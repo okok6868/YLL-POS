@@ -1021,18 +1021,35 @@ function smartPrintLast(){
 }
 
 async function sendToTelegram(text){
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-  // iPad / iPhone
+  // iPad / iPhone：优先使用系统分享菜单，不再跳 Telegram 网页版
+  if(isIOS && navigator.share){
+    try{
+      await navigator.share({
+        title:"YLL POS Receipt",
+        text:text
+      });
+      return;
+    }catch(e){
+      // 用户取消分享时不要报错
+      if(e && e.name === "AbortError") return;
+    }
+  }
+
+  // 其他支持系统分享的设备，也先用系统分享
   if(navigator.share){
     try{
       await navigator.share({
+        title:"YLL POS Receipt",
         text:text
       });
       return;
     }catch(e){}
   }
 
-  // 电脑备用
+  // 电脑备用：才打开 Telegram 网页版
   window.open(
     "https://t.me/share/url?url=&text="+
     encodeURIComponent(text),
