@@ -288,7 +288,15 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .modal-content button{width:100%;padding:12px;margin-top:7px;border-radius:12px;background:#334155;color:white;font-weight:800}
 .modal-content button:hover{background:#475569}
 .modal-content .green{background:linear-gradient(135deg,#16a34a,#22c55e);color:#04130a;font-weight:900}
-.discount-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.discount-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+
+.discount-grid .confirm-cash-btn{
+  grid-column:1 / -1;
+}
 .discount-grid button{margin-top:0}
 .discount-preview{background:#020617;border:1px solid var(--line);padding:11px;border-radius:14px;line-height:1.8;margin:10px 0}
 .report-card{background:#111827;padding:12px;border-radius:14px;margin:9px 0;border:1px solid var(--line)}
@@ -652,12 +660,20 @@ body.light .cash-quick-btn{
   <div class="modal-content">
     <h3>💵 Cash 收款</h3>
     <div id="cashTotal">RM 0.00</div>
-    <input id="cashInput" type="number" placeholder="不输入 = 刚好现金" oninput="calcChange()">
+    <input id="cashInput" type="number" placeholder="输入顾客付款金额" oninput="calcChange()">
     <div class="discount-grid">
-      <button class="cash-quick-btn" onclick="quick(10)">RM10</button>
-      <button class="cash-quick-btn" onclick="quick(20)">RM20</button>
-      <button class="cash-quick-btn" onclick="quick(50)">RM50</button>
-    </div>
+  <button class="cash-quick-btn" onclick="quick(1)">RM1</button>
+  <button class="cash-quick-btn" onclick="quick(5)">RM5</button>
+  <button class="cash-quick-btn" onclick="quick(10)">RM10</button>
+
+  <button class="cash-quick-btn" onclick="quick(20)">RM20</button>
+  <button class="cash-quick-btn" onclick="quick(50)">RM50</button>
+  <button class="cash-quick-btn" onclick="quick(100)">RM100</button>
+
+  <button class="confirm-cash-btn" onclick="quickExact()">
+    💵 刚好付款
+  </button>
+</div>
     <div id="change">找零 RM 0.00</div>
     <button class="confirm-cash-btn" onclick="confirmCash()">✅ 确认收款</button>
     <button class="cancel-pay-btn" onclick="closeCash()">✕ 取消</button>
@@ -825,7 +841,38 @@ function updateDiscountPreview(val){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0
 
 function openPay(){if(!cart.length){alert("🛒 没商品");return} openModal("payModal")}
 function closePay(){closeModal("payModal")}
-function openCash(){if(!cart.length){alert("没商品");return} let data=calcCartData(); cashTotal=data.final; let e=document.getElementById("cashTotal"); if(e)e.innerText=`原价 ${fmt(data.subtotal)}\n折扣 -${fmt(data.discount)}\n应付 ${fmt(data.final)}`; openModal("cashBox"); let input=document.getElementById("cashInput"),ch=document.getElementById("change"); if(input)input.value=""; if(ch)ch.innerText="找零 RM 0.00"; let suggest=Math.ceil(cashTotal/10)*10; setTimeout(()=>{if(input){input.value=suggest;input.focus();calcChange()}},50)}
+function openCash(){
+  if(!cart.length){
+    alert("没商品");
+    return;
+  }
+
+  let data = calcCartData();
+  cashTotal = data.final;
+
+  let e = document.getElementById("cashTotal");
+  if(e){
+    e.innerText =
+      `原价 ${fmt(data.subtotal)}
+折扣 -${fmt(data.discount)}
+应付 ${fmt(data.final)}`;
+  }
+
+  openModal("cashBox");
+
+  let input = document.getElementById("cashInput");
+  let ch = document.getElementById("change");
+
+  if(input) input.value = "";
+  if(ch) ch.innerText = "找零 RM 0.00";
+
+  setTimeout(()=>{
+    if(input){
+      input.focus();
+      calcChange();
+    }
+  },50);
+}
 function closeCash(){closeModal("cashBox")}
 function quick(v){let i=document.getElementById("cashInput"); if(!i)return; i.value=v; calcChange()}
 function quickExact(){let i=document.getElementById("cashInput"); if(!i)return; i.value=cashTotal; calcChange()}
