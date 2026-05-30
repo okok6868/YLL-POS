@@ -1020,8 +1020,24 @@ function smartPrintLast(){
   sendToTelegram(lastReceiptText);
 }
 
-function sendToTelegram(text){
-  window.open("https://t.me/share/url?url=&text="+encodeURIComponent(text),"_blank");
+async function sendToTelegram(text){
+
+  // iPad / iPhone
+  if(navigator.share){
+    try{
+      await navigator.share({
+        text:text
+      });
+      return;
+    }catch(e){}
+  }
+
+  // 电脑备用
+  window.open(
+    "https://t.me/share/url?url=&text="+
+    encodeURIComponent(text),
+    "_blank"
+  );
 }
 
 function sendLastReceipt(){
