@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
-  const gasUrl = process.env.GAS_API_URL;
+  const gasUrl = "https://script.google.com/macros/s/AKfycbwU1ydbLBW0QrMde-_ecy4liE4oVBopuG5HAtZb6W23OjdV1LgRRl8ervlZNWuf3qPzcQ/exec";
   if (!gasUrl) {
     return res.status(500).json({ success: false, error: "Missing GAS_API_URL in Vercel Environment Variables" });
   }
