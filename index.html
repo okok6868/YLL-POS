@@ -619,23 +619,8 @@ body.light .auto-print-btn{
       <div id="moreMenu" class="moreMenu">
 
   <button class="smallbtn print-btn"
-          onclick="printReceipt(false)">
-    🧾 生成/复制最后一单
-  </button>
-
-  <button class="smallbtn rawbt-btn"
-          onclick="printRawBTLast()">
-    🖨️ RawBT 打印
-  </button>
-
-  <button class="smallbtn send-btn"
-          onclick="sendLastReceipt()">
-    📤 Telegram 发送
-  </button>
-
-  <button id="autoPrintBtn" class="smallbtn auto-print-btn"
-          onclick="togglePrintMode()">
-    🔁 自动：Telegram
+          onclick="smartPrintLast()">
+    🖨️ 打印收据
   </button>
 
   <button class="smallbtn report-btn"
@@ -919,7 +904,7 @@ function checkout(payment,paid=0,change=0){
         cart.forEach(i=>i.orderId=orderId);
         lastCart=JSON.parse(JSON.stringify(cart));
         lastDiscount=Number(discount||0);
-        printReceipt(true);
+        printReceipt(false);
         cart=[];discount=0;showCart();loadTodayStats();load();
       })
       .catch(function(err){alert("❌ 保存失败："+(err.message||err));});
@@ -1012,6 +997,29 @@ Payment: ${lastPayment || ""}
   }
 }
 
+
+function smartPrintLast(){
+  if(!lastReceiptText){
+    printReceipt(false);
+  }
+
+  if(!lastReceiptText){
+    alert("还没有收据");
+    return;
+  }
+
+  let ua = navigator.userAgent || "";
+
+  // 安卓手机：直接尝试打开 RawBT 打印
+  if(/Android/i.test(ua)){
+    openRawBT(lastReceiptText);
+    return;
+  }
+
+  // iPad / iPhone / 电脑：打开 Telegram 分享
+  sendToTelegram(lastReceiptText);
+}
+
 function sendToTelegram(text){
   window.open("https://t.me/share/url?url=&text="+encodeURIComponent(text),"_blank");
 }
@@ -1094,7 +1102,8 @@ function showReport(res){
   if(res.categories){
     Object.keys(res.categories).sort((a,b)=>(res.categories[b].total||0)-(res.categories[a].total||0)).forEach(cat=>{
       let c=res.categories[cat];
-      catHtml += `<div style="display:flex;justify-content:space-between;gap:8px;margin:6px 0"><span>${cat} <small style="color:#94a3b8">Qty ${c.qty||0}</small></span><b>RM ${fix(c.total)}</b></div>`;
+      let catLabel = /香烟|cigarette|rokok|smoke|🚬/i.test(cat) ? "🚬 " + cat : cat;
+      catHtml += `<div style="display:flex;justify-content:space-between;gap:8px;margin:6px 0"><span>${catLabel} <small style="color:#94a3b8">Qty ${c.qty||0}</small></span><b>RM ${fix(c.total)}</b></div>`;
     });
   }
   let topHtml="";
