@@ -1,0 +1,9 @@
+{
+  "name": "yll-pos-v4-2",
+  "version": "4.2.1",
+  "private": true,
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {}
+}
