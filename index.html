@@ -745,8 +745,11 @@ async function apiCall(action,args=[]){
   }
 
   if(!json.success){
-    throw new Error(json.error || "API error");
-  }
+  throw new Error(
+    (json.error || "API error") +
+    (json.raw ? "\n\nRAW:\n" + json.raw : "")
+  );
+}
 
   return json.data;
 }
