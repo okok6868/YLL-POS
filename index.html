@@ -446,6 +446,61 @@ body.light .modal{
 }
 
 
+
+/* ===== POS V4.3 safety lock + next-day refresh ===== */
+body.checkout-lock .product-card,
+body.checkout-lock .qtybar button,
+body.checkout-lock .paybar button,
+body.checkout-lock .topline button,
+body.checkout-lock .cat-btn{
+  pointer-events:none !important;
+  opacity:.55;
+}
+body.checkout-lock .modal.active{pointer-events:auto}
+.checkoutOverlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(2,6,23,.58);
+  z-index:95;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  backdrop-filter:blur(3px);
+  pointer-events:auto;
+}
+.checkoutOverlay.active{display:flex}
+.checkoutCard{
+  width:min(330px,88vw);
+  padding:22px;
+  border-radius:22px;
+  background:linear-gradient(145deg,#111827,#020617);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 28px 80px rgba(0,0,0,.70);
+  font-weight:900;
+}
+.spinner{
+  width:42px;
+  height:42px;
+  margin:0 auto 12px;
+  border:4px solid rgba(255,255,255,.18);
+  border-top-color:#22c55e;
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.refund-item{
+  background:#020617;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px;
+  margin:8px 0;
+}
+.refund-item label{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.refund-item input[type=number]{width:88px;margin:0;padding:8px;font-size:14px}
+.refund-note{color:var(--muted);font-size:13px;line-height:1.5}
+body.light .checkoutCard, body.light .refund-item{background:#fff;color:#0f172a;border-color:rgba(15,23,42,.12)}
+
 /* ===== POS V4.1 TOAST ===== */
 .toast{
   position:fixed;
@@ -628,6 +683,11 @@ body.light .auto-print-btn{
     📊 销售报表
   </button>
 
+  <button class="smallbtn send-btn"
+          onclick="openRefund()">
+    ↩️ 退货申请
+  </button>
+
   <button class="smallbtn close-btn"
           onclick="closeDay()">
     📅 今日结账
@@ -711,20 +771,50 @@ body.light .auto-print-btn{
   </div>
 </div>
 
+
+<div id="refundBox" class="modal">
+  <div class="modal-content">
+    <h3>↩️ 退货申请</h3>
+    <div class="refund-note">选择上一张收据里的商品，填写数量和原因。申请会送去 Google Sheet 等老板 Approve；这里不设 PIN。</div>
+    <div id="refundItems"></div>
+    <input id="refundReason" placeholder="退货原因，例如：顾客退货 / 打错 / 换货">
+    <button class="green" onclick="submitRefundRequest()">✅ 送去 Sheet 等 Approve</button>
+    <button onclick="closeRefund()">关闭</button>
+  </div>
+</div>
+
+<div id="refreshBox" class="modal">
+  <div class="modal-content">
+    <h3>🔄 已进入新一天</h3>
+    <p>POS 还停留在昨天的画面。请刷新同步最新商品、库存和今日销售。</p>
+    <button class="green" onclick="forceReloadApp()">立即刷新</button>
+  </div>
+</div>
+
+<div id="checkoutOverlay" class="checkoutOverlay">
+  <div class="checkoutCard">
+    <div class="spinner"></div>
+    <div id="checkoutLockText">买单处理中，请不要关闭页面</div>
+  </div>
+</div>
+
 <script>
 let products=[], currentList=[], cart=[];
 let currentPage=1, perPage=12;
 let currentCat="全部分类", searchText="";
 let discount=0, cashTotal=0;
-let lastPayment="", lastCart=[], lastDiscount=0, lastReceiptText="", confirmCallback=null;
+let isCheckoutLocked=false;
+let lastPayment="", lastCart=[], lastDiscount=0, lastReceiptText="", lastPaid=0, lastChange=0, lastOrderId="", confirmCallback=null;
 
 window.onload=function(){
+  initDayGuard();
   load();
   loadTodayStats();
   syncOfflineOrders();
   updateClock();
   updateAutoPrintButton();
   setInterval(updateClock,1000);
+  setInterval(checkDayChange,60000);
 };
 
 function fmt(v){v=Number(v)||0;return "RM "+v.toFixed(2)}
@@ -822,10 +912,10 @@ function showLowStock(){
 function nextPage(){let total=Math.max(1,Math.ceil(currentList.length/perPage)); if(currentPage<total){currentPage++;render(currentList)}}
 function prevPage(){if(currentPage>1){currentPage--;render(currentList)}}
 
-function add(name,price){let found=cart.find(i=>i.name===name); if(found)found.qty++; else cart.push({name,price:Number(price)||0,qty:1}); showCart()}
-function minus(i){if(!cart[i])return; if(cart[i].qty>1)cart[i].qty--; else cart.splice(i,1); showCart()}
-function removeItem(i){cart.splice(i,1); showCart()}
-function clearCart(){if(!cart.length)return; showConfirm("确定清空购物车？",function(){cart=[];discount=0;showCart()})}
+function add(name,price){if(isCheckoutLocked)return; let found=cart.find(i=>i.name===name); if(found)found.qty++; else cart.push({name,price:Number(price)||0,qty:1}); showCart()}
+function minus(i){if(isCheckoutLocked)return; if(!cart[i])return; if(cart[i].qty>1)cart[i].qty--; else cart.splice(i,1); showCart()}
+function removeItem(i){if(isCheckoutLocked)return; cart.splice(i,1); showCart()}
+function clearCart(){if(isCheckoutLocked)return; if(!cart.length)return; showConfirm("确定清空购物车？",function(){cart=[];discount=0;showCart()})}
 function calcCartData(){let subtotal=cart.reduce((s,i)=>s+i.qty*i.price,0); discount=Number(discount)||0; if(discount>subtotal)discount=subtotal; if(discount<0)discount=0; return {subtotal,discount,final:Math.max(0,subtotal-discount)}}
 function showCart(){
   let cartBox=document.getElementById("cart");
@@ -855,7 +945,7 @@ function resetDiscount(){discount=0; let i=document.getElementById("discountInpu
 function updateDiscountUI(){let e=document.getElementById("dVal"); if(e)e.innerText=Number(discount||0).toFixed(2)}
 function updateDiscountPreview(val){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); let d=Number(val!==undefined?val:discount)||0; let final=Math.max(0,sub-d); let s=document.getElementById("dSubtotal"),c=document.getElementById("dCurrent"),f=document.getElementById("dFinal"); if(s)s.innerText=sub.toFixed(2); if(c)c.innerText=d.toFixed(2); if(f)f.innerText=final.toFixed(2)}
 
-function openPay(){if(!cart.length){alert("🛒 没商品");return} openModal("payModal")}
+function openPay(){if(isCheckoutLocked)return; if(!cart.length){alert("🛒 没商品");return} openModal("payModal")}
 function closePay(){closeModal("payModal")}
 function openCash(){
   if(!cart.length){
@@ -894,23 +984,51 @@ function quick(v){let i=document.getElementById("cashInput"); if(!i)return; i.va
 function quickExact(){let i=document.getElementById("cashInput"); if(!i)return; i.value=cashTotal; calcChange()}
 function calcChange(){let pay=Number(document.getElementById("cashInput").value)||0; let change=Math.max(0,pay-cashTotal); document.getElementById("change").innerText="找零 RM "+change.toFixed(2)}
 function confirmCash(){let raw=document.getElementById("cashInput").value; let pay = raw === "" ? cashTotal : Number(raw); if(isNaN(pay)){alert("请输入正确金额");return} if(pay<cashTotal){alert("钱不够！");return} closeCash(); checkout("cash",pay,pay-cashTotal)}
+function setCheckoutLock(on,msg){
+  isCheckoutLocked=!!on;
+  document.body.classList.toggle("checkout-lock",isCheckoutLocked);
+  let ov=document.getElementById("checkoutOverlay");
+  let tx=document.getElementById("checkoutLockText");
+  if(tx)tx.innerText=msg||"买单处理中，请不要关闭页面";
+  if(ov)ov.classList.toggle("active",isCheckoutLocked);
+}
+
 function checkout(payment,paid=0,change=0){
+  if(isCheckoutLocked)return;
   if(!cart.length){alert("没商品");return}
+  const snapshotCart=JSON.parse(JSON.stringify(cart));
+  const snapshotDiscount=Number(discount||0);
+  const snapshotPaid=Number(paid||0);
+  const snapshotChange=Number(change||0);
   showConfirm("确认付款？",function(){
-    closePay(); lastPayment=payment;
-    let send=cart.map(i=>{let p=products.find(x=>x.name===i.name)||{}; return {name:i.name,price:i.price,qty:i.qty,cost:p.cost||0}});
-    if(!navigator.onLine){let offline=JSON.parse(localStorage.getItem("offlineOrders")||"[]"); offline.push({id:Date.now(),cart:send,payment,discount,date:new Date().toISOString()}); localStorage.setItem("offlineOrders",JSON.stringify(offline)); lastCart=JSON.parse(JSON.stringify(cart)); lastDiscount=Number(discount||0); showToast("⚠️ 离线模式，订单已保存"); cart=[];discount=0;showCart();return}
-    apiCall("saveOrder",[send,payment,discount])
+    closePay();
+    closeCash();
+    lastPayment=payment;
+    setCheckoutLock(true,"买单处理中，商品已锁定");
+    let send=snapshotCart.map(i=>{let p=products.find(x=>x.name===i.name)||{}; return {name:i.name,price:i.price,qty:i.qty,cost:p.cost||0}});
+    if(!navigator.onLine){
+      let offline=JSON.parse(localStorage.getItem("offlineOrders")||"[]");
+      offline.push({id:Date.now(),cart:send,payment,discount:snapshotDiscount,paid:snapshotPaid,change:snapshotChange,date:new Date().toISOString()});
+      localStorage.setItem("offlineOrders",JSON.stringify(offline));
+      lastCart=snapshotCart; lastDiscount=snapshotDiscount; lastPaid=snapshotPaid; lastChange=snapshotChange; lastOrderId="OFFLINE-"+Date.now();
+      showToast("⚠️ 离线模式，订单已保存");
+      cart=[];discount=0;showCart();setCheckoutLock(false);return;
+    }
+    apiCall("saveOrder",[send,payment,snapshotDiscount,snapshotPaid,snapshotChange])
       .then(function(res){
         let orderId=res&&res.orderId;
         if(!orderId){alert("❌ 没有拿到订单号");return}
-        cart.forEach(i=>i.orderId=orderId);
-        lastCart=JSON.parse(JSON.stringify(cart));
-        lastDiscount=Number(discount||0);
+        snapshotCart.forEach(i=>i.orderId=orderId);
+        lastOrderId=orderId;
+        lastCart=snapshotCart;
+        lastDiscount=snapshotDiscount;
+        lastPaid=snapshotPaid;
+        lastChange=snapshotChange;
         printReceipt(false);
         cart=[];discount=0;showCart();loadTodayStats();load();
       })
-      .catch(function(err){alert("❌ 保存失败："+(err.message||err));});
+      .catch(function(err){alert("❌ 保存失败："+(err.message||err));})
+      .finally(function(){setCheckoutLock(false);});
   });
 }
 
@@ -927,7 +1045,7 @@ function printReceipt(auto=false){
     return;
   }
 
-  let orderId = useCart[0]?.orderId || "PENDING";
+  let orderId = lastOrderId || useCart[0]?.orderId || "PENDING";
   let subtotal = Number(useCart.reduce((a,b)=>a + b.qty * b.price, 0).toFixed(2));
   let finalTotal = Math.max(0, subtotal - usedDiscount);
 
@@ -978,6 +1096,8 @@ ${line("Subtotal", subtotal)}
 ${line("Discount", usedDiscount)}
 --------------------------------
 ${line("TOTAL", finalTotal)}
+${line("Paid", lastPayment === "cash" ? (lastPaid || finalTotal) : finalTotal)}
+${line("Change", lastPayment === "cash" ? lastChange : 0)}
 Payment: ${lastPayment || ""}
 --------------------------------
 
@@ -1120,6 +1240,63 @@ function runAutoPrint(){
   }
 }
 
+
+function openRefund(){
+  if(!lastCart.length){alert("还没有上一张收据可以退货");return}
+  let box=document.getElementById("refundItems");
+  let html="";
+  lastCart.forEach((i,idx)=>{
+    html+=`<div class="refund-item"><label><span><input type="checkbox" class="refundCheck" data-idx="${idx}"> ${i.name}<br><small>最多 ${i.qty} × ${fmt(i.price)}</small></span><input type="number" class="refundQty" data-idx="${idx}" min="1" max="${i.qty}" value="1"></label></div>`;
+  });
+  if(box)box.innerHTML=html;
+  let r=document.getElementById("refundReason"); if(r)r.value="";
+  openModal("refundBox");
+}
+function closeRefund(){closeModal("refundBox")}
+function submitRefundRequest(){
+  if(!lastCart.length){alert("没有可退货订单");return}
+  let selected=[];
+  document.querySelectorAll(".refundCheck:checked").forEach(ch=>{
+    let idx=Number(ch.dataset.idx);
+    let src=lastCart[idx];
+    let qtyEl=document.querySelector(`.refundQty[data-idx="${idx}"]`);
+    let qty=Math.max(1,Math.min(Number(src.qty||1),Number(qtyEl&&qtyEl.value||1)));
+    selected.push({name:src.name,price:Number(src.price||0),qty:qty,amount:Number((qty*Number(src.price||0)).toFixed(2)),orderId:lastOrderId||src.orderId||""});
+  });
+  if(!selected.length){alert("请选择要退的商品");return}
+  let reason=(document.getElementById("refundReason")?.value||"").trim();
+  if(!reason){alert("请填写退货原因");return}
+  let total=selected.reduce((a,b)=>a+b.amount,0);
+  showConfirm(`确认送出退货申请？\n金额 RM ${total.toFixed(2)}\n送去 Sheet 等 Approve`,function(){
+    closeRefund();
+    setCheckoutLock(true,"退货申请送出中");
+    apiCall("requestRefund",[{orderId:lastOrderId,items:selected,reason:reason,payment:lastPayment,createdAt:new Date().toISOString()}])
+      .then(function(){showToast("✅ 退货申请已送去 Sheet 等 Approve")})
+      .catch(function(err){alert("❌ 退货申请失败："+(err.message||err)+"\n\n如果 Apps Script 还没有 requestRefund，需要把后端也补上。")})
+      .finally(function(){setCheckoutLock(false);});
+  });
+}
+
+function todayKey(){return new Date().toLocaleDateString("en-CA")}
+function initDayGuard(){
+  if(!localStorage.getItem("yllPosOpenDate")) localStorage.setItem("yllPosOpenDate",todayKey());
+  checkDayChange();
+}
+function checkDayChange(){
+  let saved=localStorage.getItem("yllPosOpenDate");
+  let now=todayKey();
+  if(saved && saved!==now){openModal("refreshBox");}
+}
+function forceReloadApp(){
+  localStorage.setItem("yllPosOpenDate",todayKey());
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.update().catch(()=>{})))).finally(()=>location.reload());
+  }else location.reload();
+}
+window.addEventListener("focus",checkDayChange);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)checkDayChange();});
+window.addEventListener("pageshow",checkDayChange);
+
 function openReport(){let today=new Date().toISOString().split("T")[0]; document.getElementById("startDate").value=today; document.getElementById("endDate").value=today; openModal("reportBox"); loadReport()}
 function closeReport(){closeModal("reportBox")}
 function loadReport(){
@@ -1186,7 +1363,7 @@ function syncOfflineOrders(){
   if(!offline.length)return;
   let done=0,failed=[];
   offline.forEach(o=>{
-    apiCall("saveOrder",[o.cart,o.payment,o.discount||0])
+    apiCall("saveOrder",[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0])
       .then(function(){done++;finish()})
       .catch(function(){failed.push(o);done++;finish()});
   });
