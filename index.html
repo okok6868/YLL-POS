@@ -2908,5 +2908,249 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 })();
 </script>
 
+<script>
+/* ===== V4.8 STABLE CLEANUP FINAL OVERRIDES ===== */
+(function(){
+  const $ = (id)=>document.getElementById(id);
+  const html = (id,v)=>{ const e=$(id); if(e)e.innerHTML=v; };
+  const text = (id,v)=>{ const e=$(id); if(e)e.textContent=v; };
+  const fmt2 = (v)=> (typeof fmt==='function' ? fmt(v) : 'RM '+Number(v||0).toFixed(2));
+  const mnum = (v)=> (typeof moneyNum==='function' ? moneyNum(v) : Number(v||0));
+  const mcents = (v)=> (typeof cents==='function' ? cents(v) : Math.round(Number(v||0)*100));
+  const mfrom = (v)=> (typeof fromCents==='function' ? fromCents(v) : Number(v||0)/100);
+  const alertApp = async (msg,title)=>{
+    if(typeof showAppAlert==='function') return showAppAlert(msg,title||'Notice');
+    alert(msg);
+  };
+  const confirmApp = async (msg,title)=>{
+    if(typeof appConfirm==='function') return appConfirm(msg,title||'Confirm');
+    return window.confirm(msg);
+  };
+
+  window.__bossDataCache = { at:0, data:null, pending:null };
+  window.invalidateBossCache = function(){ window.__bossDataCache = { at:0, data:null, pending:null }; };
+  window.getBossDataFast = async function(force){
+    const c=window.__bossDataCache;
+    if(!force && c.data && Date.now()-c.at < 15000) return c.data;
+    if(!force && c.pending) return c.pending;
+    c.pending = apiCall('getBossOverview',[]).then(r=>{ c.data=r||{}; c.at=Date.now(); c.pending=null; return c.data; }).catch(e=>{ c.pending=null; throw e; });
+    return c.pending;
+  };
+
+  window.bossHideBossPanels = function(){
+    ['bossOverviewPanel','bossReportsPanel','bossRangeBox','bossExportBox','bossCredentialBox','bossCashBox','bossParcelBox','bossOtherIncomeBox','bossLowStockBox'].forEach(id=>{
+      const e=$(id); if(e){ e.style.display='none'; e.classList.remove('active'); }
+    });
+    // Avoid old report/table staying under another tab.
+    text('bossResult','');
+  };
+  window.bossSetNav = function(label){
+    document.querySelectorAll('.boss-tab-grid button').forEach(btn=>{
+      btn.classList.toggle('active', (btn.textContent||'').includes(label||''));
+    });
+  };
+  function miniCard(title,value,desc,warn){
+    return `<div class="overview-card ${warn?'warn':'good'}"><small>${title}</small><b>${value}</b><span>${desc||''}</span></div>`;
+  }
+
+  window.bossOpenOverview = async function(force){
+    if(!bossRequire())return;
+    bossHideBossPanels(); bossSetNav('今日');
+    const p=$('bossOverviewPanel'); if(p){p.style.display='block';p.classList.add('active');}
+    html('bossOverviewResult','<div class="overview-card"><small>Status</small><b>Loading...</b><span>Reading reminders...</span></div>');
+    try{
+      const r=await getBossDataFast(!!force);
+      const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[], today=r.today||{};
+      const drawer=mnum(cash.cashDrawer||0), flt=mnum(cash.floatCash||0), limit=mnum(cash.cashDrawerLimit||500);
+      const can=Math.max(0,mfrom(mcents(drawer)-mcents(flt)));
+      const cards=[];
+      cards.push(miniCard('Collectable Cash',fmt2(can),`Drawer ${fmt2(drawer)} / Float ${fmt2(flt)} / Limit ${fmt2(limit)}`,can>=limit));
+      cards.push(miniCard('Today Sales',fmt2(today.total||0),`Orders ${today.orders||today.count||0} / Cash ${fmt2(today.Cash||0)} / QR ${fmt2(today.MBB_QR||0)}`,false));
+      if(mnum(parcel.pendingEstimated||0)>0) cards.push(miniCard('Shopee Pending',fmt2(parcel.pendingEstimated||0),`Actual paid ${fmt2(parcel.actualPaid||0)} / Logs ${parcel.count||0}`,true));
+      if(mnum(other.pending||0)>0) cards.push(miniCard('Other Income Pending',fmt2(other.pending||0),`Received ${fmt2(other.received||0)} / Records ${other.count||0}`,true));
+      if(low.length) cards.push(miniCard('Low Stock',low.length+' items',low.slice(0,4).map(x=>x.name).join(', '),true));
+      if(cards.length<=2 && !cards.some(x=>x.includes('warn'))) cards.push(`<div class="overview-card good"><small>Today</small><b>No urgent reminders</b><span>Nothing needs action now.</span></div>`);
+      html('bossOverviewResult',cards.join(''));
+    }catch(e){ text('bossOverviewResult','Load failed: '+(e.message||e)); }
+  };
+
+  window.bossOpenCashCollect = async function(force){
+    if(!bossRequire())return;
+    bossHideBossPanels(); bossSetNav('财务');
+    const p=$('bossCashBox'); if(p){p.style.display='block';p.classList.add('active');}
+    text('bossCashInfo','Loading finance...');
+    try{
+      const r=await getBossDataFast(!!force);
+      const cash=r.cash||{};
+      const drawer=mnum(cash.cashDrawer||0), flt=mnum(cash.floatCash||0), limit=mnum(cash.cashDrawerLimit||500);
+      const can=Math.max(0,mfrom(mcents(drawer)-mcents(flt)));
+      text('cashDrawerAmount',fmt2(drawer)); text('floatCashAmount',fmt2(flt)); text('collectableAmount',fmt2(can));
+      const warn=$('bossCashWarning'); if(warn){warn.style.display=can>=limit?'block':'none'; warn.textContent=`🟠 Collectable cash ${fmt2(can)} is over limit ${fmt2(limit)}.`;}
+      html('bossCashInfo',`<table><tr><th>Item</th><th class="right">Amount</th></tr><tr><td>Collected Cash</td><td class="right">${fmt2(cash.collected||0)}</td></tr><tr><td>Approved Refund Cash</td><td class="right">${fmt2(cash.refunds||0)}</td></tr><tr><td>Reminder Limit</td><td class="right">${fmt2(limit)}</td></tr></table>`);
+    }catch(e){ text('bossCashInfo','Load failed: '+(e.message||e)); }
+  };
+
+  const oldCollect = window.bossCollectCash;
+  window.bossCollectCash = async function(){
+    const amount=Number(($('collectCashAmount')||{}).value||0);
+    const note=($('collectCashNote')||{}).value||'';
+    if(amount<=0){ await alertApp('Please enter collect amount.','Collect Cash'); return; }
+    try{
+      await apiCall('collectCash',[amount,note]);
+      if(typeof showToast==='function') showToast('✅ Cash collection recorded');
+      invalidateBossCache(); bossOpenCashCollect(true); loadTodayStats && loadTodayStats();
+    }catch(e){ await alertApp('Collect failed: '+(e.message||e),'Collect Cash'); }
+  };
+
+  ['bossOpenParcelBoss','bossOpenOtherIncome','bossOpenRangeReport'].forEach(name=>{
+    const old=window[name];
+    if(typeof old==='function') window[name]=function(){ bossHideBossPanels(); return old.apply(this,arguments); };
+  });
+
+  function qtyOptions(max){
+    max=Math.max(1,Math.floor(Number(max||1)));
+    let out=''; for(let i=1;i<=max;i++) out+=`<option value="${i}">${i}</option>`;
+    return out;
+  }
+  window.installRefundUI = function(){
+    const box=document.querySelector('#refundBox .modal-content'); if(!box)return;
+    box.innerHTML=`
+      <h3>↩️ Refund</h3>
+      <p style="color:#94a3b8;font-size:13px">Select an order from the last 3 days, choose items and quantity.</p>
+      <button class="green" onclick="loadRecentRefundOrders(true)">🔍 Load Recent Orders</button>
+      <div id="refundRecentBox">Loading recent orders...</div>
+      <input id="refundOrderId" type="text" placeholder="Order No" readonly>
+      <div id="refundItemList" class="refund-item-list">Select an order first.</div>
+      <div id="refundTotalBox" class="refund-summary">Refund Total: RM 0.00</div>
+      <input id="refundReason" type="text" placeholder="Reason, e.g. customer return">
+      <details class="refund-auth" id="refundAuthDetails"><summary>Boss Authorization / Direct Approve</summary>
+        <input id="refundBossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <input id="refundBossPassword" type="password" placeholder="Password" autocomplete="new-password">
+        <div class="receipt-note">Leave blank = submit pending request. Fill ID/password = approve immediately.</div>
+      </details>
+      <div id="refundStatusMsg" class="refund-status-msg" style="display:none"></div>
+      <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ Submit Refund</button>
+      <button onclick="closeModal('refundBox')">Close</button>`;
+  };
+  window.openRefundBox=function(){
+    installRefundUI(); window.selectedRefundOrder=null; window.__refundOrders=[]; window.__refundSelected={};
+    setRefundBusy(false); openModal('refundBox'); loadRecentRefundOrders(true);
+  };
+  window.loadRecentRefundOrders=async function(force){
+    const box=$('refundRecentBox'); if(box)box.textContent='Loading recent orders...';
+    try{
+      const rows=await apiCall('getRecentOrdersForRefund',[3]);
+      window.__refundOrders=rows||[]; window.selectedRefundOrder=null; window.__refundSelected={};
+      const list=$('refundItemList'); if(list)list.textContent='Select an order first.';
+      text('refundTotalBox','Refund Total: RM 0.00'); const oid=$('refundOrderId'); if(oid)oid.value='';
+      if(!box)return;
+      if(!rows||!rows.length){ box.textContent='No refundable orders in last 3 days.'; return; }
+      box.innerHTML=rows.map((o,idx)=>`<div class="refund-order-card" onclick="selectRefundOrder(${idx})" data-idx="${idx}" data-order="${o.orderId}"><div class="refund-order-title"><span>${o.orderId}</span><span>${fmt2(o.total||0)}</span></div><div class="refund-order-items">${o.date||''}<br>${(o.items||[]).map(i=>`${i.name} x${i.qty} (${fmt2(i.subtotal||0)})`).join('<br>')}</div></div>`).join('');
+    }catch(e){ if(box)box.textContent='Load failed: '+(e.message||e); }
+  };
+  window.selectRefundOrder=function(idx){
+    const rows=window.__refundOrders||[]; const o=rows[idx]; if(!o)return;
+    window.selectedRefundOrder=o; window.__refundSelected={};
+    document.querySelectorAll('.refund-order-card').forEach(c=>c.classList.toggle('active',Number(c.dataset.idx)===idx));
+    const oid=$('refundOrderId'); if(oid)oid.value=o.orderId||'';
+    const list=$('refundItemList'); if(!list)return;
+    list.innerHTML=(o.items||[]).map((it,i)=>`<div class="refund-item-row">
+      <input type="checkbox" id="rfChk${i}" onchange="toggleRefundItem(${i})">
+      <div><div class="refund-item-name">${it.name}</div><div class="refund-item-meta">Sold Qty: ${it.qty} × RM ${Number(it.price||0).toFixed(2)} / Max ${fmt2(it.subtotal||0)}</div></div>
+      <select id="rfQty${i}" class="refund-qty-select" disabled onchange="updateRefundTotal()">${qtyOptions(it.qty)}</select>
+      <div class="refund-amount-chip" id="rfAmt${i}">RM 0.00</div>
+    </div>`).join('');
+    updateRefundTotal();
+  };
+  window.toggleRefundItem=function(i){ const chk=$('rfChk'+i), qty=$('rfQty'+i); if(qty)qty.disabled=!(chk&&chk.checked); updateRefundTotal(); };
+  window.getRefundSelection=function(){
+    if(!window.selectedRefundOrder) return {items:[],amount:0};
+    const items=[]; let totalC=0;
+    (window.selectedRefundOrder.items||[]).forEach((it,i)=>{
+      const chk=$('rfChk'+i); const amt=$('rfAmt'+i);
+      if(!chk||!chk.checked){ if(amt)amt.textContent='RM 0.00'; return; }
+      let q=Math.floor(Number(($('rfQty'+i)||{}).value||1));
+      const max=Math.max(0,Number(it.qty||0)); if(q<1)q=1; if(q>max)q=max;
+      const lineC=mcents(it.price)*q; totalC+=lineC;
+      items.push({code:it.code||'',name:it.name||'',qty:q,price:Number(it.price||0),amount:mfrom(lineC)});
+      if(amt)amt.textContent=fmt2(mfrom(lineC));
+    });
+    return {items,amount:mfrom(totalC)};
+  };
+  window.updateRefundTotal=function(){ const sel=getRefundSelection(); text('refundTotalBox','Refund Total: '+fmt2(sel.amount||0)); };
+  window.setRefundBusy=function(on){
+    window.refundSubmitting=!!on;
+    const btn=$('refundSubmitBtn'); if(btn){btn.disabled=!!on;btn.classList.toggle('busy-btn',!!on);btn.textContent=on?'Submitting...':'✅ Submit Refund';}
+    const box=$('refundBox'); if(box) box.querySelectorAll('input,button,select,summary').forEach(el=>{ if(el.id!=='refundSubmitBtn') el.disabled=!!on; });
+  };
+  window.submitRefund=async function(){
+    if(window.refundSubmitting)return;
+    const orderId=($('refundOrderId')||{}).value||'';
+    const sel=getRefundSelection();
+    const reason=($('refundReason')||{}).value||'Customer return';
+    const bossId=(($('refundBossId')||{}).value||'').trim();
+    const bossPassword=(($('refundBossPassword')||{}).value||'');
+    const st=$('refundStatusMsg');
+    if(!orderId){ await alertApp('Please select an order.','Refund'); return; }
+    if(!sel.items.length||!sel.amount){ await alertApp('Please choose returned item and quantity.','Refund'); return; }
+    const direct=!!(bossId&&bossPassword);
+    const ok=await confirmApp(`${direct?'Approve refund now?':'Submit refund request?'}\n\nOrder: ${orderId}\nRefund: ${fmt2(sel.amount)}`,'Refund');
+    if(!ok)return;
+    setRefundBusy(true); if(st){st.style.display='block';st.textContent=direct?'Approving refund...':'Submitting refund request...';}
+    const timer=setTimeout(()=>{ if(st)st.textContent='Still working... do not press again.'; },8000);
+    try{
+      const payload={orderId,items:sel.items,amount:sel.amount,reason,bossId,bossPassword};
+      await apiCall(direct?'refundOrder':'requestRefund',[payload]);
+      clearTimeout(timer);
+      if(st){st.style.display='block';st.textContent=direct?'✅ Refund approved.':'✅ Refund request submitted.';}
+      document.querySelectorAll(`.refund-order-card[data-order="${orderId}"]`).forEach(c=>c.remove());
+      window.__refundOrders=(window.__refundOrders||[]).filter(o=>o.orderId!==orderId);
+      const list=$('refundItemList'); if(list)list.textContent='Select another order if needed.';
+      const oid=$('refundOrderId'); if(oid)oid.value='';
+      window.selectedRefundOrder=null; window.__refundSelected={}; updateRefundTotal();
+      if(typeof showToast==='function') showToast(direct?'✅ Refund approved':'✅ Refund request submitted');
+      invalidateBossCache(); loadTodayStats && loadTodayStats();
+      setTimeout(()=>{ if(document.querySelector('#refundBox.active')) closeModal('refundBox'); },900);
+    }catch(e){
+      clearTimeout(timer);
+      if(st){st.style.display='block';st.textContent='❌ Refund failed: '+(e.message||e);} else await alertApp('Refund failed: '+(e.message||e),'Refund');
+    }finally{ setRefundBusy(false); }
+  };
+
+  // Receipt alignment: final version for monospaced share/print text.
+  if(typeof printReceipt==='function'){
+    const oldPrintReceipt=window.printReceipt;
+    window.printReceipt=function(auto=false){
+      const useCart=(lastOrderCart&&lastOrderCart.length)?lastOrderCart:cart;
+      if(!useCart||!useCart.length){alert('No item to print');return;}
+      const data= lastOrderData || (typeof calcCartData==='function'?calcCartData():{});
+      const subtotal=Number(data.subtotal||useCart.reduce((a,b)=>a+b.qty*b.price,0));
+      const usedDiscount=Number(data.discount||discount||0);
+      const finalTotal=Number(data.final||data.total||Math.max(0,subtotal-usedDiscount));
+      const orderId=lastOrderId||'NOT SAVED';
+      const now=new Date(); const date=now.toLocaleDateString('en-GB'); const time=now.toLocaleTimeString('en-GB',{hour12:false});
+      const width=32, labelW=12;
+      const line=(label,val)=>String(label).toUpperCase().padEnd(labelW,' ')+fmt2(val).padStart(width-labelW,' ');
+      let text=`================================\nYLL FEEDS ENTERPRISE\n(202303217794 - KT0553187-P)\nINVOICE\n================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n--------------------------------\nITEMS\n--------------------------------\n`;
+      useCart.forEach(i=>{ const amount=Number(i.qty||0)*Number(i.price||0); text+=`${i.name}\n`; text+=`${i.qty} x RM ${Number(i.price||0).toFixed(2)}`.padEnd(18,' ')+fmt2(amount).padStart(14,' ')+'\n'; });
+      text+=`--------------------------------\n${line('SUBTOTAL',subtotal)}\n`;
+      if(usedDiscount>0) text+=`${line('DISCOUNT',-usedDiscount)}\n`;
+      text+=`--------------------------------\n${line('TOTAL',finalTotal)}\n`;
+      if(lastPayment==='cash'||lastPayment==='mixed'){
+        text+=`${line('PAID',lastPaid||finalTotal)}\n${line('CHANGE',lastChange||0)}\n`;
+      }
+      const paymentLabel=(typeof payLabel==='function'?payLabel(lastPayment):String(lastPayment||'cash')).toUpperCase();
+      text+=`${'PAYMENT'.padEnd(labelW,' ')+paymentLabel.padStart(width-labelW,' ')}\n--------------------------------\n\n================================\n   Thank you & please come again\n================================`;
+      lastReceiptText=text;
+      if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast&&showToast('✅ Receipt copied')).catch(()=>alert(text));} else alert(text);
+      if(auto && typeof runAutoPrint==='function')runAutoPrint();
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{ installRefundUI(); });
+  setTimeout(()=>{ installRefundUI(); },500);
+})();
+</script>
+
 </body>
 </html>
