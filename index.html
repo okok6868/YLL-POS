@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -3332,6 +3330,132 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 })();
 
+</script>
+
+
+<script>
+/* ===== V5.0 FINAL STABILITY OVERRIDES: speed + refund pending card ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const text=(id,v)=>{const e=$(id); if(e)e.textContent=v;};
+  const html=(id,v)=>{const e=$(id); if(e)e.innerHTML=v;};
+  const fmtM=v=> (typeof fmt==='function'?fmt(v):'RM '+Number(v||0).toFixed(2));
+  const num=v=> Number(v||0);
+  const cent=v=> Math.round(Number(v||0)*100);
+  const from=v=> Number(v||0)/100;
+
+  // Shorter cache for Boss data; loading one backend call only.
+  window.__bossDataCache={at:0,data:null,pending:null};
+  window.invalidateBossCache=function(){window.__bossDataCache={at:0,data:null,pending:null};};
+  window.getBossDataFast=async function(force){
+    const c=window.__bossDataCache;
+    if(!force && c.data && Date.now()-c.at<20000) return c.data;
+    if(!force && c.pending) return c.pending;
+    c.pending=apiCall('getBossOverview',[]).then(r=>{c.data=r||{};c.at=Date.now();c.pending=null;return c.data;}).catch(e=>{c.pending=null;throw e;});
+    return c.pending;
+  };
+
+  // Fast POS top stats: no expensive cash drawer calculation on every POS load.
+  window.loadTodayStats=async function(){
+    try{
+      const res=await apiCall('getTodayReport',[]);
+      text('todaySales',fmtM(res.total||0));
+      text('todayCash',fmtM(res.Cash||0));
+      text('todayOrders',res.orders||0);
+    }catch(e){console.error('Today report failed',e);}
+  };
+
+  function card(title,value,desc,warn){
+    return `<div class="overview-card ${warn?'warn':'good'}"><small>${title}</small><b>${value}</b><span>${desc||''}</span></div>`;
+  }
+
+  window.bossOpenOverview=async function(force){
+    if(!bossRequire())return;
+    bossHideBossPanels(); if(typeof bossSetNav==='function')bossSetNav('今日');
+    const p=$('bossOverviewPanel'); if(p){p.style.display='block';p.classList.add('active');}
+    html('bossOverviewResult','<div class="overview-card"><small>状态</small><b>载入中...</b><span>正在读取今日提醒...</span></div>');
+    try{
+      const r=await getBossDataFast(!!force);
+      const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[], today=r.today||{};
+      const drawer=num(cash.cashDrawer||0), flt=num(cash.floatCash||0), limit=num(cash.cashDrawerLimit||500);
+      const can=Math.max(0,from(cent(drawer)-cent(flt)));
+      const pendingRefundCount=num(r.refundPending||0), pendingRefundAmount=num(r.refundPendingAmount||0);
+      const cards=[];
+      cards.push(card('可收现金',fmtM(can),`收银机 ${fmtM(drawer)} / 找零 ${fmtM(flt)} / 提醒 ${fmtM(limit)}`,can>=limit));
+      cards.push(card('今日销售',fmtM(today.total||0),`订单 ${today.orders||today.count||0} / Cash ${fmtM(today.Cash||0)} / QR ${fmtM(today.MBB_QR||0)}`,false));
+      if(pendingRefundCount>0) cards.push(card('退货待审批',pendingRefundCount+' 单',`金额 ${fmtM(pendingRefundAmount)}，请到 Refunds Sheet / 审批流程处理`,true));
+      if(num(parcel.pendingEstimated||0)>0) cards.push(card('Shopee 待对账',fmtM(parcel.pendingEstimated||0),`已收 ${fmtM(parcel.actualPaid||0)} / 记录 ${parcel.count||0}`,true));
+      if(num(other.pending||0)>0) cards.push(card('其它收入待确认',fmtM(other.pending||0),`已确认 ${fmtM(other.received||0)} / 记录 ${other.count||0}`,true));
+      if(low.length) cards.push(card('库存不足',low.length+' 项',low.slice(0,4).map(x=>x.name).join('、'),true));
+      if(!cards.some(x=>x.includes('warn'))) cards.push(card('今日待处理','没有提醒','目前没有需要马上处理的事项。',false));
+      html('bossOverviewResult',cards.join(''));
+      text('bossResult','');
+    }catch(e){html('bossOverviewResult','载入失败：'+(e.message||e));}
+  };
+
+  window.bossOpenCashCollect=async function(force){
+    if(!bossRequire())return;
+    bossHideBossPanels(); if(typeof bossSetNav==='function')bossSetNav('财务');
+    const p=$('bossCashBox'); if(p){p.style.display='block';p.classList.add('active');}
+    text('bossCashInfo','载入财务资料中...');
+    try{
+      const r=await getBossDataFast(!!force); const cash=r.cash||{};
+      const drawer=num(cash.cashDrawer||0), flt=num(cash.floatCash||0), limit=num(cash.cashDrawerLimit||500);
+      const can=Math.max(0,from(cent(drawer)-cent(flt)));
+      text('cashDrawerAmount',fmtM(drawer)); text('floatCashAmount',fmtM(flt)); text('collectableAmount',fmtM(can));
+      const warn=$('bossCashWarning'); if(warn){warn.style.display=can>=limit?'block':'none';warn.textContent=`🟠 可收现金 ${fmtM(can)} 已超过提醒 ${fmtM(limit)}，建议收现金。`;}
+      html('bossCashInfo',`<table><tr><th>项目</th><th class="right">金额</th></tr><tr><td>已收走现金</td><td class="right">${fmtM(cash.collected||0)}</td></tr><tr><td>已批准退货扣回</td><td class="right">${fmtM(cash.refunds||0)}</td></tr><tr><td>提醒金额</td><td class="right">${fmtM(limit)}</td></tr></table>`);
+    }catch(e){text('bossCashInfo','载入失败：'+(e.message||e));}
+  };
+
+  // After actions, invalidate cache and reload only if boss dashboard is open.
+  const oldRequestRefund=window.submitRefund;
+  window.submitRefund=async function(){
+    const before=Date.now();
+    try{
+      await oldRequestRefund.apply(this,arguments);
+      invalidateBossCache();
+    }finally{}
+  };
+
+  // Ensure Refund submit uses app dialog and visible status. Keep Boss direct approval if fields are entered.
+  window.submitRefund=async function(){
+    if(window.refundSubmitting)return;
+    const orderId=($('refundOrderId')||{}).value||'';
+    const sel=(typeof getRefundSelection==='function'?getRefundSelection():{items:[],amount:0});
+    const reason=($('refundReason')||{}).value||'Customer return';
+    const bossId=(($('refundBossId')||{}).value||'').trim();
+    const bossPassword=(($('refundBossPassword')||{}).value||'');
+    const st=$('refundStatusMsg');
+    if(!orderId){showAppAlert('Please select an order.','Refund');return;}
+    if(!sel.items.length||!sel.amount){showAppAlert('Please choose returned item and quantity.','Refund');return;}
+    const direct=!!(bossId&&bossPassword);
+    const ok=await appConfirm(`${direct?'Approve refund now?':'Submit refund request?'}\n\nOrder: ${orderId}\nRefund: ${fmtM(sel.amount)}`,'Refund');
+    if(!ok)return;
+    if(typeof setRefundBusy==='function')setRefundBusy(true);
+    if(st){st.style.display='block';st.textContent=direct?'Approving refund...':'Submitting refund request...';}
+    const timer=setTimeout(()=>{if(st)st.textContent='Still submitting... do not press again.';},8000);
+    try{
+      await apiCall(direct?'refundOrder':'requestRefund',[{orderId,items:sel.items,amount:sel.amount,reason,bossId,bossPassword}]);
+      clearTimeout(timer); invalidateBossCache(); if(typeof clearRefundCache==='function')clearRefundCache();
+      if(st){st.style.display='block';st.textContent=direct?'✅ Refund approved.':'✅ Refund request submitted.';}
+      document.querySelectorAll(`.refund-order-card[data-order="${orderId}"]`).forEach(c=>c.remove());
+      window.__refundOrders=(window.__refundOrders||[]).filter(o=>o.orderId!==orderId);
+      const list=$('refundItemList'); if(list)list.textContent='Select another order if needed.';
+      const oid=$('refundOrderId'); if(oid)oid.value=''; window.selectedRefundOrder=null; if(typeof updateRefundTotal==='function')updateRefundTotal();
+      showToast(direct?'✅ Refund approved':'✅ Refund request submitted');
+      setTimeout(()=>{if(document.querySelector('#refundBox.active'))closeModal('refundBox');},900);
+    }catch(e){clearTimeout(timer); if(st){st.style.display='block';st.textContent='❌ Refund failed: '+(e.message||e);}else showAppAlert('Refund failed: '+(e.message||e),'Refund');}
+    finally{if(typeof setRefundBusy==='function')setRefundBusy(false);}
+  };
+
+  // Clear cache after saving parcel/other/cash settings.
+  ['bossCollectCash','bossConfirmShopeePaid','bossAddOtherIncome','bossConfirmOtherIncome','bossSaveSettings'].forEach(name=>{
+    const old=window[name]; if(typeof old==='function'){
+      window[name]=async function(){const r=await old.apply(this,arguments); invalidateBossCache(); return r;};
+    }
+  });
+})();
 </script>
 
 </body>
