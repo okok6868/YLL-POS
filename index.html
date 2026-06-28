@@ -1063,7 +1063,6 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
               <button onclick="bossLoadReport('year')">今年</button>
               <button onclick="bossOpenRangeReport()">自订日期</button>
             </div>
-            <button class="green" onclick="bossOpenExport()" style="margin-top:12px">📤 汇出 Excel</button>
           </div>
 
           <div id="bossRangeBox" class="boss-panel">
@@ -3455,6 +3454,183 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       window[name]=async function(){const r=await old.apply(this,arguments); invalidateBossCache(); return r;};
     }
   });
+})();
+</script>
+
+
+</html>
+
+<script>
+/* ===== V5.1 REAL STABLE OVERRIDES: speed, refund feedback, receipt columns ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const setText=(id,v)=>{const e=$(id); if(e)e.textContent=v;};
+  const setHtml=(id,v)=>{const e=$(id); if(e)e.innerHTML=v;};
+  const money=v=> (typeof fmt==='function'?fmt(v):'RM '+Number(v||0).toFixed(2));
+  const num=v=>Number(v||0);
+  const cents=v=>Math.round(Number(v||0)*100);
+  const fromCents=v=>Number(v||0)/100;
+
+  // Native confirm must never appear for refund/payment confirmation.
+  window.appConfirm=function(message,title){
+    return new Promise(resolve=>{
+      const box=$('paymentConfirmBox'), h=$('paymentConfirmTitle'), t=$('paymentConfirmText'), total=$('paymentConfirmTotal'), btn=$('paymentConfirmBtn');
+      const cancel=box?box.querySelector('.cancel-pay-btn'):null;
+      if(!box||!btn){ resolve(false); return; }
+      if(h)h.textContent=title||'Confirm';
+      if(t)t.textContent=String(message||'');
+      if(total)total.textContent='';
+      const cleanup=(ok)=>{ btn.onclick=null; if(cancel)cancel.onclick=null; closeModal('paymentConfirmBox'); resolve(ok); };
+      btn.onclick=()=>cleanup(true);
+      if(cancel)cancel.onclick=()=>cleanup(false);
+      openModal('paymentConfirmBox');
+    });
+  };
+
+  // Fast POS top stats. Do not overwrite with empty UI while loading.
+  window.loadTodayStats=async function(){
+    try{
+      const res=await apiCall('getTodayReport',[]);
+      setText('todaySales',money(res.total||0));
+      setText('todayCash',money(res.Cash||0));
+      setText('todayOrders',res.orders||res.count||0);
+    }catch(e){ console.error('loadTodayStats failed', e); }
+  };
+
+  // Boss data: one backend call per open/refresh. No repeated scanning per tab.
+  window.__bossDataCache={at:0,data:null,pending:null};
+  window.invalidateBossCache=function(){window.__bossDataCache={at:0,data:null,pending:null};};
+  window.getBossDataFast=async function(force){
+    const c=window.__bossDataCache;
+    if(!force && c.data && Date.now()-c.at<15000) return c.data;
+    if(!force && c.pending) return c.pending;
+    c.pending=apiCall('getBossOverview',[]).then(r=>{c.data=r||{};c.at=Date.now();c.pending=null;return c.data;}).catch(e=>{c.pending=null;throw e;});
+    return c.pending;
+  };
+  function card(title,value,desc,warn){return `<div class="overview-card ${warn?'warn':'good'}"><small>${title}</small><b>${value}</b><span>${desc||''}</span></div>`;}
+  window.bossOpenOverview=async function(force){
+    if(!bossRequire())return;
+    bossHideBossPanels(); if(typeof bossSetNav==='function')bossSetNav('今日');
+    const p=$('bossOverviewPanel'); if(p){p.style.display='block';p.classList.add('active');}
+    setHtml('bossOverviewResult', card('状态','载入中','正在读取今日提醒...',false));
+    try{
+      const r=await getBossDataFast(!!force);
+      const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[], today=r.today||{};
+      const drawer=num(cash.cashDrawer), flt=num(cash.floatCash), limit=num(cash.cashDrawerLimit||500);
+      const can=Math.max(0,fromCents(cents(drawer)-cents(flt)));
+      const pendingCount=num(r.refundPending), pendingAmt=num(r.refundPendingAmount);
+      const cards=[];
+      cards.push(card('可收现金',money(can),`收银机 ${money(drawer)} / 找零 ${money(flt)} / 提醒 ${money(limit)}`,can>=limit));
+      cards.push(card('今日销售',money(today.total||0),`订单 ${today.orders||today.count||0} / Cash ${money(today.Cash||0)} / QR ${money(today.MBB_QR||0)}`,false));
+      if(pendingCount>0)cards.push(card('退货待审批',pendingCount+' 单',`金额 ${money(pendingAmt)}，请到 Refunds Sheet 审批`,true));
+      if(num(parcel.pendingEstimated)>0)cards.push(card('Shopee 待对账',money(parcel.pendingEstimated),`已收 ${money(parcel.actualPaid||0)} / 记录 ${parcel.count||0}`,true));
+      if(num(other.pending)>0)cards.push(card('其它收入待确认',money(other.pending),`已确认 ${money(other.received||0)} / 记录 ${other.count||0}`,true));
+      if(low.length)cards.push(card('库存不足',low.length+' 项',low.slice(0,4).map(x=>x.name).join('、'),true));
+      if(!cards.some(x=>x.indexOf('warn')>=0))cards.push(card('今日待处理','没有提醒','目前没有需要马上处理的事项。',false));
+      setHtml('bossOverviewResult',cards.join(''));
+      setText('bossResult','');
+    }catch(e){ setHtml('bossOverviewResult','载入失败：'+(e.message||e)); }
+  };
+  window.bossOpenCashCollect=async function(force){
+    if(!bossRequire())return;
+    bossHideBossPanels(); if(typeof bossSetNav==='function')bossSetNav('财务');
+    const p=$('bossCashBox'); if(p){p.style.display='block';p.classList.add('active');}
+    setText('bossCashInfo','载入中...');
+    try{
+      const r=await getBossDataFast(!!force); const cash=r.cash||{};
+      const drawer=num(cash.cashDrawer), flt=num(cash.floatCash), limit=num(cash.cashDrawerLimit||500);
+      const can=Math.max(0,fromCents(cents(drawer)-cents(flt)));
+      setText('cashDrawerAmount',money(drawer)); setText('floatCashAmount',money(flt)); setText('collectableAmount',money(can));
+      const w=$('bossCashWarning'); if(w){w.style.display=can>=limit?'block':'none';w.textContent=`🟠 可收现金 ${money(can)} 已超过提醒 ${money(limit)}，建议收现金。`;}
+      setHtml('bossCashInfo',`<table><tr><th>项目</th><th class="right">金额</th></tr><tr><td>已收走现金</td><td class="right">${money(cash.collected||0)}</td></tr><tr><td>已批准退货扣回</td><td class="right">${money(cash.refunds||0)}</td></tr><tr><td>提醒金额</td><td class="right">${money(limit)}</td></tr></table>`);
+    }catch(e){ setText('bossCashInfo','载入失败：'+(e.message||e)); }
+  };
+  window.bossOpenParcelBoss=async function(force){
+    if(!bossRequire())return; bossHideBossPanels(); if(typeof bossSetNav==='function')bossSetNav('Shopee');
+    const p=$('bossParcelBox'); if(p){p.style.display='block';p.classList.add('active');}
+    setText('bossParcelResult','载入中...');
+    try{const d=await getBossDataFast(!!force); const r=d.parcel||{}; setHtml('bossParcelResult',`<table><tr><th>项目</th><th class="right">金额 / 数量</th></tr><tr><td>预计未收</td><td class="right">${money(r.pendingEstimated||0)}</td></tr><tr><td>实际已收</td><td class="right">${money(r.actualPaid||0)}</td></tr><tr><td>差额</td><td class="right">${money(r.difference||0)}</td></tr><tr><td>记录数</td><td class="right">${r.count||0}</td></tr></table>`);}catch(e){setText('bossParcelResult','载入失败：'+(e.message||e));}
+  };
+  window.bossOpenOtherIncome=async function(force){
+    if(!bossRequire())return; bossHideBossPanels(); if(typeof bossSetNav==='function')bossSetNav('其它');
+    const p=$('bossOtherIncomeBox'); if(p){p.style.display='block';p.classList.add('active');}
+    setText('bossOtherIncomeResult','载入中...');
+    try{const d=await getBossDataFast(!!force); const r=d.other||{}; const rows=(r.rows||[]).filter(x=>x.status!=='Received'); let out=`<div class="boss-overview-grid" style="margin-bottom:12px">${card('待确认',money(r.pending||0),'还没确认收到的钱',num(r.pending)>0)}${card('已确认',money(r.received||0),'已收到的钱',false)}</div>`; if(rows.length)out+=`<table><tr><th>日期</th><th>类型</th><th class="right">金额</th><th>操作</th></tr>`+rows.map(x=>`<tr><td>${x.date||''}</td><td>${x.type||''}</td><td class="right">${money(x.amount||0)}</td><td><button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${x.id}')">确认已收款</button></td></tr>`).join('')+`</table>`; else out+='没有待确认收入。'; setHtml('bossOtherIncomeResult',out);}catch(e){setText('bossOtherIncomeResult','载入失败：'+(e.message||e));}
+  };
+
+  // Recent refund orders: visible button/loading and no silent waiting.
+  window.__recentRefundCache={at:0,rows:null,pending:null};
+  window.clearRefundCache=function(){window.__recentRefundCache={at:0,rows:null,pending:null};};
+  window.loadRecentRefundOrders=async function(force){
+    const btn=document.querySelector('#refundBox .load-refund-orders-btn');
+    const box=$('refundRecentBox');
+    if(btn){btn.disabled=true;btn.classList.add('busy-btn');btn.dataset.oldText=btn.textContent;btn.textContent='Loading orders...';}
+    if(box)box.innerHTML='<div class="loading-line">⏳ Loading recent orders...</div>';
+    try{
+      let rows; const c=window.__recentRefundCache;
+      if(!force && c.rows && Date.now()-c.at<45000)rows=c.rows; else {c.pending=apiCall('getRecentOrdersForRefund',[3]).then(r=>{c.rows=r||[];c.at=Date.now();c.pending=null;return c.rows;}); rows=await c.pending;}
+      window.__refundOrders=rows||[]; window.selectedRefundOrder=null; window.__refundSelected={};
+      const list=$('refundItemList'); if(list)list.textContent='Select an order first.';
+      const total=$('refundTotalBox'); if(total)total.textContent='Refund Total: RM 0.00';
+      const oid=$('refundOrderId'); if(oid)oid.value='';
+      if(!box)return; if(!rows||!rows.length){box.textContent='No refundable orders in last 3 days.';return;}
+      box.innerHTML=rows.map((o,idx)=>`<div class="refund-order-card" onclick="selectRefundOrder(${idx})" data-idx="${idx}" data-order="${o.orderId}"><div class="refund-order-title"><span>${o.orderId}</span><span>${money(o.total||0)}</span></div><div class="refund-order-items">${o.date||''}<br>${(o.items||[]).map(i=>`${i.name} x${i.qty} (${money(i.subtotal||0)})`).join('<br>')}</div></div>`).join('');
+    }catch(e){if(box)box.textContent='Load failed: '+(e.message||e);} finally {if(btn){btn.disabled=false;btn.classList.remove('busy-btn');btn.textContent=btn.dataset.oldText||'Load recent orders';}}
+  };
+
+  window.submitRefund=async function(){
+    if(window.refundSubmitting)return;
+    const orderId=($('refundOrderId')||{}).value||'';
+    const sel=(typeof getRefundSelection==='function'?getRefundSelection():{items:[],amount:0});
+    const reason=($('refundReason')||{}).value||'Customer return';
+    const bossId=(($('refundBossId')||{}).value||'').trim();
+    const bossPassword=(($('refundBossPassword')||{}).value||'');
+    const st=$('refundStatusMsg');
+    if(!orderId){showAppAlert('Please select an order.','Refund');return;}
+    if(!sel.items.length||!sel.amount){showAppAlert('Please choose returned item and quantity.','Refund');return;}
+    const direct=!!(bossId&&bossPassword);
+    const ok=await appConfirm(`${direct?'Approve refund now?':'Submit refund request?'}\n\nOrder: ${orderId}\nRefund: ${money(sel.amount)}`,'Refund');
+    if(!ok)return;
+    if(typeof setRefundBusy==='function')setRefundBusy(true); else window.refundSubmitting=true;
+    if(st){st.style.display='block';st.textContent=direct?'Approving refund...':'Submitting refund request...';}
+    const timer=setTimeout(()=>{if(st)st.textContent='Still submitting... do not press again.';},8000);
+    try{
+      await apiCall(direct?'refundOrder':'requestRefund',[{orderId,items:sel.items,amount:sel.amount,reason,bossId,bossPassword}]);
+      clearTimeout(timer); invalidateBossCache(); clearRefundCache();
+      if(st){st.style.display='block';st.textContent=direct?'✅ Refund approved.':'✅ Refund request submitted.';}
+      document.querySelectorAll(`.refund-order-card[data-order="${orderId}"]`).forEach(c=>c.remove());
+      window.__refundOrders=(window.__refundOrders||[]).filter(o=>o.orderId!==orderId);
+      const list=$('refundItemList'); if(list)list.textContent='Select another order if needed.';
+      const oid=$('refundOrderId'); if(oid)oid.value=''; window.selectedRefundOrder=null; if(typeof updateRefundTotal==='function')updateRefundTotal();
+      showToast(direct?'✅ Refund approved':'✅ Refund request submitted'); loadTodayStats();
+      setTimeout(()=>{if(document.querySelector('#refundBox.active'))closeModal('refundBox');},900);
+    }catch(e){clearTimeout(timer); if(st){st.style.display='block';st.textContent='❌ Refund failed: '+(e.message||e);} else showAppAlert('Refund failed: '+(e.message||e),'Refund');}
+    finally{if(typeof setRefundBusy==='function')setRefundBusy(false); else window.refundSubmitting=false;}
+  };
+
+  // Final receipt alignment. Wrap in code fences for monospaced chat display.
+  window.printReceipt=function(auto=false){
+    const useCart=(typeof lastCart!=='undefined'&&lastCart.length)?lastCart:cart;
+    if(!useCart||!useCart.length){showAppAlert('No item to print','Receipt');return;}
+    const subtotal=useCart.reduce((a,b)=>a+Number(b.qty||0)*Number(b.price||0),0);
+    const usedDiscount=(typeof last折扣!=='undefined'&&lastCart&&lastCart.length)?Number(last折扣||0):Number(discount||0);
+    const finalTotal=Math.max(0,subtotal-usedDiscount);
+    const orderId=useCart[0]?.orderId||window.lastOrderId||'PENDING';
+    const now=new Date(); const date=now.toLocaleDateString('en-GB'); const time=now.toLocaleTimeString('en-GB',{hour12:false});
+    const width=36,labelW=15; const m=v=>'RM '+Number(v||0).toFixed(2); const row=(label,val)=>String(label).toUpperCase().padEnd(labelW,' ')+String(val).padStart(width-labelW,' ');
+    const payLabel=p=>p==='mbb_qr'?'QR':p==='transfer'?'TRANSFER':p==='mixed'?'MIXED':'CASH';
+    let text=`====================================\n      YLL FEEDS ENTERPRISE\n (202303217794 - KT0553187-P)\n              INVOICE\n====================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n------------------------------------\nITEMS\n------------------------------------\n`;
+    useCart.forEach(i=>{const amount=Number(i.qty||0)*Number(i.price||0); text+=`${i.name}\n${String(i.qty+' x RM '+Number(i.price||0).toFixed(2)).padEnd(20,' ')}${m(amount).padStart(16,' ')}\n`;});
+    text+=`------------------------------------\n${row('SUBTOTAL',m(subtotal))}\n`;
+    if(usedDiscount>0)text+=row('DISCOUNT','-'+m(usedDiscount))+'\n';
+    text+=`------------------------------------\n${row('TOTAL',m(finalTotal))}\n`;
+    if(lastPayment==='cash'||lastPayment==='mixed')text+=row('PAID',m(lastPaid||finalTotal))+'\n'+row('CHANGE',m(lastChange||0))+'\n';
+    text+=row('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
+    lastReceiptText=text;
+    const shareText='```\n'+text+'\n```';
+    if(navigator.clipboard){navigator.clipboard.writeText(shareText).then(()=>showToast&&showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));} else showAppAlert(text,'Receipt');
+    if(auto&&typeof runAutoPrint==='function')runAutoPrint();
+  };
 })();
 </script>
 
