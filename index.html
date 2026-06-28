@@ -802,6 +802,13 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .refund-order-card{transition:.15s ease}
 .refund-order-title span:first-child{color:#93c5fd}
 .refund-order-card.active{box-shadow:0 0 0 2px rgba(96,165,250,.35) inset}
+
+/* V53 settings current-value polish */
+.setting-field{display:flex!important;flex-direction:column!important;gap:6px!important;padding:0!important}
+.setting-field .setting-label-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 2px}
+.setting-field .setting-label-row label{font-size:12px;font-weight:800;color:#e5e7eb;line-height:1.2}
+.setting-field .setting-current{font-size:12px;color:#fbbf24;white-space:nowrap;line-height:1.2;text-align:right}
+.setting-field input{width:100%!important;margin:0!important}
 </style>
 </head>
 <body>
@@ -2767,6 +2774,181 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   document.addEventListener('DOMContentLoaded',()=>{installRefundUI();});
   setTimeout(()=>{installRefundUI();},300);
+
+
+/* ===== V5.2 STABLE FINAL: no new features, fix cash, pending refund approval, tab state, receipt ===== */
+(function(){
+  const $ = id => document.getElementById(id);
+  const num = v => Number(v||0);
+  const money2 = v => 'RM '+num(v).toFixed(2);
+  const setT = (id, txt) => { const e=$(id); if(e)e.textContent=txt; };
+  const setH = (id, html) => { const e=$(id); if(e)e.innerHTML=html; };
+  const esc = s => String(s==null?'':s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  // POS top cards: Cash must be cash drawer, not just today's cash.
+  window.loadTodayStats = async function(){
+    try{
+      const r = await apiCall('getPosTopStats', []);
+      setT('todaySales', money2(r.todaySales||0));
+      setT('todayCash', money2(r.todayCash||0));
+      setT('todayOrders', r.orders||0);
+      if(Array.isArray(products)) setT('todayItems', products.length);
+    }catch(e){ console.error('loadTodayStats v52 failed', e); }
+  };
+
+  window.bossSetNav = function(label){
+    document.querySelectorAll('.boss-tab-grid button').forEach(btn=>{
+      const t=(btn.textContent||'').replace(/\s+/g,'');
+      const map={
+        '今日':'今日提醒','财务':'财务中心','报表':'报表中心','Shopee':'Shopee对账','其它':'其它收入','库存':'库存提醒','Excel':'汇出Excel','系统':'系统设定'
+      };
+      const hit = t.includes(map[label]||label) || t.includes(label);
+      btn.classList.toggle('active', !!hit);
+    });
+  };
+
+  // Login: open immediately after auth; dashboard data loads in the panel, not blocking login.
+  window.bossLogin = async function(){
+    const id=(($('bossId')||{}).value||'').trim();
+    const pw=(($('bossPassword')||{}).value||'');
+    const msg=$('bossLoginMsg');
+    const btn=document.querySelector('#bossLoginBox button.green');
+    if(!id){ if(msg){msg.style.display='block';msg.textContent='请输入帐号';} return; }
+    if(!pw){ if(msg){msg.style.display='block';msg.textContent='请输入密码';} return; }
+    if(btn){btn.disabled=true;btn.dataset.old=btn.textContent;btn.textContent='登入中...';}
+    if(msg){msg.style.display='block';msg.textContent='登入中...';}
+    try{
+      const r=await apiCall('bossLogin',[id,pw]);
+      sessionStorage.setItem('bossSessionUntil', String(Date.now()+Number((r&&r.autoLogoutMinutes)||10)*60000));
+      bossStartIdleTimer && bossStartIdleTimer();
+      closeModal('bossLoginBox'); openModal('bossDashboard');
+      setH('bossOverviewResult','<div class="boss-money-card"><small>正在载入</small><b>请稍等...</b></div>');
+      bossOpenOverview(true); // not awaited
+    }catch(e){ if(msg){msg.style.display='block';msg.textContent='登入失败：'+(e.message||e);} }
+    finally{ if(btn){btn.disabled=false;btn.textContent=btn.dataset.old||'登入';delete btn.dataset.old;} }
+  };
+
+  function bossCard(title, value, sub, warn){
+    return `<div class="boss-money-card ${warn?'warn-card':''}"><small>${esc(title)}</small><b>${esc(value)}</b><div style="color:#94a3b8;font-size:12px;margin-top:6px">${esc(sub||'')}</div></div>`;
+  }
+
+  window.invalidateBossCache=function(){window.__bossDataCache={at:0,data:null,pending:null};};
+  window.getBossDataFast=async function(force){
+    const c=window.__bossDataCache||(window.__bossDataCache={at:0,data:null,pending:null});
+    if(!force && c.data && Date.now()-c.at<15000) return c.data;
+    if(c.pending) return c.pending;
+    c.pending=apiCall('getBossOverview',[]).then(r=>{c.data=r||{};c.at=Date.now();c.pending=null;return c.data;}).catch(e=>{c.pending=null;throw e;});
+    return c.pending;
+  };
+
+  window.bossOpenOverview=async function(force){
+    if(!bossRequire())return;
+    bossHideBossPanels(); bossSetNav('今日');
+    const p=$('bossOverviewPanel'); if(p){p.style.display='block';p.classList.add('active');}
+    setH('bossOverviewResult','<div class="boss-money-card"><small>载入中</small><b>请稍等...</b></div>');
+    setT('bossResult','');
+    try{
+      const r=await getBossDataFast(!!force);
+      const cash=r.cash||{}, today=r.today||{}, refundCount=num(r.refundPending), refundAmount=num(r.refundPendingAmount);
+      let html='';
+      html += bossCard('可收现金', money2(cash.cashDrawer||0), `收银机 ${money2(cash.cashDrawer||0)} / 找零 ${money2(cash.floatCash||0)} / 提醒 ${money2(cash.cashDrawerLimit||0)}`, num(cash.cashDrawer)>num(cash.cashDrawerLimit));
+      html += bossCard('今日销售', money2(today.total||0), `订单 ${today.orders||today.count||0} / Cash ${money2(today.Cash||0)} / QR ${money2(today.MBB_QR||0)}`, false);
+      if(refundCount>0) html += bossCard('退货待审批', refundCount+' 单', `金额 ${money2(refundAmount)}，可直接在下方审批`, true);
+      if(!refundCount) html += bossCard('退货待审批', '0 单', '目前没有待处理退货', false);
+      setH('bossOverviewResult', html);
+
+      const pending=r.pendingRefunds||[];
+      if(pending.length){
+        let list='<div class="boss-result" style="margin-top:12px"><b>退货待审批</b><div class="boss-inline" style="margin-top:8px"><input id="approveBossId" placeholder="帐号"><input id="approveBossPw" type="password" placeholder="密码"></div><table><tr><th>日期</th><th>订单</th><th>商品</th><th class="right">金额</th><th>操作</th></tr>';
+        list += pending.map(x=>`<tr><td>${esc(x.date||'')}</td><td>${esc(x.orderId||'')}</td><td>${esc(x.item||'')}</td><td class="right">${money2(x.amount||0)}</td><td><button class="green" style="padding:6px 10px" onclick="bossApproveRefund('${esc(x.refundId)}',this)">批准</button></td></tr>`).join('');
+        list += '</table></div>';
+        setH('bossResult', list);
+      } else {
+        setH('bossResult','');
+      }
+    }catch(e){ setH('bossOverviewResult', `<div class="boss-money-card"><small>载入失败</small><b>${esc(e.message||e)}</b></div>`); }
+  };
+
+  window.bossApproveRefund=async function(refundId,btn){
+    const id=(($('approveBossId')||{}).value||'').trim();
+    const pw=(($('approveBossPw')||{}).value||'');
+    if(!id||!pw){showAppAlert('请输入帐号和密码才可以批准。','退货审批');return;}
+    if(btn){btn.disabled=true;btn.textContent='处理中...';}
+    try{
+      await apiCall('approvePendingRefund',[refundId,id,pw]);
+      showToast('✅ 已批准退货'); invalidateBossCache(); bossOpenOverview(true); loadTodayStats();
+    }catch(e){showAppAlert('批准失败：'+(e.message||e),'退货审批');}
+    finally{if(btn){btn.disabled=false;btn.textContent='批准';}}
+  };
+
+  // Boss tabs: always clear old contents and set correct active state.
+  const _oldBossOpenExport = window.bossOpenExport;
+  window.bossOpenExport=function(){ if(!bossRequire())return; bossHideBossPanels(); bossSetNav('Excel'); if(_oldBossOpenExport)_oldBossOpenExport(); bossSetNav('Excel'); };
+  const _oldBossOpenCredentialBox = window.bossOpenCredentialBox;
+  window.bossOpenCredentialBox=function(){ if(!bossRequire())return; bossHideBossPanels(); bossSetNav('系统'); if(_oldBossOpenCredentialBox)_oldBossOpenCredentialBox(); bossSetNav('系统'); fillSettingsCurrent(); };
+  const _oldBossLoadLowStock = window.bossLoadLowStock;
+  window.bossLoadLowStock=function(){ if(!bossRequire())return; bossHideBossPanels(); bossSetNav('库存'); return _oldBossLoadLowStock ? _oldBossLoadLowStock() : null; };
+
+  window.bossOpenCashCollect=async function(force){
+    if(!bossRequire())return; bossHideBossPanels(); bossSetNav('财务');
+    const p=$('bossCashBox'); if(p){p.style.display='block';p.classList.add('active');}
+    setT('bossCashInfo','载入中...');
+    try{
+      const r=await getBossDataFast(!!force); const cash=r.cash||{};
+      setT('cashDrawerAmount', money2(cash.cashDrawer||0));
+      setT('floatCashAmount', money2(cash.floatCash||0));
+      setT('collectableAmount', money2(Math.max(0,num(cash.cashDrawer)-num(cash.floatCash))));
+      const warn=$('bossCashWarning'); if(warn)warn.style.display=num(cash.cashDrawer)>num(cash.cashDrawerLimit)?'block':'none';
+      setT('bossCashInfo', `当前收银机现金 ${money2(cash.cashDrawer||0)}。已收走 ${money2(cash.collected||0)}。已退货 ${money2(cash.refunds||0)}。`);
+    }catch(e){setT('bossCashInfo','载入失败：'+(e.message||e));}
+  };
+
+  function fillSettingsCurrent(){
+    const data=(window.__bossDataCache&&window.__bossDataCache.data)||{}; const s=data.settings||{};
+    const map={newCashLimit:`收现金提醒金额（当前 ${money2(s.CashDrawerLimit||0)}）`,newFloatCash:`找零本金（当前 ${money2(s.FloatCash||0)}）`,newAutoLogout:`自动退出分钟（当前 ${s.AutoLogoutMinutes||10}）`,newParcelRate:`Shopee 派件单价（当前 RM ${num(s.ParcelDeliveredRate||0).toFixed(2)}）`,newParcelReturnRate:`Shopee 退回单价（当前 RM ${num(s.ParcelReturnRate||0).toFixed(2)}）`,newBossId:'新帐号（留空=不修改）',newBossPassword:'新密码（留空=不修改）',newRecoveryCode:'新恢复码（留空=不修改）'};
+    Object.keys(map).forEach(id=>{const e=$(id); if(e)e.placeholder=map[id];});
+  }
+
+  // Refund submit: keep modal open, show clear status, no silent jump.
+  const _oldSubmitRefundV52 = window.submitRefund;
+  window.submitRefund=async function(){
+    if(window.refundSubmitting)return;
+    const st=$('refundStatusMsg');
+    const btn=$('refundSubmitBtn');
+    try{
+      if(st){st.style.display='block';st.textContent='准备提交...';}
+      if(btn){btn.disabled=true;btn.classList.add('busy-btn');btn.dataset.old=btn.textContent;btn.textContent='Submitting...';}
+      await _oldSubmitRefundV52();
+    } finally {
+      if(btn){btn.disabled=false;btn.classList.remove('busy-btn');btn.textContent=btn.dataset.old||'✅ Submit Refund';}
+    }
+  };
+
+  // Receipt alignment: label and amount columns fixed width.
+  window.printReceipt=function(auto=false){
+    const useCart=(typeof lastCart!=='undefined'&&lastCart.length)?lastCart:cart;
+    if(!useCart||!useCart.length){showAppAlert('No item to print','Receipt');return;}
+    const subtotal=useCart.reduce((a,b)=>a+num(b.qty)*num(b.price),0);
+    const usedDiscount=(typeof last折扣!=='undefined'&&lastCart&&lastCart.length)?num(last折扣):num(discount);
+    const finalTotal=Math.max(0,subtotal-usedDiscount);
+    const orderId=useCart[0]?.orderId||window.lastOrderId||'PENDING';
+    const now=new Date(); const date=now.toLocaleDateString('en-GB'); const time=now.toLocaleTimeString('en-GB',{hour12:false});
+    const width=36; const m=v=>'RM '+num(v).toFixed(2); const row=(label,val)=>label.toUpperCase().padEnd(14,' ')+String(val).padStart(width-14,' ');
+    const payLabel=p=>p==='mbb_qr'?'QR':p==='transfer'?'TRANSFER':p==='mixed'?'MIXED':'CASH';
+    let text=`====================================\n      YLL FEEDS ENTERPRISE\n (202303217794 - KT0553187-P)\n              INVOICE\n====================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n------------------------------------\nITEMS\n------------------------------------\n`;
+    useCart.forEach(i=>{const amt=num(i.qty)*num(i.price); text+=`${i.name}\n${String(i.qty+' x RM '+num(i.price).toFixed(2)).padEnd(20,' ')}${m(amt).padStart(16,' ')}\n`;});
+    text+=`------------------------------------\n${row('SUBTOTAL',m(subtotal))}\n`;
+    if(usedDiscount>0)text+=row('DISCOUNT','-'+m(usedDiscount))+'\n';
+    text+=`------------------------------------\n${row('TOTAL',m(finalTotal))}\n`;
+    if(lastPayment==='cash'||lastPayment==='mixed')text+=row('PAID',m(lastPaid||finalTotal))+'\n'+row('CHANGE',m(lastChange||0))+'\n';
+    text+=row('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
+    lastReceiptText=text;
+    const shareText='```\n'+text+'\n```';
+    if(navigator.clipboard){navigator.clipboard.writeText(shareText).then(()=>showToast&&showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));} else showAppAlert(text,'Receipt');
+    if(auto&&typeof runAutoPrint==='function')runAutoPrint();
+  };
+})();
+
 })();
 </script>
 
@@ -3631,6 +3813,58 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(navigator.clipboard){navigator.clipboard.writeText(shareText).then(()=>showToast&&showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));} else showAppAlert(text,'Receipt');
     if(auto&&typeof runAutoPrint==='function')runAutoPrint();
   };
+
+  // V53: Settings page labels/current values are outside inputs, never inside placeholders.
+  function installSettingLabelsV53(){
+    const grid=document.querySelector('#bossCredentialBox .settings-grid');
+    if(!grid) return;
+    const labels={
+      newBossId:'新帐号', newBossPassword:'新密码', newRecoveryCode:'新恢复码', newCashLimit:'收现金提醒金额',
+      newFloatCash:'找零本金', newAutoLogout:'自动退出分钟', newParcelRate:'Shopee 派件单价', newParcelReturnRate:'Shopee 退回单价'
+    };
+    Object.keys(labels).forEach(id=>{
+      const input=document.getElementById(id); if(!input) return;
+      let wrap=input.closest('.setting-field');
+      if(!wrap){
+        wrap=document.createElement('div'); wrap.className='setting-field';
+        input.parentNode.insertBefore(wrap,input); wrap.appendChild(input);
+      }
+      let row=wrap.querySelector('.setting-label-row');
+      if(!row){
+        row=document.createElement('div'); row.className='setting-label-row';
+        const lab=document.createElement('label'); lab.setAttribute('for',id);
+        const cur=document.createElement('span'); cur.className='setting-current'; cur.id=id+'Current';
+        row.appendChild(lab); row.appendChild(cur); wrap.insertBefore(row,input);
+      }
+      row.querySelector('label').textContent=labels[id];
+      input.placeholder='留空 = 不修改';
+    });
+  }
+  function updateSettingsCurrentV53(){
+    const data=(window.__bossDataCache&&window.__bossDataCache.data)||{};
+    const set=data.settings||{};
+    const get=(k,fb)=> (set[k]!==undefined && set[k]!=='' && set[k]!==null) ? set[k] : fb;
+    const txt={
+      newBossId:'Current: 已隐藏',
+      newBossPassword:'Current: 已隐藏',
+      newRecoveryCode:'Current: 已隐藏',
+      newCashLimit:'Current: RM '+Number(get('CashDrawerLimit',0)).toFixed(2),
+      newFloatCash:'Current: RM '+Number(get('FloatCash',0)).toFixed(2),
+      newAutoLogout:'Current: '+get('AutoLogoutMinutes',10)+' min',
+      newParcelRate:'Current: RM '+Number(get('ParcelDeliveredRate',0)).toFixed(2),
+      newParcelReturnRate:'Current: RM '+Number(get('ParcelReturnRate',0)).toFixed(2)
+    };
+    Object.keys(txt).forEach(id=>{const el=document.getElementById(id+'Current'); if(el)el.textContent=txt[id];});
+  }
+  const __bossOpenCredentialBoxBeforeV53 = window.bossOpenCredentialBox;
+  window.bossOpenCredentialBox=function(){
+    if(typeof __bossOpenCredentialBoxBeforeV53==='function') __bossOpenCredentialBoxBeforeV53();
+    if(typeof bossSetNav==='function') bossSetNav('系统');
+    const p=document.getElementById('bossCredentialBox'); if(p){p.style.display='block';p.classList.add('active');}
+    installSettingLabelsV53(); updateSettingsCurrentV53();
+    ['newBossId','newBossPassword','newRecoveryCode','newCashLimit','newFloatCash','newAutoLogout','newParcelRate','newParcelReturnRate'].forEach(id=>{const e=document.getElementById(id); if(e)e.placeholder='留空 = 不修改';});
+  };
+
 })();
 </script>
 
