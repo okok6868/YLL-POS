@@ -3868,5 +3868,126 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 })();
 </script>
 
+
+<script>
+/* ===== V5.4 FINAL CLEANUP: real cash drawer, fast boss overview, inline refund approve, settings UI ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const setText=(id,v)=>{const e=$(id); if(e)e.textContent=v;};
+  const setHtml=(id,v)=>{const e=$(id); if(e)e.innerHTML=v;};
+  const money=v=>(typeof fmt==='function'?fmt(v):'RM '+Number(v||0).toFixed(2));
+  const num=v=>Number(v||0);
+  const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
+  window.invalidateBossCache=function(){window.__bossDataCache={at:0,data:null,pending:null};};
+
+  // POS top Cash must be the drawer cash, not only today's cash.
+  window.loadTodayStats=async function(){
+    try{
+      const res=await apiCall('getPosTopStats',[]);
+      setText('todaySales',money(res.todaySales||0));
+      setText('todayCash',money(res.todayCash||res.cashDrawer?.cashDrawer||0));
+      setText('todayOrders',res.orders||0);
+    }catch(e){
+      console.error('getPosTopStats failed, fallback getTodayReport',e);
+      try{const r=await apiCall('getTodayReport',[]);setText('todaySales',money(r.total||0));setText('todayCash',money(r.Cash||0));setText('todayOrders',r.orders||r.count||0);}catch(_e){}
+    }
+  };
+
+  // Active menu must always match current panel.
+  window.bossSetNav=function(key){
+    const map={今日:'今日提醒',财务:'财务中心',报表:'报表中心',Shopee:'Shopee 对账',其它:'其它收入',库存:'库存提醒',Excel:'汇出 Excel',系统:'系统设定'};
+    const want=map[key]||String(key||'');
+    document.querySelectorAll('#bossDashboard .boss-tab-grid button').forEach(btn=>{
+      btn.classList.toggle('active', (btn.textContent||'').includes(want));
+    });
+  };
+  function showPanel(panelId,key){
+    if(typeof bossHideBossPanels==='function') bossHideBossPanels();
+    bossSetNav(key);
+    const p=$(panelId); if(p){p.style.display='block';p.classList.add('active');}
+  }
+
+  // Use fast overview for 今日提醒: no stock scan, no shopee/water scan unless needed.
+  function overviewCard(title,value,desc,warn,extra){
+    return `<div class="overview-card ${warn?'warn':'good'}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(desc||'')}</span>${extra||''}</div>`;
+  }
+  function refundPendingHtml(rows){
+    if(!rows||!rows.length) return '';
+    return `<div class="boss-result" style="margin-top:12px"><b>退货待审批</b><table><tr><th>订单</th><th>商品</th><th class="right">金额</th><th>操作</th></tr>${rows.map(r=>`<tr><td>${esc(r.orderId)}</td><td>${esc(r.item||'')}</td><td class="right">${money(r.amount||0)}</td><td><button class="green" style="padding:7px 10px" onclick="bossApproveRefundInline('${esc(r.refundId)}',this)">批准</button></td></tr>`).join('')}</table></div>`;
+  }
+  window.bossOpenOverview=async function(force){
+    if(!bossRequire())return;
+    showPanel('bossOverviewPanel','今日');
+    setHtml('bossOverviewResult', overviewCard('状态','载入中','正在读取今日提醒...',false));
+    try{
+      const r=await apiCall('getBossDashboardFast',[]);
+      const cash=r.cash||{}, today=r.today||{}, rows=r.pendingRefunds||[];
+      const drawer=num(cash.cashDrawer), flt=num(cash.floatCash), limit=num(cash.cashDrawerLimit||500);
+      const can=Math.max(0, drawer-flt);
+      const cards=[];
+      cards.push(overviewCard('可收现金',money(can),`收银机 ${money(drawer)} / 找零 ${money(flt)} / 提醒 ${money(limit)}`,can>=limit));
+      cards.push(overviewCard('今日销售',money(today.total||0),`订单 ${today.orders||today.count||0} / Cash ${money(today.Cash||0)} / QR ${money(today.MBB_QR||0)}`,false));
+      if(rows.length) cards.push(overviewCard('退货待审批',rows.length+' 单',`金额 ${money(r.refundPendingAmount||0)}，可在下方直接批准`,true));
+      if(!rows.length && can<limit) cards.push(overviewCard('今日待处理','没有紧急事项','没有待审批退货；现金未超过提醒。',false));
+      setHtml('bossOverviewResult',cards.join('')+refundPendingHtml(rows));
+      setText('bossResult','');
+    }catch(e){setHtml('bossOverviewResult','载入失败：'+(e.message||e));}
+  };
+  window.bossApproveRefundInline=async function(refundId,btn){
+    if(!refundId||!btn)return;
+    const old=btn.textContent; btn.disabled=true; btn.classList.add('busy-btn'); btn.textContent='批准中...';
+    try{
+      await apiCall('approvePendingRefundFromBoss',[refundId]);
+      if(typeof invalidateBossCache==='function') invalidateBossCache();
+      showToast('✅ 已批准退货');
+      await bossOpenOverview(true);
+      if(typeof loadTodayStats==='function') loadTodayStats();
+    }catch(e){btn.disabled=false;btn.classList.remove('busy-btn');btn.textContent=old;showAppAlert('批准失败：'+(e.message||e),'退货审批');}
+  };
+
+  // Finance tab only calls cash drawer endpoint, not whole Boss overview.
+  window.bossOpenCashCollect=async function(force){
+    if(!bossRequire())return; showPanel('bossCashBox','财务');
+    setText('bossCashInfo','载入中...');
+    try{
+      const cash=await apiCall('getCashDrawer',[]);
+      const drawer=num(cash.cashDrawer), flt=num(cash.floatCash), limit=num(cash.cashDrawerLimit||500);
+      const can=Math.max(0,drawer-flt);
+      setText('cashDrawerAmount',money(drawer));setText('floatCashAmount',money(flt));setText('collectableAmount',money(can));
+      const w=$('bossCashWarning'); if(w){w.style.display=can>=limit?'block':'none';w.textContent=`🟠 可收现金 ${money(can)} 已超过提醒 ${money(limit)}，建议收现金。`;}
+      setHtml('bossCashInfo',`<table><tr><th>项目</th><th class="right">金额</th></tr><tr><td>已收走现金</td><td class="right">${money(cash.collected||0)}</td></tr><tr><td>已批准退货扣回</td><td class="right">${money(cash.refunds||0)}</td></tr><tr><td>提醒金额</td><td class="right">${money(limit)}</td></tr></table>`);
+    }catch(e){setText('bossCashInfo','载入失败：'+(e.message||e));}
+  };
+
+  // Rebuild Settings panel cleanly: one label row only, current value outside input.
+  window.bossOpenCredentialBox=function(){
+    if(!bossRequire())return; showPanel('bossCredentialBox','系统');
+    const box=$('bossCredentialBox'); if(!box)return;
+    const data=(window.__bossDataCache&&window.__bossDataCache.data)||{};
+    const set=data.settings||{};
+    const get=(k,fb)=> (set[k]!==undefined&&set[k]!==''&&set[k]!==null)?set[k]:fb;
+    const field=(id,label,current,type='text',step='')=>`<div class="setting-field"><div class="setting-label-row"><label for="${id}">${label}</label><span class="setting-current">Current: ${current}</span></div><input id="${id}" type="${type}" ${step?`step="${step}"`:''} placeholder="留空 = 不修改" autocomplete="off"></div>`;
+    box.innerHTML=`<h4>⚙️ 系统设定</h4><p style="color:#94a3b8;font-size:13px">只填要修改的项目，留空就保持原本设定。储存后会退出管理模式，重新登入才会生效。</p><div class="settings-grid">
+      ${field('newBossId','新帐号','已隐藏')}
+      ${field('newBossPassword','新密码','已隐藏','password')}
+      ${field('newRecoveryCode','新恢复码','已隐藏')}
+      ${field('newCashLimit','收现金提醒金额','RM '+Number(get('CashDrawerLimit',500)).toFixed(2),'number','0.01')}
+      ${field('newFloatCash','找零本金','RM '+Number(get('FloatCash',200)).toFixed(2),'number','0.01')}
+      ${field('newAutoLogout','自动退出分钟',get('AutoLogoutMinutes',10)+' min','number','1')}
+      ${field('newParcelRate','Shopee 派件单价','RM '+Number(get('ParcelDeliveredRate',0.30)).toFixed(2),'number','0.01')}
+      ${field('newParcelReturnRate','Shopee 退回单价','RM '+Number(get('ParcelReturnRate',0.15)).toFixed(2),'number','0.01')}
+    </div><button class="green" onclick="bossSaveSettings()">储存设定</button><div id="bossCredentialResult" class="boss-result">只填写要修改的项目。</div>`;
+  };
+
+  // Export / Reports / Stock active state fixes.
+  const oldExport=window.bossOpenExport;
+  window.bossOpenExport=function(){ if(typeof oldExport==='function')oldExport(); bossSetNav('Excel'); const p=$('bossExportBox'); if(p){p.style.display='block';p.classList.add('active');} };
+  const oldLow=window.bossLoadLowStock;
+  window.bossLoadLowStock=function(){ if(typeof oldLow==='function')oldLow(); bossSetNav('库存'); };
+  const oldReport=window.bossShowPanel;
+  window.bossShowPanel=function(panelId){ if(typeof oldReport==='function')oldReport(panelId); if(panelId==='bossReportsPanel')bossSetNav('报表'); };
+})();
+</script>
 </body>
 </html>
