@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -3150,6 +3152,186 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   document.addEventListener('DOMContentLoaded',()=>{ installRefundUI(); });
   setTimeout(()=>{ installRefundUI(); },500);
 })();
+
+
+/* ===== V4.9 STABLE FIX: refund speed, app confirm, boss cache, receipt safe ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const fmtMoney=v=> (typeof fmt==='function'?fmt(v):('RM '+Number(v||0).toFixed(2)));
+  const n=v=> (typeof moneyNum==='function'?moneyNum(v):Number(v||0));
+  const toC=v=> (typeof cents==='function'?cents(v):Math.round(Number(v||0)*100));
+  const fromC=v=> (typeof fromCents==='function'?fromCents(v):Number(v||0)/100);
+
+  // App-style confirm, no more browser confirm popup.
+  window.appConfirm=function(message,title){
+    return new Promise(resolve=>{
+      const box=$('paymentConfirmBox'), h=$('paymentConfirmTitle'), t=$('paymentConfirmText'), total=$('paymentConfirmTotal'), btn=$('paymentConfirmBtn');
+      if(!box||!btn){ resolve(window.confirm(message)); return; }
+      if(h)h.textContent=title||'Confirm';
+      if(t)t.textContent=String(message||'');
+      if(total)total.textContent='';
+      const cancel=box.querySelector('.cancel-pay-btn');
+      const cleanup=(v)=>{ btn.onclick=null; if(cancel)cancel.onclick=null; closeModal('paymentConfirmBox'); resolve(v); };
+      btn.onclick=()=>cleanup(true);
+      if(cancel)cancel.onclick=()=>cleanup(false);
+      openModal('paymentConfirmBox');
+    });
+  };
+
+  // Make Refund open instantly with visible loading state.
+  window.__recentRefundCache={at:0,rows:null,pending:null};
+  window.clearRefundCache=function(){window.__recentRefundCache={at:0,rows:null,pending:null};};
+  window.loadRecentRefundOrders=async function(force){
+    const box=$('refundRecentBox');
+    if(box)box.innerHTML='<div class="loading-line">⏳ Loading recent orders...</div>';
+    try{
+      let rows;
+      const c=window.__recentRefundCache;
+      if(!force && c.rows && Date.now()-c.at<60000){ rows=c.rows; }
+      else if(!force && c.pending){ rows=await c.pending; }
+      else{
+        c.pending=apiCall('getRecentOrdersForRefund',[3]).then(r=>{c.rows=r||[];c.at=Date.now();c.pending=null;return c.rows;}).catch(e=>{c.pending=null;throw e;});
+        rows=await c.pending;
+      }
+      window.__refundOrders=rows||[]; window.selectedRefundOrder=null; window.__refundSelected={};
+      const list=$('refundItemList'); if(list)list.textContent='Select an order first.';
+      const total=$('refundTotalBox'); if(total)total.textContent='Refund Total: RM 0.00';
+      const oid=$('refundOrderId'); if(oid)oid.value='';
+      if(!box)return;
+      if(!rows||!rows.length){box.textContent='No refundable orders in last 3 days.';return;}
+      box.innerHTML=rows.map((o,idx)=>`<div class="refund-order-card" onclick="selectRefundOrder(${idx})" data-idx="${idx}" data-order="${o.orderId}"><div class="refund-order-title"><span>${o.orderId}</span><span>${fmtMoney(o.total||0)}</span></div><div class="refund-order-items">${o.date||''}<br>${(o.items||[]).map(i=>`${i.name} x${i.qty} (${fmtMoney(i.subtotal||0)})`).join('<br>')}</div></div>`).join('');
+    }catch(e){ if(box)box.textContent='Load failed: '+(e.message||e); }
+  };
+
+  function qtyOptions(max){ max=Math.max(1,Math.floor(Number(max||1))); let out=''; for(let i=1;i<=max;i++)out+=`<option value="${i}">${i}</option>`; return out; }
+  window.selectRefundOrder=function(idx){
+    const rows=window.__refundOrders||[]; const o=rows[idx]; if(!o)return;
+    window.selectedRefundOrder=o; window.__refundSelected={};
+    document.querySelectorAll('.refund-order-card').forEach(c=>c.classList.toggle('active',Number(c.dataset.idx)===idx));
+    const oid=$('refundOrderId'); if(oid)oid.value=o.orderId||'';
+    const list=$('refundItemList'); if(!list)return;
+    list.innerHTML=(o.items||[]).map((it,i)=>`<div class="refund-item-row">
+      <input type="checkbox" id="rfChk${i}" onchange="toggleRefundItem(${i})">
+      <div><div class="refund-item-name">${it.name}</div><div class="refund-item-meta">Sold Qty: ${it.qty} × RM ${Number(it.price||0).toFixed(2)} / Max ${fmtMoney(it.subtotal||0)}</div></div>
+      <select id="rfQty${i}" class="refund-qty-select" disabled onchange="updateRefundTotal()">${qtyOptions(it.qty)}</select>
+      <div class="refund-amount-chip" id="rfAmt${i}">RM 0.00</div>
+    </div>`).join('');
+    updateRefundTotal();
+  };
+  window.getRefundSelection=function(){
+    if(!window.selectedRefundOrder) return {items:[],amount:0};
+    const items=[]; let totalC=0;
+    (window.selectedRefundOrder.items||[]).forEach((it,i)=>{
+      const chk=$('rfChk'+i); const amt=$('rfAmt'+i);
+      if(!chk||!chk.checked){ if(amt)amt.textContent='RM 0.00'; return; }
+      let q=Math.floor(Number(($('rfQty'+i)||{}).value||1)); const max=Math.max(0,Number(it.qty||0));
+      if(q<1)q=1; if(q>max)q=max;
+      const lineC=toC(it.price)*q; totalC+=lineC;
+      items.push({code:it.code||'',name:it.name||'',qty:q,price:Number(it.price||0),amount:fromC(lineC)});
+      if(amt)amt.textContent=fmtMoney(fromC(lineC));
+    });
+    return {items,amount:fromC(totalC)};
+  };
+  window.updateRefundTotal=function(){ const sel=getRefundSelection(); const total=$('refundTotalBox'); if(total)total.textContent='Refund Total: '+fmtMoney(sel.amount||0); };
+  window.setRefundBusy=function(on){
+    window.refundSubmitting=!!on;
+    const btn=$('refundSubmitBtn'); if(btn){btn.disabled=!!on;btn.classList.toggle('busy-btn',!!on);btn.textContent=on?'⏳ Submitting...':'✅ Submit Refund';}
+    const box=$('refundBox'); if(box) box.querySelectorAll('input,button,select,summary').forEach(el=>{ if(el.id!=='refundSubmitBtn') el.disabled=!!on; });
+  };
+  window.submitRefund=async function(){
+    if(window.refundSubmitting)return;
+    const orderId=($('refundOrderId')||{}).value||'';
+    const sel=getRefundSelection();
+    const reason=($('refundReason')||{}).value||'Customer return';
+    const bossId=(($('refundBossId')||{}).value||'').trim();
+    const bossPassword=(($('refundBossPassword')||{}).value||'');
+    const st=$('refundStatusMsg');
+    if(!orderId){showAppAlert?showAppAlert('Please select an order.','Refund'):alert('Please select an order.');return;}
+    if(!sel.items.length||!sel.amount){showAppAlert?showAppAlert('Please choose returned item and quantity.','Refund'):alert('Please choose returned item and quantity.');return;}
+    const direct=!!(bossId&&bossPassword);
+    const ok=await appConfirm(`${direct?'Approve refund now?':'Submit refund request?'}\n\nOrder: ${orderId}\nRefund: ${fmtMoney(sel.amount)}`,'Refund');
+    if(!ok)return;
+    setRefundBusy(true); if(st){st.style.display='block';st.textContent=direct?'Approving refund...':'Submitting refund request...';}
+    const timer=setTimeout(()=>{ if(st)st.textContent='Still working... do not press again.'; },8000);
+    try{
+      const payload={orderId,items:sel.items,amount:sel.amount,reason,bossId,bossPassword};
+      await apiCall(direct?'refundOrder':'requestRefund',[payload]);
+      clearTimeout(timer);
+      if(st){st.style.display='block';st.textContent=direct?'✅ Refund approved.':'✅ Refund request submitted.';}
+      document.querySelectorAll(`.refund-order-card[data-order="${orderId}"]`).forEach(c=>c.remove());
+      window.__refundOrders=(window.__refundOrders||[]).filter(o=>o.orderId!==orderId);
+      clearRefundCache();
+      const list=$('refundItemList'); if(list)list.textContent='Select another order if needed.';
+      const oid=$('refundOrderId'); if(oid)oid.value=''; window.selectedRefundOrder=null; window.__refundSelected={}; updateRefundTotal();
+      if(typeof showToast==='function')showToast(direct?'✅ Refund approved':'✅ Refund request submitted');
+      if(typeof invalidateBossCache==='function')invalidateBossCache(); if(typeof loadTodayStats==='function')loadTodayStats();
+      setTimeout(()=>{ if(document.querySelector('#refundBox.active')) closeModal('refundBox'); },900);
+    }catch(e){ clearTimeout(timer); if(st){st.style.display='block';st.textContent='❌ Refund failed: '+(e.message||e);} else if(showAppAlert)showAppAlert('Refund failed: '+(e.message||e),'Refund'); else alert('Refund failed: '+(e.message||e)); }
+    finally{setRefundBusy(false);}
+  };
+
+  // Boss tab active + settings current values.
+  const oldCredential=window.bossOpenCredentialBox;
+  window.bossOpenCredentialBox=function(){
+    if(typeof oldCredential==='function')oldCredential();
+    if(typeof bossSetNav==='function')bossSetNav('系统');
+    const p=$('bossCredentialBox'); if(p){p.style.display='block';p.classList.add('active');}
+    const cache=(window.__bossDataCache&&window.__bossDataCache.data)||{}; const set=cache.settings||{};
+    const map={newCashLimit:'CashDrawerLimit',newFloatCash:'FloatCash',newAutoLogout:'AutoLogoutMinutes',newParcelRate:'ParcelDeliveredRate',newParcelReturnRate:'ParcelReturnRate'};
+    Object.keys(map).forEach(id=>{const e=$(id); if(e && set[map[id]]!==undefined)e.placeholder=e.placeholder+' / Current: '+set[map[id]];});
+  };
+
+  // Faster cached Shopee / Other Income tabs.
+  window.bossOpenParcelBoss=async function(force){
+    if(!bossRequire())return; bossHideBossPanels(); bossSetNav&&bossSetNav('Shopee');
+    const p=$('bossParcelBox'); if(p){p.style.display='block';p.classList.add('active');}
+    const box=$('bossParcelResult'); if(box)box.textContent='Loading...';
+    try{ const data=await getBossDataFast(!!force); const r=data.parcel||{};
+      if(box)box.innerHTML=`<table><tr><th>Item</th><th class="right">Amount / Qty</th></tr><tr><td>Estimated Pending</td><td class="right">${fmtMoney(r.pendingEstimated||0)}</td></tr><tr><td>Actual Paid</td><td class="right">${fmtMoney(r.actualPaid||0)}</td></tr><tr><td>Difference</td><td class="right">${fmtMoney((r.pendingEstimated||0)-(r.actualPaid||0))}</td></tr><tr><td>Records</td><td class="right">${r.count||0}</td></tr></table>`;
+    }catch(e){ if(box)box.textContent='Load failed: '+(e.message||e); }
+  };
+  window.bossOpenOtherIncome=async function(force){
+    if(!bossRequire())return; bossHideBossPanels(); bossSetNav&&bossSetNav('其它');
+    const p=$('bossOtherIncomeBox'); if(p){p.style.display='block';p.classList.add('active');}
+    const box=$('bossOtherIncomeResult'); if(box)box.textContent='Loading...';
+    try{ const data=await getBossDataFast(!!force); const r=data.other||{}; const rows=(r.rows||[]).filter(x=>x.status!=='Received');
+      let out=`<div class="boss-overview-grid" style="margin-bottom:12px"><div class="overview-card ${(r.pending||0)>0?'warn':''}"><small>待确认</small><b>${fmtMoney(r.pending||0)}</b><span>还没确认收到的钱</span></div><div class="overview-card"><small>已确认</small><b>${fmtMoney(r.received||0)}</b><span>已收到的钱</span></div></div>`;
+      if(rows.length) out+=`<table><tr><th>日期</th><th>类型</th><th class="right">金额</th><th>操作</th></tr>`+rows.map(x=>`<tr><td>${x.date||''}</td><td>${x.type||''}</td><td class="right">${fmtMoney(x.amount||0)}</td><td><button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${x.id}')">确认已收款</button></td></tr>`).join('')+`</table>`; else out+='没有待确认收入。';
+      if(box)box.innerHTML=out;
+    }catch(e){ if(box)box.textContent='Load failed: '+(e.message||e); }
+  };
+
+  const oldBossConfirmOtherIncome=window.bossConfirmOtherIncome;
+  window.bossConfirmOtherIncome=async function(id){
+    if(!bossRequire())return; const ok=await appConfirm('确认这笔已经收到钱？','确认收款'); if(!ok)return;
+    try{ await apiCall('confirmOtherIncome',[id,null]); showToast&&showToast('✅ 已确认收款'); invalidateBossCache&&invalidateBossCache(); bossOpenOtherIncome(true); }
+    catch(e){ showAppAlert?showAppAlert('确认失败：'+(e.message||e),'其它收入'):alert('确认失败：'+(e.message||e)); }
+  };
+
+  // Receipt final: no undefined lastOrderCart / lastOrderData.
+  window.printReceipt=function(auto=false){
+    const useCart=(window.lastOrderCart&&window.lastOrderCart.length)?window.lastOrderCart:((typeof lastCart!=='undefined'&&lastCart.length)?lastCart:cart);
+    if(!useCart||!useCart.length){showAppAlert?showAppAlert('No item to print','Receipt'):alert('No item to print');return;}
+    const subtotal=useCart.reduce((a,b)=>a+Number(b.qty||0)*Number(b.price||0),0);
+    const usedDiscount=(typeof last折扣!=='undefined'&&lastCart&&lastCart.length)?Number(last折扣||0):Number(discount||0);
+    const finalTotal=Math.max(0,subtotal-usedDiscount);
+    const orderId=useCart[0]?.orderId||window.lastOrderId||'PENDING';
+    const now=new Date(); const date=now.toLocaleDateString('en-GB'); const time=now.toLocaleTimeString('en-GB',{hour12:false});
+    const width=36, labelW=12; const money=v=>'RM '+Number(v||0).toFixed(2); const row=(label,val)=>String(label).toUpperCase().padEnd(labelW,' ')+String(val).padStart(width-labelW,' ');
+    const payLabel=p=>p==='mbb_qr'?'QR':p==='transfer'?'TRANSFER':p==='mixed'?'MIXED':'CASH';
+    let text=`====================================\n      YLL FEEDS ENTERPRISE\n (202303217794 - KT0553187-P)\n              INVOICE\n====================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n------------------------------------\nITEMS\n------------------------------------\n`;
+    useCart.forEach(i=>{ const amount=Number(i.qty||0)*Number(i.price||0); text+=`${i.name}\n`; text+=`${i.qty} x RM ${Number(i.price||0).toFixed(2)}`.padEnd(20,' ')+money(amount).padStart(16,' ')+'\n'; });
+    text+=`------------------------------------\n${row('SUBTOTAL',money(subtotal))}\n`;
+    if(usedDiscount>0)text+=row('DISCOUNT','-'+money(usedDiscount))+'\n';
+    text+=`------------------------------------\n${row('TOTAL',money(finalTotal))}\n`;
+    if(lastPayment==='cash'||lastPayment==='mixed')text+=row('PAID',money(lastPaid||finalTotal))+'\n'+row('CHANGE',money(lastChange||0))+'\n';
+    text+=row('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
+    lastReceiptText=text;
+    if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast&&showToast('✅ Receipt copied')).catch(()=>showAppAlert?showAppAlert(text,'Receipt'):alert(text));} else if(showAppAlert)showAppAlert(text,'Receipt'); else alert(text);
+    if(auto&&typeof runAutoPrint==='function')runAutoPrint();
+  };
+})();
+
 </script>
 
 </body>
