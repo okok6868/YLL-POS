@@ -4013,5 +4013,95 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.bossShowPanel=function(panelId){ if(typeof oldReport==='function')oldReport(panelId); if(panelId==='bossReportsPanel')bossSetNav('报表'); };
 })();
 </script>
+
+
+<script>
+/* ===== V5.6 FINAL APPROVAL STAY-IN-BOSS PATCH =====
+   Scope intentionally small:
+   1) Approve / Reject refund stays in management mode.
+   2) After approve / reject, refresh Today Reminder in-place.
+*/
+(function(){
+  const $ = id => document.getElementById(id);
+  const money = v => (typeof fmt === 'function' ? fmt(v) : 'RM ' + Number(v||0).toFixed(2));
+  const esc = s => String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
+  function keepBossModeOpen(){
+    try{
+      const mins = Number(window.BOSS_IDLE_MS || 10*60*1000) / 60000;
+      const ms = Math.max(1, mins) * 60 * 1000;
+      sessionStorage.setItem('bossSessionUntil', String(Date.now() + ms));
+      window.__bossSessionActive = true;
+      const boss = $('bossDashboard');
+      if (boss) boss.classList.add('active');
+      document.body.classList.add('modal-open');
+    }catch(e){}
+  }
+
+  function setBusy(btn,on,text){
+    if(!btn) return;
+    btn.disabled = !!on;
+    btn.classList.toggle('busy-btn', !!on);
+    if(on){ btn.dataset.oldText = btn.textContent; btn.textContent = text || '处理中...'; }
+    else { btn.textContent = btn.dataset.oldText || btn.textContent; delete btn.dataset.oldText; }
+  }
+
+  async function refreshBossAfterApproval(){
+    keepBossModeOpen();
+    if(typeof invalidateBossCache === 'function') invalidateBossCache();
+    if(typeof bossOpenOverview === 'function') await bossOpenOverview(true);
+    keepBossModeOpen();
+    if(typeof loadTodayStats === 'function') loadTodayStats();
+  }
+
+  window.bossApproveRefundInline = async function(refundId, btn){
+    if(!refundId) return;
+    keepBossModeOpen();
+    setBusy(btn, true, '批准中...');
+    try{
+      await apiCall('approvePendingRefundFromBoss', [refundId]);
+      if(typeof showToast === 'function') showToast('✅ 已批准退货');
+      await refreshBossAfterApproval();
+    }catch(e){
+      keepBossModeOpen();
+      if(typeof showAppAlert === 'function') showAppAlert('批准失败：' + (e.message || e), '退货审批');
+      else alert('批准失败：' + (e.message || e));
+      setBusy(btn, false);
+    }
+  };
+
+  window.bossRejectRefundInline = async function(refundId, btn){
+    if(!refundId) return;
+    keepBossModeOpen();
+    let ok = true;
+    if(typeof appConfirm === 'function') ok = await appConfirm('确定取消这个退货申请？\n\n取消后不会退款，也不会加回库存。', '取消退货');
+    else ok = confirm('确定取消这个退货申请？');
+    keepBossModeOpen();
+    if(!ok) return;
+    setBusy(btn, true, '取消中...');
+    try{
+      await apiCall('rejectPendingRefund', [refundId, 'Boss rejected']);
+      if(typeof showToast === 'function') showToast('✅ 已取消退货申请');
+      await refreshBossAfterApproval();
+    }catch(e){
+      keepBossModeOpen();
+      if(typeof showAppAlert === 'function') showAppAlert('取消失败：' + (e.message || e), '退货审批');
+      else alert('取消失败：' + (e.message || e));
+      setBusy(btn, false);
+    }
+  };
+
+  // Ensure Today Reminder renderer uses the patched buttons and keeps the modal open.
+  const oldBossOpenOverview = window.bossOpenOverview;
+  window.bossOpenOverview = async function(force){
+    keepBossModeOpen();
+    if(typeof oldBossOpenOverview === 'function'){
+      await oldBossOpenOverview(force);
+    }
+    keepBossModeOpen();
+  };
+})();
+</script>
+
 </body>
 </html>
