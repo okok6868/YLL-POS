@@ -2771,5 +2771,142 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 })();
 </script>
 
+
+<script>
+/* ===== V4.7 STABLE CLEANUP: Return + Boss stability/speed only ===== */
+(function(){
+  function el(id){return document.getElementById(id)}
+  function safeFmt(v){ try{return fmt(v||0)}catch(e){return 'RM '+Number(v||0).toFixed(2)} }
+  function setHtml(id, html){ const x=el(id); if(x) x.innerHTML=html; }
+  function setText(id, text){ const x=el(id); if(x) x.textContent=text; }
+  function markLoading(panelId, msg){ setHtml(panelId, `<div class="boss-result" style="display:block">${msg||'Loading...'}</div>`); }
+  function bossBusyButton(btn,on,text){ if(!btn)return; btn.disabled=!!on; if(on){btn.dataset.oldText=btn.textContent; btn.textContent=text||'Loading...';} else if(btn.dataset.oldText){btn.textContent=btn.dataset.oldText; delete btn.dataset.oldText;} }
+
+  window.bossLogout=function(){
+    sessionStorage.removeItem('bossSessionUntil');
+    window.__bossSessionActive=false;
+    window.__bossLoggingIn=false;
+    try{ clearTimeout(window.bossIdleTimer); }catch(e){}
+    closeModal('bossDashboard');
+    closeModal('bossLoginBox');
+    showToast('已退出管理模式');
+  };
+
+  window.openBossLogin=function(){
+    window.__bossLoggingIn=false;
+    const msg=el('bossLoginMsg'); if(msg){msg.style.display='none';msg.textContent='';}
+    openModal('bossLoginBox');
+    setTimeout(()=>{ const id=el('bossId'), pw=el('bossPassword'); if(id){id.value=''; id.focus();} if(pw)pw.value=''; },80);
+  };
+
+  window.bossLogin=async function(){
+    if(window.__bossLoggingIn) return;
+    const idEl=el('bossId'), pwEl=el('bossPassword'), msg=el('bossLoginMsg');
+    const btn=document.querySelector('#bossLoginBox button.green');
+    const id=(idEl&&idEl.value||'').trim(), pw=(pwEl&&pwEl.value||'');
+    if(!id){ if(msg){msg.style.display='block';msg.textContent='请输入帐号';} if(idEl)idEl.focus(); return; }
+    if(!pw){ if(msg){msg.style.display='block';msg.textContent='请输入密码';} if(pwEl)pwEl.focus(); return; }
+    window.__bossLoggingIn=true; bossBusyButton(btn,true,'登入中...');
+    if(msg){msg.style.display='block';msg.textContent='登入中...';}
+    try{
+      const r=await apiCall('bossLogin',[id,pw]);
+      if(r&&r.locked){ closeAllModal(); await checkSystemStatus(false); return; }
+      if(r&&r.ok){
+        BOSS_IDLE_MS=Math.max(1,Number(r.autoLogoutMinutes||10))*60*1000;
+        sessionStorage.setItem('bossSessionUntil',String(Date.now()+BOSS_IDLE_MS));
+        window.__bossSessionActive=true;
+        if(typeof bossStartIdleTimer==='function') bossStartIdleTimer();
+        if(idEl)idEl.value=''; if(pwEl)pwEl.value='';
+        closeModal('bossLoginBox'); openModal('bossDashboard');
+        setText('bossResult','管理模式已开启。');
+        bossOpenOverview();
+        return;
+      }
+      if(msg){msg.textContent='帐号或密码错误，剩余 '+(r && r.remaining!==undefined ? r.remaining : 0)+' 次。';}
+    }catch(e){ if(msg){msg.textContent='登入失败：'+(e.message||e);} }
+    finally{ window.__bossLoggingIn=false; bossBusyButton(btn,false); }
+  };
+
+  function installEnter(){
+    const id=el('bossId'), pw=el('bossPassword');
+    if(id){ id.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); if(pw) pw.focus(); }}; }
+    if(pw){ pw.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); bossLogin(); }}; }
+  }
+  document.addEventListener('DOMContentLoaded',installEnter); setTimeout(installEnter,500);
+
+  window.bossOpenOverview=async function(){
+    if(!bossRequire())return;
+    bossHideBossPanels(); bossSetNav && bossSetNav('今日');
+    const p=el('bossOverviewPanel'); if(p){p.style.display='block';p.classList.add('active');}
+    setHtml('bossOverviewResult','<div class="overview-card"><small>状态</small><b>载入中...</b><span>正在读取今日提醒</span></div>');
+    setText('bossResult','载入今日提醒中...');
+    try{
+      const r=await apiCall('getBossOverview',[]);
+      const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[], today=r.today||{};
+      const cashDrawer=moneyNum(cash.cashDrawer||0), flt=moneyNum(cash.floatCash||0), limit=moneyNum(cash.cashDrawerLimit||500);
+      const can=Math.max(0,fromCents(cents(cashDrawer)-cents(flt)));
+      const parcelPending=moneyNum(parcel.pendingEstimated||0);
+      const otherPending=moneyNum(other.pending||0);
+      const cards=[];
+      cards.push(bossMiniCard('收银机可收现金',safeFmt(can),`收银机 ${safeFmt(cashDrawer)} / 找零本金 ${safeFmt(flt)} / 提醒 ${safeFmt(limit)}`, can>=limit));
+      cards.push(bossMiniCard('今日销售',safeFmt(today.total||0),`订单 ${today.orders||today.count||0} 笔 / Cash ${safeFmt(today.Cash||0)} / QR ${safeFmt(today.MBB_QR||0)}`, false));
+      if(parcelPending>0) cards.push(bossMiniCard('Shopee 待对账',safeFmt(parcelPending),`已记录实际收到 ${safeFmt(parcel.actualPaid||0)} / 共 ${parcel.count||0} 笔`, true));
+      if(otherPending>0) cards.push(bossMiniCard('其它收入待确认',safeFmt(otherPending),`已确认 ${safeFmt(other.received||0)} / 共 ${other.count||0} 笔`, true));
+      if(low.length) cards.push(bossMiniCard('库存不足',low.length+' 项',low.slice(0,4).map(x=>x.name).join('、'),true));
+      if(!cards.some(x=>x.includes('warn'))) cards.push(`<div class="overview-card good"><small>今日待处理</small><b>没有提醒</b><span>目前没有需要马上处理的收现金、Shopee、水机或库存提醒。</span></div>`);
+      setHtml('bossOverviewResult',cards.join(''));
+      setText('bossResult','今日提醒已更新。');
+    }catch(e){ setText('bossOverviewResult','载入失败：'+(e.message||e)); setText('bossResult','今日提醒载入失败。'); }
+  };
+
+  window.bossOpenCashCollect=async function(){
+    if(!bossRequire())return; bossHideBossPanels(); bossSetNav && bossSetNav('财务');
+    const p=el('bossCashBox'); if(p){p.style.display='block';p.classList.add('active');}
+    setText('bossCashInfo','载入财务资料中...');
+    try{
+      const r=await apiCall('getCashDrawer',[]);
+      const cash=moneyNum(r.cashDrawer||0), flt=moneyNum(r.floatCash||0), limit=moneyNum(r.cashDrawerLimit||0);
+      const can=Math.max(0,fromCents(cents(cash)-cents(flt)));
+      const set=(id,val)=>{let e=el(id); if(e)e.textContent=safeFmt(val)};
+      set('cashDrawerAmount', cash); set('floatCashAmount', flt); set('collectableAmount', can);
+      const warn=el('bossCashWarning');
+      if(warn){warn.style.display=can>=limit?'block':'none';warn.textContent=`🟠 可收现金 ${safeFmt(can)} 已超过提醒 ${safeFmt(limit)}，建议收现金。`;}
+      setHtml('bossCashInfo',`<table><tr><th>项目</th><th class="right">金额</th></tr><tr><td>已收走现金</td><td class="right">${safeFmt(r.collected||0)}</td></tr><tr><td>退货现金扣回</td><td class="right">${safeFmt(r.refunds||0)}</td></tr><tr><td>提醒金额</td><td class="right">${safeFmt(limit)}</td></tr></table>`);
+    }catch(e){ setText('bossCashInfo','载入失败：'+(e.message||e)); }
+  };
+
+  // Stable refund submit: clear feedback, no silent wait, no duplicate submit.
+  window.submitRefund=async function(){
+    if(window.refundSubmitting)return;
+    const orderId=(el('refundOrderId')||{}).value||'';
+    const sel=getRefundSelection ? getRefundSelection() : {items:[],amount:0};
+    const reason=(el('refundReason')||{}).value||'Customer return';
+    const st=el('refundStatusMsg');
+    if(!orderId){showAppAlert('Please select an order.','Refund');return;}
+    if(!sel.items.length||!sel.amount){showAppAlert('Please choose returned item and quantity.','Refund');return;}
+    const ok=await appConfirm(`Submit refund request?\n\nOrder: ${orderId}\nRefund: ${safeFmt(sel.amount)}\n\nThis order will not appear again in recent refund list.`,'Refund Request');
+    if(!ok)return;
+    setRefundBusy(true);
+    if(st){st.style.display='block';st.textContent='Submitting refund request...';}
+    const t=setTimeout(()=>{ if(st)st.textContent='Still submitting... please wait, do not press again.'; },8000);
+    try{
+      await apiCall('requestRefund',[{orderId,items:sel.items,amount:sel.amount,reason}]);
+      clearTimeout(t);
+      if(st){st.style.display='block';st.textContent='✅ Refund request submitted.';}
+      document.querySelectorAll(`.refund-order-card[data-order="${orderId}"]`).forEach(c=>c.remove());
+      window.__refundOrders=(window.__refundOrders||[]).filter(o=>o.orderId!==orderId);
+      const list=el('refundItemList'); if(list)list.textContent='Select another order if needed.';
+      const oid=el('refundOrderId'); if(oid)oid.value='';
+      window.selectedRefundOrder=null; updateRefundTotal && updateRefundTotal();
+      showToast('✅ Refund request submitted');
+      setTimeout(()=>{ if(document.querySelector('#refundBox.active')) closeModal('refundBox'); },800);
+    }catch(e){
+      clearTimeout(t);
+      if(st){st.style.display='block';st.textContent='❌ Refund failed: '+(e.message||e);} else showAppAlert('Refund failed: '+(e.message||e),'Refund');
+    }finally{ setRefundBusy(false); }
+  };
+})();
+</script>
+
 </body>
 </html>
