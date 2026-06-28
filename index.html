@@ -2431,6 +2431,199 @@ printReceipt = function(auto=false){
   const d=document.getElementById('parcelPreview'); if(d)d.textContent='Estimated: RM 0.00';
 })();
 
+
+/* ===== V4.6.2 final hotfix: refund item selection, settings labels, parcel simplification ===== */
+(function(){
+  const st=document.createElement('style');
+  st.textContent=`
+  .setting-field{display:flex;flex-direction:column;gap:6px;padding:0;margin:0}
+  .setting-field label{font-size:12px;color:#cbd5e1;font-weight:800;letter-spacing:.2px}
+  .setting-field input{width:100%;margin:0!important}
+  .refund-item-list{max-height:260px;overflow:auto;border:1px solid rgba(148,163,184,.22);border-radius:16px;padding:10px;background:rgba(2,6,23,.35);margin:10px 0}
+  .refund-item-row{display:grid;grid-template-columns:28px 1fr 74px 92px;gap:8px;align-items:center;padding:9px;border-bottom:1px solid rgba(148,163,184,.14)}
+  .refund-item-row:last-child{border-bottom:0}
+  .refund-item-name{font-weight:900;color:#fff}.refund-item-meta{font-size:12px;color:#94a3b8;margin-top:2px}
+  .refund-item-row input[type="number"]{height:38px;margin:0!important;text-align:center}.refund-amount-chip{font-weight:900;color:#22c55e;text-align:right}
+  .refund-summary{padding:10px;border-radius:14px;background:rgba(15,23,42,.88);border:1px solid rgba(148,163,184,.18);margin:8px 0;color:#e5e7eb;font-weight:900}
+  .parcel-auto-note{font-size:12px;color:#93c5fd;margin:8px 0 10px;padding:8px 10px;border-radius:12px;background:rgba(37,99,235,.10);border:1px solid rgba(96,165,250,.22)}
+  `;
+  document.head.appendChild(st);
+})();
+
+function installSettingLabels(){
+  const grid=document.querySelector('#bossCredentialBox .settings-grid');
+  if(!grid || grid.dataset.labeled==='1') return;
+  const labels={
+    newBossId:'新帐号', newBossPassword:'新密码', newRecoveryCode:'新恢复码', newCashLimit:'收现金提醒金额',
+    newFloatCash:'找零本金', newAutoLogout:'自动退出分钟', newParcelRate:'Shopee 派件单价', newParcelReturnRate:'Shopee 退回单价'
+  };
+  [...grid.children].forEach(input=>{
+    if(!input.id || !labels[input.id]) return;
+    const wrap=document.createElement('div'); wrap.className='setting-field';
+    const lab=document.createElement('label'); lab.setAttribute('for',input.id); lab.textContent=labels[input.id];
+    input.parentNode.insertBefore(wrap,input); wrap.appendChild(lab); wrap.appendChild(input);
+  });
+  grid.dataset.labeled='1';
+}
+const __oldBossOpenCredentialBox = typeof bossOpenCredentialBox==='function' ? bossOpenCredentialBox : null;
+bossOpenCredentialBox=function(){
+  if(__oldBossOpenCredentialBox) __oldBossOpenCredentialBox();
+  installSettingLabels();
+};
+
+function installParcelUI(){
+  const box=document.querySelector('#parcelBox .modal-content');
+  if(!box || box.dataset.v462==='1') return;
+  box.innerHTML=`
+    <h3>📦 Shopee Parcel</h3>
+    <p style="color:#94a3b8;font-size:13px">Fill today parcel count only. Trip number is auto counted by system.</p>
+    <div class="parcel-auto-note" id="parcelTripNote">Today trip: Auto</div>
+    <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="Arrived parcels">
+    <input id="parcelReturned" type="number" inputmode="numeric" placeholder="Returned parcels">
+    <input id="parcelNote" type="text" placeholder="Note optional">
+    <button class="green" onclick="saveParcelLog()">✅ Save Parcel Record</button>
+    <button onclick="closeModal('parcelBox')">Close</button>`;
+  box.dataset.v462='1';
+}
+openParcelBox=function(){
+  installParcelUI();
+  ['parcelDelivered','parcelReturned','parcelNote'].forEach(id=>{let e=document.getElementById(id); if(e)e.value='';});
+  const note=document.getElementById('parcelTripNote'); if(note)note.textContent='Today trip: Auto';
+  openModal('parcelBox');
+};
+saveParcelLog=async function(){
+  const delivered=Number((document.getElementById('parcelDelivered')||{}).value||0);
+  const returned=Number((document.getElementById('parcelReturned')||{}).value||0);
+  const note=(document.getElementById('parcelNote')||{}).value||'';
+  if(delivered<0||returned<0||(!delivered&&!returned)){showAppAlert('Please fill arrived or returned parcels.','Shopee Parcel');return;}
+  try{
+    const r=await apiCall('saveParcelLog',[{delivered,returned,note}]);
+    closeModal('parcelBox');
+    showToast(`✅ Shopee saved. Trip ${r.trip||''}`);
+  }catch(e){showAppAlert('Shopee save failed: '+(e.message||e),'Shopee Parcel')}
+};
+
+let selectedRefundOrder=null;
+function installRefundUI(){
+  const box=document.querySelector('#refundBox .modal-content');
+  if(!box) return;
+  box.innerHTML=`
+    <h3>↩️ Refund Request</h3>
+    <p style="color:#94a3b8;font-size:13px">Select an order from last 3 days, then choose returned item and quantity. Submitted orders will disappear from the list.</p>
+    <button class="green" onclick="loadRecentRefundOrders()">🔍 Load Recent Orders</button>
+    <div id="refundRecentBox">Loading recent orders...</div>
+    <input id="refundOrderId" type="text" placeholder="Order No" readonly>
+    <div id="refundItemList" class="refund-item-list">Select an order first.</div>
+    <div id="refundTotalBox" class="refund-summary">Refund Total: RM 0.00</div>
+    <input id="refundReason" type="text" placeholder="Reason, e.g. customer return">
+    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ Submit Refund Request</button>
+    <button onclick="closeModal('refundBox')">Close</button>`;
+}
+openRefundBox=function(){
+  installRefundUI();
+  const oid=document.getElementById('refundOrderId'), rs=document.getElementById('refundReason');
+  if(oid)oid.value=''; if(rs)rs.value='';
+  selectedRefundOrder=null; window.__refundOrders=[]; window.__refundSelected={};
+  setRefundBusy(false); openModal('refundBox'); loadRecentRefundOrders();
+};
+async function loadRecentRefundOrders(){
+  const box=document.getElementById('refundRecentBox'); if(box)box.textContent='Loading recent orders...';
+  try{
+    const rows=await apiCall('getRecentOrdersForRefund',[3]);
+    window.__refundOrders=rows||[]; window.__refundSelected={}; selectedRefundOrder=null;
+    const list=document.getElementById('refundItemList'); if(list)list.textContent='Select an order first.';
+    const total=document.getElementById('refundTotalBox'); if(total)total.textContent='Refund Total: RM 0.00';
+    const oid=document.getElementById('refundOrderId'); if(oid)oid.value='';
+    if(!box)return;
+    if(!rows||!rows.length){box.textContent='No refundable orders in last 3 days.';return;}
+    box.innerHTML=rows.map((o,idx)=>`<div class="refund-order-card" onclick="selectRefundOrder(${idx})" data-idx="${idx}"><div class="refund-order-title"><span>${o.orderId}</span><span>${fmt(o.total||0)}</span></div><div class="refund-order-items">${o.date||''}<br>${(o.items||[]).map(i=>`${i.name} x${i.qty} (${fmt(i.subtotal||0)})`).join('<br>')}</div></div>`).join('');
+  }catch(e){if(box)box.textContent='Load failed: '+(e.message||e);}
+}
+function selectRefundOrder(idx){
+  const rows=window.__refundOrders||[]; const o=rows[idx]; if(!o)return;
+  selectedRefundOrder=o; window.__refundSelected={};
+  document.querySelectorAll('.refund-order-card').forEach(c=>c.classList.toggle('active',Number(c.dataset.idx)===idx));
+  const oid=document.getElementById('refundOrderId'); if(oid)oid.value=o.orderId||'';
+  const list=document.getElementById('refundItemList');
+  if(list){
+    list.innerHTML=(o.items||[]).map((it,i)=>`<div class="refund-item-row">
+      <input type="checkbox" id="rfChk${i}" onchange="toggleRefundItem(${i})">
+      <div><div class="refund-item-name">${it.name}</div><div class="refund-item-meta">Sold Qty: ${it.qty} × RM ${Number(it.price||0).toFixed(2)} / Max ${fmt(it.subtotal||0)}</div></div>
+      <input id="rfQty${i}" type="number" inputmode="numeric" min="1" max="${it.qty}" step="1" value="1" disabled oninput="updateRefundTotal()">
+      <div class="refund-amount-chip" id="rfAmt${i}">RM 0.00</div>
+    </div>`).join('');
+  }
+  updateRefundTotal();
+}
+function toggleRefundItem(i){
+  const chk=document.getElementById('rfChk'+i), qty=document.getElementById('rfQty'+i);
+  if(qty) qty.disabled=!(chk&&chk.checked);
+  updateRefundTotal();
+}
+function getRefundSelection(){
+  if(!selectedRefundOrder) return {items:[], amount:0};
+  const items=[]; let totalC=0;
+  (selectedRefundOrder.items||[]).forEach((it,i)=>{
+    const chk=document.getElementById('rfChk'+i); if(!chk||!chk.checked)return;
+    const maxQty=Math.max(0,Number(it.qty||0));
+    let q=Math.floor(Number((document.getElementById('rfQty'+i)||{}).value||0));
+    if(q<1) q=1; if(q>maxQty) q=maxQty;
+    const lineC=cents(it.price)*q;
+    totalC+=lineC;
+    items.push({code:it.code||'',name:it.name||'',qty:q,price:Number(it.price||0),amount:fromCents(lineC)});
+    const amt=document.getElementById('rfAmt'+i); if(amt)amt.textContent=fmt(fromCents(lineC));
+  });
+  return {items, amount:fromCents(totalC)};
+}
+function updateRefundTotal(){
+  const sel=getRefundSelection();
+  const total=document.getElementById('refundTotalBox'); if(total)total.textContent='Refund Total: '+fmt(sel.amount||0);
+}
+submitRefund=async function(){
+  if(refundSubmitting)return;
+  const orderId=(document.getElementById('refundOrderId')||{}).value||'';
+  const sel=getRefundSelection();
+  const reason=(document.getElementById('refundReason')||{}).value||'Customer return';
+  if(!orderId){showAppAlert('Please select an order.','Refund');return;}
+  if(!sel.items.length||!sel.amount){showAppAlert('Please choose returned item and quantity.','Refund');return;}
+  const ok=await appConfirm(`Submit refund request?\n\nOrder: ${orderId}\nRefund: ${fmt(sel.amount)}\n\nThis order will not appear again in recent refund list.`,'Refund Request');
+  if(!ok)return;
+  setRefundBusy(true);
+  try{await apiCall('requestRefund',[{orderId,items:sel.items,amount:sel.amount,reason}]); closeModal('refundBox'); showToast('✅ Refund request submitted');}
+  catch(e){showAppAlert('Refund failed: '+(e.message||e),'Refund');}
+  finally{setRefundBusy(false);}
+};
+
+printReceipt=function(auto=false){
+  let now=new Date(), date=now.toLocaleDateString('en-GB'), time=now.toLocaleTimeString();
+  let useCart=lastCart.length?lastCart:cart, usedDiscount=lastCart.length?last折扣:discount;
+  if(!useCart.length){showAppAlert('No receipt to print','Receipt');return;}
+  let orderId=useCart[0]?.orderId||'PENDING';
+  let subtotal=fromCents(useCart.reduce((a,b)=>a+cents(b.price)*Number(b.qty||0),0));
+  let finalTotal=fromCents(Math.max(0,cents(subtotal)-cents(usedDiscount)));
+  const money=v=>'RM '+Number(v||0).toFixed(2);
+  const payLabel=p=>p==='mbb_qr'?'QR':p==='transfer'?'TRANSFER':p==='mixed'?'MIXED':'CASH';
+  const meta=(label,value)=>`${String(label).padEnd(9,' ')}: ${value}`;
+  let text=`====================================\n      YLL FEEDS ENTERPRISE\n (202303217794 - KT0553187-P)\n              INVOICE\n====================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n------------------------------------\nITEMS\n------------------------------------\n`;
+  useCart.forEach(i=>{let amount=Number(i.qty||0)*Number(i.price||0); text+=`${i.name}\n${Number(i.qty||0)} x RM ${Number(i.price||0).toFixed(2)} = ${money(amount)}\n`;});
+  text+=`------------------------------------\n${meta('SUBTOTAL',money(subtotal))}\n`;
+  if(Number(usedDiscount||0)>0) text+=meta('DISCOUNT','-'+money(usedDiscount))+'\n';
+  text+=`------------------------------------\n${meta('TOTAL',money(finalTotal))}\n`;
+  if(lastPayment==='cash'||lastPayment==='mixed') text+=meta('PAID',money(lastPaid||finalTotal))+'\n'+meta('CHANGE',money(lastChange||0))+'\n';
+  text+=meta('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
+  lastReceiptText=text;
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));}else showAppAlert(text,'Receipt');
+  if(auto)runAutoPrint();
+};
+
+function installBossEnterHandlersFinal(){
+  const id=document.getElementById('bossId'), pw=document.getElementById('bossPassword');
+  if(id){id.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault(); if(pw)pw.focus();}};}
+  if(pw){pw.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault(); bossLogin();}};}
+}
+document.addEventListener('DOMContentLoaded',()=>{installParcelUI(); installRefundUI(); installSettingLabels(); installBossEnterHandlersFinal();});
+setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); installBossEnterHandlersFinal();},500);
+
 </script>
 <div id="toast" class="toast"></div>
 </body>
