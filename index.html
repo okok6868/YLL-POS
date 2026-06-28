@@ -1026,7 +1026,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <h3>🔐 权限验证</h3>
     <input id="bossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('bossPassword').focus()">
     <input id="bossPassword" type="password" placeholder="密码" autocomplete="new-password" onkeydown="if(event.key==='Enter')bossLogin()">
-    <button class="green" onclick="bossLogin()">登入</button>
+    <button id="bossLoginBtn" class="green" onclick="bossLogin()">登入</button>
     <button onclick="closeModal('bossLoginBox')">关闭</button>
     <div id="bossLoginMsg" class="boss-result" style="display:none"></div>
   </div>
@@ -1851,18 +1851,29 @@ async function bossLogin(){
   const id=(document.getElementById("bossId")||{}).value||"";
   const pw=(document.getElementById("bossPassword")||{}).value||"";
   const msg=document.getElementById("bossLoginMsg");
+  const btn=document.getElementById("bossLoginBtn");
+  if(!id||!pw){ if(msg){msg.style.display="block";msg.textContent="请输入帐号和密码。";} return; }
+  if(btn){btn.disabled=true;btn.classList.add("busy-btn");btn.dataset.oldText=btn.textContent;btn.textContent="登入中...";}
+  if(msg){msg.style.display="block";msg.textContent="登入中...";}
   try{
     const r=await apiCall("bossLogin",[id,pw]);
     if(r && r.locked){ closeAllModal(); await checkSystemStatus(false); return; }
     if(r && r.ok){
-      BOSS_IDLE_MS = Math.max(1, Number(r.autoLogoutMinutes||10))*60*1000; sessionStorage.setItem("bossSessionUntil", String(Date.now()+BOSS_IDLE_MS));
+      BOSS_IDLE_MS = Math.max(1, Number(r.autoLogoutMinutes||10))*60*1000;
+      sessionStorage.setItem("bossSessionUntil", String(Date.now()+BOSS_IDLE_MS));
       bossStartIdleTimer();
       if(document.getElementById("bossId"))document.getElementById("bossId").value="";
       if(document.getElementById("bossPassword"))document.getElementById("bossPassword").value="";
-      closeModal("bossLoginBox"); openModal("bossDashboard"); await bossOpenOverview(); document.getElementById("bossResult").textContent="已进入管理模式。"; return;
+      closeModal("bossLoginBox");
+      openModal("bossDashboard");
+      const ov=document.getElementById("bossOverviewResult"); if(ov) ov.innerHTML="<div class='overview-card'><small>状态</small><b>载入中...</b><span>正在读取管理资料。</span></div>";
+      const br=document.getElementById("bossResult"); if(br)br.textContent="已进入管理模式。";
+      setTimeout(()=>{ try{ bossOpenOverview(true); }catch(e){ console.error(e); } },30);
+      return;
     }
-    if(msg){msg.style.display="block"; msg.textContent="帐号 或密码错误，剩余 "+(r.remaining??0)+" 次。";}
+    if(msg){msg.style.display="block"; msg.textContent="帐号或密码错误，剩余 "+(r.remaining??0)+" 次。";}
   }catch(e){ if(msg){msg.style.display="block"; msg.textContent="登入失败："+(e.message||e);} }
+  finally{if(btn){btn.disabled=false;btn.classList.remove("busy-btn");btn.textContent=btn.dataset.oldText||"登入";}}
 }
 let BOSS_IDLE_MS = 10*60*1000;
 let bossIdleTimer=null;
@@ -3914,7 +3925,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
   function refundPendingHtml(rows){
     if(!rows||!rows.length) return '';
-    return `<div class="boss-result" style="margin-top:12px"><b>退货待审批</b><table><tr><th>订单</th><th>商品</th><th class="right">金额</th><th>操作</th></tr>${rows.map(r=>`<tr><td>${esc(r.orderId)}</td><td>${esc(r.item||'')}</td><td class="right">${money(r.amount||0)}</td><td><button class="green" style="padding:7px 10px" onclick="bossApproveRefundInline('${esc(r.refundId)}',this)">批准</button></td></tr>`).join('')}</table></div>`;
+    return `<div class="boss-result" style="margin-top:12px"><b>退货待审批</b><table><tr><th>订单</th><th>商品</th><th class="right">金额</th><th>操作</th></tr>${rows.map(r=>`<tr><td>${esc(r.orderId)}</td><td>${esc(r.item||'')}</td><td class="right">${money(r.amount||0)}</td><td><button class="green" style="padding:7px 10px;width:auto;margin-right:6px" onclick="bossApproveRefundInline('${esc(r.refundId)}',this)">批准</button><button class="danger-outline" style="padding:7px 10px;width:auto" onclick="bossRejectRefundInline('${esc(r.refundId)}',this)">取消</button></td></tr>`).join('')}</table></div>`;
   }
   window.bossOpenOverview=async function(force){
     if(!bossRequire())return;
@@ -3928,7 +3939,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const cards=[];
       cards.push(overviewCard('可收现金',money(can),`收银机 ${money(drawer)} / 找零 ${money(flt)} / 提醒 ${money(limit)}`,can>=limit));
       cards.push(overviewCard('今日销售',money(today.total||0),`订单 ${today.orders||today.count||0} / Cash ${money(today.Cash||0)} / QR ${money(today.MBB_QR||0)}`,false));
-      if(rows.length) cards.push(overviewCard('退货待审批',rows.length+' 单',`金额 ${money(r.refundPendingAmount||0)}，可在下方直接批准`,true));
+      if(rows.length) cards.push(overviewCard('退货待审批',rows.length+' 单',`金额 ${money(r.refundPendingAmount||0)}，可在下方批准或取消`,true));
       if(!rows.length && can<limit) cards.push(overviewCard('今日待处理','没有紧急事项','没有待审批退货；现金未超过提醒。',false));
       setHtml('bossOverviewResult',cards.join('')+refundPendingHtml(rows));
       setText('bossResult','');
@@ -3944,6 +3955,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       await bossOpenOverview(true);
       if(typeof loadTodayStats==='function') loadTodayStats();
     }catch(e){btn.disabled=false;btn.classList.remove('busy-btn');btn.textContent=old;showAppAlert('批准失败：'+(e.message||e),'退货审批');}
+  };
+
+  window.bossRejectRefundInline=async function(refundId,btn){
+    if(!refundId||!btn)return;
+    const ok=await appConfirm('确定取消这个退货申请？\n\n取消后不会退款，也不会加回库存。','取消退货');
+    if(!ok)return;
+    const old=btn.textContent; btn.disabled=true; btn.classList.add('busy-btn'); btn.textContent='取消中...';
+    try{
+      await apiCall('rejectPendingRefund',[refundId,'Boss rejected']);
+      if(typeof invalidateBossCache==='function') invalidateBossCache();
+      showToast('✅ 已取消退货申请');
+      await bossOpenOverview(true);
+    }catch(e){btn.disabled=false;btn.classList.remove('busy-btn');btn.textContent=old;showAppAlert('取消失败：'+(e.message||e),'退货审批');}
   };
 
   // Finance tab only calls cash drawer endpoint, not whole Boss overview.
