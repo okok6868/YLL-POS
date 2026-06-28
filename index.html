@@ -2626,5 +2626,150 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
 </script>
 <div id="toast" class="toast"></div>
+
+<script>
+/* ===== V4.6.4 Refund Qty + Submit Feedback + Boss Refresh Hotfix ===== */
+(function(){
+  const style=document.createElement('style');
+  style.textContent=`
+  .refund-qty-select{min-width:92px;border-radius:13px;background:#020617;color:#fff;border:1px solid rgba(148,163,184,.3);padding:11px;font-weight:900;text-align:center}
+  .refund-order-card.submitted{opacity:.45;pointer-events:none;filter:grayscale(.4)}
+  .refund-status-msg{margin:8px 0;padding:10px 12px;border-radius:14px;background:rgba(59,130,246,.14);border:1px solid rgba(96,165,250,.3);color:#dbeafe;font-weight:900}
+  `;
+  document.head.appendChild(style);
+
+  window.installRefundUI=function(){
+    const box=document.querySelector('#refundBox .modal-content');
+    if(!box) return;
+    box.innerHTML=`
+      <h3>↩️ Refund Request</h3>
+      <p style="color:#94a3b8;font-size:13px">Select an order from last 3 days, choose item and return quantity. Submitted orders disappear from this list.</p>
+      <button class="green" onclick="loadRecentRefundOrders()">🔍 Load Recent Orders</button>
+      <div id="refundRecentBox">Loading recent orders...</div>
+      <input id="refundOrderId" type="text" placeholder="Order No" readonly>
+      <div id="refundItemList" class="refund-item-list">Select an order first.</div>
+      <div id="refundTotalBox" class="refund-summary">Refund Total: RM 0.00</div>
+      <input id="refundReason" type="text" placeholder="Reason, e.g. customer return">
+      <div id="refundStatusMsg" class="refund-status-msg" style="display:none"></div>
+      <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ Submit Refund Request</button>
+      <button onclick="closeModal('refundBox')">Close</button>`;
+  };
+
+  window.openRefundBox=function(){
+    installRefundUI();
+    const oid=document.getElementById('refundOrderId'), rs=document.getElementById('refundReason'), st=document.getElementById('refundStatusMsg');
+    if(oid)oid.value=''; if(rs)rs.value=''; if(st){st.style.display='none';st.textContent='';}
+    window.selectedRefundOrder=null; window.__refundOrders=[]; window.__refundSelected={};
+    setRefundBusy(false); openModal('refundBox'); loadRecentRefundOrders();
+  };
+
+  window.loadRecentRefundOrders=async function(){
+    const box=document.getElementById('refundRecentBox'); if(box)box.textContent='Loading recent orders...';
+    try{
+      const rows=await apiCall('getRecentOrdersForRefund',[3]);
+      window.__refundOrders=rows||[]; window.__refundSelected={}; window.selectedRefundOrder=null;
+      const list=document.getElementById('refundItemList'); if(list)list.textContent='Select an order first.';
+      const total=document.getElementById('refundTotalBox'); if(total)total.textContent='Refund Total: RM 0.00';
+      const oid=document.getElementById('refundOrderId'); if(oid)oid.value='';
+      if(!box)return;
+      if(!rows||!rows.length){box.textContent='No refundable orders in last 3 days.';return;}
+      box.innerHTML=rows.map((o,idx)=>`<div class="refund-order-card" onclick="selectRefundOrder(${idx})" data-idx="${idx}" data-order="${o.orderId}"><div class="refund-order-title"><span>${o.orderId}</span><span>${fmt(o.total||0)}</span></div><div class="refund-order-items">${o.date||''}<br>${(o.items||[]).map(i=>`${i.name} x${i.qty} (${fmt(i.subtotal||0)})`).join('<br>')}</div></div>`).join('');
+    }catch(e){ if(box)box.textContent='Load failed: '+(e.message||e); }
+  };
+
+  function qtyOptions(max){
+    max=Math.max(1,Math.floor(Number(max||1)));
+    let out='';
+    for(let i=1;i<=max;i++) out+=`<option value="${i}">${i}</option>`;
+    return out;
+  }
+
+  window.selectRefundOrder=function(idx){
+    const rows=window.__refundOrders||[]; const o=rows[idx]; if(!o)return;
+    window.selectedRefundOrder=o; window.__refundSelected={};
+    document.querySelectorAll('.refund-order-card').forEach(c=>c.classList.toggle('active',Number(c.dataset.idx)===idx));
+    const oid=document.getElementById('refundOrderId'); if(oid)oid.value=o.orderId||'';
+    const list=document.getElementById('refundItemList');
+    if(list){
+      list.innerHTML=(o.items||[]).map((it,i)=>`<div class="refund-item-row">
+        <input type="checkbox" id="rfChk${i}" onchange="toggleRefundItem(${i})">
+        <div><div class="refund-item-name">${it.name}</div><div class="refund-item-meta">Sold Qty: ${it.qty} × RM ${Number(it.price||0).toFixed(2)} / Max ${fmt(it.subtotal||0)}</div></div>
+        <select id="rfQty${i}" class="refund-qty-select" disabled onchange="updateRefundTotal()">${qtyOptions(it.qty)}</select>
+        <div class="refund-amount-chip" id="rfAmt${i}">RM 0.00</div>
+      </div>`).join('');
+    }
+    updateRefundTotal();
+  };
+
+  window.toggleRefundItem=function(i){
+    const chk=document.getElementById('rfChk'+i), qty=document.getElementById('rfQty'+i);
+    if(qty) qty.disabled=!(chk&&chk.checked);
+    updateRefundTotal();
+  };
+
+  window.getRefundSelection=function(){
+    if(!window.selectedRefundOrder) return {items:[], amount:0};
+    const items=[]; let totalC=0;
+    (window.selectedRefundOrder.items||[]).forEach((it,i)=>{
+      const chk=document.getElementById('rfChk'+i); if(!chk||!chk.checked){ const amt=document.getElementById('rfAmt'+i); if(amt)amt.textContent='RM 0.00'; return; }
+      const maxQty=Math.max(0,Number(it.qty||0));
+      let q=Math.floor(Number((document.getElementById('rfQty'+i)||{}).value||1));
+      if(q<1) q=1; if(q>maxQty) q=maxQty;
+      const lineC=cents(it.price)*q;
+      totalC+=lineC;
+      items.push({code:it.code||'',name:it.name||'',qty:q,price:Number(it.price||0),amount:fromCents(lineC)});
+      const amt=document.getElementById('rfAmt'+i); if(amt)amt.textContent=fmt(fromCents(lineC));
+    });
+    return {items, amount:fromCents(totalC)};
+  };
+
+  window.updateRefundTotal=function(){
+    const sel=getRefundSelection();
+    const total=document.getElementById('refundTotalBox'); if(total)total.textContent='Refund Total: '+fmt(sel.amount||0);
+  };
+
+  window.submitRefund=async function(){
+    if(refundSubmitting)return;
+    const orderId=(document.getElementById('refundOrderId')||{}).value||'';
+    const sel=getRefundSelection();
+    const reason=(document.getElementById('refundReason')||{}).value||'Customer return';
+    const st=document.getElementById('refundStatusMsg');
+    if(!orderId){showAppAlert('Please select an order.','Refund');return;}
+    if(!sel.items.length||!sel.amount){showAppAlert('Please choose returned item and quantity.','Refund');return;}
+    const ok=await appConfirm(`Submit refund request?\n\nOrder: ${orderId}\nRefund: ${fmt(sel.amount)}\n\nThis order will not appear again in recent refund list.`,'Refund Request');
+    if(!ok)return;
+    setRefundBusy(true);
+    if(st){st.style.display='block';st.textContent='Submitting refund request...';}
+    try{
+      await apiCall('requestRefund',[{orderId,items:sel.items,amount:sel.amount,reason}]);
+      if(st){st.textContent='✅ Refund request submitted.';}
+      document.querySelectorAll(`.refund-order-card[data-order="${orderId}"]`).forEach(c=>{c.classList.add('submitted'); c.remove();});
+      window.__refundOrders=(window.__refundOrders||[]).filter(o=>o.orderId!==orderId);
+      const list=document.getElementById('refundItemList'); if(list)list.textContent='Select another order if needed.';
+      const oid=document.getElementById('refundOrderId'); if(oid)oid.value='';
+      window.selectedRefundOrder=null; window.__refundSelected={}; updateRefundTotal();
+      showToast('✅ Refund request submitted');
+      if(typeof bossOpenOverview==='function') setTimeout(()=>bossOpenOverview().catch(()=>{}),100);
+      setTimeout(()=>closeModal('refundBox'),650);
+    }catch(e){
+      if(st){st.style.display='block';st.textContent='❌ Refund failed: '+(e.message||e);} else showAppAlert('Refund failed: '+(e.message||e),'Refund');
+    }finally{setRefundBusy(false);}
+  };
+
+  const oldBossLogin=window.bossLogin;
+  window.bossLogin=async function(){
+    const btn=document.querySelector('#bossLoginBox button.green');
+    const msg=document.getElementById('bossLoginMsg');
+    if(btn){btn.disabled=true;btn.textContent='登入中...';}
+    if(msg){msg.style.display='block';msg.textContent='登入中...';}
+    try{ await oldBossLogin(); }
+    finally{ if(btn){btn.disabled=false;btn.textContent='登入';} }
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{installRefundUI();});
+  setTimeout(()=>{installRefundUI();},300);
+})();
+</script>
+
 </body>
 </html>
