@@ -2333,7 +2333,7 @@ function installRefundUI(){
     <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ Submit Refund Request</button>
     <button onclick="closeModal('refundBox')">Close</button>`;
 }
-let selectedRefundOrder=null;
+/* older refund patch disabled: selectedRefundOrder declared once later */
 openRefundBox = function(){
   installRefundUI();
   ['refundOrderId','refundItem','refundAmount','refundReason'].forEach(id=>{let e=document.getElementById(id); if(e)e.value='';});
