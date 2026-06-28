@@ -588,7 +588,7 @@ html,body{width:100%;overflow-x:hidden;}
 .plain-gear{width:auto!important;min-width:44px;border-radius:14px!important;background:rgba(15,23,42,.7)!important;border:1px solid rgba(148,163,184,.25)!important;color:#cbd5e1!important;padding:9px 12px!important;font-size:18px!important}.plain-gear:hover{background:rgba(30,41,59,.9)!important}.access-card h3{text-align:center;margin-bottom:14px}.access-card{max-width:380px}
 
 
-<style id="v433-ipad-fix">
+/* v433-ipad-fix merged into main style */
 html,body{background:#050816!important;overscroll-behavior:none!important;}
 body{padding-bottom:0!important;}
 .app,.layout{background:#050816!important;}
@@ -712,7 +712,6 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
 html,body,#app,.layout{background-color:#050816!important}
 body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-area-inset-bottom);background:#050816;z-index:1;pointer-events:none}
 
-</style>
 
 /* V4.4 iPad bottom white-line hard fix */
 html,body{width:100%;height:100%;min-height:100%;overflow:hidden;background:#050816!important;}
@@ -753,6 +752,56 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
 .boss-evidence{font-size:12px;color:#94a3b8;margin:6px 0 10px}.boss-evidence input{margin-top:6px}.boss-result table{width:100%;border-collapse:collapse;font-size:13px}.boss-result th,.boss-result td{border-bottom:1px solid rgba(148,163,184,.16);padding:7px;text-align:left}.boss-result th{color:#fde68a}.boss-result .right{text-align:right}.boss-chip{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(245,158,11,.14);color:#fde68a;font-size:12px}
 @media(max-width:900px){.boss-overview-grid{grid-template-columns:1fr}.boss-tab-grid{grid-template-columns:repeat(2,1fr)}.boss-money-cards{grid-template-columns:1fr}.boss-inline{flex-direction:column}}
 
+
+
+/* ===== V4.6 POS/Boss UI fix ===== */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+input[type=number]{ -moz-appearance:textfield; appearance:textfield; }
+.pay-choice-box button{border:0!important;box-shadow:0 10px 22px rgba(0,0,0,.24)!important;letter-spacing:.2px}
+.pay-cash-btn{background:linear-gradient(135deg,#16a34a,#22c55e)!important;color:#fff!important}
+.pay-transfer-btn{background:linear-gradient(135deg,#2563eb,#60a5fa)!important;color:#fff!important}
+.pay-qr-btn{background:linear-gradient(135deg,#7c3aed,#a855f7)!important;color:#fff!important}
+.pay-mixed-btn{background:linear-gradient(135deg,#0f766e,#14b8a6)!important;color:#fff!important}
+.cancel-pay-btn{background:linear-gradient(135deg,#475569,#64748b)!important;color:#fff!important}
+.cash-quick-btn{color:#fff!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 10px 20px rgba(0,0,0,.20)!important}
+.cash-rm1{background:linear-gradient(135deg,#1d4ed8,#60a5fa)!important}
+.cash-rm5{background:linear-gradient(135deg,#16a34a,#4ade80)!important}
+.cash-rm10{background:linear-gradient(135deg,#b91c1c,#fb7185)!important}
+.cash-rm20{background:linear-gradient(135deg,#ea580c,#fdba74)!important}
+.cash-rm50{background:linear-gradient(135deg,#047857,#2dd4bf)!important}
+.cash-rm100{background:linear-gradient(135deg,#5b21b6,#a78bfa)!important}
+.exact-pay-btn{background:linear-gradient(135deg,#64748b,#94a3b8)!important;color:#fff!important}
+.confirm-cash-btn{background:linear-gradient(135deg,#16a34a,#22c55e)!important;color:#fff!important}
+.payment-confirm-card{max-width:430px!important;border-radius:22px!important;padding:22px!important}
+.payment-confirm-card .confirm-total{font-size:28px;font-weight:1000;color:#22c55e;margin:12px 0 18px}
+.payment-confirm-card .confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.payment-confirm-card .confirm-actions button{min-height:48px;border-radius:14px;font-weight:900}
+#appAlertBox .modal-content{max-width:420px!important;border-radius:22px!important;padding:22px!important}
+#appAlertText{white-space:pre-wrap;line-height:1.5;color:#e5e7eb;font-weight:700}
+#refundRecentBox{max-height:260px;overflow:auto;border:1px solid rgba(148,163,184,.22);border-radius:16px;padding:10px;background:rgba(2,6,23,.35);margin:10px 0}
+.refund-order-card{padding:10px;border-radius:14px;background:rgba(15,23,42,.85);border:1px solid rgba(148,163,184,.16);margin-bottom:9px;cursor:pointer}
+.refund-order-card:hover,.refund-order-card.active{border-color:#60a5fa;background:rgba(30,64,175,.28)}
+.refund-order-title{font-weight:1000;color:#fff;display:flex;justify-content:space-between;gap:8px}
+.refund-order-items{font-size:12px;color:#cbd5e1;margin-top:6px;line-height:1.4}
+.receipt-text{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;white-space:pre;line-height:1.32}
+body::after{height:max(env(safe-area-inset-bottom),0px)!important;background:#050816!important;z-index:0!important}
+html,body{overscroll-behavior:none!important;background:#050816!important}
+body{overflow:hidden!important}
+.modal.active{backdrop-filter:blur(5px)}
+
+
+/* ===== V4.6.1 POS polish ===== */
+.pay-choice-box h3{font-size:18px;margin-bottom:14px;color:#f8fafc}
+.pay-choice-box button{letter-spacing:.2px;font-size:15px}
+.exact-pay-btn{background:linear-gradient(135deg,#0f766e,#14b8a6)!important;color:#fff!important;border:1px solid rgba(45,212,191,.45)!important}
+.confirm-cash-btn{background:linear-gradient(135deg,#059669,#22c55e)!important;color:#fff!important}
+.cancel-pay-btn{background:linear-gradient(135deg,#334155,#64748b)!important;color:#fff!important}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none!important;margin:0!important}
+input[type=number]{-moz-appearance:textfield!important;appearance:textfield!important}
+.refund-order-card{transition:.15s ease}
+.refund-order-title span:first-child{color:#93c5fd}
+.refund-order-card.active{box-shadow:0 0 0 2px rgba(96,165,250,.35) inset}
 </style>
 </head>
 <body>
@@ -804,18 +853,18 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
     </div>
 
     <div class="paybar">
-      <button class="big" onclick="openPay()">💰 买单 / CHECKOUT</button>
+      <button class="big" onclick="openPay()">💰 CHECKOUT</button>
       <div class="btnrow">
-        <button class="smallbtn discount-btn" onclick="open折扣()">💸 折扣 <b id="dVal">0.00</b></button>
-        <button class="smallbtn danger" onclick="clearCart()">🗑 清除</button>
+        <button class="smallbtn discount-btn" onclick="open折扣()">💸 Discount <b id="dVal">0.00</b></button>
+        <button class="smallbtn danger" onclick="clearCart()">🗑 Clear</button>
         <button class="smallbtn more" onclick="toggleMore()">⋯</button>
       </div>
 
       <div id="moreMenu" class="moreMenu">
 
-  <button class="smallbtn print-btn" onclick="smartPrintLast()">🖨️ 打印收据</button>
-  <button class="smallbtn parcel-btn" onclick="openParcelBox()">📦 Shopee 包裹</button>
-  <button class="smallbtn close-btn" onclick="openRefundBox()">↩️ 退货</button>
+  <button class="smallbtn print-btn" onclick="smartPrintLast()">🖨️ Print Receipt</button>
+  <button class="smallbtn parcel-btn" onclick="openParcelBox()">📦 Shopee Parcel</button>
+  <button class="smallbtn close-btn" onclick="openRefundBox()">↩️ Refund</button>
 
 </div>
     </div>
@@ -824,7 +873,7 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
 
 <div id="discountBox" class="modal">
   <div class="modal-content">
-    <h3>💸 折扣</h3>
+    <h3>💸 Discount</h3>
     <input id="discountInput" type="number" placeholder="输入折扣">
     <div class="discount-grid">
       <button onclick="add折扣(0.1)">+0.10</button>
@@ -844,36 +893,36 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
 
 <div id="payModal" class="modal">
   <div class="modal-content pay-choice-box">
-    <h3>选择付款方式</h3>
+    <h3>Select Payment</h3>
     <button class="pay-cash-btn" onclick="openCash()">💵 Cash</button>
-    <button class="pay-transfer-btn" onclick="confirmDirectCheckout('transfer','转账')">🏦 转账</button>
+    <button class="pay-transfer-btn" onclick="confirmDirectCheckout('transfer','Transfer')">🏦 Transfer</button>
     <button class="pay-qr-btn" onclick="confirmDirectCheckout('mbb_qr','QR')">📱 QR</button>
-    <button class="pay-transfer-btn" onclick="openMixedPayment()">➗ Mixed</button>
-    <button class="cancel-pay-btn" onclick="closePay()">✕ 取消</button>
+    <button class="pay-mixed-btn" onclick="openMixedPayment()">➗ Mixed</button>
+    <button class="cancel-pay-btn" onclick="closePay()">✕ Cancel</button>
   </div>
 </div>
 
 <div id="cashBox" class="modal">
   <div class="modal-content">
-    <h3>💵 Cash 收款</h3>
+    <h3>💵 Cash Payment</h3>
     <div id="cashTotal">RM 0.00</div>
-    <input id="cashInput" type="number" placeholder="输入顾客付款金额" oninput="calcChange()">
+    <input id="cashInput" type="number" inputmode="decimal" placeholder="Customer paid amount" oninput="calcChange()">
     <div class="discount-grid">
-  <button class="cash-quick-btn" onclick="quick(1)">RM1</button>
-  <button class="cash-quick-btn" onclick="quick(5)">RM5</button>
-  <button class="cash-quick-btn" onclick="quick(10)">RM10</button>
+  <button class="cash-quick-btn cash-rm1" onclick="quick(1)">RM1</button>
+  <button class="cash-quick-btn cash-rm5" onclick="quick(5)">RM5</button>
+  <button class="cash-quick-btn cash-rm10" onclick="quick(10)">RM10</button>
 
-  <button class="cash-quick-btn" onclick="quick(20)">RM20</button>
-  <button class="cash-quick-btn" onclick="quick(50)">RM50</button>
-  <button class="cash-quick-btn" onclick="quick(100)">RM100</button>
+  <button class="cash-quick-btn cash-rm20" onclick="quick(20)">RM20</button>
+  <button class="cash-quick-btn cash-rm50" onclick="quick(50)">RM50</button>
+  <button class="cash-quick-btn cash-rm100" onclick="quick(100)">RM100</button>
 
-  <button class="confirm-cash-btn" onclick="quickExact()">
+  <button class="exact-pay-btn" onclick="quickExact()">
     💵 刚好付款
   </button>
 </div>
-    <div id="change">找零 RM 0.00</div>
-    <button class="confirm-cash-btn" onclick="confirmCash()">✅ 确认收款</button>
-    <button class="cancel-pay-btn" onclick="closeCash()">✕ 取消</button>
+    <div id="change">Change RM 0.00</div>
+    <button class="confirm-cash-btn" onclick="confirmCash()">✅ Confirm Payment</button>
+    <button class="cancel-pay-btn" onclick="closeCash()">✕ Cancel</button>
   </div>
 </div>
 
@@ -893,21 +942,21 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
 
 <div id="parcelBox" class="modal">
   <div class="modal-content">
-    <h3>📦 Shopee 包裹记录</h3>
-    <p style="color:#94a3b8;font-size:13px">这个只记录包裹，不算进 POS 销售。Shopee 实际给钱后，再到管理模式确认。</p>
-    <input id="parcelTrip" type="number" placeholder="今天第几趟，例如 1 / 2" value="1">
-    <input id="parcelDelivered" type="number" placeholder="送来 / 派件数量">
-    <input id="parcelReturned" type="number" placeholder="退回数量">
-    <input id="parcelNote" type="text" placeholder="备注，可空">
-    <div id="parcelPreview" class="discount-preview">预计：RM 0.00</div>
-    <button class="green" onclick="saveParcelLog()">✅ 保存 Shopee 记录</button>
-    <button onclick="closeModal('parcelBox')">关闭</button>
+    <h3>📦 Shopee Parcel</h3>
+    <p style="color:#94a3b8;font-size:13px">Record parcel count only. This is not POS sales.</p>
+    <input id="parcelTrip" type="number" placeholder="Trip number, e.g. 1 / 2" value="1">
+    <input id="parcelDelivered" type="number" placeholder="Delivered / Pick-up count">
+    <input id="parcelReturned" type="number" placeholder="Return count">
+    <input id="parcelNote" type="text" placeholder="Note optional">
+    <div id="parcelPreview" class="discount-preview">Estimated: RM 0.00</div>
+    <button class="green" onclick="saveParcelLog()">✅ Save Parcel Record</button>
+    <button onclick="closeModal('parcelBox')">Close</button>
   </div>
 </div>
 
 <div id="refundBox" class="modal">
   <div class="modal-content">
-    <h3>↩️ 退货</h3>
+    <h3>↩️ Refund</h3>
     <p style="color:#94a3b8;font-size:13px">已买单的退货需要 管理帐号 / 密码。会保留原订单，不删除历史。</p>
     <input id="refundOrderId" type="text" placeholder="订单号 ORD-...">
     <input id="refundItem" type="text" placeholder="商品名 / 备注">
@@ -921,6 +970,27 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
     </details>
     <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ 确认退货</button>
     <button onclick="closeModal('refundBox')">关闭</button>
+  </div>
+</div>
+
+
+<div id="appAlertBox" class="modal">
+  <div class="modal-content">
+    <h3 id="appAlertTitle">Notice</h3>
+    <div id="appAlertText"></div>
+    <button class="green" onclick="closeModal('appAlertBox')">知道了</button>
+  </div>
+</div>
+
+<div id="paymentConfirmBox" class="modal">
+  <div class="modal-content payment-confirm-card">
+    <h3 id="paymentConfirmTitle">确认付款</h3>
+    <div id="paymentConfirmText"></div>
+    <div class="confirm-total" id="paymentConfirmTotal">RM 0.00</div>
+    <div class="confirm-actions">
+      <button class="cancel-pay-btn" onclick="closeModal('paymentConfirmBox')">取消</button>
+      <button class="confirm-cash-btn" id="paymentConfirmBtn">确认</button>
+    </div>
   </div>
 </div>
 
@@ -1266,7 +1336,7 @@ function openCash(){
   let ch = document.getElementById("change");
 
   if(input) input.value = "";
-  if(ch) ch.innerText = "找零 RM 0.00";
+  if(ch) ch.innerText = "Change RM 0.00";
 
   setTimeout(()=>{
     if(input){
@@ -2154,6 +2224,212 @@ bossConfirmOtherIncome = async function(id){
   try{await apiCall('confirmOtherIncome',[id,null]); showToast('✅ 已确认收款'); bossOpenOtherIncome();}
   catch(e){alert('确认失败：'+(e.message||e))}
 };
+
+
+
+/* ===== V4.6.1 operational hotfix ===== */
+(function(){
+  const nativeAlert = window.alert.bind(window);
+  window.showAppAlert = function(msg,title){
+    const box=document.getElementById('appAlertBox'), text=document.getElementById('appAlertText'), h=document.getElementById('appAlertTitle');
+    if(!box||!text){ nativeAlert(String(msg||'')); return; }
+    if(h) h.textContent=title||'提示';
+    text.textContent=String(msg||'');
+    openModal('appAlertBox');
+  };
+  window.alert = function(msg){ window.showAppAlert(msg,'提示'); };
+})();
+
+function showPaymentConfirm(payment,label){
+  if(isCheckingOut)return;
+  if(!cart.length){alert('No item in cart');return;}
+  const data=calcCartData();
+  const title=document.getElementById('paymentConfirmTitle');
+  const text=document.getElementById('paymentConfirmText');
+  const total=document.getElementById('paymentConfirmTotal');
+  const btn=document.getElementById('paymentConfirmBtn');
+  if(title) title.textContent='Confirm '+label+' Payment';
+  if(text) text.textContent=label+' payment will be saved after confirmation.';
+  if(total) total.textContent=fmt(data.final);
+  if(btn){ btn.onclick=function(){ closeModal('paymentConfirmBox'); checkout(payment,data.final,0); }; }
+  openModal('paymentConfirmBox');
+}
+confirmDirectCheckout = function(payment,label){ showPaymentConfirm(payment,label); };
+
+openPay = function(){
+  if(isCheckingOut)return;
+  if(!cart.length){alert('No item in cart');return;}
+  openModal('payModal');
+};
+
+openCash = function(){
+  if(!cart.length){alert('No item in cart');return;}
+  const data=calcCartData(); cashTotal=data.final;
+  const e=document.getElementById('cashTotal');
+  if(e){ e.innerText=`Subtotal ${fmt(data.subtotal)}\nDiscount -${fmt(data.discount)}\nTOTAL ${fmt(data.final)}`; }
+  openModal('cashBox');
+  const input=document.getElementById('cashInput'), ch=document.getElementById('change');
+  if(input) input.value=''; if(ch) ch.innerText='Change RM 0.00';
+  setTimeout(()=>{ if(input){input.focus(); calcChange();} },60);
+};
+calcChange = function(){
+  const input=document.getElementById('cashInput');
+  const pay=moneyNum(input?input.value:0);
+  const change=fromCents(Math.max(0,cents(pay)-cents(cashTotal)));
+  const ch=document.getElementById('change'); if(ch) ch.innerText='Change RM '+change.toFixed(2);
+};
+confirmCash = function(){
+  const raw=(document.getElementById('cashInput')||{}).value||'';
+  const pay = raw === '' ? cashTotal : moneyNum(raw);
+  if(isNaN(pay)){alert('Please enter valid amount');return;}
+  if(cents(pay)<cents(cashTotal)){alert('Cash amount is not enough.');return;}
+  const change=fromCents(cents(pay)-cents(cashTotal));
+  closeCash(); checkout('cash',pay,change);
+};
+
+openMixedPayment = function(){
+  if(!cart.length){alert('No item in cart');return;}
+  const data=calcCartData(); cashTotal=data.final; closePay();
+  const t=document.getElementById('mixedTotal'); if(t)t.textContent='Total '+fmt(data.final);
+  const h=document.querySelector('#mixedBox h3'); if(h)h.textContent='➗ Mixed Payment';
+  const map={mixedCash:'Cash amount',mixedQr:'QR amount','mixed转账':'Transfer amount'};
+  Object.keys(map).forEach(id=>{let e=document.getElementById(id); if(e){e.value=''; e.placeholder=map[id];}});
+  const btn=document.querySelector('#mixedBox button.green'); if(btn)btn.textContent='✅ Confirm Mixed Payment';
+  calcMixed(); openModal('mixedBox');
+};
+calcMixed = function(){
+  const data=calcCartData();
+  const cash=moneyNum((document.getElementById('mixedCash')||{}).value||0);
+  const qr=moneyNum((document.getElementById('mixedQr')||{}).value||0);
+  const tr=moneyNum((document.getElementById('mixed转账')||{}).value||0);
+  const paid=fromCents(cents(cash)+cents(qr)+cents(tr));
+  const remain=fromCents(cents(data.final)-cents(paid));
+  const el=document.getElementById('mixedRemain');
+  if(el)el.textContent=(remain>0?'Remaining ':'Change ')+fmt(Math.abs(remain));
+};
+confirmMixed = function(){
+  const data=calcCartData();
+  const cash=moneyNum((document.getElementById('mixedCash')||{}).value||0);
+  const qr=moneyNum((document.getElementById('mixedQr')||{}).value||0);
+  const tr=moneyNum((document.getElementById('mixed转账')||{}).value||0);
+  const paid=fromCents(cents(cash)+cents(qr)+cents(tr));
+  if(cents(paid)<cents(data.final)){alert('Mixed payment is not enough.');return;}
+  const change=fromCents(Math.max(0,cents(paid)-cents(data.final)));
+  checkout('mixed',paid,change);
+};
+
+function installRefundUI(){
+  const box=document.querySelector('#refundBox .modal-content');
+  if(!box) return;
+  box.innerHTML=`
+    <h3>↩️ Refund Request</h3>
+    <p style="color:#94a3b8;font-size:13px">Select an order from the last 3 days, choose item/amount, then submit for approval.</p>
+    <button class="green" onclick="loadRecentRefundOrders()">🔍 Load Recent Orders</button>
+    <div id="refundRecentBox">Press Load Recent Orders to show last 3 days orders.</div>
+    <input id="refundOrderId" type="text" placeholder="Order No" readonly>
+    <input id="refundItem" type="text" placeholder="Item / Note">
+    <input id="refundAmount" type="number" placeholder="Refund Amount RM">
+    <input id="refundReason" type="text" placeholder="Reason, e.g. customer return">
+    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ Submit Refund Request</button>
+    <button onclick="closeModal('refundBox')">Close</button>`;
+}
+let selectedRefundOrder=null;
+openRefundBox = function(){
+  installRefundUI();
+  ['refundOrderId','refundItem','refundAmount','refundReason'].forEach(id=>{let e=document.getElementById(id); if(e)e.value='';});
+  selectedRefundOrder=null; setRefundBusy(false); openModal('refundBox'); loadRecentRefundOrders();
+};
+async function loadRecentRefundOrders(){
+  const box=document.getElementById('refundRecentBox'); if(box)box.textContent='Loading recent orders...';
+  try{
+    const rows=await apiCall('getRecentOrdersForRefund',[3]);
+    if(!box)return;
+    if(!rows||!rows.length){box.textContent='No orders found in last 3 days.';return;}
+    box.innerHTML=rows.map((o,idx)=>`<div class="refund-order-card" onclick="selectRefundOrder(${idx})" data-idx="${idx}"><div class="refund-order-title"><span>${o.orderId}</span><span>${fmt(o.total||0)}</span></div><div class="refund-order-items">${o.date||''}<br>${(o.items||[]).map(i=>`${i.name} x${i.qty} (${fmt(i.subtotal||0)})`).join('<br>')}</div></div>`).join('');
+    window.__refundOrders=rows;
+  }catch(e){ if(box)box.textContent='Load failed: '+(e.message||e); }
+}
+function selectRefundOrder(idx){
+  const rows=window.__refundOrders||[]; const o=rows[idx]; if(!o)return; selectedRefundOrder=o;
+  document.querySelectorAll('.refund-order-card').forEach(c=>c.classList.toggle('active',Number(c.dataset.idx)===idx));
+  const oid=document.getElementById('refundOrderId'), item=document.getElementById('refundItem'), amt=document.getElementById('refundAmount');
+  if(oid)oid.value=o.orderId||'';
+  if(item)item.value=(o.items&&o.items[0]&&o.items[0].name)||'';
+  if(amt)amt.value=Number(o.total||0).toFixed(2);
+}
+submitRefund = async function(){
+  if(refundSubmitting)return;
+  const payload={
+    orderId:(document.getElementById('refundOrderId')||{}).value||'',
+    item:(document.getElementById('refundItem')||{}).value||'',
+    amount:Number((document.getElementById('refundAmount')||{}).value||0),
+    reason:(document.getElementById('refundReason')||{}).value||'Customer return'
+  };
+  if(!payload.orderId||!payload.amount){alert('Please select order and enter refund amount.');return;}
+  setRefundBusy(true);
+  try{await apiCall('requestRefund',[payload]); closeModal('refundBox'); showToast('✅ Refund request submitted');}
+  catch(e){alert('Refund failed: '+(e.message||e));}
+  finally{setRefundBusy(false);}
+};
+
+openBossLogin = function(){
+  const msg=document.getElementById('bossLoginMsg'); if(msg){msg.style.display='none';msg.textContent='';}
+  openModal('bossLoginBox');
+  setTimeout(()=>{let id=document.getElementById('bossId'), pw=document.getElementById('bossPassword'); if(id){id.value='';id.focus();} if(pw)pw.value='';},60);
+};
+bossLogin = async function(){
+  const idEl=document.getElementById('bossId'), pwEl=document.getElementById('bossPassword'), msg=document.getElementById('bossLoginMsg');
+  const id=(idEl||{}).value||'', pw=(pwEl||{}).value||'';
+  if(msg){msg.style.display='block';msg.textContent='登入中...';}
+  try{
+    const r=await apiCall('bossLogin',[id,pw]);
+    if(r&&r.locked){ closeAllModal(); await checkSystemStatus(false); return; }
+    if(r&&r.ok){
+      BOSS_IDLE_MS=Math.max(1,Number(r.autoLogoutMinutes||10))*60*1000;
+      sessionStorage.setItem('bossSessionUntil',String(Date.now()+BOSS_IDLE_MS)); bossStartIdleTimer();
+      if(idEl)idEl.value=''; if(pwEl)pwEl.value='';
+      closeModal('bossLoginBox'); openModal('bossDashboard'); await bossOpenOverview();
+      const br=document.getElementById('bossResult'); if(br)br.textContent='已进入管理模式。'; return;
+    }
+    if(msg){msg.textContent='帐号 或密码错误，剩余 '+(r.remaining??0)+' 次。';}
+  }catch(e){ if(msg){msg.textContent='登入失败：'+(e.message||e);} }
+};
+
+function installEnterHandlers(){
+  const id=document.getElementById('bossId'), pw=document.getElementById('bossPassword');
+  if(id&&!id.dataset.enterFix){id.dataset.enterFix='1';id.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault(); if(pw)pw.focus();}});}
+  if(pw&&!pw.dataset.enterFix){pw.dataset.enterFix='1';pw.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault(); bossLogin();}});}
+}
+document.addEventListener('DOMContentLoaded',()=>{installEnterHandlers(); installRefundUI();});
+setTimeout(installEnterHandlers,500);
+
+printReceipt = function(auto=false){
+  let now=new Date(), date=now.toLocaleDateString('en-GB'), time=now.toLocaleTimeString();
+  let useCart=lastCart.length?lastCart:cart, usedDiscount=lastCart.length?last折扣:discount;
+  if(!useCart.length){alert('No receipt to print');return;}
+  let orderId=useCart[0]?.orderId||'PENDING';
+  let subtotal=fromCents(useCart.reduce((a,b)=>a+cents(b.price)*Number(b.qty||0),0));
+  let finalTotal=fromCents(Math.max(0,cents(subtotal)-cents(usedDiscount)));
+  const W=36, L=18;
+  const money=v=>'RM '+Number(v||0).toFixed(2);
+  const line=(label,value)=>String(label).padEnd(L,' ')+String(value).padStart(W-L,' ');
+  const payLabel=p=>p==='mbb_qr'?'QR':p==='transfer'?'TRANSFER':p==='mixed'?'MIXED':'CASH';
+  let text=`====================================\n      YLL FEEDS ENTERPRISE\n (202303217794 - KT0553187-P)\n              INVOICE\n====================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n------------------------------------\nITEMS\n------------------------------------\n`;
+  useCart.forEach(i=>{let amount=Number(i.qty||0)*Number(i.price||0); text+=`${i.name}\n`; text+=line(`${i.qty} x RM ${Number(i.price||0).toFixed(2)}`,money(amount))+'\n';});
+  text+=`------------------------------------\n${line('SUBTOTAL',money(subtotal))}\n`;
+  if(Number(usedDiscount||0)>0) text+=line('DISCOUNT','-'+money(usedDiscount))+'\n';
+  text+=`------------------------------------\n${line('TOTAL',money(finalTotal))}\n`;
+  if(lastPayment==='cash'||lastPayment==='mixed') text+=line('PAID',money(lastPaid||finalTotal))+'\n'+line('CHANGE',money(lastChange||0))+'\n';
+  text+=line('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
+  lastReceiptText=text;
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));}else showAppAlert(text,'Receipt');
+  if(auto)runAutoPrint();
+};
+
+// Keep POS Shopee wording simple English and update preview label
+(function(){
+  const d=document.getElementById('parcelPreview'); if(d)d.textContent='Estimated: RM 0.00';
+})();
 
 </script>
 <div id="toast" class="toast"></div>
