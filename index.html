@@ -4299,5 +4299,111 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 })();
 </script>
 
+
+
+<script>
+/* ===== V1.0 FINAL TELEGRAM SHARE RECEIPT PATCH =====
+   Telegram/iPad share uses a readable receipt layout that does not rely on spacing alignment.
+   58mm printer/RawBT keeps window.lastReceiptText pure printer format. */
+(function(){
+  function safeStr(v){ return String(v == null ? '' : v).trim(); }
+  function moneyPlain(v){ return 'RM ' + Number(v || 0).toFixed(2); }
+  function payLabelFinal(p){
+    p = String(p || '').toLowerCase();
+    if(p === 'mbb_qr' || p === 'qr' || p === 'tng') return 'QR';
+    if(p === 'transfer' || p === 'bank') return 'TRANSFER';
+    if(p === 'mixed' || p === 'mixed_payment') return 'MIXED PAYMENT';
+    return 'CASH';
+  }
+  function currentReceiptCart(){
+    if(typeof lastCart !== 'undefined' && Array.isArray(lastCart) && lastCart.length) return lastCart;
+    if(window.lastOrderCart && Array.isArray(window.lastOrderCart) && window.lastOrderCart.length) return window.lastOrderCart;
+    if(window.cart && Array.isArray(window.cart) && window.cart.length) return window.cart;
+    return [];
+  }
+  function buildTelegramReceiptTextFinal(){
+    const items = currentReceiptCart();
+    if(!items.length && window.lastReceiptText) return String(window.lastReceiptText).replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    if(!items.length) return '';
+
+    const subtotal = items.reduce((sum, it)=>sum + (Number(it.qty)||0) * (Number(it.price)||0), 0);
+    const discount = (typeof last折扣 !== 'undefined' && items === lastCart) ? Number(last折扣 || 0) : Number(window.discount || 0);
+    const total = Math.max(0, subtotal - discount);
+    const payment = payLabelFinal(window.lastPayment);
+    const now = new Date();
+    const date = now.toLocaleDateString('en-GB');
+    const time = now.toLocaleTimeString('en-GB', {hour12:false});
+    const orderId = (items[0] && items[0].orderId) || window.lastOrderId || 'PENDING';
+
+    let out = '';
+    out += 'YLL FEEDS ENTERPRISE\n';
+    out += '(202303217794 - KT0553187-P)\n';
+    out += 'RECEIPT\n\n';
+    out += 'Address:\n';
+    out += 'Ground Floor No 2,\n';
+    out += 'Jalan Springhill 9/12\n';
+    out += 'Bandar Springhill\n';
+    out += '71010 Port Dickson\n';
+    out += 'Negeri Sembilan\n\n';
+    out += 'Date: ' + date + '\n';
+    out += 'Time: ' + time + '\n';
+    out += 'Order: ' + orderId + '\n\n';
+    out += 'ITEMS\n';
+    items.forEach(function(it){
+      const name = safeStr(it.name || 'ITEM');
+      const qty = Number(it.qty) || 0;
+      const price = Number(it.price) || 0;
+      const amount = qty * price;
+      out += '\n• ' + name + '\n';
+      out += '  Qty: ' + qty + '\n';
+      out += '  Unit: ' + moneyPlain(price) + '\n';
+      out += '  Amount: ' + moneyPlain(amount) + '\n';
+    });
+    out += '\nSubtotal: ' + moneyPlain(subtotal) + '\n';
+    if(discount > 0) out += 'Discount: -' + moneyPlain(discount) + '\n';
+    out += 'Total: ' + moneyPlain(total) + '\n';
+    if(String(window.lastPayment || '').toLowerCase() === 'cash' || String(window.lastPayment || '').toLowerCase() === 'mixed'){
+      out += 'Paid: ' + moneyPlain(window.lastPaid || total) + '\n';
+      out += 'Change: ' + moneyPlain(window.lastChange || 0) + '\n';
+    }
+    out += 'Payment: ' + payment + '\n\n';
+    out += 'THANK YOU & PLEASE COME AGAIN';
+    return out;
+  }
+  window.buildTelegramReceiptTextFinal = buildTelegramReceiptTextFinal;
+
+  async function shareReceiptFinal(){
+    let text = buildTelegramReceiptTextFinal();
+    if(!text){
+      if(window.showAppAlert) showAppAlert('No receipt available yet. Please complete checkout first.','Receipt');
+      else alert('No receipt available yet. Please complete checkout first.');
+      return false;
+    }
+    // Do not wrap with ``` because iPad native Share to Telegram sends it as plain visible text.
+    if(navigator.share){
+      try{
+        await navigator.share({ title:'YLL POS Receipt', text:text });
+        return true;
+      }catch(e){
+        if(e && e.name === 'AbortError') return true;
+      }
+    }
+    if(navigator.clipboard){
+      try{
+        await navigator.clipboard.writeText(text);
+        if(window.showToast) showToast('✅ Receipt copied. Paste into Telegram.');
+        else alert('Receipt copied. Paste into Telegram.');
+        return true;
+      }catch(e){}
+    }
+    window.open('https://t.me/share/url?url=&text=' + encodeURIComponent(text), '_blank');
+    return true;
+  }
+  window.sendToTelegram = function(){ return shareReceiptFinal(); };
+  window.sendLastReceipt = function(){ return shareReceiptFinal(); };
+  window.smartPrintLast = function(){ return shareReceiptFinal(); };
+})();
+</script>
+
 </body>
 </html>
