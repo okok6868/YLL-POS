@@ -4244,5 +4244,60 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 })();
 </script>
 
+
+<script>
+/* ===== V1.0 FINAL PATCH: Native iPad Share + Telegram monospace fallback ===== */
+(function(){
+  function getPlainReceipt(){
+    let txt = String(window.lastReceiptText || '').trim();
+    if(!txt && typeof window.buildReceiptTextV1Final === 'function'){
+      try{ txt = String(window.buildReceiptTextV1Final() || '').trim(); }catch(e){}
+    }
+    if(!txt && typeof window.printReceipt === 'function'){
+      try{ window.printReceipt(false); txt = String(window.lastReceiptText || '').trim(); }catch(e){}
+    }
+    return txt.replace(/^```\s*/,'').replace(/\s*```$/,'');
+  }
+  function codeReceipt(txt){
+    txt = String(txt || '').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    return '```\n' + txt + '\n```';
+  }
+  async function shareReceiptNative(){
+    const raw = getPlainReceipt();
+    if(!raw){
+      if(window.showAppAlert) showAppAlert('No receipt available yet. Please complete checkout first.','Receipt');
+      else alert('No receipt available yet. Please complete checkout first.');
+      return false;
+    }
+    window.lastReceiptText = raw;
+    const text = codeReceipt(raw);
+    if(navigator.share){
+      try{
+        await navigator.share({ title:'YLL POS Receipt', text:text });
+        return true;
+      }catch(e){
+        if(e && e.name === 'AbortError') return true;
+      }
+    }
+    if(navigator.clipboard){
+      try{
+        await navigator.clipboard.writeText(text);
+        if(window.showToast) showToast('✅ Receipt copied. Paste into Telegram.');
+        else alert('Receipt copied. Paste into Telegram.');
+        return true;
+      }catch(e){}
+    }
+    window.open('https://t.me/share/url?url=&text=' + encodeURIComponent(text), '_blank');
+    return true;
+  }
+  window.sendToTelegram = async function(text){
+    if(text) window.lastReceiptText = String(text).replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    return shareReceiptNative();
+  };
+  window.sendLastReceipt = function(){ return shareReceiptNative(); };
+  window.smartPrintLast = function(){ return shareReceiptNative(); };
+})();
+</script>
+
 </body>
 </html>
