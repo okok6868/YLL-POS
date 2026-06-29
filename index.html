@@ -3512,7 +3512,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     let text=`====================================\n      YLL FEEDS ENTERPRISE\n (202303217794 - KT0553187-P)\n              INVOICE\n====================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n------------------------------------\nITEMS\n------------------------------------\n`;
     useCart.forEach(i=>{ const amount=Number(i.qty||0)*Number(i.price||0); text+=`${i.name}\n`; text+=`${i.qty} x RM ${Number(i.price||0).toFixed(2)}`.padEnd(20,' ')+money(amount).padStart(16,' ')+'\n'; });
     text+=`------------------------------------\n${row('SUBTOTAL',money(subtotal))}\n`;
-    if(usedDiscount>0)text+=row('DISCOUNT','-'+money(usedDiscount))+'\n';
+    if(usedDiscount>0)text+=row('DISCOUNT',moneyNeg(usedDiscount))+'\n';
     text+=`------------------------------------\n${row('TOTAL',money(finalTotal))}\n`;
     if(lastPayment==='cash'||lastPayment==='mixed')text+=row('PAID',money(lastPaid||finalTotal))+'\n'+row('CHANGE',money(lastChange||0))+'\n';
     text+=row('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
@@ -3825,7 +3825,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const left=Math.floor((WIDTH-t.length)/2);
       return ' '.repeat(left)+t+' '.repeat(WIDTH-t.length-left);
     }
-    function money(v){return 'RM '+Number(v||0).toFixed(2);}
+    function money(v){
+      // Fixed-width RM column for 58mm receipts.
+      // Keeps RM and amount digits aligned: RM   5.00 / RM  15.00 / RM 100.00
+      const n=Number(v||0).toFixed(2);
+      return 'RM '+n.padStart(7,' ');
+    }
+    function moneyNeg(v){
+      const n=Number(v||0).toFixed(2);
+      return '-RM '+n.padStart(6,' ');
+    }
     function row(label,value){
       label=String(label||'').toUpperCase();
       value=String(value||'');
@@ -3858,7 +3867,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const qtyLine=String(qty)+' X '+money(price);
       let out='';
       wrapText(name).forEach(l=>out+=l+'\n');
-      out+=qtyLine.padEnd(ROW_LABEL,' ')+money(amount).padStart(WIDTH-ROW_LABEL,' ')+'\n';
+      const ITEM_LABEL=18;
+      out+=qtyLine.padEnd(ITEM_LABEL,' ')+money(amount).padStart(WIDTH-ITEM_LABEL,' ')+'\n';
       return out;
     }
 
