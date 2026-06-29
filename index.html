@@ -4103,5 +4103,150 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 })();
 </script>
 
+
+
+<script>
+/* ===== V1.0 POLISH: receipt fixed-width alignment only =====
+   Scope: index.html only. No API / sheet / business logic changes.
+*/
+(function(){
+  function safeNumber(v){
+    const n = Number(v || 0);
+    return Number.isFinite(n) ? n : 0;
+  }
+  function toCents(v){ return Math.round(safeNumber(v) * 100); }
+  function fromCents(v){ return Math.round(Number(v||0)) / 100; }
+  function rm(v){ return 'RM ' + safeNumber(v).toFixed(2); }
+  function getVar(name, fallback){
+    try { const v = (0, eval)(name); return v === undefined ? fallback : v; } catch(e){ return fallback; }
+  }
+  function payLabel(p){
+    p = String(p || '').toLowerCase();
+    if(p === 'mbb_qr' || p === 'qr') return 'QR';
+    if(p === 'transfer') return 'TRANSFER';
+    if(p === 'mixed') return 'MIXED';
+    if(p === 'debt') return 'DEBT';
+    return 'CASH';
+  }
+  const WIDTH = 32;
+  const LABEL_W = 13;
+  const SEP = '-'.repeat(WIDTH);
+  const EQ = '='.repeat(WIDTH);
+  function row(label, value){
+    label = String(label || '').toUpperCase();
+    value = String(value || '');
+    if(label.length > LABEL_W) label = label.slice(0, LABEL_W);
+    if(value.length > WIDTH - LABEL_W) value = value.slice(-(WIDTH - LABEL_W));
+    return label.padEnd(LABEL_W, ' ') + value.padStart(WIDTH - LABEL_W, ' ');
+  }
+  function moneyRow(label, value){ return row(label, rm(value)); }
+  function wrapText(text, width){
+    text = String(text || '').trim();
+    if(!text) return [''];
+    const out=[];
+    let s=text;
+    while(s.length > width){
+      let cut=s.lastIndexOf(' ', width);
+      if(cut < 8) cut = width;
+      out.push(s.slice(0, cut).trim());
+      s=s.slice(cut).trim();
+    }
+    out.push(s);
+    return out;
+  }
+  function getReceiptCart(){
+    const wCart = Array.isArray(window.lastOrderCart) ? window.lastOrderCart : [];
+    if(wCart.length) return wCart;
+    const lexicalLastCart = getVar('lastCart', []);
+    if(Array.isArray(lexicalLastCart) && lexicalLastCart.length) return lexicalLastCart;
+    const lexicalCart = getVar('cart', []);
+    return Array.isArray(lexicalCart) ? lexicalCart : [];
+  }
+  function getDiscount(useLast){
+    if(useLast){
+      const d = getVar('last折扣', 0);
+      return safeNumber(d);
+    }
+    return safeNumber(getVar('discount', 0));
+  }
+  window.printReceipt = function(auto=false){
+    const now = new Date();
+    const date = now.toLocaleDateString('en-GB');
+    const time = now.toLocaleTimeString('en-GB', {hour12:false});
+    const useCart = getReceiptCart();
+    if(!useCart || !useCart.length){
+      if(typeof showAppAlert === 'function') showAppAlert('No item to print', 'Receipt');
+      else alert('No item to print');
+      return;
+    }
+    const usedLast = (Array.isArray(window.lastOrderCart) && window.lastOrderCart.length) || (Array.isArray(getVar('lastCart', [])) && getVar('lastCart', []).length);
+    const orderId = (useCart[0] && useCart[0].orderId) || window.lastOrderId || 'PENDING';
+    const subtotalCents = useCart.reduce((sum, item) => sum + (toCents(item.price) * safeNumber(item.qty)), 0);
+    const subtotal = fromCents(subtotalCents);
+    const usedDiscount = Math.max(0, getDiscount(usedLast));
+    const finalTotal = fromCents(Math.max(0, subtotalCents - toCents(usedDiscount)));
+    const payment = String(getVar('lastPayment', window.lastPayment || 'cash')).toLowerCase();
+    const paid = safeNumber(getVar('lastPaid', window.lastPaid || finalTotal));
+    const change = safeNumber(getVar('lastChange', window.lastChange || 0));
+
+    let text = '';
+    text += EQ + '\n';
+    text += '    YLL FEEDS ENTERPRISE\n';
+    text += '(202303217794 - KT0553187-P)\n';
+    text += '            INVOICE\n';
+    text += EQ + '\n';
+    text += 'Address:\n';
+    text += 'Ground Floor No 2,\n';
+    text += 'Jalan Springhill 9/12\n';
+    text += 'Bandar Springhill\n';
+    text += '71010 Port Dickson\n';
+    text += 'Negeri Sembilan\n\n';
+    text += 'Date : ' + date + '\n';
+    text += 'Time : ' + time + '\n';
+    text += 'Order: ' + orderId + '\n\n';
+    text += SEP + '\n';
+    text += 'ITEMS\n';
+    text += SEP + '\n';
+
+    useCart.forEach(item => {
+      const nameLines = wrapText(item.name || 'ITEM', WIDTH);
+      nameLines.forEach(line => { text += line + '\n'; });
+      const qty = safeNumber(item.qty);
+      const price = safeNumber(item.price);
+      const amount = fromCents(toCents(price) * qty);
+      const left = (String(qty).replace(/\.0+$/,'') + ' x ' + rm(price));
+      text += row(left, rm(amount)) + '\n';
+    });
+
+    text += SEP + '\n';
+    text += moneyRow('SUBTOTAL', subtotal) + '\n';
+    if(toCents(usedDiscount) > 0){
+      text += moneyRow('DISCOUNT', -Math.abs(usedDiscount)) + '\n';
+    }
+    text += SEP + '\n';
+    text += moneyRow('TOTAL', finalTotal) + '\n';
+    if(payment === 'cash' || payment === 'mixed'){
+      text += moneyRow('PAID', paid || finalTotal) + '\n';
+      text += moneyRow('CHANGE', change || 0) + '\n';
+    }
+    text += row('PAYMENT', payLabel(payment)) + '\n';
+    text += SEP + '\n\n';
+    text += EQ + '\n';
+    text += '   Thank you & please come again\n';
+    text += EQ;
+
+    window.lastReceiptText = text;
+    try { lastReceiptText = text; } catch(e) {}
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(text)
+        .then(() => { if(typeof showToast === 'function') showToast('✅ Receipt copied'); })
+        .catch(() => { if(typeof showAppAlert === 'function') showAppAlert(text, 'Receipt'); else alert(text); });
+    } else if(typeof showAppAlert === 'function') showAppAlert(text, 'Receipt');
+    else alert(text);
+    if(auto && typeof runAutoPrint === 'function') runAutoPrint();
+  };
+})();
+</script>
+
 </body>
 </html>
