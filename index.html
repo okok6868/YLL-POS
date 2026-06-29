@@ -1095,7 +1095,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
               <label><input type="checkbox" id="exOther"> 其它收入独立页</label>
               <label><input type="checkbox" id="exCigarette"> 香烟独立页</label>
             </div>
-            <p style="color:#94a3b8;font-size:13px">Shopee / 其它收入不会混进 POS 销售；需要给会计时再勾选。</p>
+            <p style="color:#94a3b8;font-size:13px">Shopee / 其它收入 / 香烟不会混进 POS 销售；需要给会计时再勾选。</p>
           </div>
 
           <div id="bossCashBox" class="boss-panel">
@@ -4409,137 +4409,123 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
 
 <script>
-/* ===== YLL POS V1.0 STABLE FINAL: Professional shared/print receipt =====
-   One receipt format for iPad Share -> Telegram -> Android RawBT -> 58mm print.
-   No emoji, no code block, no fragile wide spacing. */
+/* ===== YLL POS V1.0 STABLE FINAL RECEIPT PATCH =====
+   Surgical override only: receipt builder + native share.
+   Existing checkout/refund/boss logic is not changed.
+*/
 (function(){
-  const WIDTH = 32;
-  const SEP = '-'.repeat(WIDTH);
-  const EQ = '='.repeat(WIDTH);
-  function clean(v){ return String(v == null ? '' : v).replace(/\s+/g,' ').trim(); }
-  function center(v){ v = clean(v); if(v.length >= WIDTH) return v; const left = Math.floor((WIDTH - v.length) / 2); return ' '.repeat(left) + v; }
-  function money(v){ return 'RM' + Number(v || 0).toFixed(2); }
-  function qtyText(q){ const n = Number(q || 0); return Number.isInteger(n) ? String(n) : String(n); }
-  function paymentLabel(p){
-    p = String(p || '').toLowerCase();
+  const W = 32;
+  function safe(v){ return String(v == null ? '' : v).replace(/\s+/g,' ').trim(); }
+  function money(v){ return 'RM' + (Number(v || 0) || 0).toFixed(2); }
+  function payLabel(p){
+    p = String(p || '').toLowerCase().replace(/\s+/g,'_');
     if(p === 'mbb_qr' || p === 'qr' || p === 'tng') return 'QR';
     if(p === 'transfer' || p === 'bank') return 'TRANSFER';
-    if(p === 'mixed' || p === 'mixed_payment') return 'MIXED';
+    if(p === 'mixed' || p === 'mixed_payment') return 'MIXED PAYMENT';
     return 'CASH';
   }
-  function meta(label, value){ return String(label).padEnd(9, ' ') + ': ' + String(value || ''); }
-  function wrap(text, width){
-    text = clean(text);
-    if(!text) return [''];
-    const words = text.split(' '), out = [];
-    let line = '';
-    words.forEach(w => {
-      if(!line){ line = w; return; }
-      if((line + ' ' + w).length <= width) line += ' ' + w;
-      else { out.push(line); line = w; }
-    });
-    if(line) out.push(line);
-    return out;
+  function line(ch){ return String(ch || '-').repeat(W); }
+  function center(t){
+    t = safe(t);
+    const left = Math.max(0, Math.floor((W - t.length) / 2));
+    return ' '.repeat(left) + t;
   }
-  function getReceiptItems(){
+  function receiptItems(){
     if(typeof lastCart !== 'undefined' && Array.isArray(lastCart) && lastCart.length) return lastCart;
     if(window.lastOrderCart && Array.isArray(window.lastOrderCart) && window.lastOrderCart.length) return window.lastOrderCart;
     if(window.cart && Array.isArray(window.cart) && window.cart.length) return window.cart;
     return [];
   }
-  function buildProfessionalReceipt(){
-    const items = getReceiptItems();
+  function wrapWords(text, max){
+    text = safe(text);
+    if(!text) return ['ITEM'];
+    const words = text.split(' ');
+    const rows = [];
+    let cur = '';
+    words.forEach(function(w){
+      if(!cur){ cur = w; return; }
+      if((cur + ' ' + w).length <= max) cur += ' ' + w;
+      else { rows.push(cur); cur = w; }
+    });
+    if(cur) rows.push(cur);
+    return rows.length ? rows : ['ITEM'];
+  }
+  function buildReceiptFinal(){
+    const items = receiptItems();
     if(!items.length) return '';
-    const subtotal = items.reduce((sum, it) => sum + (Number(it.qty)||0) * (Number(it.price)||0), 0);
-    const usedDiscount = (typeof last折扣 !== 'undefined' && typeof lastCart !== 'undefined' && items === lastCart) ? Number(last折扣 || 0) : Number(window.discount || 0);
+    const useLast = (typeof lastCart !== 'undefined' && items === lastCart);
+    const subtotal = items.reduce(function(sum,it){ return sum + (Number(it.qty)||0) * (Number(it.price)||0); }, 0);
+    const usedDiscount = useLast ? Number(window.last折扣 || 0) : Number(window.discount || 0);
     const total = Math.max(0, subtotal - usedDiscount);
-    const pay = paymentLabel(window.lastPayment);
     const now = new Date();
     const date = now.toLocaleDateString('en-GB');
     const time = now.toLocaleTimeString('en-GB', {hour12:false});
     const orderId = (items[0] && items[0].orderId) || window.lastOrderId || 'PENDING';
-
+    const payment = payLabel(window.lastPayment);
     let out = '';
-    out += EQ + '\n';
+    out += line('=') + '\n';
     out += center('YLL FEEDS ENTERPRISE') + '\n';
     out += center('(202303217794 - KT0553187-P)') + '\n';
     out += center('RECEIPT') + '\n';
-    out += EQ + '\n';
+    out += line('=') + '\n';
     out += 'Address:\n';
     out += 'Ground Floor No 2,\n';
     out += 'Jalan Springhill 9/12\n';
     out += 'Bandar Springhill\n';
     out += '71010 Port Dickson\n';
     out += 'Negeri Sembilan\n\n';
-    out += meta('Date', date) + '\n';
-    out += meta('Time', time) + '\n';
-    out += meta('Order', orderId) + '\n\n';
-    out += SEP + '\n';
+    out += 'Date   : ' + date + '\n';
+    out += 'Time   : ' + time + '\n';
+    out += 'Order  : ' + orderId + '\n\n';
+    out += line('-') + '\n';
     out += 'ITEMS\n';
-    out += SEP + '\n\n';
-
-    items.forEach((it, idx) => {
-      const nameLines = wrap(it.name || 'ITEM', WIDTH);
-      nameLines.forEach(line => out += line + '\n');
+    out += line('-') + '\n\n';
+    items.forEach(function(it, idx){
+      const name = safe(it.name || 'ITEM');
       const qty = Number(it.qty) || 0;
       const price = Number(it.price) || 0;
       const amount = qty * price;
-      out += qtyText(qty) + ' x ' + money(price) + '\n';
-      out += 'Amount   : ' + money(amount) + '\n';
+      wrapWords(name, W).forEach(function(row){ out += row + '\n'; });
+      out += qty + ' X ' + money(price) + '\n';
+      out += 'Amount : ' + money(amount) + '\n';
       if(idx < items.length - 1) out += '\n';
     });
-
-    out += '\n' + SEP + '\n';
-    out += meta('Subtotal', money(subtotal)) + '\n';
-    if(usedDiscount > 0) out += meta('Discount', '-' + money(usedDiscount)) + '\n';
-    out += meta('Total', money(total)) + '\n';
+    out += '\n' + line('-') + '\n';
+    out += 'Subtotal : ' + money(subtotal) + '\n';
+    if(usedDiscount > 0) out += 'Discount : -' + money(usedDiscount) + '\n';
+    out += 'Total    : ' + money(total) + '\n';
     if(String(window.lastPayment || '').toLowerCase() === 'cash' || String(window.lastPayment || '').toLowerCase() === 'mixed'){
-      out += meta('Paid', money(window.lastPaid || total)) + '\n';
-      out += meta('Change', money(window.lastChange || 0)) + '\n';
+      out += 'Paid     : ' + money(window.lastPaid || total) + '\n';
+      out += 'Change   : ' + money(window.lastChange || 0) + '\n';
     }
-    out += meta('Payment', pay) + '\n';
-    out += SEP + '\n\n';
+    out += 'Payment  : ' + payment + '\n';
+    out += line('-') + '\n\n';
     out += 'THANK YOU\n';
     out += 'PLEASE COME AGAIN\n';
-    out += EQ;
+    out += line('=');
     return out;
   }
-  window.buildYllFinalReceipt = buildProfessionalReceipt;
-  window.printReceipt = function(auto=false){
-    const text = buildProfessionalReceipt();
-    if(!text){
-      if(window.showAppAlert) showAppAlert('No item to print', 'Receipt');
-      else alert('No item to print');
-      return;
-    }
+  window.buildReceiptTextV1Final = buildReceiptFinal;
+  window.buildReceiptText = buildReceiptFinal;
+  window.buildTelegramReceiptTextFinal = buildReceiptFinal;
+  window.printReceipt = function(auto){
+    const text = buildReceiptFinal();
+    if(!text){ if(window.showAppAlert) showAppAlert('No receipt available yet. Please complete checkout first.','Receipt'); else alert('No receipt available yet. Please complete checkout first.'); return; }
     window.lastReceiptText = text;
-    if(navigator.clipboard){
-      navigator.clipboard.writeText(text).then(()=>window.showToast && showToast('✅ Receipt copied')).catch(()=>{});
-    }
+    if(window.showAppAlert) showAppAlert(text, 'Receipt');
+    else alert(text);
     if(auto && typeof window.runAutoPrint === 'function') window.runAutoPrint();
   };
   async function nativeShareReceipt(){
-    let text = window.lastReceiptText || buildProfessionalReceipt();
-    if(!text){
-      if(window.showAppAlert) showAppAlert('No receipt available yet. Please complete checkout first.', 'Receipt');
-      else alert('No receipt available yet. Please complete checkout first.');
-      return false;
-    }
+    let text = buildReceiptFinal() || String(window.lastReceiptText || '').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    if(!text){ if(window.showAppAlert) showAppAlert('No receipt available yet. Please complete checkout first.','Receipt'); else alert('No receipt available yet. Please complete checkout first.'); return false; }
     window.lastReceiptText = text;
     if(navigator.share){
-      try{
-        await navigator.share({title:'YLL POS Receipt', text:text});
-        return true;
-      }catch(e){
-        if(e && e.name === 'AbortError') return true;
-      }
+      try{ await navigator.share({title:'YLL POS Receipt', text:text}); return true; }
+      catch(e){ if(e && e.name === 'AbortError') return true; }
     }
     if(navigator.clipboard){
-      try{
-        await navigator.clipboard.writeText(text);
-        if(window.showToast) showToast('✅ Receipt copied. Paste into Telegram.');
-        return true;
-      }catch(e){}
+      try{ await navigator.clipboard.writeText(text); if(window.showToast) showToast('✅ Receipt copied. Paste into Telegram.'); else alert('Receipt copied. Paste into Telegram.'); return true; }catch(e){}
     }
     window.open('https://t.me/share/url?url=&text=' + encodeURIComponent(text), '_blank');
     return true;
