@@ -3801,10 +3801,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     finally{if(typeof setRefundBusy==='function')setRefundBusy(false); else window.refundSubmitting=false;}
   };
 
-  // V1.0 receipt polish: fixed 58mm receipt layout, text only, no business logic changes.
+  // V1.0 FINAL: 58mm receipt builder. Only receipt text formatting is changed.
   window.printReceipt=function(auto=false){
     const useCart=(typeof lastCart!=='undefined'&&lastCart.length)?lastCart:cart;
     if(!useCart||!useCart.length){showAppAlert('No item to print','Receipt');return;}
+
+    const WIDTH=32;
+    const LINE='='.repeat(WIDTH);
+    const DASH='-'.repeat(WIDTH);
+    const ROW_LABEL=14;
 
     const subtotal=useCart.reduce((a,b)=>a+Number(b.qty||0)*Number(b.price||0),0);
     const usedDiscount=(typeof last折扣!=='undefined'&&lastCart&&lastCart.length)?Number(last折扣||0):Number(discount||0);
@@ -3814,76 +3819,93 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const date=now.toLocaleDateString('en-GB');
     const time=now.toLocaleTimeString('en-GB',{hour12:false});
 
-    const WIDTH=32;
-    const SEP='-'.repeat(WIDTH);
-    const DSEP='='.repeat(WIDTH);
-    const money=v=>'RM '+Number(v||0).toFixed(2);
-    const center=t=>String(t||'').slice(0,WIDTH).padStart(Math.floor((WIDTH+String(t||'').slice(0,WIDTH).length)/2),' ').padEnd(WIDTH,' ');
-    const row=(label,value)=>String(label).toUpperCase().padEnd(14,' ')+String(value).padStart(WIDTH-14,' ');
-    const meta=(label,value)=>String(label).padEnd(7,' ')+': '+String(value||'');
-    const payLabel=p=>p==='mbb_qr'?'QR':p==='transfer'?'TRANSFER':p==='mixed'?'MIXED':'CASH';
-    const itemLine=(left,right)=>String(left).slice(0,17).padEnd(17,' ')+String(right).padStart(WIDTH-17,' ');
-    const wrapText=(text,max=WIDTH)=>{
+    function center(t){
+      t=String(t||'');
+      if(t.length>=WIDTH)return t.slice(0,WIDTH);
+      const left=Math.floor((WIDTH-t.length)/2);
+      return ' '.repeat(left)+t+' '.repeat(WIDTH-t.length-left);
+    }
+    function money(v){return 'RM '+Number(v||0).toFixed(2);}
+    function row(label,value){
+      label=String(label||'').toUpperCase();
+      value=String(value||'');
+      return label.padEnd(ROW_LABEL,' ')+value.padStart(WIDTH-ROW_LABEL,' ');
+    }
+    function payLabel(p){
+      if(p==='mbb_qr')return 'QR';
+      if(p==='transfer')return 'TRANSFER';
+      if(p==='mixed')return 'MIXED';
+      return 'CASH';
+    }
+    function wrapText(text){
       text=String(text||'').replace(/\s+/g,' ').trim();
-      if(!text) return [''];
-      const out=[]; let line='';
-      text.split(' ').forEach(w=>{
-        if(!line){ line=w; return; }
-        if((line+' '+w).length<=max) line+=' '+w;
-        else { out.push(line); line=w; }
+      if(!text)return [''];
+      const words=text.split(' ');
+      const lines=[]; let cur='';
+      words.forEach(w=>{
+        if(!cur){cur=w;return;}
+        if((cur+' '+w).length<=WIDTH)cur+=' '+w;
+        else{lines.push(cur);cur=w;}
       });
-      if(line) out.push(line);
+      if(cur)lines.push(cur);
+      return lines;
+    }
+    function itemBlock(item){
+      const name=String(item.name||'ITEM').trim();
+      const qty=Number(item.qty||0);
+      const price=Number(item.price||0);
+      const amount=qty*price;
+      const qtyLine=String(qty)+' X '+money(price);
+      let out='';
+      wrapText(name).forEach(l=>out+=l+'\n');
+      out+=qtyLine.padEnd(ROW_LABEL,' ')+money(amount).padStart(WIDTH-ROW_LABEL,' ')+'\n';
       return out;
-    };
+    }
 
     let text='';
-    text+=DSEP+'\n';
+    text+=LINE+'\n';
     text+=center('YLL FEEDS ENTERPRISE')+'\n';
     text+=center('(202303217794 - KT0553187-P)')+'\n';
     text+=center('RECEIPT')+'\n';
-    text+=DSEP+'\n';
+    text+=LINE+'\n';
     text+='Address:\n';
     text+='Ground Floor No 2,\n';
     text+='Jalan Springhill 9/12\n';
     text+='Bandar Springhill\n';
     text+='71010 Port Dickson\n';
     text+='Negeri Sembilan\n\n';
-    text+=meta('Date',date)+'\n';
-    text+=meta('Time',time)+'\n';
-    text+=meta('Order',orderId)+'\n\n';
-    text+=SEP+'\n';
-    text+=center('ITEMS').trim()+'\n';
-    text+=SEP+'\n';
+    text+='Date   : '+date+'\n';
+    text+='Time   : '+time+'\n';
+    text+='Order  : '+orderId+'\n\n';
+    text+=DASH+'\n';
+    text+=center('ITEMS')+'\n';
+    text+=DASH+'\n';
 
     useCart.forEach((i,idx)=>{
-      const qty=Number(i.qty||0);
-      const price=Number(i.price||0);
-      const amount=qty*price;
-      wrapText(i.name,WIDTH).forEach(nameLine=>{ text+=nameLine+'\n'; });
-      text+=itemLine(`${qty} X ${money(price)}`,money(amount))+'\n';
-      if(idx<useCart.length-1) text+='\n';
+      if(idx>0)text+='\n';
+      text+=itemBlock(i);
     });
 
-    text+=SEP+'\n';
+    text+=DASH+'\n';
     text+=row('SUBTOTAL',money(subtotal))+'\n';
-    if(usedDiscount>0) text+=row('DISCOUNT','-'+money(usedDiscount))+'\n';
-    text+=SEP+'\n';
+    if(usedDiscount>0)text+=row('DISCOUNT','-'+money(usedDiscount))+'\n';
+    text+=DASH+'\n';
     text+=row('TOTAL',money(finalTotal))+'\n';
     if(lastPayment==='cash'||lastPayment==='mixed'){
       text+=row('PAID',money(lastPaid||finalTotal))+'\n';
       text+=row('CHANGE',money(lastChange||0))+'\n';
     }
     text+=row('PAYMENT',payLabel(lastPayment))+'\n';
-    text+=SEP+'\n\n';
-    text+=DSEP+'\n';
-    text+=center('THANK YOU & PLEASE COME AGAIN').trim()+'\n';
-    text+=DSEP;
+    text+=DASH+'\n\n';
+    text+=LINE+'\n';
+    text+=center('THANK YOU & PLEASE COME AGAIN')+'\n';
+    text+=LINE;
 
     lastReceiptText=text;
     const shareText='```\n'+text+'\n```';
     if(navigator.clipboard){
       navigator.clipboard.writeText(shareText).then(()=>showToast&&showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));
-    } else showAppAlert(text,'Receipt');
+    }else showAppAlert(text,'Receipt');
     if(auto&&typeof runAutoPrint==='function')runAutoPrint();
   };
 
