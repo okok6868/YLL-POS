@@ -3512,7 +3512,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     let text=`====================================\n      YLL FEEDS ENTERPRISE\n (202303217794 - KT0553187-P)\n              INVOICE\n====================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n------------------------------------\nITEMS\n------------------------------------\n`;
     useCart.forEach(i=>{ const amount=Number(i.qty||0)*Number(i.price||0); text+=`${i.name}\n`; text+=`${i.qty} x RM ${Number(i.price||0).toFixed(2)}`.padEnd(20,' ')+money(amount).padStart(16,' ')+'\n'; });
     text+=`------------------------------------\n${row('SUBTOTAL',money(subtotal))}\n`;
-    if(usedDiscount>0)text+=row('DISCOUNT',moneyNeg(usedDiscount))+'\n';
+    if(usedDiscount>0)text+=row('DISCOUNT','-'+money(usedDiscount))+'\n';
     text+=`------------------------------------\n${row('TOTAL',money(finalTotal))}\n`;
     if(lastPayment==='cash'||lastPayment==='mixed')text+=row('PAID',money(lastPaid||finalTotal))+'\n'+row('CHANGE',money(lastChange||0))+'\n';
     text+=row('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
@@ -3801,121 +3801,27 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     finally{if(typeof setRefundBusy==='function')setRefundBusy(false); else window.refundSubmitting=false;}
   };
 
-  // V1.0 FINAL: 58mm receipt builder. Only receipt text formatting is changed.
+  // Final receipt alignment. Wrap in code fences for monospaced chat display.
   window.printReceipt=function(auto=false){
     const useCart=(typeof lastCart!=='undefined'&&lastCart.length)?lastCart:cart;
     if(!useCart||!useCart.length){showAppAlert('No item to print','Receipt');return;}
-
-    const WIDTH=32;
-    const LINE='='.repeat(WIDTH);
-    const DASH='-'.repeat(WIDTH);
-    const ROW_LABEL=14;
-
     const subtotal=useCart.reduce((a,b)=>a+Number(b.qty||0)*Number(b.price||0),0);
     const usedDiscount=(typeof last折扣!=='undefined'&&lastCart&&lastCart.length)?Number(last折扣||0):Number(discount||0);
     const finalTotal=Math.max(0,subtotal-usedDiscount);
     const orderId=useCart[0]?.orderId||window.lastOrderId||'PENDING';
-    const now=new Date();
-    const date=now.toLocaleDateString('en-GB');
-    const time=now.toLocaleTimeString('en-GB',{hour12:false});
-
-    function center(t){
-      t=String(t||'');
-      if(t.length>=WIDTH)return t.slice(0,WIDTH);
-      const left=Math.floor((WIDTH-t.length)/2);
-      return ' '.repeat(left)+t+' '.repeat(WIDTH-t.length-left);
-    }
-    function money(v){
-      // Fixed-width RM column for 58mm receipts.
-      // Keeps RM and amount digits aligned: RM   5.00 / RM  15.00 / RM 100.00
-      const n=Number(v||0).toFixed(2);
-      return 'RM '+n.padStart(7,' ');
-    }
-    function moneyNeg(v){
-      const n=Number(v||0).toFixed(2);
-      return '-RM '+n.padStart(6,' ');
-    }
-    function row(label,value){
-      label=String(label||'').toUpperCase();
-      value=String(value||'');
-      return label.padEnd(ROW_LABEL,' ')+value.padStart(WIDTH-ROW_LABEL,' ');
-    }
-    function payLabel(p){
-      if(p==='mbb_qr')return 'QR';
-      if(p==='transfer')return 'TRANSFER';
-      if(p==='mixed')return 'MIXED';
-      return 'CASH';
-    }
-    function wrapText(text){
-      text=String(text||'').replace(/\s+/g,' ').trim();
-      if(!text)return [''];
-      const words=text.split(' ');
-      const lines=[]; let cur='';
-      words.forEach(w=>{
-        if(!cur){cur=w;return;}
-        if((cur+' '+w).length<=WIDTH)cur+=' '+w;
-        else{lines.push(cur);cur=w;}
-      });
-      if(cur)lines.push(cur);
-      return lines;
-    }
-    function itemBlock(item){
-      const name=String(item.name||'ITEM').trim();
-      const qty=Number(item.qty||0);
-      const price=Number(item.price||0);
-      const amount=qty*price;
-      const qtyLine=String(qty)+' X '+money(price);
-      let out='';
-      wrapText(name).forEach(l=>out+=l+'\n');
-      const ITEM_LABEL=18;
-      out+=qtyLine.padEnd(ITEM_LABEL,' ')+money(amount).padStart(WIDTH-ITEM_LABEL,' ')+'\n';
-      return out;
-    }
-
-    let text='';
-    text+=LINE+'\n';
-    text+=center('YLL FEEDS ENTERPRISE')+'\n';
-    text+=center('(202303217794 - KT0553187-P)')+'\n';
-    text+=center('RECEIPT')+'\n';
-    text+=LINE+'\n';
-    text+='Address:\n';
-    text+='Ground Floor No 2,\n';
-    text+='Jalan Springhill 9/12\n';
-    text+='Bandar Springhill\n';
-    text+='71010 Port Dickson\n';
-    text+='Negeri Sembilan\n\n';
-    text+='Date   : '+date+'\n';
-    text+='Time   : '+time+'\n';
-    text+='Order  : '+orderId+'\n\n';
-    text+=DASH+'\n';
-    text+=center('ITEMS')+'\n';
-    text+=DASH+'\n';
-
-    useCart.forEach((i,idx)=>{
-      if(idx>0)text+='\n';
-      text+=itemBlock(i);
-    });
-
-    text+=DASH+'\n';
-    text+=row('SUBTOTAL',money(subtotal))+'\n';
-    if(usedDiscount>0)text+=row('DISCOUNT','-'+money(usedDiscount))+'\n';
-    text+=DASH+'\n';
-    text+=row('TOTAL',money(finalTotal))+'\n';
-    if(lastPayment==='cash'||lastPayment==='mixed'){
-      text+=row('PAID',money(lastPaid||finalTotal))+'\n';
-      text+=row('CHANGE',money(lastChange||0))+'\n';
-    }
-    text+=row('PAYMENT',payLabel(lastPayment))+'\n';
-    text+=DASH+'\n\n';
-    text+=LINE+'\n';
-    text+=center('THANK YOU & PLEASE COME AGAIN')+'\n';
-    text+=LINE;
-
+    const now=new Date(); const date=now.toLocaleDateString('en-GB'); const time=now.toLocaleTimeString('en-GB',{hour12:false});
+    const width=36,labelW=15; const m=v=>'RM '+Number(v||0).toFixed(2); const row=(label,val)=>String(label).toUpperCase().padEnd(labelW,' ')+String(val).padStart(width-labelW,' ');
+    const payLabel=p=>p==='mbb_qr'?'QR':p==='transfer'?'TRANSFER':p==='mixed'?'MIXED':'CASH';
+    let text=`====================================\n      YLL FEEDS ENTERPRISE\n (202303217794 - KT0553187-P)\n              INVOICE\n====================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n------------------------------------\nITEMS\n------------------------------------\n`;
+    useCart.forEach(i=>{const amount=Number(i.qty||0)*Number(i.price||0); text+=`${i.name}\n${String(i.qty+' x RM '+Number(i.price||0).toFixed(2)).padEnd(20,' ')}${m(amount).padStart(16,' ')}\n`;});
+    text+=`------------------------------------\n${row('SUBTOTAL',m(subtotal))}\n`;
+    if(usedDiscount>0)text+=row('DISCOUNT','-'+m(usedDiscount))+'\n';
+    text+=`------------------------------------\n${row('TOTAL',m(finalTotal))}\n`;
+    if(lastPayment==='cash'||lastPayment==='mixed')text+=row('PAID',m(lastPaid||finalTotal))+'\n'+row('CHANGE',m(lastChange||0))+'\n';
+    text+=row('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
     lastReceiptText=text;
     const shareText='```\n'+text+'\n```';
-    if(navigator.clipboard){
-      navigator.clipboard.writeText(shareText).then(()=>showToast&&showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));
-    }else showAppAlert(text,'Receipt');
+    if(navigator.clipboard){navigator.clipboard.writeText(shareText).then(()=>showToast&&showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));} else showAppAlert(text,'Receipt');
     if(auto&&typeof runAutoPrint==='function')runAutoPrint();
   };
 
@@ -4193,6 +4099,147 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       await oldBossOpenOverview(force);
     }
     keepBossModeOpen();
+  };
+})();
+</script>
+
+
+<script>
+/* ===== V1.0 FINAL POLISH: 58mm receipt monospace + export UI + exact cash confirm ===== */
+(function(){
+  const RECEIPT_WIDTH = 32;
+  function repeat(ch,n){return Array(n+1).join(ch)}
+  function center(str,w=RECEIPT_WIDTH){str=String(str||''); if(str.length>=w)return str; const l=Math.floor((w-str.length)/2); return ' '.repeat(l)+str+' '.repeat(w-str.length-l);}
+  function cleanText(str){return String(str||'').replace(/\s+/g,' ').trim();}
+  function wrapWords(str,w=RECEIPT_WIDTH){
+    str=cleanText(str); if(!str)return [''];
+    const words=str.split(' '), out=[]; let line='';
+    words.forEach(word=>{
+      if(!line){line=word;return;}
+      if((line+' '+word).length<=w) line+=' '+word;
+      else {out.push(line); line=word;}
+    });
+    if(line)out.push(line);
+    return out;
+  }
+  function moneyValue(v){return Number(v||0).toFixed(2);}
+  function money(v){return 'RM '+moneyValue(v).padStart(8,' ');}
+  function row(label,value){
+    label=String(label||'').toUpperCase(); value=String(value||'');
+    return label.padEnd(14,' ') + value.padStart(RECEIPT_WIDTH-14,' ');
+  }
+  function amountRow(label,value){return row(label,money(value));}
+  function payLabel(p){return p==='mbb_qr'?'QR':p==='transfer'?'TRANSFER':p==='mixed'?'MIXED':'CASH';}
+  function buildReceiptText(){
+    const useCart=(typeof lastCart!=='undefined' && lastCart && lastCart.length) ? lastCart : (window.cart||[]);
+    if(!useCart || !useCart.length) return '';
+    const subtotal=useCart.reduce((a,b)=>a+(Number(b.qty)||0)*(Number(b.price)||0),0);
+    const usedDiscount=(typeof last折扣!=='undefined' && lastCart && lastCart.length) ? Number(last折扣||0) : Number(window.discount||0);
+    const finalTotal=Math.max(0,subtotal-usedDiscount);
+    const orderId=(useCart[0]&&useCart[0].orderId) || window.lastOrderId || 'PENDING';
+    const now=new Date();
+    const date=now.toLocaleDateString('en-GB');
+    const time=now.toLocaleTimeString('en-GB',{hour12:false});
+    let text='';
+    text+=repeat('=',RECEIPT_WIDTH)+'\n';
+    text+=center('YLL FEEDS ENTERPRISE')+'\n';
+    text+=center('(202303217794 - KT0553187-P)')+'\n';
+    text+=center('RECEIPT')+'\n';
+    text+=repeat('=',RECEIPT_WIDTH)+'\n';
+    text+='Address:\n';
+    text+='Ground Floor No 2,\n';
+    text+='Jalan Springhill 9/12\n';
+    text+='Bandar Springhill\n';
+    text+='71010 Port Dickson\n';
+    text+='Negeri Sembilan\n\n';
+    text+='Date  : '+date+'\n';
+    text+='Time  : '+time+'\n';
+    text+='Order : '+orderId+'\n\n';
+    text+=repeat('-',RECEIPT_WIDTH)+'\n';
+    text+='ITEMS\n';
+    text+=repeat('-',RECEIPT_WIDTH)+'\n';
+    useCart.forEach((i,idx)=>{
+      const name=cleanText(i.name||'ITEM');
+      const qty=Number(i.qty)||0;
+      const price=Number(i.price)||0;
+      const amount=qty*price;
+      wrapWords(name,RECEIPT_WIDTH).forEach(line=>{text+=line+'\n';});
+      const left=(String(qty).replace(/\.0$/,'')+' X RM '+moneyValue(price));
+      text+=row(left,money(amount))+'\n';
+      if(idx<useCart.length-1) text+='\n';
+    });
+    text+=repeat('-',RECEIPT_WIDTH)+'\n';
+    text+=amountRow('SUBTOTAL',subtotal)+'\n';
+    if(usedDiscount>0) text+=row('DISCOUNT','-'+money(usedDiscount))+'\n';
+    text+=repeat('-',RECEIPT_WIDTH)+'\n';
+    text+=amountRow('TOTAL',finalTotal)+'\n';
+    if(window.lastPayment==='cash' || window.lastPayment==='mixed'){
+      text+=amountRow('PAID',window.lastPaid||finalTotal)+'\n';
+      text+=amountRow('CHANGE',window.lastChange||0)+'\n';
+    }
+    text+=row('PAYMENT',payLabel(window.lastPayment))+'\n';
+    text+=repeat('-',RECEIPT_WIDTH)+'\n\n';
+    text+=repeat('=',RECEIPT_WIDTH)+'\n';
+    text+=center('THANK YOU & PLEASE COME AGAIN')+'\n';
+    text+=repeat('=',RECEIPT_WIDTH);
+    return text;
+  }
+  window.buildReceiptTextV1Final = buildReceiptText;
+  window.printReceipt=function(auto=false){
+    const text=buildReceiptText();
+    if(!text){ if(window.showAppAlert)showAppAlert('No item to print','Receipt'); else alert('No item to print'); return; }
+    window.lastReceiptText=text;
+    const shareText='```\n'+text+'\n```';
+    if(navigator.clipboard){navigator.clipboard.writeText(shareText).then(()=>window.showToast&&showToast('✅ Receipt copied')).catch(()=>window.showAppAlert?showAppAlert(text,'Receipt'):alert(text));}
+    else if(window.showAppAlert) showAppAlert(text,'Receipt'); else alert(text);
+    if(auto && typeof window.runAutoPrint==='function') window.runAutoPrint();
+  };
+  const oldSendToTelegram = window.sendToTelegram;
+  window.sendToTelegram = async function(text){
+    const raw=String(text||window.lastReceiptText||'');
+    const shareText = raw.trim().startsWith('```') ? raw : '```\n'+raw+'\n```';
+    const ua=navigator.userAgent||'';
+    const isIOS=/iPad|iPhone|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    if((isIOS||navigator.share) && navigator.share){
+      try{ await navigator.share({title:'YLL POS Receipt', text:shareText}); return; }catch(e){ if(e&&e.name==='AbortError')return; }
+    }
+    window.open('https://t.me/share/url?url=&text='+encodeURIComponent(shareText),'_blank');
+  };
+  // Remove exact-payment shortcut. If cash amount is blank, ask once using app confirm, then exact pay.
+  const exactBtn=document.querySelector('.exact-pay-btn'); if(exactBtn) exactBtn.style.display='none';
+  window.quickExact=function(){ const i=document.getElementById('cashInput'); if(i){ i.value=''; i.focus(); } };
+  window.confirmCash=async function(){
+    const input=document.getElementById('cashInput');
+    const raw=input ? String(input.value||'').trim() : '';
+    const total=Number(window.cashTotal||0);
+    let pay, change;
+    if(raw===''){
+      let ok=true;
+      const msg='Confirm exact cash payment?\n\nTotal: RM '+total.toFixed(2);
+      if(typeof window.appConfirm==='function') ok=await appConfirm(msg,'Cash Payment');
+      else if(typeof window.showPaymentConfirm==='function'){
+        // fallback to existing modal when available
+        ok=await new Promise(resolve=>{
+          const box=document.getElementById('paymentConfirmBox');
+          const btn=document.getElementById('paymentConfirmBtn');
+          const title=document.getElementById('paymentConfirmTitle');
+          const sub=document.getElementById('paymentConfirmSub');
+          const tot=document.getElementById('paymentConfirmTotal');
+          if(!box||!btn){resolve(confirm(msg));return;}
+          if(title)title.textContent='Cash Payment'; if(sub)sub.textContent='Confirm exact payment'; if(tot)tot.textContent='RM '+total.toFixed(2);
+          const old=btn.onclick; btn.onclick=function(){closeModal('paymentConfirmBox');btn.onclick=old;resolve(true);};
+          openModal('paymentConfirmBox');
+        });
+      }else ok=confirm(msg);
+      if(!ok)return;
+      pay=total; change=0;
+    }else{
+      pay=Number(raw); if(isNaN(pay)){ if(window.showAppAlert)showAppAlert('Please enter a valid amount','Cash Payment'); else alert('Please enter a valid amount'); return; }
+      if(Math.round(pay*100)<Math.round(total*100)){ if(window.showAppAlert)showAppAlert('Not enough cash','Cash Payment'); else alert('Not enough cash'); return; }
+      change=(Math.round(pay*100)-Math.round(total*100))/100;
+    }
+    if(typeof closeCash==='function')closeCash();
+    checkout('cash',pay,change);
   };
 })();
 </script>
