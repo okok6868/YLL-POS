@@ -2,7 +2,6 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#050816">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -10,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="https://via.placeholder.com/192/0f172a/ffffff.png?text=YLL">
 <style>
-/* YLL POS V4.1 patched: full theme + toast + iPad/menu fixes */
+/* YLL POS clean Apps Script UI */
 *{box-sizing:border-box}
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 button,.product-card,.cat-btn,.smallbtn,.big{touch-action:manipulation;-webkit-user-select:none;user-select:none}
@@ -858,11 +857,12 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
       <div class="row discount-row" id="discountRow"><span>折扣</span><b id="discountVal">- RM 0.00</b></div>
       <div class="row total"><span>Total</span><b id="finalTotal">RM 0.00</b></div>
     </div>
+    <div id="discountApprovalBanner" class="boss-result" style="display:none;margin:8px 0"></div>
 
     <div class="paybar">
       <button class="big" onclick="openPay()">💰 CHECKOUT</button>
       <div class="btnrow">
-        <button class="smallbtn discount-btn" onclick="open折扣()">💸 Discount <b id="dVal">0.00</b></button>
+        <button class="smallbtn discount-btn" onclick="openDiscount()">💸 Discount <b id="dVal">0.00</b></button>
         <button class="smallbtn danger" onclick="clearCart()">🗑 Clear</button>
         <button class="smallbtn more" onclick="toggleMore()">⋯</button>
       </div>
@@ -883,18 +883,26 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <h3>💸 Discount</h3>
     <input id="discountInput" type="number" placeholder="输入折扣">
     <div class="discount-grid">
-      <button onclick="add折扣(0.1)">+0.10</button>
-      <button onclick="add折扣(1)">+1</button>
-      <button onclick="add折扣(5)">+5</button>
+      <button onclick="addDiscount(0.1)">+0.10</button>
+      <button onclick="addDiscount(1)">+1</button>
+      <button onclick="addDiscount(5)">+5</button>
     </div>
     <div class="discount-preview">
       原价 RM <span id="dSubtotal">0.00</span><br>
       折扣 -RM <span id="dCurrent">0.00</span><br>
       <b>应付 RM <span id="dFinal">0.00</span></b>
     </div>
-    <button class="green" onclick="apply折扣()">✅ 应用折扣</button>
-    <button onclick="reset折扣()">清除折扣</button>
-    <button onclick="close折扣()">关闭</button>
+    <input id="discountReason" type="text" placeholder="折扣原因，可空">
+    <details class="refund-auth" id="discountAuthDetails">
+      <summary>超过 RM10 需要老板批准 / Boss approval</summary>
+      <input id="discountBossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="discountBossPassword" type="password" placeholder="密码" autocomplete="new-password">
+      <small style="color:#94a3b8">老板在场就输入 ID / Password 直接批准；老板不在就留空提交待审批。</small>
+    </details>
+    <div id="discountStatusMsg" class="boss-result" style="display:none"></div>
+    <button class="green" onclick="applyDiscount()">✅ 应用折扣</button>
+    <button onclick="resetDiscount()">清除折扣</button>
+    <button onclick="closeDiscount()">关闭</button>
   </div>
 </div>
 
@@ -1193,28 +1201,16 @@ function checkDayRollover(){let t=todayKey(); if(appBootDate && t!==appBootDate)
 function setCheckoutBusy(on){isCheckingOut=!!on; document.body.classList.toggle("pos-busy",!!on); let b=document.getElementById("checkoutBusy"); if(b)b.classList.toggle("active",!!on)}
 function updateClock(){let e=document.getElementById("clock");if(e)e.textContent=new Date().toLocaleTimeString()}
 
-async function apiCall(action,args=[]){
-  const res = await fetch("/api/pos",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action, args})
+function apiCall(action,args=[]){
+  return new Promise((resolve,reject)=>{
+    if(!google || !google.script || !google.script.run){
+      reject(new Error("google.script.run is not available. Open this from the Apps Script web app URL."));
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(reject)[action](...(Array.isArray(args)?args:[]));
   });
-
-  let json;
-  try{
-    json = await res.json();
-  }catch(e){
-    throw new Error("API returned non-JSON");
-  }
-
-  if(!json.success){
-  throw new Error(
-    (json.error || "API error") +
-    (json.raw ? "\n\nRAW:\n" + json.raw : "")
-  );
-}
-
-  return json.data;
 }
 
 async function load(){
@@ -1310,13 +1306,14 @@ function updateTotals(data){
   if(s)s.innerText=fmt(data.subtotal); if(d)d.innerText="- "+fmt(data.discount); if(f)f.innerText=fmt(data.final); if(r)r.classList.toggle("active",data.discount>0);
 }
 
-function open折扣(){if(!bossRequire())return; if(!cart.length){alert("🛒 购物车为空");return} update折扣Preview(discount); openModal("discountBox"); let input=document.getElementById("discountInput"); if(input){input.value=discount||""; setTimeout(()=>{input.focus();input.select()},50); input.oninput=function(){let val=Number(input.value)||0;let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(val>sub){val=sub;input.value=sub} update折扣Preview(val)}; input.onkeydown=function(e){if(e.key==="Enter")apply折扣()}}}
-function close折扣(){closeModal("discountBox"); let i=document.getElementById("discountInput"); if(i)i.blur()}
-function add折扣(v){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); discount=Number(discount)||0; discount+=Number(v)||0; if(discount>sub)discount=sub; if(discount<0)discount=0; discount=Number(discount.toFixed(2)); close折扣(); showCart()}
-function apply折扣(){let input=document.getElementById("discountInput"); let val=Number(input.value); let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(isNaN(val)){alert("请输入折扣");return} if(val>sub){alert("❗折扣不能超过总金额");return} if(val>sub*.5 && !confirm("⚠️ 折扣超过50%，确认？"))return; discount=Number(val.toFixed(2)); close折扣(); showCart()}
-function reset折扣(){discount=0; let i=document.getElementById("discountInput"); if(i)i.value=""; update折扣Preview(0); showCart()}
-function update折扣UI(){let e=document.getElementById("dVal"); if(e)e.innerText=Number(discount||0).toFixed(2)}
-function update折扣Preview(val){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); let d=Number(val!==undefined?val:discount)||0; let final=Math.max(0,sub-d); let s=document.getElementById("dSubtotal"),c=document.getElementById("dCurrent"),f=document.getElementById("dFinal"); if(s)s.innerText=sub.toFixed(2); if(c)c.innerText=d.toFixed(2); if(f)f.innerText=final.toFixed(2)}
+function openDiscount(){if(!cart.length){alert("🛒 购物车为空");return} updateDiscountPreview(discount); openModal("discountBox"); let input=document.getElementById("discountInput"); if(input){input.value=discount||""; setTimeout(()=>{input.focus();input.select()},50); input.oninput=function(){let val=Number(input.value)||0;let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(val>sub){val=sub;input.value=sub} updateDiscountPreview(val)}; input.onkeydown=function(e){if(e.key==="Enter")applyDiscount()}}}
+function closeDiscount(){closeModal("discountBox"); let i=document.getElementById("discountInput"); if(i)i.blur()}
+function addDiscount(v){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); discount=Number(discount)||0; discount+=Number(v)||0; if(discount>sub)discount=sub; if(discount<0)discount=0; discount=Number(discount.toFixed(2)); closeDiscount(); showCart()}
+function applyDiscount(){let input=document.getElementById("discountInput"); let val=Number(input.value); let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(isNaN(val)){alert("请输入折扣");return} if(val>sub){alert("❗折扣不能超过总金额");return} if(val>sub*.5 && !confirm("⚠️ 折扣超过50%，确认？"))return; discount=Number(val.toFixed(2)); closeDiscount(); showCart()}
+function resetDiscount(){discount=0; let i=document.getElementById("discountInput"); if(i)i.value=""; updateDiscountPreview(0); showCart()}
+function updateDiscountUI(){let e=document.getElementById("dVal"); if(e)e.innerText=Number(discount||0).toFixed(2)}
+function updateDiscountPreview(val){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); let d=Number(val!==undefined?val:discount)||0; let final=Math.max(0,sub-d); let s=document.getElementById("dSubtotal"),c=document.getElementById("dCurrent"),f=document.getElementById("dFinal"); if(s)s.innerText=sub.toFixed(2); if(c)c.innerText=d.toFixed(2); if(f)f.innerText=final.toFixed(2)}
+const open折扣=openDiscount, close折扣=closeDiscount, add折扣=addDiscount, apply折扣=applyDiscount, reset折扣=resetDiscount, update折扣UI=updateDiscountUI, update折扣Preview=updateDiscountPreview;
 
 function openPay(){if(isCheckingOut)return; if(!cart.length){alert("🛒 没商品");return} openModal("payModal")}
 function closePay(){closeModal("payModal")}
@@ -1390,14 +1387,14 @@ function checkout(payment,paid=0,change=0){
 
   if(!navigator.onLine){
     let offline=JSON.parse(localStorage.getItem("offlineOrders")||"[]");
-    offline.push({id:Date.now(),cart:send,payment,discount:send折扣,paid:lastPaid,change:lastChange,date:new Date().toISOString()});
+    offline.push({id:Date.now(),cart:send,payment,discount:send折扣,paid:lastPaid,change:lastChange,discountMeta:(typeof getDiscountOrderMeta==='function'?getDiscountOrderMeta():null),date:new Date().toISOString()});
     localStorage.setItem("offlineOrders",JSON.stringify(offline));
     lastCart=JSON.parse(JSON.stringify(cart)); last折扣=send折扣;
     showToast("⚠️ 离线模式，订单已保存");
     cart=[];discount=0;showCart();setCheckoutBusy(false);return
   }
 
-  apiCall("saveOrder",[send,payment,send折扣,lastPaid,lastChange])
+  apiCall("saveOrder",[send,payment,send折扣,lastPaid,lastChange,(typeof getDiscountOrderMeta==='function'?getDiscountOrderMeta():null)])
     .then(function(res){
       let orderId=res&&res.orderId;
       if(!orderId){alert("❌ 没有拿到订单号");return}
@@ -1951,7 +1948,7 @@ function syncOfflineOrders(){
   if(!offline.length)return;
   let done=0,failed=[];
   offline.forEach(o=>{
-    apiCall("saveOrder",[o.cart,o.payment,o.discount||0])
+    apiCall("saveOrder",[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.discountMeta||null])
       .then(function(){done++;finish()})
       .catch(function(){failed.push(o);done++;finish()});
   });
@@ -2124,17 +2121,6 @@ function printReceipt(auto=false){
   if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast("✅ 收据已生成 + 已复制")).catch(()=>alert(text));}else alert(text);
   if(auto)runAutoPrint();
 }
-
-/* PWA */
-if("serviceWorker" in navigator){
-  window.addEventListener("load", function(){
-    navigator.serviceWorker.register("sw.js")
-      .then(function(){ console.log("✅ PWA ready"); })
-      .catch(function(err){ console.log("❌ PWA failed", err); });
-  });
-}
-
-
 
 /* ===== V4.5 Boss UI/UX overrides: no evidence upload, cleaner dashboard ===== */
 function bossSetNav(label){
@@ -4536,5 +4522,196 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 })();
 </script>
 
+<script>
+/* ===== Discount approval final rules: every discount needs approval; pending limit RM10 ===== */
+(function(){
+  const DISCOUNT_STAFF_LIMIT = 10;
+  const $ = id => document.getElementById(id);
+  const money = v => (typeof fmt === 'function' ? fmt(v) : 'RM ' + Number(v || 0).toFixed(2));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
+  function setDiscountStatus(msg, tone){
+    const box = $('discountStatusMsg');
+    if(box){
+      box.style.display = msg ? 'block' : 'none';
+      box.style.borderColor = tone === 'bad' ? 'rgba(248,113,113,.6)' : tone === 'good' ? 'rgba(34,197,94,.55)' : 'rgba(245,158,11,.55)';
+      box.textContent = msg || '';
+    }
+  }
+  function setDiscountBanner(msg, tone){
+    const box = $('discountApprovalBanner');
+    if(box){
+      box.style.display = msg ? 'block' : 'none';
+      box.style.borderColor = tone === 'bad' ? 'rgba(248,113,113,.6)' : tone === 'good' ? 'rgba(34,197,94,.55)' : 'rgba(245,158,11,.55)';
+      box.textContent = msg || '';
+    }
+  }
+  function pendingKey(){ return 'yllPendingDiscountApproval'; }
+  function getPendingDiscount(){ try{return JSON.parse(localStorage.getItem(pendingKey()) || 'null');}catch(e){return null;} }
+  function setPendingDiscount(obj){
+    window.__currentDiscountApproval = obj || null;
+    if(obj)localStorage.setItem(pendingKey(), JSON.stringify(obj)); else localStorage.removeItem(pendingKey());
+  }
+  window.getDiscountOrderMeta = function(){
+    const current = window.__currentDiscountApproval || getPendingDiscount();
+    if(!discount || !current) return {status:'None'};
+    return {status:current.status || 'Pending', discountApprovalId:current.discountId || '', amount:Number(discount||0)};
+  };
+  function discountPayload(amount){
+    const data = typeof calcCartData === 'function' ? calcCartData() : {subtotal:0,final:0};
+    return {amount:Number(amount||0), subtotal:Number(data.subtotal||0), finalTotal:Math.max(0, Number(data.subtotal||0)-Number(amount||0)), reason:(($('discountReason')||{}).value||'POS discount approval').trim()};
+  }
+  function applyApprovedDiscount(amount, source, approvalId){
+    discount = Number(Number(amount || 0).toFixed(2));
+    window.__currentDiscountApproval = {discountId:approvalId || '', amount:discount, status:'Approved'};
+    closeDiscount();
+    showCart();
+    setPendingDiscount(null);
+    window.__currentDiscountApproval = {discountId:approvalId || '', amount:discount, status:'Approved'};
+    setDiscountBanner((source || 'Discount approved') + ': ' + money(discount), 'good');
+    if(typeof showToast === 'function') showToast('✅ Discount approved: ' + money(discount));
+  }
+
+  window.openDiscount = function(){
+    if(!cart.length){ alert('🛒 购物车为空'); return; }
+    const pending = getPendingDiscount();
+    updateDiscountPreview(discount);
+    openModal('discountBox');
+    const input = $('discountInput'), auth = $('discountAuthDetails'), id = $('discountBossId'), pw = $('discountBossPassword');
+    if(auth) auth.open = false;
+    if(id) id.value = '';
+    if(pw) pw.value = '';
+    if(input){
+      input.value = discount || '';
+      setTimeout(()=>{input.focus();input.select();},50);
+      input.oninput = function(){
+        let val = Number(input.value) || 0;
+        let sub = cart.reduce((a,b)=>a + b.qty * b.price, 0);
+        if(val > sub){ val = sub; input.value = sub; }
+        updateDiscountPreview(val);
+        if(auth) auth.open = val > DISCOUNT_STAFF_LIMIT;
+        setDiscountStatus(val > DISCOUNT_STAFF_LIMIT ? '超过 RM10，必须老板在场输入 ID/密码直接批准。' : '需要老板批准。老板不在时，可提交 RM10 以内待审批。', 'warn');
+      };
+      input.onkeydown = function(e){ if(e.key === 'Enter') applyDiscount(); };
+      input.oninput();
+    }
+    if(pending) setDiscountStatus('已有待审批折扣 ' + money(pending.amount) + '，等待老板处理。', 'warn');
+  };
+  window.open折扣 = window.openDiscount;
+  window.closeDiscount = function(){ closeModal('discountBox'); const i=$('discountInput'); if(i)i.blur(); };
+  window.close折扣 = window.closeDiscount;
+  window.addDiscount = function(v){
+    const input = $('discountInput');
+    const data = typeof calcCartData === 'function' ? calcCartData() : {subtotal:0};
+    const next = Math.min(Number(data.subtotal || 0), Math.max(0, Number((input && input.value) || discount || 0) + Number(v || 0)));
+    if(input){ input.value = next.toFixed(2); input.oninput && input.oninput(); }
+  };
+  window.add折扣 = window.addDiscount;
+  window.resetDiscount = function(){
+    discount = 0;
+    const i = $('discountInput'); if(i)i.value = '';
+    updateDiscountPreview(0);
+    setDiscountStatus('', 'warn');
+    setDiscountBanner('', 'warn');
+    showCart();
+  };
+  window.reset折扣 = window.resetDiscount;
+  window.applyDiscount = async function(){
+    const input = $('discountInput');
+    const amount = Number((input && input.value) || 0);
+    const data = typeof calcCartData === 'function' ? calcCartData() : {subtotal:0};
+    if(!amount || amount <= 0){ alert('请输入折扣'); return; }
+    if(amount > Number(data.subtotal || 0)){ alert('❗折扣不能超过总金额'); return; }
+    const bossId = (($('discountBossId') || {}).value || '').trim();
+    const bossPassword = (($('discountBossPassword') || {}).value || '');
+    const payload = discountPayload(amount);
+    const direct = !!(bossId && bossPassword);
+    if(!direct && amount > DISCOUNT_STAFF_LIMIT){
+      const auth = $('discountAuthDetails');
+      if(auth) auth.open = true;
+      setDiscountStatus('超过 RM10 不能提交待审批，必须老板输入 ID/密码批准。', 'bad');
+      return;
+    }
+    if(direct){ payload.bossId = bossId; payload.bossPassword = bossPassword; }
+    const ok = typeof appConfirm === 'function' ? await appConfirm((direct ? 'Approve discount now?' : 'Submit discount request?') + '\n\nDiscount: ' + money(amount), 'Discount Approval') : confirm((direct ? 'Approve discount now?' : 'Submit discount request?') + '\n\nDiscount: ' + money(amount));
+    if(!ok) return;
+    try{
+      setDiscountStatus(direct ? '老板批准中...' : '提交待审批中...', 'warn');
+      const res = await apiCall(direct ? 'approveDiscountWithBoss' : 'requestDiscountApproval', [payload]);
+      if(direct || (res && res.status === 'Approved')) applyApprovedDiscount(amount, 'Boss approved discount', res && res.discountId);
+      else{
+        discount = Number(amount.toFixed(2));
+        setPendingDiscount({discountId:res.discountId, amount:amount, status:'Pending', at:Date.now()});
+        closeDiscount();
+        showCart();
+        setDiscountBanner('折扣 ' + money(amount) + ' 已给顾客/收据显示，但财务暂按原价。老板批准后才扣 sales/cash drawer。', 'warn');
+        if(typeof invalidateBossCache === 'function') invalidateBossCache();
+      }
+    }catch(e){ setDiscountStatus('❌ 折扣审批失败：' + (e.message || e), 'bad'); }
+  };
+  window.apply折扣 = window.applyDiscount;
+  window.checkPendingDiscountApproval = async function(){
+    const pending = getPendingDiscount();
+    if(!pending || !pending.discountId) return;
+    try{
+      const r = await apiCall('getDiscountApprovalStatus', [pending.discountId]);
+      if(!r || r.status === 'Pending'){ setDiscountBanner('折扣 ' + money(pending.amount) + ' 等待老板审批。', 'warn'); return; }
+      if(r.status === 'Approved'){ applyApprovedDiscount(r.amount || pending.amount, 'Boss approved discount', r.discountId); return; }
+      if(r.status === 'Rejected'){
+        setPendingDiscount(null);
+        if(cart && cart.length){ discount=0; showCart(); }
+        setDiscountBanner('❌ 折扣 ' + money(r.amount || pending.amount) + ' 老板不通过。财务/cash drawer 保持原价。' + (r.note ? ' ' + r.note : ''), 'bad');
+      }
+    }catch(e){}
+  };
+
+  function discountPendingHtml(rows){
+    if(!rows || !rows.length) return '';
+    return `<div class="boss-result" style="margin-top:12px"><b>折扣待审批</b><table><tr><th>时间</th><th class="right">折扣</th><th class="right">原价</th><th>原因</th><th>操作</th></tr>${rows.map(r=>`<tr><td>${esc(r.date||'')}</td><td class="right">${money(r.amount||0)}</td><td class="right">${money(r.subtotal||0)}</td><td>${esc(r.reason||'')}</td><td><button class="green" style="padding:7px 10px;width:auto;margin-right:6px" onclick="bossApproveDiscountInline('${esc(r.discountId)}',this)">批准</button><button class="danger-outline" style="padding:7px 10px;width:auto" onclick="bossRejectDiscountInline('${esc(r.discountId)}',this)">不通过</button></td></tr>`).join('')}</table></div>`;
+  }
+  window.bossApproveDiscountInline = async function(discountId, btn){
+    if(!discountId) return;
+    const old = btn && btn.textContent;
+    if(btn){btn.disabled=true;btn.classList.add('busy-btn');btn.textContent='批准中...';}
+    try{ await apiCall('approvePendingDiscountFromBoss', [discountId]); if(typeof invalidateBossCache === 'function') invalidateBossCache(); if(typeof showToast === 'function') showToast('✅ 折扣已批准'); await bossOpenOverview(true); }
+    catch(e){ if(btn){btn.disabled=false;btn.classList.remove('busy-btn');btn.textContent=old||'批准';} if(typeof showAppAlert === 'function') showAppAlert('批准失败：' + (e.message || e), 'Discount Approval'); else alert(e.message || e); }
+  };
+  window.bossRejectDiscountInline = async function(discountId, btn){
+    if(!discountId) return;
+    const ok = typeof appConfirm === 'function' ? await appConfirm('确定不通过这个折扣申请？', 'Discount Approval') : confirm('确定不通过这个折扣申请？');
+    if(!ok) return;
+    const old = btn && btn.textContent;
+    if(btn){btn.disabled=true;btn.classList.add('busy-btn');btn.textContent='处理中...';}
+    try{ await apiCall('rejectPendingDiscount', [discountId, 'Boss rejected']); if(typeof invalidateBossCache === 'function') invalidateBossCache(); if(typeof showToast === 'function') showToast('已拒绝折扣申请'); await bossOpenOverview(true); }
+    catch(e){ if(btn){btn.disabled=false;btn.classList.remove('busy-btn');btn.textContent=old||'不通过';} if(typeof showAppAlert === 'function') showAppAlert('处理失败：' + (e.message || e), 'Discount Approval'); else alert(e.message || e); }
+  };
+  window.bossOpenOverview = async function(force){
+    if(typeof keepBossModeOpen === 'function') keepBossModeOpen();
+    if(!bossRequire()) return;
+    const setHtml = (id,v)=>{const e=$(id); if(e)e.innerHTML=v;};
+    const setText = (id,v)=>{const e=$(id); if(e)e.textContent=v;};
+    if(typeof bossHideBossPanels === 'function') bossHideBossPanels();
+    if(typeof bossSetNav === 'function') bossSetNav('今日');
+    const p=$('bossOverviewPanel'); if(p){p.style.display='block';p.classList.add('active');}
+    const card=(title,value,desc,warn)=>`<div class="overview-card ${warn?'warn':'good'}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(desc||'')}</span></div>`;
+    setHtml('bossOverviewResult', card('状态','载入中','正在读取今日提醒...',false));
+    try{
+      const r = await apiCall('getBossDashboardFast', []);
+      const cash=r.cash||{}, today=r.today||{}, refunds=r.pendingRefunds||[], discounts=r.pendingDiscounts||[];
+      const drawer=Number(cash.cashDrawer||0), flt=Number(cash.floatCash||0), limit=Number(cash.cashDrawerLimit||500);
+      const can=Math.max(0,drawer-flt);
+      const cards=[card('可收现金', money(can), `收银机 ${money(drawer)} / 找零 ${money(flt)} / 提醒 ${money(limit)}`, can>=limit), card('今日销售', money(today.total||0), `订单 ${today.orders||today.count||0} / 折扣 ${money(today.discount||0)}`, false)];
+      if(refunds.length) cards.push(card('退货待审批', refunds.length + ' 单', `金额 ${money(r.refundPendingAmount||0)}，可在下方批准或取消`, true));
+      if(discounts.length) cards.push(card('折扣待审批', discounts.length + ' 单', `金额 ${money(r.discountPendingAmount||0)}，可在下方批准或不通过`, true));
+      if(!refunds.length && !discounts.length && can<limit) cards.push(card('今日待处理','没有紧急事项','没有待审批退货/折扣；现金未超过提醒。',false));
+      const refundHtml = (typeof refundPendingHtml === 'function') ? refundPendingHtml(refunds) : '';
+      setHtml('bossOverviewResult', cards.join('') + refundHtml + discountPendingHtml(discounts));
+      setText('bossResult','');
+    }catch(e){ setHtml('bossOverviewResult','载入失败：' + (e.message || e)); }
+    if(typeof keepBossModeOpen === 'function') keepBossModeOpen();
+  };
+  window.addEventListener('load', function(){ checkPendingDiscountApproval(); setInterval(checkPendingDiscountApproval, 30000); });
+})();
+</script>
 </body>
 </html>
