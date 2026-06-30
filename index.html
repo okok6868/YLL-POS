@@ -1959,7 +1959,7 @@ function syncOfflineOrders(){
   if(!offline.length)return;
   let done=0,failed=[];
   offline.forEach(o=>{
-    apiCall("saveOrder",[o.cart,o.payment,o.discount||0])
+    apiCall("saveOrder",[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id||('OFF-'+Date.now())])
       .then(function(){done++;finish()})
       .catch(function(){failed.push(o);done++;finish()});
   });
@@ -4972,6 +4972,18 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       new Promise((_,reject)=>setTimeout(()=>reject(new Error((label||'Request')+' timeout, please check connection.')),ms))
     ]);
   }
+  function makeClientOrderId(){
+    return 'POS-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
+  }
+  function finishSavedOrder(orderId,sendDiscount){
+    cart.forEach(i=>i.orderId=orderId);
+    lastCart=JSON.parse(JSON.stringify(cart)); window.lastCart=lastCart;
+    window.last折扣=sendDiscount;
+    cart=[];discount=0;showCart();
+    setCheckoutBusy(false);
+    try{printReceipt(false);}catch(e){console.error('receipt failed',e); if(typeof showToast==='function')showToast('Order saved. Receipt failed; tap Print Receipt.');}
+    if(typeof loadTodayStats==='function')loadTodayStats();
+  }
   function totalDue(){
     try{
       if(typeof calcCartData==='function'){
@@ -5011,9 +5023,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       return {name:i.name,price:n(i.price),qty:i.qty,cost:p.cost||0};
     });
     const sendDiscount=n(discount||0);
+    const clientOrderId=makeClientOrderId();
     if(!navigator.onLine){
       const offline=JSON.parse(localStorage.getItem('offlineOrders')||'[]');
-      offline.push({id:Date.now(),cart:send,payment,discount:sendDiscount,paid:lastPaid,change:lastChange,date:new Date().toISOString()});
+      offline.push({id:clientOrderId,cart:send,payment,discount:sendDiscount,paid:lastPaid,change:lastChange,date:new Date().toISOString()});
       localStorage.setItem('offlineOrders',JSON.stringify(offline));
       lastCart=JSON.parse(JSON.stringify(cart)); window.lastCart=lastCart;
       window.last折扣=sendDiscount;
@@ -5021,23 +5034,28 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(typeof showToast==='function')showToast('Offline order saved');
       return;
     }
-    timeout(apiCall('saveOrder',[send,payment,sendDiscount,lastPaid,lastChange]),30000,'Save order')
+    timeout(apiCall('saveOrder',[send,payment,sendDiscount,lastPaid,lastChange,clientOrderId]),18000,'Save order')
       .then(res=>{
         const orderId=res&&res.orderId;
         if(!orderId)throw new Error('No order number returned');
-        cart.forEach(i=>i.orderId=orderId);
-        lastCart=JSON.parse(JSON.stringify(cart)); window.lastCart=lastCart;
-        window.last折扣=sendDiscount;
-        cart=[];discount=0;showCart();
-        setCheckoutBusy(false);
-        try{printReceipt(false);}catch(e){console.error('receipt failed',e); if(typeof showToast==='function')showToast('Order saved. Receipt failed; tap Print Receipt.');}
-        if(typeof loadTodayStats==='function')loadTodayStats();
+        finishSavedOrder(orderId,sendDiscount);
       })
-      .catch(err=>{
+      .catch(async err=>{
+        try{
+          for(let attempt=0;attempt<5;attempt++){
+            if(attempt>0)await new Promise(resolve=>setTimeout(resolve,2500));
+            const saved=await timeout(apiCall('getOrderByClientId',[clientOrderId]),6000,'Check saved order');
+            if(saved&&saved.orderId){
+              finishSavedOrder(saved.orderId,sendDiscount);
+              if(typeof showToast==='function')showToast('Order saved. Connection was slow.');
+              return;
+            }
+          }
+        }catch(_e){}
         setCheckoutBusy(false);
         const msg=String((err&&err.message)||err||'');
-        if(typeof showAppAlert==='function')showAppAlert('Save failed: '+msg,'Payment');
-        else alert('Save failed: '+msg);
+        if(typeof showAppAlert==='function')showAppAlert('Save not confirmed. Please check Orders_Main before pressing checkout again.\n\n'+msg,'Payment');
+        else alert('Save not confirmed. Please check Orders_Main before pressing checkout again.\n\n'+msg);
       });
   };
   window.confirmCash=function(){
