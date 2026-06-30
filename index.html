@@ -4854,7 +4854,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <input id="parcelRecovered" type="number" inputmode="numeric" placeholder="Recovered today">
       </div>
       <input id="parcelNote" type="text" placeholder="Note optional">
-      <div id="parcelPreview" class="discount-preview">Estimated: RM 0.00</div>
       <button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">Save Parcel Record</button>
       <button onclick="closeModal('parcelBox')">Close</button>`;
     ['parcelExpected','parcelReturned','parcelDelivered','parcelRecovered'].forEach(id=>{
@@ -4869,8 +4868,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const returned=Number(($('parcelReturned')||{}).value||0);
     const missing=Math.max(0,expected-delivered);
     const recovered=Number(($('parcelRecovered')||{}).value||0);
-    const est=(delivered*0.30)+(returned*0.15);
-    const p=$('parcelPreview'); if(p)p.textContent=`Estimated: ${money(est)}${recovered?` | Recovered: ${recovered}`:''}`;
     const s=$('parcelShortPreview'); if(s)s.textContent=`Missing: ${missing}`;
   };
   window.openParcelBox=async function(){
