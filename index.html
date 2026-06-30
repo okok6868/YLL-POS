@@ -4961,5 +4961,52 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 })();
 </script>
 
+<script>
+/* Final checkout guard: cash/mixed cannot be saved if paid amount is less than total. */
+(function(){
+  const oldCheckout = window.checkout;
+  function n(v){return Math.round(Number(v||0)*100)/100}
+  function cents(v){return Math.round(Number(v||0)*100)}
+  function totalDue(){
+    try{
+      if(typeof calcCartData==='function'){
+        const d=calcCartData();
+        return n(d.final||0);
+      }
+    }catch(e){}
+    try{
+      const sub=(cart||[]).reduce((s,i)=>s+Number(i.price||0)*Number(i.qty||0),0);
+      return n(sub-Number(discount||0));
+    }catch(e){return 0;}
+  }
+  window.checkout=function(payment,paid=0,change=0){
+    const method=String(payment||'').toLowerCase();
+    const due=totalDue();
+    const got=n(paid||0);
+    if((method==='cash'||method==='mixed') && cents(got)<cents(due)){
+      if(typeof showAppAlert==='function')showAppAlert(`Cash received is not enough.\n\nTotal: RM ${due.toFixed(2)}\nPaid: RM ${got.toFixed(2)}`,'Payment');
+      else alert(`Cash received is not enough.\n\nTotal: RM ${due.toFixed(2)}\nPaid: RM ${got.toFixed(2)}`);
+      return;
+    }
+    return oldCheckout.apply(this,arguments);
+  };
+  window.confirmCash=function(){
+    const input=document.getElementById('cashInput');
+    const raw=input?input.value:'';
+    const due=totalDue();
+    const pay=raw===''?due:n(raw);
+    if(!Number.isFinite(pay)){alert('Please enter a valid amount.');return;}
+    if(cents(pay)<cents(due)){
+      if(typeof showAppAlert==='function')showAppAlert(`Cash received is not enough.\n\nTotal: RM ${due.toFixed(2)}\nPaid: RM ${pay.toFixed(2)}`,'Payment');
+      else alert(`Cash received is not enough.\n\nTotal: RM ${due.toFixed(2)}\nPaid: RM ${pay.toFixed(2)}`);
+      return;
+    }
+    const change=n(pay-due);
+    if(typeof closeCash==='function')closeCash();
+    window.checkout('cash',pay,change);
+  };
+})();
+</script>
+
 </body>
 </html>
