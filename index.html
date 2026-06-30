@@ -3107,6 +3107,121 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }finally{ setRefundBusy(false); }
   };
 })();
+
+/* Shopee parcel fix: actual received vs system count, plus duplicate-submit lock. */
+(function(){
+  let parcelSubmitting=false;
+  function $(id){return document.getElementById(id)}
+  function parcelBusy(on){
+    parcelSubmitting=!!on;
+    const btn=$('parcelSubmitBtn');
+    if(btn){
+      btn.disabled=!!on;
+      btn.classList.toggle('busy-btn',!!on);
+      btn.textContent=on?'Saving... please wait':'Save Parcel Record';
+    }
+    const box=$('parcelBox');
+    if(box) box.querySelectorAll('input,button').forEach(el=>{
+      if(el.id!=='parcelSubmitBtn') el.disabled=!!on;
+    });
+  }
+  window.installParcelUI=function(){
+    const box=document.querySelector('#parcelBox .modal-content');
+    if(!box) return;
+    box.innerHTML=`
+      <h3>Shopee Parcel</h3>
+      <p style="color:#94a3b8;font-size:13px">Record actual received parcels. If Shopee system shows a different number, fill System parcels too.</p>
+      <div class="parcel-auto-note" id="parcelTripNote">Today trip: Auto</div>
+      <input id="parcelExpected" type="number" inputmode="numeric" placeholder="System parcels, e.g. 65">
+      <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="Actual received, e.g. 62">
+      <input id="parcelReturned" type="number" inputmode="numeric" placeholder="Returned parcels">
+      <input id="parcelNote" type="text" placeholder="Note optional">
+      <div id="parcelPreview" class="discount-preview">Estimated: RM 0.00</div>
+      <button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">Save Parcel Record</button>
+      <button onclick="closeModal('parcelBox')">Close</button>`;
+    ['parcelExpected','parcelDelivered','parcelReturned'].forEach(id=>{
+      const el=$(id); if(el) el.oninput=updateParcelPreview;
+    });
+  };
+  window.openParcelBox=function(){
+    installParcelUI();
+    ['parcelExpected','parcelDelivered','parcelReturned','parcelNote'].forEach(id=>{const e=$(id); if(e)e.value='';});
+    const note=$('parcelTripNote'); if(note)note.textContent='Today trip: Auto';
+    updateParcelPreview();
+    openModal('parcelBox');
+  };
+  window.updateParcelPreview=function(){
+    const expected=Number(($('parcelExpected')||{}).value||0);
+    const delivered=Number(($('parcelDelivered')||{}).value||0);
+    const returned=Number(($('parcelReturned')||{}).value||0);
+    const missing=Math.max(0,expected-delivered);
+    const est=(delivered*0.30)+(returned*0.15);
+    const p=$('parcelPreview');
+    if(p)p.textContent=`Estimated: RM ${est.toFixed(2)}${expected?` | Missing: ${missing}`:''}`;
+  };
+  window.saveParcelLog=async function(){
+    if(parcelSubmitting)return;
+    const expected=Number(($('parcelExpected')||{}).value||0);
+    const delivered=Number(($('parcelDelivered')||{}).value||0);
+    const returned=Number(($('parcelReturned')||{}).value||0);
+    let note=($('parcelNote')||{}).value||'';
+    if(expected<0||delivered<0||returned<0||(!expected&&!delivered&&!returned)){
+      showAppAlert('Please fill system count or actual received parcels.','Shopee Parcel');return;
+    }
+    if(expected && delivered>expected){
+      const ok=await appConfirm(`Actual received (${delivered}) is more than system count (${expected}). Continue?`);
+      if(!ok)return;
+    }
+    if(expected && delivered<expected){
+      const missing=expected-delivered;
+      note = note ? `${note} | System ${expected}, actual ${delivered}, missing ${missing}` : `System ${expected}, actual ${delivered}, missing ${missing}`;
+    }
+    parcelBusy(true);
+    try{
+      const runner=typeof withTimeout==='function'?withTimeout(apiCall('saveParcelLog',[{expected,delivered,returned,note}]),35000,'Shopee save'):apiCall('saveParcelLog',[{expected,delivered,returned,note}]);
+      const r=await runner;
+      closeModal('parcelBox');
+      showToast(r.duplicate?'Already saved. Duplicate ignored.':`Shopee saved. Trip ${r.trip||''}`);
+      if(typeof loadTodayStats==='function')loadTodayStats();
+    }catch(e){
+      showAppAlert('Shopee save failed: '+(e.message||e),'Shopee Parcel');
+    }finally{
+      parcelBusy(false);
+    }
+  };
+  window.bossOpenParcelBoss=async function(force){
+    if(!bossRequire())return;
+    bossHideBossPanels();
+    if(typeof bossSetNav==='function')bossSetNav('Shopee');
+    const p=$('bossParcelBox'); if(p){p.style.display='block';p.classList.add('active');}
+    const box=$('bossParcelResult'); if(box)box.textContent='Loading...';
+    try{
+      const d=typeof getBossDataFast==='function'?await getBossDataFast(!!force):await apiCall('getBossOverview',[]);
+      const r=d.parcel||{};
+      let html=`<table><tr><th>Item</th><th class="right">Amount / Count</th></tr>
+        <tr><td>Pending estimated</td><td class="right">RM ${Number(r.pendingEstimated||0).toFixed(2)}</td></tr>
+        <tr><td>Actual paid recorded</td><td class="right">RM ${Number(r.actualPaid||0).toFixed(2)}</td></tr>
+        <tr><td>Difference</td><td class="right">RM ${Number(r.difference||0).toFixed(2)}</td></tr>
+        <tr><td>Record count</td><td class="right">${r.count||0}</td></tr></table>`;
+      const logs=r.logs||[];
+      const shortages=r.shortages||[];
+      if(shortages.length){
+        html+=`<table style="margin-top:12px"><tr><th>Short date</th><th class="right">Missing</th><th class="right">Recovered</th><th class="right">Still missing</th></tr>`;
+        html+=shortages.map(x=>`<tr><td>${x.date||''}</td><td class="right">${x.missing||0}</td><td class="right">${x.recovered||0}</td><td class="right">${x.outstanding||0}</td></tr>`).join('');
+        html+='</table>';
+      }
+      if(logs.length){
+        html+=`<table style="margin-top:12px"><tr><th>Date</th><th>Trip</th><th class="right">System</th><th class="right">Actual</th><th class="right">Missing</th><th class="right">Recovered</th><th class="right">Return</th><th class="right">Est.</th><th>Note</th></tr>`;
+        html+=logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.expected||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.missing||0}</td><td class="right">${x.recovered||0}</td><td class="right">${x.returned||0}</td><td class="right">RM ${Number(x.estimated||0).toFixed(2)}</td><td>${x.note||''}</td></tr>`).join('');
+        html+='</table>';
+      }
+      if(box)box.innerHTML=html;
+    }catch(e){
+      if(box)box.textContent='Load failed: '+(e.message||e);
+    }
+  };
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{try{installParcelUI()}catch(e){}},0));
+})();
 </script>
 
 <script>
@@ -4687,6 +4802,163 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         if(orders) orders.innerText=today.orders||today.count||0;
         if(typeof updateCashDrawerAlert==="function") updateCashDrawerAlert(cashDrawer);
       }catch(_e){}
+    }
+  };
+})();
+</script>
+
+<script>
+/* Final Shopee parcel UX: normal day only system count; shortage/recovery appears only when needed. */
+(function(){
+  const $=id=>document.getElementById(id);
+  let parcelSubmitting=false;
+  let parcelOutstanding=[];
+  function alertBox(msg,title){ if(typeof showAppAlert==='function')showAppAlert(msg,title||'Shopee Parcel'); else alert(msg); }
+  function money(v){return 'RM '+Number(v||0).toFixed(2)}
+  function timeout(p,ms,label){return Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error((label||'Request')+' timeout')),ms))]);}
+  function setBusy(on){
+    parcelSubmitting=!!on;
+    const btn=$('parcelSubmitBtn');
+    if(btn){btn.disabled=!!on;btn.textContent=on?'Saving... please wait':'Save Parcel Record';}
+    const box=$('parcelBox');
+    if(box)box.querySelectorAll('input,button,summary').forEach(el=>{if(el.id!=='parcelSubmitBtn')el.disabled=!!on;});
+  }
+  function renderRecovery(){
+    const wrap=$('parcelRecoveryWrap');
+    const list=$('parcelRecoveryList');
+    if(!wrap||!list)return;
+    const rows=(parcelOutstanding||[]).filter(x=>Number(x.outstanding||0)>0);
+    if(!rows.length){wrap.style.display='none';list.innerHTML='';return;}
+    wrap.style.display='block';
+    list.innerHTML='<table><tr><th>Date</th><th class="right">Missing</th><th class="right">Recovered</th><th class="right">Still missing</th></tr>'+
+      rows.map(x=>`<tr><td>${x.date||''}</td><td class="right">${x.missing||0}</td><td class="right">${x.recovered||0}</td><td class="right">${x.outstanding||0}</td></tr>`).join('')+
+      '</table>';
+  }
+  window.installParcelUI=function(){
+    const box=document.querySelector('#parcelBox .modal-content');
+    if(!box)return;
+    box.innerHTML=`
+      <h3>Shopee Parcel</h3>
+      <p style="color:#94a3b8;font-size:13px">Normal day: fill Shopee system parcels only. Open shortage only when parcels are missing.</p>
+      <div class="parcel-auto-note" id="parcelTripNote">Today trip: Auto</div>
+      <input id="parcelExpected" type="number" inputmode="numeric" placeholder="Shopee system parcels, e.g. 65">
+      <input id="parcelReturned" type="number" inputmode="numeric" placeholder="Returned parcels">
+      <details class="refund-auth" id="parcelShortDetails">
+        <summary>Short parcels / actual received</summary>
+        <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="Actual received, e.g. 62">
+        <div id="parcelShortPreview" class="discount-preview">Missing: 0</div>
+      </details>
+      <div id="parcelRecoveryWrap" style="display:none">
+        <div class="discount-preview">Previous missing parcels</div>
+        <div id="parcelRecoveryList"></div>
+        <input id="parcelRecovered" type="number" inputmode="numeric" placeholder="Recovered today">
+      </div>
+      <input id="parcelNote" type="text" placeholder="Note optional">
+      <div id="parcelPreview" class="discount-preview">Estimated: RM 0.00</div>
+      <button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">Save Parcel Record</button>
+      <button onclick="closeModal('parcelBox')">Close</button>`;
+    ['parcelExpected','parcelReturned','parcelDelivered','parcelRecovered'].forEach(id=>{
+      const el=$(id); if(el)el.oninput=updateParcelPreview;
+    });
+  };
+  window.updateParcelPreview=function(){
+    const expected=Number(($('parcelExpected')||{}).value||0);
+    const shortOpen=!!($('parcelShortDetails')&&$('parcelShortDetails').open);
+    const actualRaw=($('parcelDelivered')||{}).value;
+    const delivered=shortOpen&&actualRaw!==''?Number(actualRaw||0):expected;
+    const returned=Number(($('parcelReturned')||{}).value||0);
+    const missing=Math.max(0,expected-delivered);
+    const recovered=Number(($('parcelRecovered')||{}).value||0);
+    const est=(delivered*0.30)+(returned*0.15);
+    const p=$('parcelPreview'); if(p)p.textContent=`Estimated: ${money(est)}${recovered?` | Recovered: ${recovered}`:''}`;
+    const s=$('parcelShortPreview'); if(s)s.textContent=`Missing: ${missing}`;
+  };
+  window.openParcelBox=async function(){
+    installParcelUI();
+    ['parcelExpected','parcelReturned','parcelDelivered','parcelRecovered','parcelNote'].forEach(id=>{const e=$(id); if(e)e.value='';});
+    const d=$('parcelShortDetails'); if(d)d.open=false;
+    const n=$('parcelTripNote'); if(n)n.textContent='Today trip: Auto';
+    parcelOutstanding=[];
+    renderRecovery();
+    updateParcelPreview();
+    openModal('parcelBox');
+    try{
+      const r=await timeout(apiCall('getParcelSummary',[]),12000,'Shopee summary');
+      parcelOutstanding=r.outstandingShortages||[];
+      renderRecovery();
+    }catch(e){}
+  };
+  window.saveParcelLog=async function(){
+    if(parcelSubmitting)return;
+    const expected=Number(($('parcelExpected')||{}).value||0);
+    const returned=Number(($('parcelReturned')||{}).value||0);
+    const recovered=Number(($('parcelRecovered')||{}).value||0);
+    const shortOpen=!!($('parcelShortDetails')&&$('parcelShortDetails').open);
+    const actualRaw=($('parcelDelivered')||{}).value;
+    const delivered=shortOpen?Number(actualRaw||0):expected;
+    let note=($('parcelNote')||{}).value||'';
+    if(expected<0||delivered<0||returned<0||recovered<0){alertBox('Parcel count cannot be negative.');return;}
+    if(shortOpen && actualRaw===''){alertBox('Please fill actual received parcels.');return;}
+    if(!expected&&!returned&&!recovered){alertBox('Please fill Shopee system parcels.');return;}
+    if(expected && delivered>expected){
+      const ok=await appConfirm(`Actual received (${delivered}) is more than system count (${expected}). Continue?`);
+      if(!ok)return;
+    }
+    if(expected && delivered<expected){
+      const missing=expected-delivered;
+      note=note?`${note} | System ${expected}, actual ${delivered}, missing ${missing}`:`System ${expected}, actual ${delivered}, missing ${missing}`;
+    }
+    if(recovered>0){
+      note=note?`${note} | Recovered ${recovered}`:`Recovered ${recovered}`;
+    }
+    setBusy(true);
+    try{
+      const r=await timeout(apiCall('saveParcelLog',[{expected,delivered,returned,recovered,note}]),35000,'Shopee save');
+      closeModal('parcelBox');
+      showToast(r.duplicate?'Already saved. Duplicate ignored.':`Shopee saved. Trip ${r.trip||''}`);
+      if(typeof loadTodayStats==='function')loadTodayStats();
+    }catch(e){
+      alertBox('Shopee save failed: '+(e.message||e));
+    }finally{
+      setBusy(false);
+    }
+  };
+})();
+</script>
+
+<script>
+/* Final Shopee boss table override: show system count, actual count, missing count. */
+(function(){
+  const $=id=>document.getElementById(id);
+  window.bossOpenParcelBoss=async function(force){
+    if(!bossRequire())return;
+    bossHideBossPanels();
+    if(typeof bossSetNav==='function')bossSetNav('Shopee');
+    const p=$('bossParcelBox'); if(p){p.style.display='block';p.classList.add('active');}
+    const box=$('bossParcelResult'); if(box)box.textContent='Loading...';
+    try{
+      const d=typeof getBossDataFast==='function'?await getBossDataFast(!!force):await apiCall('getBossOverview',[]);
+      const r=d.parcel||{};
+      let html=`<table><tr><th>Item</th><th class="right">Amount / Count</th></tr>
+        <tr><td>Pending estimated</td><td class="right">RM ${Number(r.pendingEstimated||0).toFixed(2)}</td></tr>
+        <tr><td>Actual paid recorded</td><td class="right">RM ${Number(r.actualPaid||0).toFixed(2)}</td></tr>
+        <tr><td>Difference</td><td class="right">RM ${Number(r.difference||0).toFixed(2)}</td></tr>
+        <tr><td>Record count</td><td class="right">${r.count||0}</td></tr></table>`;
+      const logs=r.logs||[];
+      const shortages=r.shortages||[];
+      if(shortages.length){
+        html+=`<table style="margin-top:12px"><tr><th>Short date</th><th class="right">Missing</th><th class="right">Recovered</th><th class="right">Still missing</th></tr>`;
+        html+=shortages.map(x=>`<tr><td>${x.date||''}</td><td class="right">${x.missing||0}</td><td class="right">${x.recovered||0}</td><td class="right">${x.outstanding||0}</td></tr>`).join('');
+        html+='</table>';
+      }
+      if(logs.length){
+        html+=`<table style="margin-top:12px"><tr><th>Date</th><th>Trip</th><th class="right">System</th><th class="right">Actual</th><th class="right">Missing</th><th class="right">Recovered</th><th class="right">Return</th><th class="right">Est.</th><th>Note</th></tr>`;
+        html+=logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.expected||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.missing||0}</td><td class="right">${x.recovered||0}</td><td class="right">${x.returned||0}</td><td class="right">RM ${Number(x.estimated||0).toFixed(2)}</td><td>${x.note||''}</td></tr>`).join('');
+        html+='</table>';
+      }
+      if(box)box.innerHTML=html;
+    }catch(e){
+      if(box)box.textContent='Load failed: '+(e.message||e);
     }
   };
 })();
