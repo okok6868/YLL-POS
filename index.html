@@ -892,6 +892,13 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
       折扣 -RM <span id="dCurrent">0.00</span><br>
       <b>应付 RM <span id="dFinal">0.00</span></b>
     </div>
+    <details class="refund-auth" id="discountAuthDetails">
+      <summary>Boss Authorization / Direct Approve</summary>
+      <input id="discountBossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="discountBossPassword" type="password" placeholder="密码" autocomplete="new-password">
+      <small style="color:#94a3b8">员工折扣每单最多 RM10；超过 RM10 必须老板批准。</small>
+    </details>
+    <div id="discountStatusMsg" class="boss-result" style="display:none"></div>
     <button class="green" onclick="apply折扣()">✅ 应用折扣</button>
     <button onclick="reset折扣()">清除折扣</button>
     <button onclick="close折扣()">关闭</button>
@@ -4544,6 +4551,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     update折扣Preview(discount);
     openModal("discountBox");
     let input=document.getElementById("discountInput");
+    let auth=document.getElementById("discountAuthDetails");
+    let msg=document.getElementById("discountStatusMsg");
+    let id=document.getElementById("discountBossId");
+    let pw=document.getElementById("discountBossPassword");
+    if(auth)auth.open=false;
+    if(msg){msg.style.display="none";msg.textContent="";}
+    if(id)id.value="";
+    if(pw)pw.value="";
     if(input){
       input.value=discount||"";
       setTimeout(()=>{input.focus();input.select()},50);
@@ -4552,9 +4567,101 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         let sub=cart.reduce((a,b)=>a+b.qty*b.price,0);
         if(val>sub){val=sub;input.value=sub}
         update折扣Preview(val);
+        if(auth)auth.open=val>10;
+        if(msg){
+          msg.style.display=val>0?"block":"none";
+          msg.textContent=val>10?"超过 RM10，必须打开 Boss Authorization 输入老板 ID / Password。":"员工折扣审核：每单最多 RM10。";
+        }
       };
       input.onkeydown=function(e){if(e.key==="Enter")apply折扣()}
+      input.oninput();
     }
+  };
+
+  window.apply折扣 = async function(){
+    const input=document.getElementById("discountInput");
+    const auth=document.getElementById("discountAuthDetails");
+    const msg=document.getElementById("discountStatusMsg");
+    const val=Number(input&&input.value);
+    const sub=cart.reduce((a,b)=>a+b.qty*b.price,0);
+    const bossId=((document.getElementById("discountBossId")||{}).value||"").trim();
+    const bossPassword=((document.getElementById("discountBossPassword")||{}).value||"");
+    if(isNaN(val)||val<=0){alert("请输入折扣");return}
+    if(val>sub){alert("❗折扣不能超过总金额");return}
+    if(val>10&&(!bossId||!bossPassword)){
+      if(auth)auth.open=true;
+      if(msg){msg.style.display="block";msg.textContent="超过 RM10 需要 Boss Authorization。";}
+      return;
+    }
+    try{
+      if(msg){msg.style.display="block";msg.textContent="审核折扣中...";}
+      await apiCall("approveDiscount",[val,bossId,bossPassword,sub]);
+      discount=Number(val.toFixed(2));
+      close折扣();
+      showCart();
+      if(typeof showToast==="function")showToast("✅ 折扣已应用");
+    }catch(e){
+      if(String(e.message||e).toLowerCase().includes("locked")){
+        closeAllModal();
+        await checkSystemStatus(false);
+        return;
+      }
+      if(auth)auth.open=true;
+      if(msg){msg.style.display="block";msg.textContent="❌ 折扣不通过："+(e.message||e);}
+      else alert("折扣不通过："+(e.message||e));
+    }
+  };
+
+  function withTimeout(promise,ms,label){
+    return Promise.race([
+      promise,
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error((label||"Request")+" timeout, please check connection.")),ms))
+    ]);
+  }
+
+  window.checkout = function(payment,paid=0,change=0){
+    if(isCheckingOut)return;
+    if(!cart.length){alert("没商品");return}
+    setCheckoutBusy(true);
+    closePay();
+    closeCash();
+    closeModal("mixedBox");
+    const data=calcCartData();
+    lastPayment=payment;
+    lastPaid=moneyNum(paid||data.final);
+    lastChange=moneyNum(change||0);
+    window.lastPayment=payment;
+    window.lastPaid=lastPaid;
+    window.lastChange=lastChange;
+    const send=cart.map(i=>{let p=products.find(x=>x.name===i.name)||{}; return {name:i.name,price:moneyNum(i.price),qty:i.qty,cost:p.cost||0}});
+    const send折扣=moneyNum(discount);
+    if(!navigator.onLine){
+      let offline=JSON.parse(localStorage.getItem("offlineOrders")||"[]");
+      offline.push({id:Date.now(),cart:send,payment,discount:send折扣,paid:lastPaid,change:lastChange,date:new Date().toISOString()});
+      localStorage.setItem("offlineOrders",JSON.stringify(offline));
+      lastCart=JSON.parse(JSON.stringify(cart)); last折扣=send折扣;
+      window.lastCart=lastCart; window.last折扣=last折扣;
+      showToast("⚠️ 离线模式，订单已保存");
+      cart=[];discount=0;showCart();setCheckoutBusy(false);return;
+    }
+    withTimeout(apiCall("saveOrder",[send,payment,send折扣,lastPaid,lastChange]),25000,"Save order")
+      .then(function(res){
+        let orderId=res&&res.orderId;
+        if(!orderId)throw new Error("没有拿到订单号");
+        cart.forEach(i=>i.orderId=orderId);
+        lastCart=JSON.parse(JSON.stringify(cart));
+        last折扣=send折扣;
+        window.lastCart=lastCart; window.last折扣=last折扣;
+        cart=[];discount=0;showCart();
+        setCheckoutBusy(false);
+        try{printReceipt(false);}catch(e){console.error("receipt failed",e); if(typeof showToast==="function")showToast("✅ 已买单，收据显示失败可点 Print Receipt");}
+        loadTodayStats();
+        load();
+      })
+      .catch(function(err){
+        setCheckoutBusy(false);
+        alert("❌ 保存失败："+(err.message||err));
+      });
   };
 
   window.loadTodayStats = async function(){
