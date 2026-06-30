@@ -4964,9 +4964,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 <script>
 /* Final checkout guard: cash/mixed cannot be saved if paid amount is less than total. */
 (function(){
-  const oldCheckout = window.checkout;
   function n(v){return Math.round(Number(v||0)*100)/100}
   function cents(v){return Math.round(Number(v||0)*100)}
+  function timeout(promise,ms,label){
+    return Promise.race([
+      promise,
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error((label||'Request')+' timeout, please check connection.')),ms))
+    ]);
+  }
   function totalDue(){
     try{
       if(typeof calcCartData==='function'){
@@ -4988,7 +4993,52 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       else alert(`Cash received is not enough.\n\nTotal: RM ${due.toFixed(2)}\nPaid: RM ${got.toFixed(2)}`);
       return;
     }
-    return oldCheckout.apply(this,arguments);
+    if(isCheckingOut)return;
+    if(!cart.length){alert('No items');return;}
+    setCheckoutBusy(true);
+    if(typeof closePay==='function')closePay();
+    if(typeof closeCash==='function')closeCash();
+    if(typeof closeModal==='function')closeModal('mixedBox');
+    const data=typeof calcCartData==='function'?calcCartData():{final:due};
+    lastPayment=payment;
+    lastPaid=method==='cash'||method==='mixed'?got:n(data.final||due);
+    lastChange=n(change||0);
+    window.lastPayment=payment;
+    window.lastPaid=lastPaid;
+    window.lastChange=lastChange;
+    const send=(cart||[]).map(i=>{
+      const p=(products||[]).find(x=>x.name===i.name)||{};
+      return {name:i.name,price:n(i.price),qty:i.qty,cost:p.cost||0};
+    });
+    const sendDiscount=n(discount||0);
+    if(!navigator.onLine){
+      const offline=JSON.parse(localStorage.getItem('offlineOrders')||'[]');
+      offline.push({id:Date.now(),cart:send,payment,discount:sendDiscount,paid:lastPaid,change:lastChange,date:new Date().toISOString()});
+      localStorage.setItem('offlineOrders',JSON.stringify(offline));
+      lastCart=JSON.parse(JSON.stringify(cart)); window.lastCart=lastCart;
+      window.last折扣=sendDiscount;
+      cart=[];discount=0;showCart();setCheckoutBusy(false);
+      if(typeof showToast==='function')showToast('Offline order saved');
+      return;
+    }
+    timeout(apiCall('saveOrder',[send,payment,sendDiscount,lastPaid,lastChange]),30000,'Save order')
+      .then(res=>{
+        const orderId=res&&res.orderId;
+        if(!orderId)throw new Error('No order number returned');
+        cart.forEach(i=>i.orderId=orderId);
+        lastCart=JSON.parse(JSON.stringify(cart)); window.lastCart=lastCart;
+        window.last折扣=sendDiscount;
+        cart=[];discount=0;showCart();
+        setCheckoutBusy(false);
+        try{printReceipt(false);}catch(e){console.error('receipt failed',e); if(typeof showToast==='function')showToast('Order saved. Receipt failed; tap Print Receipt.');}
+        if(typeof loadTodayStats==='function')loadTodayStats();
+      })
+      .catch(err=>{
+        setCheckoutBusy(false);
+        const msg=String((err&&err.message)||err||'');
+        if(typeof showAppAlert==='function')showAppAlert('Save failed: '+msg,'Payment');
+        else alert('Save failed: '+msg);
+      });
   };
   window.confirmCash=function(){
     const input=document.getElementById('cashInput');
