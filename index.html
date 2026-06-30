@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -1195,14 +1194,6 @@ function setCheckoutBusy(on){isCheckingOut=!!on; document.body.classList.toggle(
 function updateClock(){let e=document.getElementById("clock");if(e)e.textContent=new Date().toLocaleTimeString()}
 
 async function apiCall(action,args=[]){
-  if(window.google && google.script && google.script.run){
-    return new Promise((resolve,reject)=>{
-      google.script.run
-        .withSuccessHandler(resolve)
-        .withFailureHandler(reject)[action](...(Array.isArray(args)?args:[]));
-    });
-  }
-
   const res = await fetch("/api/pos",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -4542,6 +4533,54 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.sendToTelegram = function(){ return nativeShareReceipt(); };
   window.sendLastReceipt = function(){ return nativeShareReceipt(); };
   window.smartPrintLast = function(){ return nativeShareReceipt(); };
+})();
+</script>
+
+<script>
+/* Minimal restore fix: keep original project, only fix cash top stat and discount modal routing. */
+(function(){
+  window.open折扣 = function(){
+    if(!cart.length){ alert("🛒 购物车为空"); return; }
+    update折扣Preview(discount);
+    openModal("discountBox");
+    let input=document.getElementById("discountInput");
+    if(input){
+      input.value=discount||"";
+      setTimeout(()=>{input.focus();input.select()},50);
+      input.oninput=function(){
+        let val=Number(input.value)||0;
+        let sub=cart.reduce((a,b)=>a+b.qty*b.price,0);
+        if(val>sub){val=sub;input.value=sub}
+        update折扣Preview(val);
+      };
+      input.onkeydown=function(e){if(e.key==="Enter")apply折扣()}
+    }
+  };
+
+  window.loadTodayStats = async function(){
+    try{
+      const res = await apiCall("getPosTopStats", []);
+      const sales=document.getElementById("todaySales");
+      const cash=document.getElementById("todayCash");
+      const orders=document.getElementById("todayOrders");
+      if(sales) sales.innerText=fmt(res.todaySales||0);
+      if(cash) cash.innerText=fmt(res.todayCash||0);
+      if(orders) orders.innerText=res.orders||0;
+      if(typeof updateCashDrawerAlert==="function") updateCashDrawerAlert(res.cashDrawer||{});
+    }catch(e){
+      try{
+        const cashDrawer = await apiCall("getCashDrawer", []);
+        const today = await apiCall("getTodayReport", []);
+        const sales=document.getElementById("todaySales");
+        const cash=document.getElementById("todayCash");
+        const orders=document.getElementById("todayOrders");
+        if(sales) sales.innerText=fmt(today.total||0);
+        if(cash) cash.innerText=fmt(cashDrawer.cashDrawer||0);
+        if(orders) orders.innerText=today.orders||today.count||0;
+        if(typeof updateCashDrawerAlert==="function") updateCashDrawerAlert(cashDrawer);
+      }catch(_e){}
+    }
+  };
 })();
 </script>
 
