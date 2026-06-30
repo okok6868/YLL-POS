@@ -1839,7 +1839,8 @@ async function recoveryUnlock(){
       sessionStorage.removeItem("bossSessionUntil");
       if(document.getElementById("recoveryCodeInput"))document.getElementById("recoveryCodeInput").value="";
       await checkSystemStatus(true);
-      showToast("✅ 已解锁");
+      showToast("✅ 已解锁，恢复码已自动更换");
+      alert("✅ 已解锁。\n\n系统已自动生成新的恢复码，请到 Google Sheet 的 Settings 查看 RecoveryCode。旧恢复码已经失效。");
       return;
     }
     alert((r && r.error) ? r.error : "恢复码错误");
