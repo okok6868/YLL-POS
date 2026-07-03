@@ -816,7 +816,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div class="header">
   <div class="header-top">
     <div class="title">YLL FEEDS ENTERPRISE</div>
-    <div class="tools"><span id="clock"></span><button class="plain-gear" title="Settings" aria-label="Settings" onclick="openBossLogin()">&#9881;</button><button onclick="toggleMode()">Mode</button></div>
+    <div class="tools"><span id="clock"></span><button class="plain-gear" title="Settings" aria-label="Settings" onclick="openBossLogin()">&#9881;</button><button id="themeBtn" title="Light mode" aria-label="Light mode" onclick="toggleMode()">&#9728;</button><button id="langBtn" title="Switch Chinese" aria-label="Switch Chinese" onclick="toggleLanguage()">&#20013;</button></div>
   </div>
   <div class="stats">
     <div class="stat blue"><div class="icon">Sales</div><div><small>Today Payments</small><b id="todaySales">RM 0.00</b></div></div>
@@ -2560,32 +2560,109 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error((label || 'Request') + ' timeout, please check connection.')), ms))
   ]);
+  const I18N = {
+    en: {
+      all:'All Products', home:'Home', search:'Search product / category / price', low:'Low Stock', prev:'Prev', next:'Next',
+      cart:'Cart', empty:'Cart is empty', subtotal:'Subtotal', discount:'Discount', total:'Total', checkout:'CHECKOUT',
+      print:'Print Receipt', parcel:'Shopee Parcel', refund:'Refund', login:'Login', close:'Close', bossAuth:'Boss Authorization',
+      bossMode:'Boss Mode', bossHint:'Authorized use only. Idle mode returns to POS screen.', logout:'Logout',
+      enteredBoss:'Boss mode opened.', exitedBoss:'Boss mode closed.', autoExited:'Boss mode auto closed.',
+      loggingIn:'Logging in...', missingLogin:'Please enter ID and password.', wrongLogin:'ID or password is wrong. Remaining ',
+      loginFailed:'Login failed: ', choose:'Choose a function.'
+    },
+    zh: {
+      all:'\u5168\u90e8\u5546\u54c1', home:'\u9996\u9875', search:'\u641c\u7d22\u5546\u54c1 / \u5206\u7c7b / \u4ef7\u94b1', low:'\u4f4e\u5e93\u5b58', prev:'\u4e0a\u4e00\u9875', next:'\u4e0b\u4e00\u9875',
+      cart:'\u8d2d\u7269\u8f66', empty:'\u8d2d\u7269\u8f66\u662f\u7a7a\u7684', subtotal:'\u5c0f\u8ba1', discount:'\u6298\u6263', total:'\u603b\u6570', checkout:'\u4e70\u5355',
+      print:'\u6253\u5370\u6536\u636e', parcel:'Shopee \u5305\u88f9', refund:'\u9000\u8d27', login:'\u767b\u5165', close:'\u5173\u95ed', bossAuth:'\u8001\u677f\u6743\u9650',
+      bossMode:'\u7ba1\u7406\u6a21\u5f0f', bossHint:'\u4ec5\u9650\u6388\u6743\u4f7f\u7528\uff0c\u95f2\u7f6e\u540e\u81ea\u52a8\u56de\u5230 POS\u3002', logout:'\u9000\u51fa',
+      enteredBoss:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\u3002', exitedBoss:'\u5df2\u9000\u51fa\u7ba1\u7406\u6a21\u5f0f\u3002', autoExited:'\u7ba1\u7406\u6a21\u5f0f\u5df2\u81ea\u52a8\u9000\u51fa\u3002',
+      loggingIn:'\u767b\u5165\u4e2d...', missingLogin:'\u8bf7\u8f93\u5165 ID \u548c\u5bc6\u7801\u3002', wrongLogin:'ID \u6216\u5bc6\u7801\u9519\u8bef\uff0c\u5269\u4f59 ',
+      loginFailed:'\u767b\u5165\u5931\u8d25\uff1a', choose:'\u9009\u62e9\u529f\u80fd\u3002'
+    }
+  };
+  const lang = () => localStorage.getItem('yllLang') || 'en';
+  const tr = key => (I18N[lang()] && I18N[lang()][key]) || I18N.en[key] || key;
+
+  function ensureCleanUiCss(){
+    if(document.getElementById('cleanThemeCss'))return;
+    const style=document.createElement('style');
+    style.id='cleanThemeCss';
+    style.textContent = `
+      .tools #themeBtn,.tools #langBtn{min-width:44px!important}
+      body.light,body.light #app,body.light .app,body.light .layout,body.light .main,body.light .products{background:#f3f4f6!important;background-color:#f3f4f6!important;color:#0f172a!important}
+      body.light::after,body.light .modal::after{background:#f3f4f6!important}
+      body.light .topline{background:#f3f4f6!important;border-bottom-color:rgba(15,23,42,.12)!important}
+      body.light .modal{background:rgba(15,23,42,.28)!important}
+      body.light .modal-content,body.light #bossDashboard .modal-content{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important;box-shadow:0 24px 70px rgba(15,23,42,.24)!important}
+      body.light .boss-dashboard-shell{background:#ffffff!important;color:#0f172a!important}
+      body.light .boss-hero{background:linear-gradient(135deg,#dbeafe,#f5f3ff)!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
+      body.light .boss-panel,body.light .boss-tab-grid,body.light .overview-card,body.light .boss-money-card,body.light .boss-result{background:#f8fafc!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
+      body.light .boss-tab-grid button{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
+      body.light .boss-tab-grid button.active{background:linear-gradient(135deg,#2563eb,#14b8a6)!important;color:#fff!important}
+      body.light #appAlertText,body.light #bossLoginMsg{color:#0f172a!important}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function setThemeButton(){
+    const btn=$('themeBtn') || document.querySelector('.tools button[onclick="toggleMode()"]');
+    if(btn){
+      btn.id='themeBtn';
+      btn.textContent=document.body.classList.contains('light')?'\u263e':'\u2600';
+      btn.title=document.body.classList.contains('light')?'Dark mode':'Light mode';
+      btn.setAttribute('aria-label',btn.title);
+    }
+    let langBtn=$('langBtn');
+    if(!langBtn && btn && btn.parentElement){
+      langBtn=document.createElement('button');
+      langBtn.id='langBtn';
+      langBtn.type='button';
+      langBtn.onclick=window.toggleLanguage;
+      btn.parentElement.appendChild(langBtn);
+    }
+    if(langBtn){
+      langBtn.textContent=lang()==='zh'?'EN':'\u4e2d';
+      langBtn.title=lang()==='zh'?'Switch to English':'\u5207\u6362\u4e2d\u6587';
+    }
+  }
 
   function setStaticText(){
+    ensureCleanUiCss();
     const title = document.querySelector('.title'); if(title)title.textContent='YLL FEEDS ENTERPRISE';
     const bossBtn = document.querySelector('.plain-gear');
     if(bossBtn){ bossBtn.textContent='\u2699'; bossBtn.title='Settings'; bossBtn.setAttribute('aria-label','Settings'); }
-    const modeBtn = document.querySelector('.tools button[onclick="toggleMode()"]');
-    if(modeBtn)modeBtn.textContent='Mode';
+    setThemeButton();
     const stats = document.querySelectorAll('.stat small');
     if(stats[0])stats[0].textContent='Today Payments';
     if(stats[1])stats[1].textContent='Cash Drawer';
     if(stats[2])stats[2].textContent='Orders';
     if(stats[3])stats[3].textContent='Products';
-    const all = document.querySelector('.sidebar > .cat-btn span:first-child'); if(all)all.textContent='All Products';
-    const h = document.querySelector('.right h3'); if(h)h.textContent='Cart';
-    const search = $('searchInput'); if(search)search.placeholder='Search product / category / price';
-    const low = document.querySelector('.quick-chip'); if(low)low.textContent='Low Stock';
-    const checkout = document.querySelector('.paybar .big'); if(checkout)checkout.textContent='CHECKOUT';
-    const discountBtn = document.querySelector('.discount-btn'); if(discountBtn)discountBtn.innerHTML='Discount <b id="dVal">0.00</b>';
-    const clearBtn = document.querySelector('.smallbtn.danger'); if(clearBtn)clearBtn.textContent='Clear';
+    const all = document.querySelector('.sidebar > .cat-btn span:first-child'); if(all)all.textContent=tr('all');
+    const homeBtn = document.querySelector('.topline button[onclick="goHome()"]'); if(homeBtn)homeBtn.textContent=tr('home');
+    const h = document.querySelector('.right h3'); if(h)h.textContent=tr('cart');
+    const empty = document.querySelector('#cart .empty'); if(empty)empty.textContent=tr('empty');
+    const search = $('searchInput'); if(search)search.placeholder=tr('search');
+    const low = document.querySelector('.quick-chip'); if(low)low.textContent=tr('low');
+    const prev = document.querySelector('.topline button[onclick="prevPage()"]'); if(prev)prev.textContent=tr('prev');
+    const next = document.querySelector('.topline button[onclick="nextPage()"]'); if(next)next.textContent=tr('next');
+    const checkout = document.querySelector('.paybar .big'); if(checkout)checkout.textContent=tr('checkout');
+    const discountBtn = document.querySelector('.discount-btn'); if(discountBtn)discountBtn.innerHTML=esc(tr('discount'))+' <b id="dVal">0.00</b>';
+    const clearBtn = document.querySelector('.smallbtn.danger'); if(clearBtn)clearBtn.textContent=tr('close')==='Close'?'Clear':'\u6e05\u7a7a';
     const moreBtn = document.querySelector('.smallbtn.more'); if(moreBtn)moreBtn.textContent='...';
     const labels = document.querySelectorAll('.summary .row span');
-    if(labels[0])labels[0].textContent='Subtotal';
-    if(labels[1])labels[1].textContent='Discount';
-    if(labels[2])labels[2].textContent='Total';
+    if(labels[0])labels[0].textContent=tr('subtotal');
+    if(labels[1])labels[1].textContent=tr('discount');
+    if(labels[2])labels[2].textContent=tr('total');
     const more = $('moreMenu');
-    if(more)more.innerHTML='<button class="smallbtn print-btn" onclick="smartPrintLast()">Print Receipt</button><button class="smallbtn parcel-btn" onclick="openParcelBox()">Shopee Parcel</button><button class="smallbtn close-btn" onclick="openRefundBox()">Refund</button>';
+    if(more)more.innerHTML=`<button class="smallbtn print-btn" onclick="smartPrintLast()">${esc(tr('print'))}</button><button class="smallbtn parcel-btn" onclick="openParcelBox()">${esc(tr('parcel'))}</button><button class="smallbtn close-btn" onclick="openRefundBox()">${esc(tr('refund'))}</button>`;
+    const bossTitle = document.querySelector('#bossLoginBox h3'); if(bossTitle)bossTitle.textContent=tr('bossAuth');
+    const bossLoginBtn = $('bossLoginBtn'); if(bossLoginBtn && !bossLoginBtn.disabled)bossLoginBtn.textContent=tr('login');
+    const bossLoginClose = document.querySelector('#bossLoginBox button[onclick*="closeModal"]'); if(bossLoginClose)bossLoginClose.textContent=tr('close');
+    const hero = document.querySelector('.boss-hero div'); if(hero)hero.innerHTML=`<b>${esc(tr('bossMode'))}</b><br><small>${esc(tr('bossHint'))}</small>`;
+    const logoutBtn = document.querySelector('.boss-hero button'); if(logoutBtn)logoutBtn.textContent=tr('logout');
+    const bossResult = $('bossResult'); if(bossResult && /[ÃƒÃ‚]|Ã¥|Ã¨|Ã¦|Ã§/.test(bossResult.textContent||''))bossResult.textContent=tr('choose');
+    const alertBtn = document.querySelector('#appAlertBox button');
+    if(alertBtn)alertBtn.textContent=tr('close');
     const busy = $('checkoutBusy'); if(busy)busy.textContent='Processing checkout, please wait...';
   }
 
@@ -3005,12 +3082,69 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
   };
 
+  window.toggleMode = function(){
+    ensureCleanUiCss();
+    document.body.classList.toggle('light');
+    localStorage.setItem('yllTheme', document.body.classList.contains('light') ? 'light' : 'dark');
+    setStaticText();
+  };
+
+  window.toggleLanguage = function(){
+    localStorage.setItem('yllLang', lang()==='zh' ? 'en' : 'zh');
+    setStaticText();
+    try{ render(currentList || currentProducts()); }catch(e){}
+  };
+
+  window.bossLogout = function(auto=false){
+    try{ sessionStorage.removeItem('bossSessionUntil'); }catch(e){}
+    try{ closeModal('bossDashboard'); }catch(e){}
+    if(typeof showToast === 'function')showToast(auto ? tr('autoExited') : tr('exitedBoss'));
+    setStaticText();
+  };
+
+  window.bossLogin = async function(){
+    const idEl=$('bossId'), pwEl=$('bossPassword'), msg=$('bossLoginMsg'), btn=$('bossLoginBtn');
+    const id=(idEl||{}).value||'', pw=(pwEl||{}).value||'';
+    if(!id || !pw){
+      if(msg){msg.style.display='block'; msg.textContent=tr('missingLogin');}
+      return;
+    }
+    if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
+    if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
+    try{
+      const r=await apiCall('bossLogin',[id,pw]);
+      if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
+      if(r&&r.ok){
+        try{
+          BOSS_IDLE_MS=Math.max(1,Number(r.autoLogoutMinutes||10))*60*1000;
+          sessionStorage.setItem('bossSessionUntil',String(Date.now()+BOSS_IDLE_MS));
+          if(typeof bossStartIdleTimer==='function')bossStartIdleTimer();
+        }catch(e){}
+        if(idEl)idEl.value='';
+        if(pwEl)pwEl.value='';
+        closeModal('bossLoginBox');
+        openModal('bossDashboard');
+        await window.bossOpenOverview();
+        const br=$('bossResult'); if(br)br.textContent=tr('enteredBoss');
+        setStaticText();
+        return;
+      }
+      if(msg)msg.textContent=tr('wrongLogin')+(r&&r.remaining!=null?r.remaining:0)+'.';
+    }catch(e){
+      if(msg)msg.textContent=tr('loginFailed')+(e.message||e);
+    }finally{
+      if(btn){btn.disabled=false; btn.textContent=tr('login');}
+    }
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     setStaticText();
     setTimeout(setStaticText, 300);
     setTimeout(setStaticText, 1200);
     setTimeout(()=>{ try{ window.loadTodayStats(); }catch(e){} }, 600);
+    ensureCleanUiCss();
     if(localStorage.getItem('yllTheme') === 'light') document.body.classList.add('light');
+    setThemeButton();
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
   });
 })();
