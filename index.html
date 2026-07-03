@@ -816,10 +816,10 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div class="header">
   <div class="header-top">
     <div class="title">YLL FEEDS ENTERPRISE</div>
-    <div class="tools"><span id="clock"></span><button class="plain-gear" title="Boss" aria-label="Boss" onclick="openBossLogin()">Boss</button><button onclick="toggleMode()">Mode</button></div>
+    <div class="tools"><span id="clock"></span><button class="plain-gear" title="Settings" aria-label="Settings" onclick="openBossLogin()">&#9881;</button><button onclick="toggleMode()">Mode</button></div>
   </div>
   <div class="stats">
-    <div class="stat blue"><div class="icon">Sales</div><div><small>Today Sales</small><b id="todaySales">RM 0.00</b></div></div>
+    <div class="stat blue"><div class="icon">Sales</div><div><small>Today Payments</small><b id="todaySales">RM 0.00</b></div></div>
     <div class="stat green"><div class="icon">Cash</div><div><small>Cash Drawer</small><b id="todayCash">RM 0.00</b></div></div>
     <div class="stat yellow"><div class="icon">Orders</div><div><small>Orders</small><b id="todayOrders">0</b></div></div>
     <div class="stat purple"><div class="icon">Items</div><div><small>Products</small><b id="todayItems">0</b></div></div>
@@ -959,31 +959,29 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
 <div id="refundBox" class="modal">
   <div class="modal-content">
-    <h3>Refund</h3>
-    <p style="color:#94a3b8;font-size:13px">Select an order from last 3 days, choose returned item and quantity.</p>
-    <button class="green" onclick="loadRecentRefundOrders(true)">Load Recent Orders</button>
-    <div id="refundRecentBox">Press Load Recent Orders.</div>
-    <input id="refundOrderId" type="text" placeholder="Order No" readonly>
-    <div id="refundItemList" class="refund-item-list">Select an order first.</div>
-    <div id="refundTotalBox" class="refund-summary">Refund Total: RM 0.00</div>
-    <input id="refundReason" type="text" placeholder="Reason, e.g. customer return">
+    <h3>â†©ï¸ Refund</h3>
+    <p style="color:#94a3b8;font-size:13px">å·²ä¹°å•çš„é€€è´§éœ€è¦ ç®¡ç†å¸å· / å¯†ç ã€‚ä¼šä¿ç•™åŽŸè®¢å•ï¼Œä¸åˆ é™¤åŽ†å²ã€‚</p>
+    <input id="refundOrderId" type="text" placeholder="è®¢å•å· ORD-...">
+    <input id="refundItem" type="text" placeholder="å•†å“å / å¤‡æ³¨">
+    <input id="refundAmount" type="number" placeholder="é€€æ¬¾é‡‘é¢ RM">
+    <input id="refundReason" type="text" placeholder="åŽŸå› ï¼Œä¾‹å¦‚é¡¾å®¢é€€è´§">
     <details class="refund-auth" id="refundAuthDetails">
-      <summary>Boss Authorization / Direct Approve</summary>
-      <input id="refundBossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <input id="refundBossPassword" type="password" placeholder="Password" autocomplete="new-password">
-      <div class="receipt-note">Leave blank = submit pending request. Fill ID/password = approve immediately.</div>
+      <summary>ðŸ” æ‰“å¼€æŽˆæƒéªŒè¯</summary>
+      <input id="refundBossId" type="text" placeholder="å¸å·" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="refundBossPassword" type="password" placeholder="å¯†ç " autocomplete="new-password">
+      <div class="receipt-note">é€€è´§ä¸€å®šè¦æŽˆæƒéªŒè¯ã€‚æäº¤ä¸­ä¼šé”ä½ï¼Œé¿å…é‡å¤ä¸Šä¼ ã€‚</div>
     </details>
-    <div id="refundStatusMsg" class="refund-status-msg" style="display:none"></div>
-    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">Submit Refund</button>
-    <button onclick="closeModal('refundBox')">Close</button>
+    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">âœ… ç¡®è®¤é€€è´§</button>
+    <button onclick="closeModal('refundBox')">å…³é—­</button>
   </div>
 </div>
+
 
 <div id="appAlertBox" class="modal">
   <div class="modal-content">
     <h3 id="appAlertTitle">Notice</h3>
     <div id="appAlertText"></div>
-    <button class="green" onclick="closeModal('appAlertBox')">OK</button>
+    <button class="green" onclick="closeModal('appAlertBox')">çŸ¥é“äº†</button>
   </div>
 </div>
 
@@ -2565,8 +2563,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   function setStaticText(){
     const title = document.querySelector('.title'); if(title)title.textContent='YLL FEEDS ENTERPRISE';
+    const bossBtn = document.querySelector('.plain-gear');
+    if(bossBtn){ bossBtn.textContent='\u2699'; bossBtn.title='Settings'; bossBtn.setAttribute('aria-label','Settings'); }
+    const modeBtn = document.querySelector('.tools button[onclick="toggleMode()"]');
+    if(modeBtn)modeBtn.textContent='Mode';
     const stats = document.querySelectorAll('.stat small');
-    if(stats[0])stats[0].textContent='Today Sales';
+    if(stats[0])stats[0].textContent='Today Payments';
     if(stats[1])stats[1].textContent='Cash Drawer';
     if(stats[2])stats[2].textContent='Orders';
     if(stats[3])stats[3].textContent='Products';
@@ -2586,6 +2588,39 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(more)more.innerHTML='<button class="smallbtn print-btn" onclick="smartPrintLast()">Print Receipt</button><button class="smallbtn parcel-btn" onclick="openParcelBox()">Shopee Parcel</button><button class="smallbtn close-btn" onclick="openRefundBox()">Refund</button>';
     const busy = $('checkoutBusy'); if(busy)busy.textContent='Processing checkout, please wait...';
   }
+
+  function setStatDetail(id, html){
+    const b=$(id);
+    if(!b)return;
+    let detail=b.parentElement && b.parentElement.querySelector('.stat-detail');
+    if(!detail && b.parentElement){
+      detail=document.createElement('div');
+      detail.className='stat-detail';
+      detail.style.cssText='font-size:11px;color:#9ca3af;line-height:1.25;margin-top:2px;font-weight:700';
+      b.parentElement.appendChild(detail);
+    }
+    if(detail)detail.innerHTML=html;
+  }
+
+  window.loadTodayStats = async function(){
+    try{
+      const [today, top] = await Promise.all([
+        apiCall('getTodayReport',[]),
+        apiCall('getPosTopStats',[]).catch(()=>null)
+      ]);
+      const drawer = top && top.cashDrawer ? top.cashDrawer : await apiCall('getCashDrawer',[]);
+      const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
+      if(sales)sales.textContent=money(today.total||0);
+      setStatDetail('todaySales', `Cash ${money(today.Cash||0)} | QR ${money(today.MBB_QR||0)} | Transfer ${money(today.Transfer||0)}`);
+      if(cash)cash.textContent=money(drawer.cashDrawer||0);
+      setStatDetail('todayCash', `Collected ${money(drawer.collected||0)}`);
+      if(orders)orders.textContent=today.orders||today.count||0;
+      if(items)items.textContent=(currentProducts()||[]).length || (window.products||[]).length || 0;
+      if(typeof updateCashDrawerAlert === 'function')updateCashDrawerAlert(drawer);
+    }catch(e){
+      console.error('loadTodayStats failed', e);
+    }
+  };
 
   window.render = function(list){
     const box=$('list'); if(!box)return;
@@ -2906,10 +2941,75 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     finally{ if(btn){btn.disabled=false; btn.textContent='Save Parcel Record';} }
   };
 
+  window.bossOpenCashCollect = async function(){
+    if(typeof bossRequire === 'function' && !bossRequire())return;
+    try{
+      if(typeof bossHideBossPanels === 'function')bossHideBossPanels();
+    }catch(e){}
+    const panel=$('bossCashBox');
+    if(panel){panel.style.display='block';panel.classList.add('active');}
+    const info=$('bossCashInfo');
+    if(info)info.textContent='Loading...';
+    try{
+      const r=await apiCall('getCashDrawer',[]);
+      const drawer=num(r.cashDrawer||0), collected=num(r.collected||0), refunds=num(r.refunds||0), flt=num(r.floatCash||0), collectable=drawer-flt;
+      const a=$('cashDrawerAmount'), b=$('floatCashAmount'), c=$('collectableAmount');
+      if(a)a.textContent=money(drawer);
+      if(b)b.textContent=money(flt);
+      if(c)c.textContent=money(collectable);
+      const warn=$('bossCashWarning');
+      if(warn){
+        warn.style.display=collectable>=num(r.cashDrawerLimit||500)?'block':'none';
+        warn.textContent=`Collectable cash ${money(collectable)} reached reminder ${money(r.cashDrawerLimit||500)}.`;
+      }
+      let html=`<table><tr><th>Item</th><th class="right">Amount</th></tr>
+        <tr><td>Cash currently in drawer</td><td class="right">${money(drawer)}</td></tr>
+        <tr><td>Cash already collected</td><td class="right">${money(collected)}</td></tr>
+        <tr><td>Approved cash refunds deducted</td><td class="right">${money(refunds)}</td></tr>
+        <tr><td>Float cash</td><td class="right">${money(flt)}</td></tr></table>`;
+      const logs=r.collections||[];
+      if(logs.length){
+        html+=`<table style="margin-top:12px"><tr><th>Date</th><th class="right">Collected</th><th>Note</th></tr>`+
+          logs.map(x=>`<tr><td>${esc(x.date||'')}</td><td class="right">${money(x.amount||0)}</td><td>${esc(x.note||'')}</td></tr>`).join('')+
+          `</table>`;
+      }
+      if(info)info.innerHTML=html;
+    }catch(e){
+      if(info)info.textContent='Load failed: '+(e.message||e);
+    }
+  };
+
+  window.bossOpenOverview = async function(){
+    if(typeof bossRequire === 'function' && !bossRequire())return;
+    try{ if(typeof bossHideBossPanels === 'function')bossHideBossPanels(); }catch(e){}
+    const panel=$('bossOverviewPanel');
+    if(panel){panel.style.display='block';panel.classList.add('active');}
+    const box=$('bossOverviewResult');
+    if(box)box.textContent='Loading...';
+    try{
+      const [overview,today]=await Promise.all([apiCall('getBossDashboardFast',[]).catch(()=>apiCall('getBossOverview',[])), apiCall('getTodayReport',[])]);
+      const cash=overview.cash||{}, parcel=overview.parcel||{}, other=overview.other||{};
+      const drawer=num(cash.cashDrawer||0), flt=num(cash.floatCash||0), collectable=drawer-flt;
+      const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
+      const html=[
+        card('Today Cash',money(today.Cash||0),`QR ${money(today.MBB_QR||0)} / Transfer ${money(today.Transfer||0)}`,false),
+        card('Today Total',money(today.total||0),`Orders ${today.orders||today.count||0}`,false),
+        card('Cash Drawer',money(drawer),`Collectable ${money(collectable)} / Collected ${money(cash.collected||0)}`,collectable>=num(cash.cashDrawerLimit||500)),
+        card('Shopee Pending',money(parcel.pendingEstimated||0),`Paid ${money(parcel.actualPaid||0)}`,num(parcel.pendingEstimated)>0),
+        card('Other Pending',money(other.pending||0),`Received ${money(other.received||0)}`,num(other.pending)>0),
+        card('Pending Refunds',money(overview.refundPendingAmount||0),`${overview.refundPending||0} requests`,num(overview.refundPending)>0)
+      ].join('');
+      if(box)box.innerHTML=html;
+    }catch(e){
+      if(box)box.textContent='Load failed: '+(e.message||e);
+    }
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     setStaticText();
     setTimeout(setStaticText, 300);
     setTimeout(setStaticText, 1200);
+    setTimeout(()=>{ try{ window.loadTodayStats(); }catch(e){} }, 600);
     if(localStorage.getItem('yllTheme') === 'light') document.body.classList.add('light');
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
   });
@@ -2918,4 +3018,5 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 </script>
 </body>
 </html>
+
 
