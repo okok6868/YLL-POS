@@ -2576,6 +2576,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       processingCheckout:'Processing checkout, please wait...', page:'Page', noProducts:'No products', transfer:'Transfer', collected:'Collected',
       payment:'Payment', confirm:'Confirm', mixed:'Mixed', validAmount:'Please enter valid amount', paymentNotEnough:'Payment is not enough.',
       cashNotEnough:'Cash received is not enough.', confirmPaymentReceived:'Confirm {label} payment received?',
+      confirmCashReceived:'Confirm cash received?',
       offlineSaved:'Offline order saved. It will sync when online.', orderSlow:'Order saved. Connection was slow.',
       saveUnconfirmed:'Save not confirmed. Please check Orders_Main before pressing checkout again.',
       noOrderNumber:'No order number returned', noLowStock:'No low stock products', change:'Change', remaining:'Remaining',
@@ -2592,6 +2593,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       cashReminderReached:'Collectable cash {amount} reached reminder {limit}.', paid:'Paid', otherPending:'Other Pending',
       received:'Received', pendingRefunds:'Pending Refunds', requests:'requests', records:'Records', pending:'Pending', last30:'Last 30 records',
       actualPaidRequired:'Please enter actual paid amount.', saveFailed:'Save failed: ', receiptFailed:'Order saved. Receipt failed; tap Print Receipt.',
+      receiptCopied:'Receipt copied',
       saveSentSlow:'Order sent. Network is slow, POS will confirm in background.', saveStillChecking:'Order sent. Please do not press checkout again.'
     },
     zh: {
@@ -2609,6 +2611,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       processingCheckout:'\u6b63\u5728\u4e70\u5355\uff0c\u8bf7\u7a0d\u7b49...', page:'\u7b2c', noProducts:'\u6ca1\u6709\u5546\u54c1', transfer:'\u8f6c\u8d26', collected:'\u5df2\u6536\u8d70',
       payment:'\u4ed8\u6b3e', confirm:'\u786e\u8ba4', mixed:'\u6df7\u5408\u4ed8\u6b3e', validAmount:'\u8bf7\u8f93\u5165\u6b63\u786e\u91d1\u989d', paymentNotEnough:'\u4ed8\u6b3e\u91d1\u989d\u4e0d\u8db3\u3002',
       cashNotEnough:'\u6536\u5230\u7684\u73b0\u91d1\u4e0d\u8db3\u3002', confirmPaymentReceived:'\u786e\u8ba4\u5df2\u6536\u5230 {label} \u4ed8\u6b3e\uff1f',
+      confirmCashReceived:'\u786e\u8ba4\u5df2\u6536\u5230\u73b0\u91d1\uff1f',
       offlineSaved:'\u79bb\u7ebf\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u6709\u7f51\u540e\u4f1a\u81ea\u52a8\u540c\u6b65\u3002', orderSlow:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u53ea\u662f\u7f51\u7edc\u8f83\u6162\u3002',
       saveUnconfirmed:'\u8fd8\u4e0d\u80fd\u786e\u8ba4\u5df2\u4fdd\u5b58\u3002\u8bf7\u5148\u68c0\u67e5 Orders_Main\uff0c\u518d\u51b3\u5b9a\u662f\u5426\u91cd\u65b0\u4e70\u5355\u3002',
       noOrderNumber:'\u6ca1\u6709\u56de\u4f20\u8ba2\u5355\u53f7', noLowStock:'\u6ca1\u6709\u4f4e\u5e93\u5b58\u5546\u54c1', change:'\u627e\u96f6', remaining:'\u8fd8\u5dee',
@@ -2625,6 +2628,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       cashReminderReached:'\u53ef\u6536\u8d70\u73b0\u91d1 {amount} \u5df2\u8fbe\u5230\u63d0\u9192\u91d1\u989d {limit}\u3002', paid:'\u5df2\u6536', otherPending:'\u5176\u5b83\u672a\u6536',
       received:'\u5df2\u6536', pendingRefunds:'\u5f85\u6279\u9000\u6b3e', requests:'\u7533\u8bf7', records:'\u8bb0\u5f55', pending:'\u672a\u6536', last30:'\u6700\u8fd1 30 \u7b14',
       actualPaidRequired:'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002', saveFailed:'\u8bb0\u5f55\u5931\u8d25\uff1a', receiptFailed:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u4f46\u6536\u636e\u5217\u5370\u5931\u8d25\uff0c\u8bf7\u70b9\u51fb\u6253\u5370\u6536\u636e\u3002',
+      receiptCopied:'\u6536\u636e\u5df2\u590d\u5236',
       saveSentSlow:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u7f51\u7edc\u6162\uff0cPOS \u4f1a\u5728\u540e\u53f0\u7ee7\u7eed\u786e\u8ba4\u3002', saveStillChecking:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u8bf7\u4e0d\u8981\u518d\u91cd\u590d\u70b9\u4e70\u5355\u3002'
     }
   };
@@ -2888,9 +2892,57 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.renderCategories = function(){
     const bar=$('menuList'); if(!bar)return;
-    const first=document.querySelector('.sidebar > .cat-btn .cat-count'); if(first)first.textContent=products.length;
-    const cats=[...new Set(products.map(p=>p.category||'Uncategorized'))];
-    bar.innerHTML=cats.map(c=>`<div class="cat-btn" onclick='quickCat(${JSON.stringify(c)},this)'><span>${esc(c)}</span><span class="cat-count">${products.filter(p=>(p.category||'Uncategorized')===c).length}</span></div>`).join('');
+    const allProducts=currentProducts();
+    const first=document.querySelector('.sidebar > .cat-btn .cat-count'); if(first)first.textContent=allProducts.length;
+    const cats=[...new Set(allProducts.map(p=>p.category||'Uncategorized'))];
+    bar.innerHTML=cats.map(c=>`<div class="cat-btn" onclick='quickCat(${JSON.stringify(c)},this)'><span>${esc(c)}</span><span class="cat-count">${allProducts.filter(p=>(p.category||'Uncategorized')===c).length}</span></div>`).join('');
+  };
+  function setActiveCategory(el){
+    document.querySelectorAll('.cat-btn').forEach(x=>x.classList.remove('active'));
+    if(el)el.classList.add('active');
+  }
+  function allCategorySelected(cat){
+    const s=String(cat||'').trim().toLowerCase();
+    return !s || s==='all' || s==='all products' || s==='全部商品' || s==='全部分类' || s.includes('å…¨');
+  }
+  window.filterCat = function(cat){
+    const allProducts=currentProducts();
+    currentPage=1;
+    if(allCategorySelected(cat)){
+      try{ currentCat='ALL'; searchText=''; }catch(e){}
+      const si=$('searchInput'); if(si)si.value='';
+      currentList=allProducts;
+      render(currentList);
+      return;
+    }
+    try{ currentCat=cat; }catch(e){}
+    currentList=allProducts.filter(p=>String(p.category||'Uncategorized')===String(cat));
+    render(currentList);
+  };
+  window.quickCat = function(cat,el){
+    setActiveCategory(el);
+    filterCat(cat);
+  };
+  window.goHome = function(){
+    currentPage=1;
+    try{ currentCat='ALL'; searchText=''; }catch(e){}
+    const si=$('searchInput'); if(si)si.value='';
+    const first=document.querySelector('.sidebar > .cat-btn');
+    setActiveCategory(first);
+    currentList=currentProducts();
+    render(currentList);
+  };
+  window.searchProducts = function(q){
+    const text=String(q||'').toLowerCase().trim();
+    try{ searchText=text; }catch(e){}
+    currentPage=1;
+    const allProducts=currentProducts();
+    currentList=!text ? allProducts : allProducts.filter(p =>
+      String(p.name||'').toLowerCase().includes(text) ||
+      String(p.category||'').toLowerCase().includes(text) ||
+      String(p.price||'').includes(text)
+    );
+    render(currentList);
   };
 
   window.showLowStock = function(){
@@ -2994,7 +3046,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.showAppAlert = function(msg,title){
     const h=$('appAlertTitle'), t=$('appAlertText');
     if(h)h.textContent=cleanTitle(title);
-    if(t)t.textContent=cleanMessage(msg);
+    if(t){ t.style.whiteSpace='pre-wrap'; t.textContent=cleanMessage(msg); }
     const btn=document.querySelector('#appAlertBox button'); if(btn)btn.textContent=tr('close');
     openModal('appAlertBox');
   };
@@ -3080,6 +3132,51 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function currentProducts(){
     return window.products || products || [];
   }
+  function paymentLabel(payment){
+    const p=String(payment||'').toLowerCase();
+    if(p==='cash')return tr('cash');
+    if(p==='transfer')return tr('transfer');
+    if(p==='mbb_qr' || p==='qr')return 'QR';
+    if(p==='mixed')return tr('mixed');
+    return String(payment||'');
+  }
+  function buildReceiptText(){
+    const c=(window.lastCart && window.lastCart.length ? window.lastCart : currentCart()) || [];
+    const usedDiscount=moneyNum(typeof window.lastDiscount!=='undefined'?window.lastDiscount:(typeof discount!=='undefined'?discount:0));
+    const subtotal=moneyNum(c.reduce((s,i)=>s+num(i.price)*num(i.qty),0));
+    const finalTotal=moneyNum(Math.max(0, subtotal-usedDiscount));
+    const orderId=(c[0] && c[0].orderId) || '';
+    const lines=[];
+    lines.push('YLL FEEDS ENTERPRISE');
+    lines.push(new Date().toLocaleString());
+    if(orderId)lines.push('ORDER: '+orderId);
+    lines.push('------------------------------');
+    c.forEach(i=>{
+      lines.push(String(i.name||''));
+      lines.push(`${num(i.qty)} x ${money(i.price)} = ${money(num(i.qty)*num(i.price))}`);
+    });
+    lines.push('------------------------------');
+    lines.push(`${tr('subtotal')}: ${money(subtotal)}`);
+    if(usedDiscount>0)lines.push(`${tr('discount')}: -${money(usedDiscount)}`);
+    lines.push(`${tr('total')}: ${money(finalTotal)}`);
+    if(window.lastPayment==='cash' || window.lastPayment==='mixed'){
+      lines.push(`${tr('paid')}: ${money(window.lastPaid||finalTotal)}`);
+      lines.push(`${tr('change')}: ${money(window.lastChange||0)}`);
+    }
+    lines.push(`${tr('payment')}: ${paymentLabel(window.lastPayment)}`);
+    lines.push('------------------------------');
+    lines.push('Thank you');
+    return lines.join('\n');
+  }
+  window.printReceipt = function(auto=false){
+    const text=buildReceiptText();
+    if(!text || !/YLL FEEDS/.test(text)){ showAppAlert(lang()==='zh'?'\u6ca1\u6709\u6536\u636e\u53ef\u4ee5\u6253\u5370':'No receipt to print', tr('print')); return; }
+    try{
+      if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>{ if(typeof showToast==='function')showToast(tr('receiptCopied')); }).catch(()=>{});
+    }catch(e){}
+    showAppAlert(text, tr('print'));
+  };
+  window.smartPrintLast = function(){ window.printReceipt(false); };
   function reduceLocalStock(savedCart){
     try{
       const list=currentProducts();
@@ -3184,8 +3281,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       showAppAlert(`${tr('cashNotEnough')}\n\n${tr('total')}: ${money(due)}\n${tr('paid')}: ${money(pay)}`,tr('payment'));
       return;
     }
+    const change=moneyNum(pay - due);
+    if(cents(change)===0){
+      appConfirm(tr('confirmCashReceived'), tr('cash'), money(due)).then(ok=>{
+        if(ok){ closeCash(); checkout('cash', pay, change); }
+      });
+      return;
+    }
     closeCash();
-    checkout('cash', pay, moneyNum(pay - due));
+    checkout('cash', pay, change);
   };
   window.confirmDirectCheckout = function(payment,label){
     if(!currentCart().length){ showAppAlert(cartEmptyMessage(),tr('payment')); return; }
