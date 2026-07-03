@@ -8,8 +8,8 @@ export default async function handler(req, res) {
   try {
     const action = String((req.body && req.body.action) || "");
     const timeoutMs =
-      action === "bossLogin" ? 15000 :
-      action === "getBossDashboardFast" ? 16000 :
+      action === "bossLogin" ? 26000 :
+      action === "getBossDashboardFast" ? 18000 :
       action === "getBossOverview" ? 10000 :
       action === "getTodayReport" ? 8000 :
       action === "saveOrder" ? 16000 :
