@@ -2597,6 +2597,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     style.id='cleanThemeCss';
     style.textContent = `
       .tools #themeBtn,.tools #langBtn{min-width:44px!important}
+      .qtybar .trash{font-size:22px!important;line-height:1!important;padding:0!important;min-width:42px!important;width:42px!important}
       body.light,body.light #app,body.light .app,body.light .layout,body.light .main,body.light .products{background:#f3f4f6!important;background-color:#f3f4f6!important;color:#0f172a!important}
       body.light::after,body.light .modal::after{background:#f3f4f6!important}
       body.light .topline{background:#f3f4f6!important;border-bottom-color:rgba(15,23,42,.12)!important}
@@ -2823,17 +2824,55 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(!currentList.length && typeof showToast==='function')showToast('No low stock products');
   };
 
+  function cartEmptyMessage(){
+    return lang()==='zh' ? '\u8d2d\u7269\u8f66\u662f\u7a7a\u7684' : 'Cart is empty';
+  }
+
+  window.add = function(name,price){
+    if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut))return;
+    const c=currentCart();
+    const found=c.find(i=>String(i.name)===String(name));
+    if(found)found.qty=Number(found.qty||0)+1;
+    else c.push({name,price:Number(price)||0,qty:1});
+    showCart();
+  };
+
+  window.minus = function(i){
+    if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut))return;
+    const c=currentCart();
+    if(!c[i])return;
+    if(Number(c[i].qty||0)>1)c[i].qty=Number(c[i].qty||0)-1;
+    else c.splice(i,1);
+    showCart();
+  };
+
+  window.removeItem = function(i){
+    if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut))return;
+    const c=currentCart();
+    if(c[i])c.splice(i,1);
+    showCart();
+  };
+
+  window.clearCart = function(){
+    const c=currentCart();
+    if(!c.length)return;
+    c.length=0;
+    try{ discount=0; }catch(e){ window.discount=0; }
+    showCart();
+  };
+
   window.showCart = function(){
     const cartBox=$('cart');
-    if(!cart.length){
+    const c=currentCart();
+    if(!c.length){
       try{ discount=0; }catch(e){}
-      if(cartBox)cartBox.innerHTML='<div class="empty">Cart is empty</div>';
+      if(cartBox)cartBox.innerHTML=`<div class="empty">${esc(cartEmptyMessage())}</div>`;
       updateTotals({subtotal:0,discount:0,final:0});
       updateDiscountButton();
       return;
     }
-    if(cartBox)cartBox.innerHTML=cart.map((i,x)=>`<div class="item"><div class="cart-head"><div><div class="cart-name">${esc(i.name)}</div><div class="cart-sub">${i.qty} x ${money(i.price)}</div></div><div class="cart-amount">${money(i.qty*i.price)}</div></div><div class="qtybar"><button type="button" onclick="minus(${x})">-</button><div class="qty">${i.qty}</div><button type="button" onclick='add(${JSON.stringify(i.name)},${Number(i.price)||0})'>+</button><button type="button" class="trash" onclick="removeItem(${x})">Delete</button></div></div>`).join('');
-    const data=calcCartData();
+    if(cartBox)cartBox.innerHTML=c.map((i,x)=>`<div class="item"><div class="cart-head"><div><div class="cart-name">${esc(i.name)}</div><div class="cart-sub">${i.qty} x ${money(i.price)}</div></div><div class="cart-amount">${money(i.qty*i.price)}</div></div><div class="qtybar"><button type="button" onclick="minus(${x})">-</button><div class="qty">${i.qty}</div><button type="button" onclick='add(${JSON.stringify(i.name)},${Number(i.price)||0})'>+</button><button type="button" class="trash" title="${lang()==='zh'?'\u5220\u9664':'Delete'}" aria-label="${lang()==='zh'?'\u5220\u9664':'Delete'}" onclick="removeItem(${x})">&times;</button></div></div>`).join('');
+    const data=calcDue();
     updateTotals(data);
     updateDiscountButton();
   };
@@ -2851,7 +2890,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   window.openCash = function(){
-    if(!currentCart().length){ showAppAlert('Cart is empty','Cash'); return; }
+    if(!currentCart().length){ showAppAlert(cartEmptyMessage(),'Cash'); return; }
     const d=calcDue();
     try{ cashTotal=d.final; }catch(e){}
     const t=$('cashTotal'); if(t)t.textContent=`Subtotal ${money(d.subtotal)} | Discount -${money(d.discount)} | Total ${money(d.final)}`;
@@ -2897,8 +2936,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   function calcDue(){
-    if(typeof calcCartData === 'function') return calcCartData();
-    const sub = (window.cart || cart || []).reduce((s,i)=>s + num(i.price) * num(i.qty), 0);
+    const sub = currentCart().reduce((s,i)=>s + num(i.price) * num(i.qty), 0);
     const d = Math.min(num(window.discount || discount || 0), sub);
     return {subtotal:moneyNum(sub), discount:moneyNum(d), final:moneyNum(sub-d)};
   }
@@ -2906,7 +2944,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     return 'POS-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
   }
   function currentCart(){
-    return window.cart || cart || [];
+    let local=null, global=null;
+    try{ if(typeof cart !== 'undefined' && Array.isArray(cart))local=cart; }catch(e){}
+    try{ if(Array.isArray(window.cart))global=window.cart; }catch(e){}
+    if(local && local.length)return local;
+    if(global && global.length)return global;
+    return local || global || [];
   }
   function currentProducts(){
     return window.products || products || [];
@@ -2942,7 +2985,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.checkout = async function(payment, paid=0, change=0){
     if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut)) return;
     const c = currentCart();
-    if(!c.length){ showAppAlert('Cart is empty','Payment'); return; }
+    if(!c.length){ showAppAlert(cartEmptyMessage(),'Payment'); return; }
     const method = String(payment || '').toLowerCase();
     const due = calcDue();
     if((method === 'cash' || method === 'mixed') && cents(paid) < cents(due.final)){
@@ -3005,7 +3048,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     checkout('cash', pay, moneyNum(pay - due));
   };
   window.confirmDirectCheckout = function(payment,label){
-    if(!currentCart().length){ showAppAlert('Cart is empty','Payment'); return; }
+    if(!currentCart().length){ showAppAlert(cartEmptyMessage(),'Payment'); return; }
     const due = calcDue().final;
     appConfirm(`Confirm ${label} payment received?`, 'Payment', money(due)).then(ok => {
       if(ok) checkout(payment, due, 0);
@@ -3040,7 +3083,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.addEventListener('online', window.syncOfflineOrders);
 
   window.openDiscount = function(){
-    if(!currentCart().length){ showAppAlert('Cart is empty','Discount'); return; }
+    if(!currentCart().length){ showAppAlert(cartEmptyMessage(),'Discount'); return; }
     const input=$('discountInput');
     if(input){ input.value = (typeof discount !== 'undefined' ? discount : 0) || ''; input.oninput = () => updateDiscountPreview(num(input.value)); }
     const auth=$('discountAuthDetails'); if(auth)auth.open=false;
@@ -3281,48 +3324,4 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(msg){msg.style.display='block'; msg.textContent=tr('missingLogin');}
       return;
     }
-    if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
-    if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
-    try{
-      const r=await apiCall('bossLogin',[id,pw]);
-      if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
-      if(r&&r.ok){
-        try{
-          BOSS_IDLE_MS=Math.max(1,Number(r.autoLogoutMinutes||10))*60*1000;
-          sessionStorage.setItem('bossSessionUntil',String(Date.now()+BOSS_IDLE_MS));
-          if(typeof bossStartIdleTimer==='function')bossStartIdleTimer();
-        }catch(e){}
-        if(idEl)idEl.value='';
-        if(pwEl)pwEl.value='';
-        closeModal('bossLoginBox');
-        openModal('bossDashboard');
-        await window.bossOpenOverview();
-        const br=$('bossResult'); if(br)br.textContent=tr('enteredBoss');
-        setStaticText();
-        return;
-      }
-      if(msg)msg.textContent=tr('wrongLogin')+(r&&r.remaining!=null?r.remaining:0)+'.';
-    }catch(e){
-      if(msg)msg.textContent=tr('loginFailed')+(e.message||e);
-    }finally{
-      if(btn){btn.disabled=false; btn.textContent=tr('login');}
-    }
-  };
-
-  document.addEventListener('DOMContentLoaded', () => {
-    setStaticText();
-    setTimeout(setStaticText, 300);
-    setTimeout(setStaticText, 1200);
-    setTimeout(()=>{ try{ window.loadTodayStats(); }catch(e){} }, 600);
-    ensureCleanUiCss();
-    if(localStorage.getItem('yllTheme') === 'light') document.body.classList.add('light');
-    setThemeButton();
-    setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
-  });
-})();
-
-</script>
-</body>
-</html>
-
-
+    if(btn){b
