@@ -981,7 +981,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <div class="modal-content">
     <h3 id="appAlertTitle">Notice</h3>
     <div id="appAlertText"></div>
-    <button class="green" onclick="closeModal('appAlertBox')">çŸ¥é“äº†</button>
+    <button class="green" onclick="closeModal('appAlertBox')">Close</button>
   </div>
 </div>
 
@@ -2565,19 +2565,27 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       all:'All Products', home:'Home', search:'Search product / category / price', low:'Low Stock', prev:'Prev', next:'Next',
       cart:'Cart', empty:'Cart is empty', subtotal:'Subtotal', discount:'Discount', total:'Total', checkout:'CHECKOUT',
       print:'Print Receipt', parcel:'Shopee Parcel', refund:'Refund', login:'Login', close:'Close', bossAuth:'Boss Authorization',
+      sales:'Sales', todayPayments:'Today Payments', cash:'Cash', cashDrawer:'Cash Drawer', orders:'Orders', products:'Products',
       bossMode:'Boss Mode', bossHint:'Authorized use only. Idle mode returns to POS screen.', logout:'Logout',
       enteredBoss:'Boss mode opened.', exitedBoss:'Boss mode closed.', autoExited:'Boss mode auto closed.',
       loggingIn:'Logging in...', missingLogin:'Please enter ID and password.', wrongLogin:'ID or password is wrong. Remaining ',
-      loginFailed:'Login failed: ', choose:'Choose a function.'
+      loginFailed:'Login failed: ', choose:'Choose a function.', notice:'Notice', loading:'Loading...',
+      today:'Today', finance:'Finance', reports:'Reports', shopee:'Shopee', otherIncome:'Other Income', lowStock:'Low Stock', exportExcel:'Export Excel', settings:'Settings',
+      recordShopee:'Record actual payout received from Shopee.', shopeePaid:'Shopee paid amount', payoutNote:'Note / payout date', recordPaid:'Record Paid',
+      pendingShopee:'Pending Shopee', actualPaid:'Actual Paid', difference:'Difference', trips:'Trips', noRecords:'No records', saved:'Saved'
     },
     zh: {
       all:'\u5168\u90e8\u5546\u54c1', home:'\u9996\u9875', search:'\u641c\u7d22\u5546\u54c1 / \u5206\u7c7b / \u4ef7\u94b1', low:'\u4f4e\u5e93\u5b58', prev:'\u4e0a\u4e00\u9875', next:'\u4e0b\u4e00\u9875',
       cart:'\u8d2d\u7269\u8f66', empty:'\u8d2d\u7269\u8f66\u662f\u7a7a\u7684', subtotal:'\u5c0f\u8ba1', discount:'\u6298\u6263', total:'\u603b\u6570', checkout:'\u4e70\u5355',
       print:'\u6253\u5370\u6536\u636e', parcel:'Shopee \u5305\u88f9', refund:'\u9000\u8d27', login:'\u767b\u5165', close:'\u5173\u95ed', bossAuth:'\u8001\u677f\u6743\u9650',
+      sales:'\u9500\u552e', todayPayments:'\u4eca\u65e5\u6536\u6b3e', cash:'\u73b0\u91d1', cashDrawer:'\u6536\u94f6\u673a\u73b0\u91d1', orders:'\u8ba2\u5355', products:'\u5546\u54c1',
       bossMode:'\u7ba1\u7406\u6a21\u5f0f', bossHint:'\u4ec5\u9650\u6388\u6743\u4f7f\u7528\uff0c\u95f2\u7f6e\u540e\u81ea\u52a8\u56de\u5230 POS\u3002', logout:'\u9000\u51fa',
       enteredBoss:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\u3002', exitedBoss:'\u5df2\u9000\u51fa\u7ba1\u7406\u6a21\u5f0f\u3002', autoExited:'\u7ba1\u7406\u6a21\u5f0f\u5df2\u81ea\u52a8\u9000\u51fa\u3002',
       loggingIn:'\u767b\u5165\u4e2d...', missingLogin:'\u8bf7\u8f93\u5165 ID \u548c\u5bc6\u7801\u3002', wrongLogin:'ID \u6216\u5bc6\u7801\u9519\u8bef\uff0c\u5269\u4f59 ',
-      loginFailed:'\u767b\u5165\u5931\u8d25\uff1a', choose:'\u9009\u62e9\u529f\u80fd\u3002'
+      loginFailed:'\u767b\u5165\u5931\u8d25\uff1a', choose:'\u9009\u62e9\u529f\u80fd\u3002', notice:'\u63d0\u793a', loading:'\u8f7d\u5165\u4e2d...',
+      today:'\u4eca\u65e5', finance:'\u8d22\u52a1', reports:'\u62a5\u8868', shopee:'Shopee', otherIncome:'\u5176\u5b83\u6536\u5165', lowStock:'\u4f4e\u5e93\u5b58', exportExcel:'\u6c47\u51fa Excel', settings:'\u7cfb\u7edf\u8bbe\u5b9a',
+      recordShopee:'\u8bb0\u5f55 Shopee \u5b9e\u9645\u6536\u5230\u7684\u6b3e\u9879\u3002', shopeePaid:'Shopee \u5b9e\u6536\u91d1\u989d', payoutNote:'\u5907\u6ce8 / payout \u65e5\u671f', recordPaid:'\u8bb0\u5f55\u5b9e\u6536',
+      pendingShopee:'Shopee \u672a\u6536', actualPaid:'\u5df2\u5b9e\u6536', difference:'\u5dee\u989d', trips:'\u8d9f\u6570', noRecords:'\u6ca1\u6709\u8bb0\u5f55', saved:'\u5df2\u8bb0\u5f55'
     }
   };
   const lang = () => localStorage.getItem('yllLang') || 'en';
@@ -2633,10 +2641,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(bossBtn){ bossBtn.textContent='\u2699'; bossBtn.title='Settings'; bossBtn.setAttribute('aria-label','Settings'); }
     setThemeButton();
     const stats = document.querySelectorAll('.stat small');
-    if(stats[0])stats[0].textContent='Today Payments';
-    if(stats[1])stats[1].textContent='Cash Drawer';
-    if(stats[2])stats[2].textContent='Orders';
-    if(stats[3])stats[3].textContent='Products';
+    const icons = document.querySelectorAll('.stat .icon');
+    if(icons[0])icons[0].textContent=tr('sales');
+    if(icons[1])icons[1].textContent=tr('cash');
+    if(icons[2])icons[2].textContent=tr('orders');
+    if(icons[3])icons[3].textContent=tr('products');
+    if(stats[0])stats[0].textContent=tr('todayPayments');
+    if(stats[1])stats[1].textContent=tr('cashDrawer');
+    if(stats[2])stats[2].textContent=tr('orders');
+    if(stats[3])stats[3].textContent=tr('products');
     const all = document.querySelector('.sidebar > .cat-btn span:first-child'); if(all)all.textContent=tr('all');
     const homeBtn = document.querySelector('.topline button[onclick="goHome()"]'); if(homeBtn)homeBtn.textContent=tr('home');
     const h = document.querySelector('.right h3'); if(h)h.textContent=tr('cart');
@@ -2660,7 +2673,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const bossLoginClose = document.querySelector('#bossLoginBox button[onclick*="closeModal"]'); if(bossLoginClose)bossLoginClose.textContent=tr('close');
     const hero = document.querySelector('.boss-hero div'); if(hero)hero.innerHTML=`<b>${esc(tr('bossMode'))}</b><br><small>${esc(tr('bossHint'))}</small>`;
     const logoutBtn = document.querySelector('.boss-hero button'); if(logoutBtn)logoutBtn.textContent=tr('logout');
+    const bossBtns = document.querySelectorAll('#bossDashboard .boss-tab-grid button');
+    const bossKeys = ['today','finance','reports','shopee','otherIncome','lowStock','exportExcel','settings'];
+    bossBtns.forEach((b,i)=>{ if(bossKeys[i]){ b.dataset.navKey=bossKeys[i]; b.textContent=tr(bossKeys[i]); } });
+    const shopeePanel = $('bossParcelBox');
+    if(shopeePanel){
+      const h4=shopeePanel.querySelector('h4'); if(h4)h4.textContent=tr('shopee');
+      const p=shopeePanel.querySelector('p'); if(p)p.textContent=tr('recordShopee');
+      const amt=$('shopeePaidAmount'); if(amt)amt.placeholder=tr('shopeePaid');
+      const note=$('shopeePaidNote'); if(note)note.placeholder=tr('payoutNote');
+      const btn=shopeePanel.querySelector('button.green'); if(btn)btn.textContent=tr('recordPaid');
+    }
     const bossResult = $('bossResult'); if(bossResult && /[ÃƒÃ‚]|Ã¥|Ã¨|Ã¦|Ã§/.test(bossResult.textContent||''))bossResult.textContent=tr('choose');
+    const alertTitle = $('appAlertTitle'); if(alertTitle && /[ÃƒÃ‚]|Ã¥|Ã¨|Ã¦|Ã§/.test(alertTitle.textContent||''))alertTitle.textContent=tr('notice');
     const alertBtn = document.querySelector('#appAlertBox button');
     if(alertBtn)alertBtn.textContent=tr('close');
     const busy = $('checkoutBusy'); if(busy)busy.textContent='Processing checkout, please wait...';
@@ -2702,14 +2727,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.render = function(list){
     const box=$('list'); if(!box)return;
     list = list || currentList || [];
-    if(!list.length){ box.innerHTML='<div class="empty">No products</div>'; updatePageInfo(list); return; }
+    if(!list.length){ box.innerHTML='<div class="empty">'+(lang()==='zh'?'\u6ca1\u6709\u5546\u54c1':'No products')+'</div>'; updatePageInfo(list); return; }
     const start=(currentPage-1)*perPage;
     const pageList=list.slice(start,start+perPage);
     box.innerHTML=pageList.map(p=>{
       const stock=Number(p.stock||0);
       const low=stock<=5?'color:#ef4444;font-weight:bold':'';
-      const img=p.image?`<img src="${esc(p.image)}" onerror="this.parentNode.innerHTML='<div class=\\'noimg\\'>Box</div>'">`:'<div class="noimg">Box</div>';
-      return `<div class="product-card" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0})'><div class="imgbox">${img}</div><div class="pname">${esc(p.name)}</div><div class="pprice">${money(p.price)}</div><div class="pstock" style="${low}">Stock ${stock}</div></div>`;
+      const boxLabel=lang()==='zh'?'\u56fe\u7247':'Box';
+      const stockLabel=lang()==='zh'?'\u5e93\u5b58':'Stock';
+      const img=p.image?`<img src="${esc(p.image)}" onerror="this.parentNode.innerHTML='<div class=\\'noimg\\'>${boxLabel}</div>'">`:`<div class="noimg">${boxLabel}</div>`;
+      return `<div class="product-card" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0})'><div class="imgbox">${img}</div><div class="pname">${esc(p.name)}</div><div class="pprice">${money(p.price)}</div><div class="pstock" style="${low}">${stockLabel} ${stock}</div></div>`;
     }).join('');
     updatePageInfo(list);
   };
@@ -2787,12 +2814,26 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       openModal('paymentConfirmBox');
     });
   };
-  window.showAppAlert = window.showAppAlert || function(msg,title='Notice'){
+  window.showAppAlert = function(msg,title){
     const h=$('appAlertTitle'), t=$('appAlertText');
-    if(h)h.textContent=title;
+    if(h)h.textContent=title || tr('notice');
     if(t)t.textContent=msg;
+    const btn=document.querySelector('#appAlertBox button'); if(btn)btn.textContent=tr('close');
     openModal('appAlertBox');
   };
+  window.alert = function(msg){ window.showAppAlert(String(msg||''), tr('notice')); };
+
+  function setBossNav(activeKey){
+    const buttons=document.querySelectorAll('#bossDashboard .boss-tab-grid button');
+    buttons.forEach(b=>b.classList.toggle('active', b.dataset.navKey===activeKey));
+  }
+
+  function showBossPanel(id, activeKey){
+    if(typeof bossHideBossPanels === 'function')bossHideBossPanels();
+    const p=$(id);
+    if(p){p.style.display='block';p.classList.add('active');}
+    setBossNav(activeKey);
+  }
 
   function calcDue(){
     if(typeof calcCartData === 'function') return calcCartData();
@@ -3077,6 +3118,63 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         card('Pending Refunds',money(overview.refundPendingAmount||0),`${overview.refundPending||0} requests`,num(overview.refundPending)>0)
       ].join('');
       if(box)box.innerHTML=html;
+    }catch(e){
+      if(box)box.textContent='Load failed: '+(e.message||e);
+    }
+  };
+
+  window.bossOpenParcelBoss = async function(){
+    if(typeof bossRequire === 'function' && !bossRequire())return;
+    showBossPanel('bossParcelBox','shopee');
+    setStaticText();
+    const box=$('bossParcelResult');
+    if(box)box.textContent=tr('loading');
+    try{
+      const r=await apiCall('getParcelSummary',[]);
+      const logs=(r.logs||[]).slice(0,12);
+      const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
+      let html='<div class="boss-overview-grid">'+[
+        card(tr('pendingShopee'), money(r.pendingEstimated||0), tr('shopee'), num(r.pendingEstimated)>0),
+        card(tr('actualPaid'), money(r.actualPaid||0), 'Shopee payout', false),
+        card(tr('difference'), money(r.difference||0), '', num(r.difference)>0),
+        card(tr('trips'), String(r.count||0), 'Last 30 records', false)
+      ].join('')+'</div>';
+      if(logs.length){
+        html += '<table style="margin-top:12px"><tr><th>Date</th><th>Trip</th><th class="right">Parcels</th><th class="right">Estimated</th><th>Note</th></tr>' +
+          logs.map(x=>`<tr><td>${esc(x.date||'')}</td><td>${esc(x.trip||'')}</td><td class="right">${esc((x.delivered||0)+' / '+(x.returned||0))}</td><td class="right">${money(x.estimated||0)}</td><td>${esc(x.note||'')}</td></tr>`).join('') +
+          '</table>';
+      }else{
+        html += `<div class="boss-result">${esc(tr('noRecords'))}</div>`;
+      }
+      if(box)box.innerHTML=html;
+    }catch(e){
+      if(box)box.textContent='Load failed: '+(e.message||e);
+    }
+  };
+
+  window.bossConfirmShopeePaid = async function(){
+    if(typeof bossRequire === 'function' && !bossRequire())return;
+    const amount=num(($('shopeePaidAmount')||{}).value);
+    const note=($('shopeePaidNote')||{}).value||'';
+    if(amount<=0){showAppAlert(lang()==='zh'?'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002':'Please enter actual paid amount.',tr('shopee'));return;}
+    try{
+      await apiCall('recordShopeePayout',[amount,note,null]);
+      ['shopeePaidAmount','shopeePaidNote'].forEach(id=>{const e=$(id); if(e)e.value='';});
+      if(typeof showToast==='function')showToast(tr('saved'));
+      bossOpenParcelBoss();
+    }catch(e){
+      showAppAlert((lang()==='zh'?'\u8bb0\u5f55\u5931\u8d25\uff1a':'Save failed: ')+(e.message||e),tr('shopee'));
+    }
+  };
+
+  window.bossOpenOtherIncome = async function(){
+    if(typeof bossRequire === 'function' && !bossRequire())return;
+    showBossPanel('bossOtherIncomeBox','otherIncome');
+    const box=$('bossOtherIncomeResult');
+    if(box)box.textContent=tr('loading');
+    try{
+      const r=await apiCall('getOtherIncomeSummary',[]);
+      if(box)box.innerHTML=`<table><tr><th>Item</th><th class="right">Amount</th></tr><tr><td>Pending</td><td class="right">${money(r.pending||0)}</td></tr><tr><td>Received</td><td class="right">${money(r.received||0)}</td></tr><tr><td>Records</td><td class="right">${esc(r.count||0)}</td></tr></table>`;
     }catch(e){
       if(box)box.textContent='Load failed: '+(e.message||e);
     }
