@@ -816,42 +816,42 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div class="header">
   <div class="header-top">
     <div class="title">YLL FEEDS ENTERPRISE</div>
-    <div class="tools"><span id="clock"></span><button class="plain-gear" title="" aria-label="ç³»ç»Ÿ" onclick="openBossLogin()">âš™ï¸</button><button onclick="toggleMode()">ðŸŒ™</button></div>
+    <div class="tools"><span id="clock"></span><button class="plain-gear" title="Boss" aria-label="Boss" onclick="openBossLogin()">Boss</button><button onclick="toggleMode()">Mode</button></div>
   </div>
   <div class="stats">
-    <div class="stat blue"><div class="icon">ðŸ“Š</div><div><small>ä»Šæ—¥ é”€å”®</small><b id="todaySales">RM 0.00</b></div></div>
-    <div class="stat green"><div class="icon">ðŸ’µ</div><div><small>æ”¶é“¶æœº Cash</small><b id="todayCash">RM 0.00</b></div></div>
-    <div class="stat yellow"><div class="icon">ðŸ§¾</div><div><small>è®¢å•æ•°</small><b id="todayOrders">0</b></div></div>
-    <div class="stat purple"><div class="icon">ðŸ“¦</div><div><small>å•†å“æ•°</small><b id="todayItems">0</b></div></div>
+    <div class="stat blue"><div class="icon">Sales</div><div><small>Today Sales</small><b id="todaySales">RM 0.00</b></div></div>
+    <div class="stat green"><div class="icon">Cash</div><div><small>Cash Drawer</small><b id="todayCash">RM 0.00</b></div></div>
+    <div class="stat yellow"><div class="icon">Orders</div><div><small>Orders</small><b id="todayOrders">0</b></div></div>
+    <div class="stat purple"><div class="icon">Items</div><div><small>Products</small><b id="todayItems">0</b></div></div>
   </div>
   <div id="cashDrawerAlert" class="money-alert"></div>
 </div>
 
 <div class="layout">
   <div class="sidebar">
-    <div class="cat-btn active" onclick="quickCat('ALL',this)"><span>å…¨éƒ¨å•†å“</span><span class="cat-count">0</span></div>
+    <div class="cat-btn active" onclick="quickCat('ALL',this)"><span>All Products</span><span class="cat-count">0</span></div>
     <div id="menuList"></div>
   </div>
 
   <div class="main">
     <div class="topline">
-      <button onclick="goHome()">ðŸ  é¦–é¡µ</button>
+      <button onclick="goHome()">Home</button>
       <div class="search-wrap">
-        <input id="searchInput" class="search-input" placeholder="ðŸ” æœç´¢å•†å“ / åˆ†ç±» / ä»·æ ¼" oninput="searchProducts(this.value)">
-        <button class="quick-chip" onclick="showLowStock()">âš ï¸ ä½Žåº“å­˜</button>
+        <input id="searchInput" class="search-input" placeholder="Search product / category / price" oninput="searchProducts(this.value)">
+        <button class="quick-chip" onclick="showLowStock()">Low Stock</button>
       </div>
       <div>
-        <button onclick="prevPage()">â¬…</button>
-        <span id="pageInfo">ç¬¬ 1 é¡µ</span>
-        <button onclick="nextPage()">âž¡</button>
+        <button onclick="prevPage()">Prev</button>
+        <span id="pageInfo">Page 1</span>
+        <button onclick="nextPage()">Next</button>
       </div>
     </div>
     <div id="list" class="products"></div>
   </div>
 
   <div class="right">
-    <h3>ðŸ›’ è´­ç‰©è½¦</h3>
-    <div id="cart" class="cart"><div class="empty">è´­ç‰©è½¦ä¸ºç©º</div></div>
+    <h3>Cart</h3>
+    <div id="cart" class="cart"><div class="empty">Cart is empty</div></div>
 
     <div class="summary">
       <div class="row"><span>Subtotal</span><b id="subTotal">RM 0.00</b></div>
@@ -860,181 +860,171 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     </div>
 
     <div class="paybar">
-      <button class="big" onclick="openPay()">ðŸ’° CHECKOUT</button>
+      <button class="big" onclick="openPay()">CHECKOUT</button>
       <div class="btnrow">
-        <button class="smallbtn discount-btn" onclick="openDiscount()">ðŸ’¸ Discount <b id="dVal">0.00</b></button>
-        <button class="smallbtn danger" onclick="clearCart()">ðŸ—‘ Clear</button>
-        <button class="smallbtn more" onclick="toggleMore()">â‹¯</button>
+        <button class="smallbtn discount-btn" onclick="openDiscount()">Discount <b id="dVal">0.00</b></button>
+        <button class="smallbtn danger" onclick="clearCart()">Clear</button>
+        <button class="smallbtn more" onclick="toggleMore()">...</button>
       </div>
 
       <div id="moreMenu" class="moreMenu">
-
-  <button class="smallbtn print-btn" onclick="smartPrintLast()">ðŸ–¨ï¸ Print Receipt</button>
-  <button class="smallbtn parcel-btn" onclick="openParcelBox()">ðŸ“¦ Shopee Parcel</button>
-  <button class="smallbtn close-btn" onclick="openRefundBox()">â†©ï¸ Refund</button>
-
-</div>
+        <button class="smallbtn print-btn" onclick="smartPrintLast()">Print Receipt</button>
+        <button class="smallbtn parcel-btn" onclick="openParcelBox()">Shopee Parcel</button>
+        <button class="smallbtn close-btn" onclick="openRefundBox()">Refund</button>
+      </div>
     </div>
   </div>
 </div>
-
 <div id="discountBox" class="modal">
   <div class="modal-content">
-    <h3>ðŸ’¸ Discount</h3>
-    <input id="discountInput" type="number" placeholder="è¾“å…¥Discount">
+    <h3>Discount</h3>
+    <input id="discountInput" type="number" placeholder="Discount amount">
     <div class="discount-grid">
       <button onclick="addDiscount(0.1)">+0.10</button>
       <button onclick="addDiscount(1)">+1</button>
       <button onclick="addDiscount(5)">+5</button>
     </div>
     <div class="discount-preview">
-      åŽŸä»· RM <span id="dSubtotal">0.00</span><br>
+      Subtotal RM <span id="dSubtotal">0.00</span><br>
       Discount -RM <span id="dCurrent">0.00</span><br>
-      <b>åº”ä»˜ RM <span id="dFinal">0.00</span></b>
+      <b>Total RM <span id="dFinal">0.00</span></b>
     </div>
     <details class="refund-auth" id="discountAuthDetails">
       <summary>Boss Authorization / Direct Approve</summary>
-      <input id="discountBossId" type="text" placeholder="å¸å·" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <input id="discountBossPassword" type="password" placeholder="å¯†ç " autocomplete="new-password">
-      <small style="color:#94a3b8">å‘˜å·¥Discountæ¯å•æœ€å¤š RM10ï¼›è¶…è¿‡ RM10 å¿…é¡»è€æ¿æ‰¹å‡†ã€‚</small>
+      <input id="discountBossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="discountBossPassword" type="password" placeholder="Password" autocomplete="new-password">
+      <small style="color:#94a3b8">Staff discount max RM10 per order. Above RM10 needs boss approval.</small>
     </details>
     <div id="discountStatusMsg" class="boss-result" style="display:none"></div>
-    <button class="green" onclick="applyDiscount()">âœ… åº”ç”¨Discount</button>
-    <button onclick="resetDiscount()">æ¸…é™¤Discount</button>
-    <button onclick="closeDiscount()">å…³é—­</button>
+    <button class="green" onclick="applyDiscount()">Apply Discount</button>
+    <button onclick="resetDiscount()">Clear Discount</button>
+    <button onclick="closeDiscount()">Close</button>
   </div>
 </div>
 
 <div id="payModal" class="modal">
   <div class="modal-content pay-choice-box">
     <h3>Select Payment</h3>
-    <button class="pay-cash-btn" onclick="openCash()">ðŸ’µ Cash</button>
-    <button class="pay-transfer-btn" onclick="confirmDirectCheckout('transfer','Transfer')">ðŸ¦ Transfer</button>
-    <button class="pay-qr-btn" onclick="confirmDirectCheckout('mbb_qr','QR')">ðŸ“± QR</button>
-    <button class="pay-mixed-btn" onclick="openMixedPayment()">âž— Mixed</button>
-    <button class="cancel-pay-btn" onclick="closePay()">âœ• Cancel</button>
+    <button class="pay-cash-btn" onclick="openCash()">Cash</button>
+    <button class="pay-transfer-btn" onclick="confirmDirectCheckout('transfer','Transfer')">Transfer</button>
+    <button class="pay-qr-btn" onclick="confirmDirectCheckout('mbb_qr','QR')">QR</button>
+    <button class="pay-mixed-btn" onclick="openMixedPayment()">Mixed</button>
+    <button class="cancel-pay-btn" onclick="closePay()">Cancel</button>
   </div>
 </div>
 
 <div id="cashBox" class="modal">
   <div class="modal-content">
-    <h3>ðŸ’µ Cash Payment</h3>
+    <h3>Cash Payment</h3>
     <div id="cashTotal">RM 0.00</div>
     <input id="cashInput" type="number" inputmode="decimal" placeholder="Customer paid amount" oninput="calcChange()">
     <div class="discount-grid">
-  <button class="cash-quick-btn cash-rm1" onclick="quick(1)">RM1</button>
-  <button class="cash-quick-btn cash-rm5" onclick="quick(5)">RM5</button>
-  <button class="cash-quick-btn cash-rm10" onclick="quick(10)">RM10</button>
-
-  <button class="cash-quick-btn cash-rm20" onclick="quick(20)">RM20</button>
-  <button class="cash-quick-btn cash-rm50" onclick="quick(50)">RM50</button>
-  <button class="cash-quick-btn cash-rm100" onclick="quick(100)">RM100</button>
-
-  <button class="exact-pay-btn" onclick="quickExact()">
-    ðŸ’µ åˆšå¥½ä»˜æ¬¾
-  </button>
-</div>
+      <button class="cash-quick-btn cash-rm1" onclick="quick(1)">RM1</button>
+      <button class="cash-quick-btn cash-rm5" onclick="quick(5)">RM5</button>
+      <button class="cash-quick-btn cash-rm10" onclick="quick(10)">RM10</button>
+      <button class="cash-quick-btn cash-rm20" onclick="quick(20)">RM20</button>
+      <button class="cash-quick-btn cash-rm50" onclick="quick(50)">RM50</button>
+      <button class="cash-quick-btn cash-rm100" onclick="quick(100)">RM100</button>
+      <button class="exact-pay-btn" onclick="quickExact()">Exact Payment</button>
+    </div>
     <div id="change">Change RM 0.00</div>
-    <button class="confirm-cash-btn" onclick="confirmCash()">âœ… Confirm Payment</button>
-    <button class="cancel-pay-btn" onclick="closeCash()">âœ• Cancel</button>
+    <button class="confirm-cash-btn" onclick="confirmCash()">Confirm Payment</button>
+    <button class="cancel-pay-btn" onclick="closeCash()">Cancel</button>
   </div>
 </div>
 
 <div id="mixedBox" class="modal">
   <div class="modal-content">
-    <h3>âž— Mixed Payment</h3>
-    <div id="mixedTotal" style="font-size:20px;font-weight:900;margin-bottom:8px">åº”ä»˜ RM 0.00</div>
-    <input id="mixedCash" type="number" placeholder="çŽ°é‡‘ Cash" oninput="calcMixed()">
-    <input id="mixedQr" type="number" placeholder="QR é‡‘é¢" oninput="calcMixed()">
-    <input id="mixedTransfer" type="number" placeholder="Transferé‡‘é¢" oninput="calcMixed()">
-    <div id="mixedRemain" style="margin:10px 0;color:#cbd5e1">å‰©ä½™ RM 0.00</div>
-    <button class="green" onclick="confirmMixed()">âœ… ç¡®è®¤æ··åˆä»˜æ¬¾</button>
-    <button class="cancel-pay-btn" onclick="closeModal('mixedBox')">âœ• å–æ¶ˆ</button>
+    <h3>Mixed Payment</h3>
+    <div id="mixedTotal" style="font-size:20px;font-weight:900;margin-bottom:8px">Total RM 0.00</div>
+    <input id="mixedCash" type="number" placeholder="Cash amount" oninput="calcMixed()">
+    <input id="mixedQr" type="number" placeholder="QR amount" oninput="calcMixed()">
+    <input id="mixedTransfer" type="number" placeholder="Transfer amount" oninput="calcMixed()">
+    <div id="mixedRemain" style="margin:10px 0;color:#cbd5e1">Remaining RM 0.00</div>
+    <button class="green" onclick="confirmMixed()">Confirm Mixed Payment</button>
+    <button class="cancel-pay-btn" onclick="closeModal('mixedBox')">Cancel</button>
   </div>
 </div>
 
-
 <div id="parcelBox" class="modal">
   <div class="modal-content">
-    <h3>ðŸ“¦ Shopee Parcel</h3>
-    <p style="color:#94a3b8;font-size:13px">Record parcel count only. This is not POS sales.</p>
-    <input id="parcelTrip" type="number" placeholder="Trip number, e.g. 1 / 2" value="1">
-    <input id="parcelDelivered" type="number" placeholder="Delivered / Pick-up count">
-    <input id="parcelReturned" type="number" placeholder="Return count">
-    <input id="parcelNote" type="text" placeholder="Note optional">
-    <div id="parcelPreview" class="discount-preview">Estimated: RM 0.00</div>
-    <button class="green" onclick="saveParcelLog()">âœ… Save Parcel Record</button>
-    <button onclick="closeModal(&quot;parcelBox&quot;)">Close</button>
+    <h3>Shopee Parcel</h3>
+    <p style="color:#94a3b8;font-size:13px">Normal day: fill Shopee system parcels only.</p>
+    <input id="parcelExpected" type="number" placeholder="Shopee system parcels">
+    <input id="parcelReturned" type="number" placeholder="Returned parcels">
+    <button class="green" onclick="saveParcelLog()">Save Parcel Record</button>
+    <button onclick="closeModal('parcelBox')">Close</button>
   </div>
 </div>
 
 <div id="refundBox" class="modal">
   <div class="modal-content">
-    <h3>â†©ï¸ Refund</h3>
-    <p style="color:#94a3b8;font-size:13px">å·²ä¹°å•çš„é€€è´§éœ€è¦ ç®¡ç†å¸å· / å¯†ç ã€‚ä¼šä¿ç•™åŽŸè®¢å•ï¼Œä¸åˆ é™¤åŽ†å²ã€‚</p>
-    <input id="refundOrderId" type="text" placeholder="è®¢å•å· ORD-...">
-    <input id="refundItem" type="text" placeholder="å•†å“å / å¤‡æ³¨">
-    <input id="refundAmount" type="number" placeholder="é€€æ¬¾é‡‘é¢ RM">
-    <input id="refundReason" type="text" placeholder="åŽŸå› ï¼Œä¾‹å¦‚é¡¾å®¢é€€è´§">
+    <h3>Refund</h3>
+    <p style="color:#94a3b8;font-size:13px">Select an order from last 3 days, choose returned item and quantity.</p>
+    <button class="green" onclick="loadRecentRefundOrders(true)">Load Recent Orders</button>
+    <div id="refundRecentBox">Press Load Recent Orders.</div>
+    <input id="refundOrderId" type="text" placeholder="Order No" readonly>
+    <div id="refundItemList" class="refund-item-list">Select an order first.</div>
+    <div id="refundTotalBox" class="refund-summary">Refund Total: RM 0.00</div>
+    <input id="refundReason" type="text" placeholder="Reason, e.g. customer return">
     <details class="refund-auth" id="refundAuthDetails">
-      <summary>ðŸ” æ‰“å¼€æŽˆæƒéªŒè¯</summary>
-      <input id="refundBossId" type="text" placeholder="å¸å·" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <input id="refundBossPassword" type="password" placeholder="å¯†ç " autocomplete="new-password">
-      <div class="receipt-note">é€€è´§ä¸€å®šè¦æŽˆæƒéªŒè¯ã€‚æäº¤ä¸­ä¼šé”ä½ï¼Œé¿å…é‡å¤ä¸Šä¼ ã€‚</div>
+      <summary>Boss Authorization / Direct Approve</summary>
+      <input id="refundBossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="refundBossPassword" type="password" placeholder="Password" autocomplete="new-password">
+      <div class="receipt-note">Leave blank = submit pending request. Fill ID/password = approve immediately.</div>
     </details>
-    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">âœ… ç¡®è®¤é€€è´§</button>
-    <button onclick="closeModal('refundBox')">å…³é—­</button>
+    <div id="refundStatusMsg" class="refund-status-msg" style="display:none"></div>
+    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">Submit Refund</button>
+    <button onclick="closeModal('refundBox')">Close</button>
   </div>
 </div>
-
 
 <div id="appAlertBox" class="modal">
   <div class="modal-content">
     <h3 id="appAlertTitle">Notice</h3>
     <div id="appAlertText"></div>
-    <button class="green" onclick="closeModal('appAlertBox')">çŸ¥é“äº†</button>
+    <button class="green" onclick="closeModal('appAlertBox')">OK</button>
   </div>
 </div>
 
 <div id="paymentConfirmBox" class="modal">
   <div class="modal-content payment-confirm-card">
-    <h3 id="paymentConfirmTitle">ç¡®è®¤ä»˜æ¬¾</h3>
+    <h3 id="paymentConfirmTitle">Confirm Payment</h3>
     <div id="paymentConfirmText"></div>
     <div class="confirm-total" id="paymentConfirmTotal">RM 0.00</div>
     <div class="confirm-actions">
-      <button class="cancel-pay-btn" onclick="closeModal('paymentConfirmBox')">å–æ¶ˆ</button>
-      <button class="confirm-cash-btn" id="paymentConfirmBtn">ç¡®è®¤</button>
+      <button class="cancel-pay-btn" onclick="closeModal('paymentConfirmBox')">Cancel</button>
+      <button class="confirm-cash-btn" id="paymentConfirmBtn">Confirm</button>
     </div>
   </div>
 </div>
 
 <div id="reportBox" class="modal">
   <div class="modal-content">
-    <h3>ðŸ“Š æŠ¥è¡¨</h3>
+    <h3>Report</h3>
     <input type="date" id="startDate">
     <input type="date" id="endDate">
-    <button class="green search-btn" onclick="loadReport()">æŸ¥è¯¢</button>
+    <button class="green search-btn" onclick="loadReport()">Search</button>
     <div id="reportResult"></div>
-    <button onclick="closeReport()">å…³é—­</button>
+    <button onclick="closeReport()">Close</button>
   </div>
 </div>
 
 <div id="confirmModal" class="modal">
   <div class="modal-content">
-    <h3 id="confirmText">ç¡®è®¤æ“ä½œï¼Ÿ</h3>
-    <button class="green" onclick="confirmYes()">âœ… ç¡®è®¤</button>
-    <button onclick="confirmNo()">å–æ¶ˆ</button>
+    <h3 id="confirmText">Confirm action?</h3>
+    <button class="green" onclick="confirmYes()">Confirm</button>
+    <button onclick="confirmNo()">Cancel</button>
   </div>
 </div>
 
-
 <div id="bossLoginBox" class="modal">
   <div class="modal-content access-card">
-    <h3>ðŸ” æƒé™éªŒè¯</h3>
-    <input id="bossId" type="text" placeholder="å¸å·" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('bossPassword').focus()">
-    <input id="bossPassword" type="password" placeholder="å¯†ç " autocomplete="new-password" onkeydown="if(event.key==='Enter')bossLogin()">
-    <button id="bossLoginBtn" class="green" onclick="bossLogin()">ç™»å…¥</button>
-    <button onclick="closeModal('bossLoginBox')">å…³é—­</button>
+    <h3>Boss Authorization</h3>
+    <input id="bossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('bossPassword').focus()">
+    <input id="bossPassword" type="password" placeholder="Password" autocomplete="new-password" onkeydown="if(event.key==='Enter')bossLogin()">
+    <button id="bossLoginBtn" class="green" onclick="bossLogin()">Login</button>
+    <button onclick="closeModal('bossLoginBox')">Close</button>
     <div id="bossLoginMsg" class="boss-result" style="display:none"></div>
   </div>
 </div>
@@ -1043,116 +1033,31 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <div class="modal-content">
     <div class="boss-dashboard-shell">
       <div class="boss-hero">
-        <div><b>ðŸ”’ ç®¡ç†æ¨¡å¼</b><br><small>åªé™æŽˆæƒä½¿ç”¨ï¼›é—²ç½®åŽè‡ªåŠ¨å›žåˆ°æ”¶é“¶ç”»é¢ã€‚</small></div>
-        <button class="danger-outline" onclick="bossLogout()" style="width:auto;margin:0;padding:10px 14px">é€€å‡º</button>
+        <div><b>Boss Mode</b><br><small>Authorized use only. Idle mode returns to POS screen.</small></div>
+        <button class="danger-outline" onclick="bossLogout()" style="width:auto;margin:0;padding:10px 14px">Logout</button>
       </div>
-
       <div class="boss-layout">
         <div class="boss-tab-grid">
-          <button onclick="bossOpenOverview()">ðŸ”” ä»Šæ—¥æé†’</button>
-          <button onclick="bossOpenCashCollect()">ðŸ’° è´¢åŠ¡ä¸­å¿ƒ</button>
-          <button onclick="bossShowPanel('bossReportsPanel')">ðŸ“Š æŠ¥è¡¨ä¸­å¿ƒ</button>
-          <button onclick="bossOpenParcelBoss()">ðŸ“¦ Shopee å¯¹è´¦</button>
-          <button onclick="bossOpenOtherIncome()">ðŸš° å…¶å®ƒæ”¶å…¥</button>
-          <button onclick="bossLoadLowStock()">ðŸ“¦ åº“å­˜æé†’</button>
-          <button onclick="bossOpenExport()">ðŸ“¤ æ±‡å‡º Excel</button>
-          <button onclick="bossOpenCredentialBox()">âš™ï¸ ç³»ç»Ÿè®¾å®š</button>
+          <button onclick="bossOpenOverview()">Today</button>
+          <button onclick="bossOpenCashCollect()">Finance</button>
+          <button onclick="bossShowPanel('bossReportsPanel')">Reports</button>
+          <button onclick="bossOpenParcelBoss()">Shopee</button>
+          <button onclick="bossOpenOtherIncome()">Other Income</button>
+          <button onclick="bossLoadLowStock()">Low Stock</button>
+          <button onclick="bossOpenExport()">Export Excel</button>
+          <button onclick="bossOpenCredentialBox()">Settings</button>
         </div>
-
         <div class="boss-content">
-          <div id="bossOverviewPanel" class="boss-panel active">
-            <h4>ðŸ”” ä»Šæ—¥æé†’</h4>
-            <div id="bossOverviewResult" class="boss-overview-grid">è½½å…¥ä¸­...</div>
-          </div>
-
-          <div id="bossReportsPanel" class="boss-panel">
-            <h4>ðŸ“Š æŠ¥è¡¨ä¸­å¿ƒ</h4>
-            <div class="boss-report-grid">
-              <button onclick="bossLoadReport('today')">ä»Šæ—¥</button>
-              <button onclick="bossLoadReport('yesterday')">æ˜¨å¤©</button>
-              <button onclick="bossLoadReport('week')">æœ¬å‘¨</button>
-              <button onclick="bossLoadReport('lastWeek')">ä¸Šå‘¨</button>
-              <button onclick="bossLoadReport('month')">æœ¬æœˆ</button>
-              <button onclick="bossLoadReport('lastMonth')">ä¸Šæœˆ</button>
-              <button onclick="bossLoadReport('year')">ä»Šå¹´</button>
-              <button onclick="bossOpenRangeReport()">è‡ªè®¢æ—¥æœŸ</button>
-            </div>
-          </div>
-
-          <div id="bossRangeBox" class="boss-panel">
-            <h4>è‡ªè®¢æŠ¥è¡¨</h4>
-            <div class="boss-inline">
-              <input id="bossStartDate" type="date">
-              <input id="bossEndDate" type="date">
-              <button class="green" onclick="bossLoadCustomReport()">æŸ¥è¯¢</button>
-            </div>
-          </div>
-
-          <div id="bossExportBox" class="boss-panel">
-            <h4>ðŸ“¤ æ±‡å‡º Excel ç»™ä¼šè®¡</h4>
-            <div class="boss-inline">
-              <input id="exportYear" type="number" placeholder="å¹´ä»½ï¼Œä¾‹å¦‚ 2026">
-              <input id="exportMonth" type="number" placeholder="æœˆä»½ï¼Œå¯ç©º" min="1" max="12">
-              <button class="green" onclick="bossExportXlsx()">ç”Ÿæˆ Excel</button>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px;color:#cbd5e1">
-              <label><input type="checkbox" id="exPos" checked> POS é”€å”®</label>
-              <label><input type="checkbox" id="exRefund" checked> é€€è´§</label>
-              <label><input type="checkbox" id="exShopee"> Shopee ç‹¬ç«‹é¡µ</label>
-              <label><input type="checkbox" id="exOther"> å…¶å®ƒæ”¶å…¥ç‹¬ç«‹é¡µ</label>
-              <label><input type="checkbox" id="exCigarette"> é¦™çƒŸç‹¬ç«‹é¡µ</label>
-            </div>
-            <p style="color:#94a3b8;font-size:13px">Shopee / å…¶å®ƒæ”¶å…¥ / é¦™çƒŸä¸ä¼šæ··è¿› POS é”€å”®ï¼›éœ€è¦ç»™ä¼šè®¡æ—¶å†å‹¾é€‰ã€‚</p>
-          </div>
-
-          <div id="bossCashBox" class="boss-panel">
-            <h4>ðŸ’° è´¢åŠ¡ä¸­å¿ƒ</h4>
-            <div class="boss-money-cards">
-              <div class="boss-money-card"><small>æ”¶é“¶æœºçŽ°é‡‘</small><b id="cashDrawerAmount">RM 0.00</b></div>
-              <div class="boss-money-card"><small>æ‰¾é›¶æœ¬é‡‘</small><b id="floatCashAmount">RM 0.00</b></div>
-              <div class="boss-money-card"><small>å¯æ”¶çŽ°é‡‘</small><b id="collectableAmount">RM 0.00</b></div>
-            </div>
-            <div id="bossCashWarning" class="boss-warning">ðŸŸ  å·²è¶…è¿‡è®¾å®šæé†’ï¼Œè¯·è€ƒè™‘æ”¶çŽ°é‡‘ã€‚</div>
-            <div id="bossCashInfo" class="boss-result">è½½å…¥ä¸­...</div>
-            <div class="boss-inline" style="margin-top:10px"><input id="collectCashAmount" type="number" placeholder="æ”¶èµ°é‡‘é¢ï¼Œä¾‹å¦‚ 300"><input id="collectCashNote" type="text" placeholder="å¤‡æ³¨ï¼Œå¯ç©º"><button class="green" onclick="bossCollectCash()">ç¡®è®¤æ”¶èµ°</button></div>
-          </div>
-
-          <div id="bossParcelBox" class="boss-panel">
-            <h4>ðŸ“¦ Shopee å¯¹è´¦</h4>
-            <p style="color:#94a3b8;font-size:13px;margin-top:-4px">è¿™é‡Œåªè®°å½•å®žé™…æ”¶åˆ°çš„é’±ï¼›ä½ å¡«å†™çš„é‡‘é¢å°±æ˜¯å¯¹è´¦ä¾æ®ï¼Œä¸ä¸Šä¼ è¯æ®ã€‚</p>
-            <div class="boss-inline"><input id="shopeePaidAmount" type="number" placeholder="Shopee å®žé™…ç»™å¤šå°‘é’±"><input id="shopeePaidNote" type="text" placeholder="å¤‡æ³¨ / payout æ—¥æœŸ"><button class="green" onclick="bossConfirmShopeePaid()">è®°å½•å®žé™…æ”¶åˆ°</button></div>
-            <div id="bossParcelResult" class="boss-result">ç‚¹æŸ¥çœ‹åŽæ˜¾ç¤ºã€‚</div>
-          </div>
-
-          <div id="bossOtherIncomeBox" class="boss-panel">
-            <h4>ðŸš° å…¶å®ƒæ”¶å…¥ / æ°´æœº</h4>
-            <p style="color:#94a3b8;font-size:13px;margin-top:-4px">æ°´æœºå…ˆåŠ å…¥å¾…ç¡®è®¤ï¼›çŽ°é‡‘æ”¶åˆ°åŽå†æŒ‰ç¡®è®¤å·²æ”¶æ¬¾ã€‚</p>
-            <div class="boss-inline"><input id="otherIncomeType" type="text" placeholder="æ°´æœº"><input id="otherIncomeAmount" type="number" placeholder="é‡‘é¢"><button class="green" onclick="bossAddOtherIncome()">åŠ å…¥å¾…ç¡®è®¤</button></div>
-            <div id="bossOtherIncomeResult" class="boss-result">å¾…ç¡®è®¤åŽï¼Œä½ ç¡®è®¤æ”¶äº†æ‰ç®—æ”¶å…¥ã€‚</div>
-          </div>
-
-          <div id="bossLowStockBox" class="boss-panel">
-            <h4>ðŸ“¦ åº“å­˜æé†’</h4>
-            <div id="bossLowStockResult" class="boss-result">è½½å…¥ä¸­...</div>
-          </div>
-
-          <div id="bossCredentialBox" class="boss-panel">
-            <h4>âš™ï¸ ç³»ç»Ÿè®¾å®š</h4>
-            <p style="color:#94a3b8;font-size:13px">åªå¡«è¦ä¿®æ”¹çš„é¡¹ç›®ï¼Œç•™ç©ºå°±ä¿æŒåŽŸæœ¬è®¾å®šã€‚å‚¨å­˜åŽä¼šé€€å‡ºç®¡ç†æ¨¡å¼ï¼Œé‡æ–°ç™»å…¥æ‰ä¼šç”Ÿæ•ˆã€‚</p>
-            <div class="settings-grid">
-              <input id="newBossId" type="text" placeholder="æ–°å¸å·ï¼ˆç•™ç©º=ä¸ä¿®æ”¹ï¼‰" autocomplete="off" autocapitalize="off" spellcheck="false">
-              <input id="newBossPassword" type="password" placeholder="æ–°å¯†ç ï¼ˆç•™ç©º=ä¸ä¿®æ”¹ï¼Œè‡³å°‘ 6 ä½ï¼‰" autocomplete="new-password">
-              <input id="newRecoveryCode" type="text" placeholder="æ–°æ¢å¤ç ï¼ˆç•™ç©º=ä¸ä¿®æ”¹ï¼‰" autocomplete="off">
-              <input id="newCashLimit" type="number" placeholder="æ”¶çŽ°é‡‘æé†’ï¼Œä¾‹å¦‚ 500">
-              <input id="newFloatCash" type="number" placeholder="æ‰¾é›¶æœ¬é‡‘ï¼Œä¾‹å¦‚ 200">
-              <input id="newAutoLogout" type="number" placeholder="è‡ªåŠ¨é€€å‡ºåˆ†é’Ÿï¼Œä¾‹å¦‚ 10">
-              <input id="newParcelRate" type="number" step="0.01" placeholder="Shopee æ´¾ä»¶å•ä»·ï¼Œä¾‹å¦‚ 0.30">
-              <input id="newParcelReturnRate" type="number" step="0.01" placeholder="Shopee é€€å›žå•ä»·ï¼Œä¾‹å¦‚ 0.15">
-            </div>
-            <button class="green" onclick="bossSaveSettings()">å‚¨å­˜è®¾å®š</button>
-          </div>
-
-          <div id="bossResult" class="boss-result">è¯·é€‰æ‹©åŠŸèƒ½ã€‚</div>
+          <div id="bossOverviewPanel" class="boss-panel active"><h4>Today</h4><div id="bossOverviewResult" class="boss-overview-grid">Loading...</div></div>
+          <div id="bossReportsPanel" class="boss-panel"><h4>Reports</h4><div class="boss-report-grid"><button onclick="bossLoadReport('today')">Today</button><button onclick="bossLoadReport('yesterday')">Yesterday</button><button onclick="bossLoadReport('week')">This Week</button><button onclick="bossLoadReport('lastWeek')">Last Week</button><button onclick="bossLoadReport('month')">This Month</button><button onclick="bossLoadReport('lastMonth')">Last Month</button><button onclick="bossLoadReport('year')">This Year</button><button onclick="bossOpenRangeReport()">Custom</button></div></div>
+          <div id="bossRangeBox" class="boss-panel"><h4>Custom Report</h4><div class="boss-inline"><input id="bossStartDate" type="date"><input id="bossEndDate" type="date"><button class="green" onclick="bossLoadCustomReport()">Search</button></div></div>
+          <div id="bossExportBox" class="boss-panel"><h4>Export Excel</h4><div class="boss-inline"><input id="exportYear" type="number" placeholder="Year, e.g. 2026"><input id="exportMonth" type="number" placeholder="Month optional" min="1" max="12"><button class="green" onclick="bossExportXlsx()">Generate Excel</button></div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px;color:#cbd5e1"><label><input type="checkbox" id="exPos" checked> POS Sales</label><label><input type="checkbox" id="exRefund" checked> Refunds</label><label><input type="checkbox" id="exShopee"> Shopee page</label><label><input type="checkbox" id="exOther"> Other income page</label><label><input type="checkbox" id="exCigarette"> Cigarette page</label></div></div>
+          <div id="bossCashBox" class="boss-panel"><h4>Finance</h4><div class="boss-money-cards"><div class="boss-money-card"><small>Cash Drawer</small><b id="cashDrawerAmount">RM 0.00</b></div><div class="boss-money-card"><small>Float Cash</small><b id="floatCashAmount">RM 0.00</b></div><div class="boss-money-card"><small>Collectable</small><b id="collectableAmount">RM 0.00</b></div></div><div id="bossCashWarning" class="boss-warning">Cash reminder reached.</div><div id="bossCashInfo" class="boss-result">Loading...</div><div class="boss-inline" style="margin-top:10px"><input id="collectCashAmount" type="number" placeholder="Collect amount"><input id="collectCashNote" type="text" placeholder="Note optional"><button class="green" onclick="bossCollectCash()">Confirm Collection</button></div></div>
+          <div id="bossParcelBox" class="boss-panel"><h4>Shopee</h4><p style="color:#94a3b8;font-size:13px;margin-top:-4px">Record actual payout received from Shopee.</p><div class="boss-inline"><input id="shopeePaidAmount" type="number" placeholder="Shopee paid amount"><input id="shopeePaidNote" type="text" placeholder="Note / payout date"><button class="green" onclick="bossConfirmShopeePaid()">Record Paid</button></div><div id="bossParcelResult" class="boss-result">Open to load.</div></div>
+          <div id="bossOtherIncomeBox" class="boss-panel"><h4>Other Income</h4><p style="color:#94a3b8;font-size:13px;margin-top:-4px">Add pending income first, confirm after cash is received.</p><div class="boss-inline"><input id="otherIncomeType" type="text" placeholder="Water Machine"><input id="otherIncomeAmount" type="number" placeholder="Amount"><button class="green" onclick="bossAddOtherIncome()">Add Pending</button></div><div id="bossOtherIncomeResult" class="boss-result">Waiting confirmation.</div></div>
+          <div id="bossLowStockBox" class="boss-panel"><h4>Low Stock</h4><div id="bossLowStockResult" class="boss-result">Loading...</div></div>
+          <div id="bossCredentialBox" class="boss-panel"><h4>Settings</h4><p style="color:#94a3b8;font-size:13px">Fill only fields you want to change. Blank fields keep current setting.</p><div class="settings-grid"><input id="newBossId" type="text" placeholder="New ID"><input id="newBossPassword" type="password" placeholder="New password"><input id="newRecoveryCode" type="text" placeholder="New recovery code"><input id="newCashLimit" type="number" placeholder="Cash reminder, e.g. 500"><input id="newFloatCash" type="number" placeholder="Float cash, e.g. 200"><input id="newAutoLogout" type="number" placeholder="Auto logout minutes"><input id="newParcelRate" type="number" step="0.01" placeholder="Shopee delivery rate"><input id="newParcelReturnRate" type="number" step="0.01" placeholder="Shopee return rate"></div><button class="green" onclick="bossSaveSettings()">Save Settings</button></div>
+          <div id="bossResult" class="boss-result">Choose a function.</div>
         </div>
       </div>
     </div>
@@ -1160,19 +1065,9 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 </div>
 
 <div id="systemLock" class="security-lock">
-  <div class="security-card">
-    <h1>ðŸ”’ ç³»ç»Ÿé”å®š</h1>
-    <p>ç³»ç»Ÿå·²é”å®šï¼ŒPOS æ”¶é“¶æš‚åœä½¿ç”¨ã€‚<br>è¯·è”ç»œè€æ¿è§£é”ã€‚</p>
-    <p style="font-size:14px;color:#94a3b8">è§£é”æ–¹å¼ 1ï¼šåˆ° Google Sheet â†’ Settingsï¼ŒæŠŠ <b>SystemLocked</b> æ”¹æˆ <b>FALSE</b>ï¼Œå¹¶æŠŠ <b>BossFailedCount</b> æ”¹æˆ <b>0</b>ã€‚</p>
-    <p style="font-size:14px;color:#94a3b8">è§£é”æ–¹å¼ 2ï¼šè€æ¿è¾“å…¥ æ¢å¤ç ã€‚</p>
-    <div class="boss-inline" style="margin:10px 0">
-      <input id="recoveryCodeInput" type="password" placeholder="æ¢å¤ç " autocomplete="new-password">
-      <button class="green" onclick="recoveryUnlock()">è§£é”</button>
-    </div>
-    <button onclick="checkSystemStatus(true)" style="padding:12px 18px;border-radius:12px;background:#334155;color:white;font-weight:900">æˆ‘å·²è§£é”ï¼Œé‡æ–°æ£€æŸ¥</button>
-  </div>
+  <div class="security-card"><h1>System Locked</h1><p>POS is locked. Please contact boss.</p><p style="font-size:14px;color:#94a3b8">Unlock in Google Sheet Settings: set SystemLocked to FALSE and BossFailedCount to 0.</p><p style="font-size:14px;color:#94a3b8">Or enter recovery code.</p><div class="boss-inline" style="margin:10px 0"><input id="recoveryCodeInput" type="password" placeholder="Recovery code" autocomplete="new-password"><button class="green" onclick="recoveryUnlock()">Unlock</button></div><button onclick="checkSystemStatus(true)" style="padding:12px 18px;border-radius:12px;background:#334155;color:white;font-weight:900">Recheck</button></div>
 </div>
-<div id="checkoutBusy" class="checkout-busy">â³ ä¹°å•å¤„ç†ä¸­ï¼Œè¯·ä¸è¦æ“ä½œ...</div>
+<div id="checkoutBusy" class="checkout-busy">Processing checkout, please wait...</div>
 
 <script>
 let products=[], currentList=[], cart=[];
@@ -1959,7 +1854,7 @@ function syncOfflineOrders(){
   if(!offline.length)return;
   let done=0,failed=[];
   offline.forEach(o=>{
-    apiCall("saveOrder",[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id||('OFF-'+Date.now())])
+    apiCall("saveOrder",[o.cart,o.payment,o.discount||0])
       .then(function(){done++;finish()})
       .catch(function(){failed.push(o);done++;finish()});
   });
@@ -2508,7 +2403,7 @@ function installParcelUI(){
     <input id="parcelReturned" type="number" inputmode="numeric" placeholder="Returned parcels">
     <input id="parcelNote" type="text" placeholder="Note optional">
     <button class="green" onclick="saveParcelLog()">âœ… Save Parcel Record</button>
-    <button onclick="closeModal(&quot;parcelBox&quot;)">Close</button>`;
+    <button onclick="closeModal('parcelBox')">Close</button>`;
   box.dataset.v462='1';
 }
 openParcelBox=function(){
@@ -2524,7 +2419,7 @@ saveParcelLog=async function(){
   if(delivered<0||returned<0||(!delivered&&!returned)){showAppAlert('Please fill arrived or returned parcels.','Shopee Parcel');return;}
   try{
     const r=await apiCall('saveParcelLog',[{delivered,returned,note}]);
-    closeModal("parcelBox");
+    closeModal('parcelBox');
     showToast(`âœ… Shopee saved. Trip ${r.trip||''}`);
   }catch(e){showAppAlert('Shopee save failed: '+(e.message||e),'Shopee Parcel')}
 };
@@ -2667,6 +2562,104 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error((label || 'Request') + ' timeout, please check connection.')), ms))
   ]);
+
+  function setStaticText(){
+    const title = document.querySelector('.title'); if(title)title.textContent='YLL FEEDS ENTERPRISE';
+    const stats = document.querySelectorAll('.stat small');
+    if(stats[0])stats[0].textContent='Today Sales';
+    if(stats[1])stats[1].textContent='Cash Drawer';
+    if(stats[2])stats[2].textContent='Orders';
+    if(stats[3])stats[3].textContent='Products';
+    const all = document.querySelector('.sidebar > .cat-btn span:first-child'); if(all)all.textContent='All Products';
+    const h = document.querySelector('.right h3'); if(h)h.textContent='Cart';
+    const search = $('searchInput'); if(search)search.placeholder='Search product / category / price';
+    const low = document.querySelector('.quick-chip'); if(low)low.textContent='Low Stock';
+    const checkout = document.querySelector('.paybar .big'); if(checkout)checkout.textContent='CHECKOUT';
+    const discountBtn = document.querySelector('.discount-btn'); if(discountBtn)discountBtn.innerHTML='Discount <b id="dVal">0.00</b>';
+    const clearBtn = document.querySelector('.smallbtn.danger'); if(clearBtn)clearBtn.textContent='Clear';
+    const moreBtn = document.querySelector('.smallbtn.more'); if(moreBtn)moreBtn.textContent='...';
+    const labels = document.querySelectorAll('.summary .row span');
+    if(labels[0])labels[0].textContent='Subtotal';
+    if(labels[1])labels[1].textContent='Discount';
+    if(labels[2])labels[2].textContent='Total';
+    const more = $('moreMenu');
+    if(more)more.innerHTML='<button class="smallbtn print-btn" onclick="smartPrintLast()">Print Receipt</button><button class="smallbtn parcel-btn" onclick="openParcelBox()">Shopee Parcel</button><button class="smallbtn close-btn" onclick="openRefundBox()">Refund</button>';
+    const busy = $('checkoutBusy'); if(busy)busy.textContent='Processing checkout, please wait...';
+  }
+
+  window.render = function(list){
+    const box=$('list'); if(!box)return;
+    list = list || currentList || [];
+    if(!list.length){ box.innerHTML='<div class="empty">No products</div>'; updatePageInfo(list); return; }
+    const start=(currentPage-1)*perPage;
+    const pageList=list.slice(start,start+perPage);
+    box.innerHTML=pageList.map(p=>{
+      const stock=Number(p.stock||0);
+      const low=stock<=5?'color:#ef4444;font-weight:bold':'';
+      const img=p.image?`<img src="${esc(p.image)}" onerror="this.parentNode.innerHTML='<div class=\\'noimg\\'>Box</div>'">`:'<div class="noimg">Box</div>';
+      return `<div class="product-card" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0})'><div class="imgbox">${img}</div><div class="pname">${esc(p.name)}</div><div class="pprice">${money(p.price)}</div><div class="pstock" style="${low}">Stock ${stock}</div></div>`;
+    }).join('');
+    updatePageInfo(list);
+  };
+
+  window.updatePageInfo = function(list){
+    list = list || currentList || [];
+    const totalPages=Math.max(1,Math.ceil(list.length/perPage));
+    const e=$('pageInfo'); if(e)e.textContent=`Page ${currentPage} / ${totalPages}`;
+  };
+
+  window.renderCategories = function(){
+    const bar=$('menuList'); if(!bar)return;
+    const first=document.querySelector('.sidebar > .cat-btn .cat-count'); if(first)first.textContent=products.length;
+    const cats=[...new Set(products.map(p=>p.category||'Uncategorized'))];
+    bar.innerHTML=cats.map(c=>`<div class="cat-btn" onclick='quickCat(${JSON.stringify(c)},this)'><span>${esc(c)}</span><span class="cat-count">${products.filter(p=>(p.category||'Uncategorized')===c).length}</span></div>`).join('');
+  };
+
+  window.showLowStock = function(){
+    currentPage=1;
+    currentList=products.filter(p=>Number(p.stock||0)<=5).sort((a,b)=>Number(a.stock||0)-Number(b.stock||0));
+    document.querySelectorAll('.cat-btn').forEach(x=>x.classList.remove('active'));
+    render(currentList);
+    if(!currentList.length && typeof showToast==='function')showToast('No low stock products');
+  };
+
+  window.showCart = function(){
+    const cartBox=$('cart');
+    if(!cart.length){
+      try{ discount=0; }catch(e){}
+      if(cartBox)cartBox.innerHTML='<div class="empty">Cart is empty</div>';
+      updateTotals({subtotal:0,discount:0,final:0});
+      updateDiscountButton();
+      return;
+    }
+    if(cartBox)cartBox.innerHTML=cart.map((i,x)=>`<div class="item"><div class="cart-head"><div><div class="cart-name">${esc(i.name)}</div><div class="cart-sub">${i.qty} x ${money(i.price)}</div></div><div class="cart-amount">${money(i.qty*i.price)}</div></div><div class="qtybar"><button type="button" onclick="minus(${x})">-</button><div class="qty">${i.qty}</div><button type="button" onclick='add(${JSON.stringify(i.name)},${Number(i.price)||0})'>+</button><button type="button" class="trash" onclick="removeItem(${x})">Delete</button></div></div>`).join('');
+    const data=calcCartData();
+    updateTotals(data);
+    updateDiscountButton();
+  };
+
+  window.updateTotals = function(data){
+    const s=$('subTotal'), d=$('discountVal'), f=$('finalTotal'), r=$('discountRow');
+    if(s)s.textContent=money(data.subtotal);
+    if(d)d.textContent='- '+money(data.discount);
+    if(f)f.textContent=money(data.final);
+    if(r)r.classList.toggle('active',Number(data.discount)>0);
+  };
+
+  function updateDiscountButton(){
+    const e=$('dVal'); if(e)e.textContent=Number(typeof discount !== 'undefined' ? discount : 0).toFixed(2);
+  }
+
+  window.openCash = function(){
+    if(!currentCart().length){ showAppAlert('Cart is empty','Cash'); return; }
+    const d=calcDue();
+    try{ cashTotal=d.final; }catch(e){}
+    const t=$('cashTotal'); if(t)t.textContent=`Subtotal ${money(d.subtotal)} | Discount -${money(d.discount)} | Total ${money(d.final)}`;
+    const input=$('cashInput'); if(input)input.value='';
+    const ch=$('change'); if(ch)ch.textContent='Change RM 0.00';
+    openModal('cashBox');
+    setTimeout(()=>input&&input.focus(),50);
+  };
 
   window.appConfirm = function(message, title='Confirm', total=''){
     return new Promise(resolve => {
@@ -2858,7 +2851,24 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.openParcelBox = async function(){
     const box=document.querySelector('#parcelBox .modal-content');
-    if(box)box.innerHTML='<h3>Shopee Parcel</h3><p style="color:#94a3b8;font-size:13px">Normal day: fill Shopee system parcels only. Open shortage only when parcels are missing.</p><div class="parcel-auto-note" id="parcelTripNote">Today trip: Auto</div><input id="parcelExpected" type="number" inputmode="numeric" placeholder="Shopee system parcels, e.g. 65"><input id="parcelReturned" type="number" inputmode="numeric" placeholder="Returned parcels"><details class="refund-auth" id="parcelShortDetails"><summary>Short parcels / actual received</summary><input id="parcelDelivered" type="number" inputmode="numeric" placeholder="Actual received, e.g. 62"><div id="parcelShortPreview" class="discount-preview">Missing: 0</div></details><div id="parcelRecoveryWrap" style="display:none"><div class="discount-preview">Previous missing parcels</div><div id="parcelRecoveryList"></div><input id="parcelRecovered" type="number" inputmode="numeric" placeholder="Recovered today"></div><input id="parcelNote" type="text" placeholder="Note optional"><button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">Save Parcel Record</button><button onclick="closeModal(&quot;parcelBox&quot;)">Close</button>';
+    if(box)box.innerHTML=`<h3>Shopee Parcel</h3>
+      <p style="color:#94a3b8;font-size:13px">Normal day: fill Shopee system parcels only. Open shortage only when parcels are missing.</p>
+      <div class="parcel-auto-note" id="parcelTripNote">Today trip: Auto</div>
+      <input id="parcelExpected" type="number" inputmode="numeric" placeholder="Shopee system parcels, e.g. 65">
+      <input id="parcelReturned" type="number" inputmode="numeric" placeholder="Returned parcels">
+      <details class="refund-auth" id="parcelShortDetails">
+        <summary>Short parcels / actual received</summary>
+        <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="Actual received, e.g. 62">
+        <div id="parcelShortPreview" class="discount-preview">Missing: 0</div>
+      </details>
+      <div id="parcelRecoveryWrap" style="display:none">
+        <div class="discount-preview">Previous missing parcels</div>
+        <div id="parcelRecoveryList"></div>
+        <input id="parcelRecovered" type="number" inputmode="numeric" placeholder="Recovered today">
+      </div>
+      <input id="parcelNote" type="text" placeholder="Note optional">
+      <button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">Save Parcel Record</button>
+      <button onclick="closeModal('parcelBox')">Close</button>`;
     ['parcelExpected','parcelReturned','parcelDelivered','parcelRecovered'].forEach(id=>{ const e=$(id); if(e)e.oninput=updateParcelPreview; });
     updateParcelPreview();
     openModal('parcelBox');
@@ -2891,12 +2901,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(expected && delivered < expected){ const missing=expected-delivered; note = note ? `${note} | System ${expected}, actual ${delivered}, missing ${missing}` : `System ${expected}, actual ${delivered}, missing ${missing}`; }
     if(recovered>0) note = note ? `${note} | Recovered ${recovered}` : `Recovered ${recovered}`;
     const btn=$('parcelSubmitBtn'); if(btn){btn.disabled=true; btn.textContent='Saving...';}
-    try{ const r=await timeout(apiCall('saveParcelLog',[{expected,delivered,returned,recovered,note}]),30000,'Shopee save'); closeModal("parcelBox"); if(typeof showToast==='function')showToast(r.duplicate?'Already saved':'Shopee saved'); }
+    try{ const r=await timeout(apiCall('saveParcelLog',[{expected,delivered,returned,recovered,note}]),30000,'Shopee save'); closeModal('parcelBox'); if(typeof showToast==='function')showToast(r.duplicate?'Already saved':'Shopee saved'); }
     catch(e){ showAppAlert('Shopee save failed: '+(e.message||e),'Shopee'); }
     finally{ if(btn){btn.disabled=false; btn.textContent='Save Parcel Record';} }
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+    setStaticText();
+    setTimeout(setStaticText, 300);
+    setTimeout(setStaticText, 1200);
     if(localStorage.getItem('yllTheme') === 'light') document.body.classList.add('light');
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
   });
@@ -2905,7 +2918,4 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 </script>
 </body>
 </html>
-
-
-
 
