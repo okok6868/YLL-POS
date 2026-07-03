@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success:false, error:"Method not allowed" });
   }
 
-  const gasUrl = "https://script.google.com/macros/s/AKfycbwU1ydbLBW0QrMde-_ecy4liE4oVBopuG5HAtZb6W23OjdV1LgRRl8ervlZNWuf3qPzcQ/exec";
+  const gasUrl = process.env.GAS_URL || "https://script.google.com/macros/s/AKfycbwU1ydbLBW0QrMde-_ecy4liE4oVBopuG5HAtZb6W23OjdV1LgRRl8ervlZNWuf3qPzcQ/exec";
 
   try {
     const controller = new AbortController();
@@ -26,9 +26,9 @@ export default async function handler(req, res) {
       return res.status(500).json({
         success:false,
         error: looksLikeGoogle404
-          ? "Apps Script deployment URL is wrong or expired. Update api/pos.js gasUrl with the latest Web app /exec URL."
+          ? "Apps Script Web App URL is wrong or expired. Update GAS_URL or api/pos.js with the latest /exec URL, then redeploy."
           : "Apps Script returned non-JSON. Check Apps Script deployment and duplicate GS files.",
-        raw:text.slice(0,220)
+        raw: looksLikeGoogle404 ? "" : text.slice(0,220)
       });
     }
 
