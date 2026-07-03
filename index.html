@@ -2704,13 +2704,74 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(detail)detail.innerHTML=html;
   }
 
+  function cleanMessage(msg){
+    let s=String(msg||'');
+    s=s.replace(/[ÃƒÃ‚][^\n:ï¼š]{0,40}[:ï¼š]?\s*/g,'').replace(/[Ã¥Ã¦Ã¨Ã§][^\n:ï¼š]{0,40}[:ï¼š]?\s*/g,'');
+    if(/timeout after 30 seconds|Apps Script timeout/i.test(s)){
+      return lang()==='zh'
+        ? 'Google Apps Script \u56de\u5e94\u8d85\u65f6\u3002\u5546\u54c1\u4f1a\u5148\u7528\u672c\u673a\u7f13\u5b58\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u6216\u90e8\u7f72 URL\u3002'
+        : 'Google Apps Script timed out. POS will keep using local product cache. Please check connection or deployment URL.';
+    }
+    return s;
+  }
+
+  function applyProducts(list, fromCache=false){
+    list=(list||[]).filter(p=>p && p.name && Number(p.price)>0);
+    try{ products=list; window.products=list; currentList=list; currentPage=1; }catch(e){
+      window.products=list; window.currentList=list; window.currentPage=1;
+    }
+    renderCategories();
+    render(currentList);
+    setStaticText();
+    const items=$('todayItems'); if(items)items.textContent=list.length||0;
+    if(!fromCache){
+      try{ localStorage.setItem('yllProductsCacheV1', JSON.stringify({ts:Date.now(), items:list})); }catch(e){}
+    }
+  }
+
+  function loadProductsCache(){
+    try{
+      const cached=JSON.parse(localStorage.getItem('yllProductsCacheV1')||'null');
+      if(cached && Array.isArray(cached.items) && cached.items.length){
+        applyProducts(cached.items,true);
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  let productLoadInFlight=null;
+  window.load = function(force=false){
+    if(productLoadInFlight && !force)return productLoadInFlight;
+    const hadCache=loadProductsCache();
+    if(!hadCache){
+      const box=$('list');
+      if(box)box.innerHTML='<div class="empty">'+(lang()==='zh'?'\u6b63\u5728\u8f7d\u5165\u5546\u54c1...':'Loading products...')+'</div>';
+    }
+    productLoadInFlight=timeout(apiCall('getProducts',[]), hadCache?9000:14000, 'Product load')
+      .then(data=>{
+        applyProducts(data||[],false);
+        return data;
+      })
+      .catch(err=>{
+        console.warn('Product refresh failed', err);
+        if(!hadCache){
+          const box=$('list');
+          if(box)box.innerHTML=`<div class="empty">${esc(cleanMessage(err.message||err))}<br><br><button onclick="load(true)">${lang()==='zh'?'\u91cd\u8bd5':'Retry'}</button></div>`;
+        }else if(typeof showToast==='function')showToast(lang()==='zh'?'\u5546\u54c1\u5df2\u7528\u672c\u673a\u7f13\u5b58':'Using cached products');
+        return [];
+      })
+      .finally(()=>{ productLoadInFlight=null; });
+    return productLoadInFlight;
+  };
+
   window.loadTodayStats = async function(){
     try{
       const [today, top] = await Promise.all([
-        apiCall('getTodayReport',[]),
-        apiCall('getPosTopStats',[]).catch(()=>null)
+        timeout(apiCall('getTodayReport',[]), 6000, 'Today stats'),
+        timeout(apiCall('getPosTopStats',[]), 6000, 'Top stats').catch(()=>null)
       ]);
-      const drawer = top && top.cashDrawer ? top.cashDrawer : await apiCall('getCashDrawer',[]);
+      const drawer = top && top.cashDrawer ? top.cashDrawer : await timeout(apiCall('getCashDrawer',[]), 6000, 'Cash drawer');
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
       if(sales)sales.textContent=money(today.total||0);
       setStatDetail('todaySales', `Cash ${money(today.Cash||0)} | QR ${money(today.MBB_QR||0)} | Transfer ${money(today.Transfer||0)}`);
@@ -2817,7 +2878,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.showAppAlert = function(msg,title){
     const h=$('appAlertTitle'), t=$('appAlertText');
     if(h)h.textContent=title || tr('notice');
-    if(t)t.textContent=msg;
+    if(t)t.textContent=cleanMessage(msg);
     const btn=document.querySelector('#appAlertBox button'); if(btn)btn.textContent=tr('close');
     openModal('appAlertBox');
   };
@@ -2850,6 +2911,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function currentProducts(){
     return window.products || products || [];
   }
+  function reduceLocalStock(savedCart){
+    try{
+      const list=currentProducts();
+      (savedCart||[]).forEach(it=>{
+        const p=list.find(x=>String(x.name)===String(it.name));
+        if(p)p.stock=Math.max(0, Number(p.stock||0)-Number(it.qty||0));
+      });
+      applyProducts(list,false);
+    }catch(e){ console.warn('local stock update failed', e); }
+  }
   function finishSavedOrder(orderId, sendDiscount){
     const c = currentCart();
     c.forEach(i => i.orderId = orderId);
@@ -2857,12 +2928,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{ lastCart = window.lastCart; }catch(e){}
     window.lastDiscount = sendDiscount;
     try{ lastDiscount = sendDiscount; }catch(e){}
+    window.lastDiscount = sendDiscount;
+    try{ lastDiscount = sendDiscount; }catch(e){}
+    reduceLocalStock(window.lastCart);
     c.length = 0;
     try{ discount = 0; }catch(e){ window.discount = 0; }
     showCart();
     setCheckoutBusy(false);
     try{ printReceipt(false); }catch(e){ console.error(e); if(typeof showToast === 'function')showToast('Order saved. Receipt failed; tap Print Receipt.'); }
-    if(typeof loadTodayStats === 'function')loadTodayStats();
+    if(typeof loadTodayStats === 'function')setTimeout(()=>loadTodayStats(), 100);
   }
 
   window.checkout = async function(payment, paid=0, change=0){
