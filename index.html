@@ -2591,7 +2591,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       approvedRefundsDeducted:'Approved cash refunds deducted', floatCash:'Float cash', todayCash:'Today Cash', todayTotal:'Today Total',
       cashReminderReached:'Collectable cash {amount} reached reminder {limit}.', paid:'Paid', otherPending:'Other Pending',
       received:'Received', pendingRefunds:'Pending Refunds', requests:'requests', records:'Records', pending:'Pending', last30:'Last 30 records',
-      actualPaidRequired:'Please enter actual paid amount.', saveFailed:'Save failed: ', receiptFailed:'Order saved. Receipt failed; tap Print Receipt.'
+      actualPaidRequired:'Please enter actual paid amount.', saveFailed:'Save failed: ', receiptFailed:'Order saved. Receipt failed; tap Print Receipt.',
+      saveSentSlow:'Order sent. Network is slow, POS will confirm in background.', saveStillChecking:'Order sent. Please do not press checkout again.'
     },
     zh: {
       all:'\u5168\u90e8\u5546\u54c1', home:'\u9996\u9875', search:'\u641c\u7d22\u5546\u54c1 / \u5206\u7c7b / \u4ef7\u94b1', low:'\u4f4e\u5e93\u5b58', prev:'\u4e0a\u4e00\u9875', next:'\u4e0b\u4e00\u9875',
@@ -2623,7 +2624,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       approvedRefundsDeducted:'\u5df2\u6279\u51c6\u9000\u6b3e\u5df2\u6263\u9664', floatCash:'\u5907\u7528\u73b0\u91d1', todayCash:'\u4eca\u65e5\u73b0\u91d1', todayTotal:'\u4eca\u65e5\u603b\u6570',
       cashReminderReached:'\u53ef\u6536\u8d70\u73b0\u91d1 {amount} \u5df2\u8fbe\u5230\u63d0\u9192\u91d1\u989d {limit}\u3002', paid:'\u5df2\u6536', otherPending:'\u5176\u5b83\u672a\u6536',
       received:'\u5df2\u6536', pendingRefunds:'\u5f85\u6279\u9000\u6b3e', requests:'\u7533\u8bf7', records:'\u8bb0\u5f55', pending:'\u672a\u6536', last30:'\u6700\u8fd1 30 \u7b14',
-      actualPaidRequired:'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002', saveFailed:'\u8bb0\u5f55\u5931\u8d25\uff1a', receiptFailed:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u4f46\u6536\u636e\u5217\u5370\u5931\u8d25\uff0c\u8bf7\u70b9\u51fb\u6253\u5370\u6536\u636e\u3002'
+      actualPaidRequired:'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002', saveFailed:'\u8bb0\u5f55\u5931\u8d25\uff1a', receiptFailed:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u4f46\u6536\u636e\u5217\u5370\u5931\u8d25\uff0c\u8bf7\u70b9\u51fb\u6253\u5370\u6536\u636e\u3002',
+      saveSentSlow:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u7f51\u7edc\u6162\uff0cPOS \u4f1a\u5728\u540e\u53f0\u7ee7\u7eed\u786e\u8ba4\u3002', saveStillChecking:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u8bf7\u4e0d\u8981\u518d\u91cd\u590d\u70b9\u4e70\u5355\u3002'
     }
   };
   const lang = () => localStorage.getItem('yllLang') || 'en';
@@ -3028,6 +3030,45 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function makeClientOrderId(){
     return 'POS-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
   }
+  function isTimeoutError(err){
+    return /timeout|timed out|network/i.test(String((err && err.message) || err || ''));
+  }
+  function rememberPendingOnlineOrder(order){
+    try{
+      const rows=JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]').filter(x=>x && x.id!==order.id);
+      rows.push(order);
+      localStorage.setItem('pendingOnlineOrders', JSON.stringify(rows.slice(-30)));
+    }catch(e){}
+  }
+  function removePendingOnlineOrder(clientId){
+    try{
+      const rows=JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]').filter(x=>x && x.id!==clientId);
+      if(rows.length)localStorage.setItem('pendingOnlineOrders', JSON.stringify(rows));
+      else localStorage.removeItem('pendingOnlineOrders');
+    }catch(e){}
+  }
+  function finishSlowOrder(clientId, sendDiscount, pendingPayload){
+    rememberPendingOnlineOrder(pendingPayload);
+    finishSavedOrder('PENDING-' + clientId, sendDiscount);
+    if(typeof showToast === 'function')showToast(tr('saveSentSlow'));
+  }
+  function confirmPendingInBackground(clientId){
+    if(!clientId || !navigator.onLine)return;
+    setTimeout(()=>{
+      apiCall('getOrderByClientId',[clientId])
+        .then(saved=>{
+          if(saved && saved.orderId){
+            removePendingOnlineOrder(clientId);
+            try{
+              if(Array.isArray(window.lastCart))window.lastCart.forEach(i=>i.orderId=saved.orderId);
+              if(Array.isArray(lastCart))lastCart.forEach(i=>i.orderId=saved.orderId);
+            }catch(e){}
+            if(typeof loadTodayStats === 'function')loadTodayStats();
+          }
+        })
+        .catch(()=>{});
+    }, 2500);
+  }
   function currentCart(){
     let local=null, global=null;
     try{ if(typeof cart !== 'undefined' && Array.isArray(cart))local=cart; }catch(e){}
@@ -3100,20 +3141,34 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       return;
     }
     try{
-      const res = await timeout(apiCall('saveOrder',[send,payment,sendDiscount,window.lastPaid,window.lastChange,clientId]), 18000, 'Save order');
+      const savePromise = apiCall('saveOrder',[send,payment,sendDiscount,window.lastPaid,window.lastChange,clientId]);
+      savePromise.then(r=>{
+        if(r && r.orderId){
+          removePendingOnlineOrder(clientId);
+          try{
+            if(Array.isArray(window.lastCart))window.lastCart.forEach(i=>i.orderId=r.orderId);
+            if(Array.isArray(lastCart))lastCart.forEach(i=>i.orderId=r.orderId);
+          }catch(e){}
+        }
+      }).catch(()=>{});
+      const res = await timeout(savePromise, 12000, 'Save order');
       if(!res || !res.orderId) throw new Error(tr('noOrderNumber'));
+      removePendingOnlineOrder(clientId);
       finishSavedOrder(res.orderId, sendDiscount);
     }catch(err){
-      for(let i=0;i<5;i++){
+      if(isTimeoutError(err)){
         try{
-          if(i) await sleep(2500);
-          const saved = await timeout(apiCall('getOrderByClientId',[clientId]), 6000, 'Check saved order');
+          const saved = await timeout(apiCall('getOrderByClientId',[clientId]), 2500, 'Check saved order');
           if(saved && saved.orderId){
+            removePendingOnlineOrder(clientId);
             finishSavedOrder(saved.orderId, sendDiscount);
             if(typeof showToast === 'function')showToast(tr('orderSlow'));
             return;
           }
         }catch(e){}
+        finishSlowOrder(clientId, sendDiscount, {id:clientId, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, date:new Date().toISOString()});
+        confirmPendingInBackground(clientId);
+        return;
       }
       setCheckoutBusy(false);
       showAppAlert(tr('saveUnconfirmed') + '\n\n' + (err.message || err), tr('payment'));
@@ -3151,6 +3206,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.syncOfflineOrders = function(){
     const offline = JSON.parse(localStorage.getItem('offlineOrders') || '[]');
+    const pendingOnline = JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]');
+    if(pendingOnline.length && navigator.onLine){
+      let pDone=0, pFailed=[];
+      pendingOnline.forEach(o=>{
+        apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id])
+          .then(r=>{ if(!(r && r.orderId))pFailed.push(o); })
+          .catch(()=>pFailed.push(o))
+          .finally(()=>{
+            pDone++;
+            if(pDone===pendingOnline.length){
+              if(pFailed.length)localStorage.setItem('pendingOnlineOrders', JSON.stringify(pFailed.slice(-30)));
+              else localStorage.removeItem('pendingOnlineOrders');
+              if(typeof loadTodayStats === 'function')loadTodayStats();
+            }
+          });
+      });
+    }
     if(!offline.length || !navigator.onLine) return;
     let done=0, failed=[];
     offline.forEach(o => {
