@@ -143,7 +143,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .pstock{font-size:12px;color:var(--muted);margin-top:3px}
 .empty{text-align:center;color:#64748b;margin-top:40px;grid-column:1/-1}
 
-/* ä¹°å• */
+/* 买单 */
 .big{
   background:linear-gradient(
     135deg,
@@ -153,7 +153,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   color:white !important;
 }
 
-/* Discount */
+/* 折扣 */
 .discount-btn{
   background:linear-gradient(
     135deg,
@@ -163,7 +163,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   color:white !important;
 }
 
-/* æ¸…é™¤ */
+/* 清除 */
 .smallbtn.danger{
   background:linear-gradient(
     135deg,
@@ -172,7 +172,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   ) !important;
 }
 
-/* æ‰“å° */
+/* 打印 */
 .print-btn{
   background:linear-gradient(
     135deg,
@@ -181,7 +181,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   ) !important;
 }
 
-/* å‘é€ */
+/* 发送 */
 .send-btn{
   background:linear-gradient(
     135deg,
@@ -190,7 +190,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   ) !important;
 }
 
-/* æŠ¥è¡¨ */
+/* 报表 */
 .report-btn{
   background:linear-gradient(
     135deg,
@@ -200,7 +200,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   color:#111 !important;
 }
 
-/* ç»“è´¦ */
+/* 结账 */
 .close-btn{
   background:linear-gradient(
     135deg,
@@ -567,7 +567,7 @@ body.light .auto-print-btn{
 }
 
 
-/* V4.3.2 æƒé™ / å®‰å…¨ / busy lock */
+/* V4.3.2 权限 / 安全 / busy lock */
 body.pos-busy .products, body.pos-busy .cart, body.pos-busy .paybar, body.pos-busy .sidebar{pointer-events:none;opacity:.55}
 .security-lock{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#020617,#111827);display:none;align-items:center;justify-content:center;text-align:center;padding:22px}
 .security-lock.active{display:flex}
@@ -959,20 +959,20 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
 <div id="refundBox" class="modal">
   <div class="modal-content">
-    <h3>â†©ï¸ Refund</h3>
-    <p style="color:#94a3b8;font-size:13px">å·²ä¹°å•çš„é€€è´§éœ€è¦ ç®¡ç†å¸å· / å¯†ç ã€‚ä¼šä¿ç•™åŽŸè®¢å•ï¼Œä¸åˆ é™¤åŽ†å²ã€‚</p>
-    <input id="refundOrderId" type="text" placeholder="è®¢å•å· ORD-...">
-    <input id="refundItem" type="text" placeholder="å•†å“å / å¤‡æ³¨">
-    <input id="refundAmount" type="number" placeholder="é€€æ¬¾é‡‘é¢ RM">
-    <input id="refundReason" type="text" placeholder="åŽŸå› ï¼Œä¾‹å¦‚é¡¾å®¢é€€è´§">
+    <h3>↩️ Refund</h3>
+    <p style="color:#94a3b8;font-size:13px">已买单的退货需要 管理帐号 / 密码。会保留原订单，不删除历史。</p>
+    <input id="refundOrderId" type="text" placeholder="订单号 ORD-...">
+    <input id="refundItem" type="text" placeholder="商品名 / 备注">
+    <input id="refundAmount" type="number" placeholder="退款金额 RM">
+    <input id="refundReason" type="text" placeholder="原因，例如顾客退货">
     <details class="refund-auth" id="refundAuthDetails">
-      <summary>ðŸ” æ‰“å¼€æŽˆæƒéªŒè¯</summary>
-      <input id="refundBossId" type="text" placeholder="å¸å·" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <input id="refundBossPassword" type="password" placeholder="å¯†ç " autocomplete="new-password">
-      <div class="receipt-note">é€€è´§ä¸€å®šè¦æŽˆæƒéªŒè¯ã€‚æäº¤ä¸­ä¼šé”ä½ï¼Œé¿å…é‡å¤ä¸Šä¼ ã€‚</div>
+      <summary>🔐 打开授权验证</summary>
+      <input id="refundBossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="refundBossPassword" type="password" placeholder="密码" autocomplete="new-password">
+      <div class="receipt-note">退货一定要授权验证。提交中会锁住，避免重复上传。</div>
     </details>
-    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">âœ… ç¡®è®¤é€€è´§</button>
-    <button onclick="closeModal('refundBox')">å…³é—­</button>
+    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ 确认退货</button>
+    <button onclick="closeModal('refundBox')">关闭</button>
   </div>
 </div>
 
@@ -981,7 +981,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <div class="modal-content">
     <h3 id="appAlertTitle">Notice</h3>
     <div id="appAlertText"></div>
-    <button class="green" onclick="closeModal('appAlertBox')">Close</button>
+    <button class="green" onclick="closeModal('appAlertBox')">知道了</button>
   </div>
 </div>
 
@@ -1065,14 +1065,14 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div id="systemLock" class="security-lock">
   <div class="security-card"><h1>System Locked</h1><p>POS is locked. Please contact boss.</p><p style="font-size:14px;color:#94a3b8">Unlock in Google Sheet Settings: set SystemLocked to FALSE and BossFailedCount to 0.</p><p style="font-size:14px;color:#94a3b8">Or enter recovery code.</p><div class="boss-inline" style="margin:10px 0"><input id="recoveryCodeInput" type="password" placeholder="Recovery code" autocomplete="new-password"><button class="green" onclick="recoveryUnlock()">Unlock</button></div><button onclick="checkSystemStatus(true)" style="padding:12px 18px;border-radius:12px;background:#334155;color:white;font-weight:900">Recheck</button></div>
 </div>
-<div id="checkoutBusy" class="checkout-busy">Processing checkout, please wait...</div>
+<div id="checkoutBusy" class="checkout-busy">...</div>
 
 <script>
 let products=[], currentList=[], cart=[];
 let currentPage=1, perPage=12;
-let currentCat="ALL", searchText="";
+let currentCat="全部分类", searchText="";
 let discount=0, cashTotal=0;
-let lastPayment="", lastCart=[], lastDiscount=0, lastReceiptText="", confirmCallback=null;
+let lastPayment="", lastCart=[], last折扣=0, lastReceiptText="", confirmCallback=null;
 let lastPaid=0, lastChange=0, isCheckingOut=false, appBootDate="", unlockBusyOnConfirmCancel=false;
 
 window.onload=function(){
@@ -1089,7 +1089,7 @@ function fromCents(v){return (Number(v)||0)/100}
 function moneyNum(v){return fromCents(cents(v))}
 function fmt(v){return "RM "+moneyNum(v).toFixed(2)}
 function todayKey(){return new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Kuala_Lumpur"})}
-function checkDayRollover(){let t=todayKey(); if(appBootDate && t!==appBootDate){alert("å·²è¿›å…¥æ–°çš„ä¸€å¤©ï¼Œç³»ç»Ÿä¼šé‡æ–°åˆ·æ–°åŒæ­¥èµ„æ–™ã€‚"); location.reload();}}
+function checkDayRollover(){let t=todayKey(); if(appBootDate && t!==appBootDate){alert("已进入新的一天，系统会重新刷新同步资料。"); location.reload();}}
 function setCheckoutBusy(on){isCheckingOut=!!on; document.body.classList.toggle("pos-busy",!!on); let b=document.getElementById("checkoutBusy"); if(b)b.classList.toggle("active",!!on)}
 function updateClock(){let e=document.getElementById("clock");if(e)e.textContent=new Date().toLocaleTimeString()}
 
@@ -1127,39 +1127,39 @@ async function load(){
     renderCategories();
     let itemEl=document.getElementById("todayItems"); if(itemEl)itemEl.innerText=products.length;
   }catch(err){
-    alert("âŒ å•†å“åŠ è½½å¤±è´¥ï¼š"+(err.message||err));
+    alert("❌ 商品加载失败："+(err.message||err));
   }
 }
 
 function render(list){
   let box=document.getElementById("list"); if(!box)return;
-  if(!list || !list.length){box.innerHTML='<div class="empty">æ²¡æœ‰å•†å“</div>'; updatePageInfo(list||[]); return;}
+  if(!list || !list.length){box.innerHTML='<div class="empty">没有商品</div>'; updatePageInfo(list||[]); return;}
   let start=(currentPage-1)*perPage;
   let pageList=list.slice(start,start+perPage);
   let html="";
   pageList.forEach(p=>{
     let stock=Number(p.stock||0);
     let low=stock<=5?"color:#ef4444;font-weight:bold":"";
-    let img=p.image?`<img src="${p.image}" onerror="this.parentNode.innerHTML='<div class=\'noimg\'>ðŸ“¦</div>'">`:`<div class="noimg">ðŸ“¦</div>`;
+    let img=p.image?`<img src="${p.image}" onerror="this.parentNode.innerHTML='<div class=\'noimg\'>📦</div>'">`:`<div class="noimg">📦</div>`;
     html+=`
       <div class="product-card" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0})'>
         <div class="imgbox">${img}</div>
         <div class="pname">${p.name}</div>
         <div class="pprice">${fmt(p.price)}</div>
-        <div class="pstock" style="${low}">åº“å­˜ ${stock}</div>
+        <div class="pstock" style="${low}">库存 ${stock}</div>
       </div>`;
   });
   box.innerHTML=html;
   updatePageInfo(list);
 }
-function updatePageInfo(list){let totalPages=Math.max(1,Math.ceil((list||[]).length/perPage));let e=document.getElementById("pageInfo");if(e)e.innerText=`ç¬¬ ${currentPage} / ${totalPages} é¡µ`}
+function updatePageInfo(list){let totalPages=Math.max(1,Math.ceil((list||[]).length/perPage));let e=document.getElementById("pageInfo");if(e)e.innerText=`第 ${currentPage} / ${totalPages} 页`}
 function renderCategories(){
   let bar=document.getElementById("menuList"); if(!bar)return;
   let first=document.querySelector(".sidebar > .cat-btn .cat-count"); if(first)first.innerText=products.length;
-  let cats=[...new Set(products.map(p=>p.category||"æœªåˆ†ç±»"))];
+  let cats=[...new Set(products.map(p=>p.category||"未分类"))];
   bar.innerHTML="";
   cats.forEach(c=>{
-    let count=products.filter(p=>(p.category||"æœªåˆ†ç±»")===c).length;
+    let count=products.filter(p=>(p.category||"未分类")===c).length;
     bar.innerHTML+=`<div class="cat-btn" onclick='quickCat(${JSON.stringify(c)},this)'><span>${c}</span><span class="cat-count">${count}</span></div>`;
   });
 }
@@ -1167,20 +1167,20 @@ function quickCat(cat,el){document.querySelectorAll(".cat-btn").forEach(x=>x.cla
 function filterCat(cat){currentCat=cat; currentPage=1; applyProductFilters()}
 function searchProducts(q){searchText=String(q||"").toLowerCase().trim(); currentPage=1; applyProductFilters()}
 function applyProductFilters(){
-  let list=(currentCat==="ALL")?products:products.filter(p=>(p.category||"æœªåˆ†ç±»")===currentCat);
+  let list=(currentCat==="全部分类")?products:products.filter(p=>(p.category||"未分类")===currentCat);
   if(searchText){
     list=list.filter(p=>String(p.name||"").toLowerCase().includes(searchText)||String(p.category||"").toLowerCase().includes(searchText)||String(p.price||"").includes(searchText));
   }
   currentList=list;
   render(currentList);
 }
-function goHome(){currentPage=1; currentCat="ALL"; searchText=""; let si=document.getElementById("searchInput"); if(si)si.value=""; currentList=products; document.querySelectorAll(".cat-btn").forEach(x=>x.classList.remove("active")); let f=document.querySelector(".sidebar > .cat-btn"); if(f)f.classList.add("active"); render(currentList)}
+function goHome(){currentPage=1; currentCat="全部分类"; searchText=""; let si=document.getElementById("searchInput"); if(si)si.value=""; currentList=products; document.querySelectorAll(".cat-btn").forEach(x=>x.classList.remove("active")); let f=document.querySelector(".sidebar > .cat-btn"); if(f)f.classList.add("active"); render(currentList)}
 function showLowStock(){
   currentPage=1;
   currentList=products.filter(p=>Number(p.stock||0)<=5).sort((a,b)=>Number(a.stock||0)-Number(b.stock||0));
   document.querySelectorAll(".cat-btn").forEach(x=>x.classList.remove("active"));
   render(currentList);
-  if(!currentList.length) showToast("âœ… æš‚æ—¶æ²¡æœ‰ä½Žåº“å­˜å•†å“");
+  if(!currentList.length) showToast("✅ 暂时没有低库存商品");
 }
 function nextPage(){let total=Math.max(1,Math.ceil(currentList.length/perPage)); if(currentPage<total){currentPage++;render(currentList)}}
 function prevPage(){if(currentPage>1){currentPage--;render(currentList)}}
@@ -1188,41 +1188,41 @@ function prevPage(){if(currentPage>1){currentPage--;render(currentList)}}
 function add(name,price){if(isCheckingOut)return; let found=cart.find(i=>i.name===name); if(found)found.qty++; else cart.push({name,price:Number(price)||0,qty:1}); showCart()}
 function minus(i){if(isCheckingOut)return; if(!cart[i])return; if(cart[i].qty>1)cart[i].qty--; else cart.splice(i,1); showCart()}
 function removeItem(i){if(isCheckingOut)return; cart.splice(i,1); showCart()}
-function clearCart(){if(!cart.length)return; showConfirm("ç¡®å®šæ¸…ç©ºè´­ç‰©è½¦ï¼Ÿ",function(){cart=[];discount=0;showCart()})}
+function clearCart(){if(!cart.length)return; showConfirm("确定清空购物车？",function(){cart=[];discount=0;showCart()})}
 function calcCartData(){let subtotal=fromCents(cart.reduce((s,i)=>s+cents(i.price)*Number(i.qty||0),0)); discount=moneyNum(discount); if(discount>subtotal)discount=subtotal; if(discount<0)discount=0; let final=fromCents(Math.max(0,cents(subtotal)-cents(discount))); return {subtotal,discount,final}}
 function showCart(){
   let cartBox=document.getElementById("cart");
-  if(!cart.length){discount=0; if(cartBox)cartBox.innerHTML='<div class="empty">è´­ç‰©è½¦ä¸ºç©º</div>'; updateTotals({subtotal:0,discount:0,final:0}); updateDiscountUI(); return;}
+  if(!cart.length){discount=0; if(cartBox)cartBox.innerHTML='<div class="empty">购物车为空</div>'; updateTotals({subtotal:0,discount:0,final:0}); update折扣UI(); return;}
   let html="";
   cart.forEach((i,x)=>{
     let sub=i.qty*i.price;
     html+=`
     <div class="item">
-      <div class="cart-head"><div><div class="cart-name">${i.name}</div><div class="cart-sub">${i.qty} Ã— ${fmt(i.price)}</div></div><div class="cart-amount">${fmt(sub)}</div></div>
-      <div class="qtybar"><button onclick="minus(${x})">ï¼</button><div class="qty">${i.qty}</div><button onclick='add(${JSON.stringify(i.name)},${i.price})'>ï¼‹</button><button class="trash" onclick="removeItem(${x})">ðŸ—‘</button></div>
+      <div class="cart-head"><div><div class="cart-name">${i.name}</div><div class="cart-sub">${i.qty} × ${fmt(i.price)}</div></div><div class="cart-amount">${fmt(sub)}</div></div>
+      <div class="qtybar"><button onclick="minus(${x})">－</button><div class="qty">${i.qty}</div><button onclick='add(${JSON.stringify(i.name)},${i.price})'>＋</button><button class="trash" onclick="removeItem(${x})">🗑</button></div>
     </div>`;
   });
   if(cartBox)cartBox.innerHTML=html;
-  let data=calcCartData(); updateTotals(data); updateDiscountUI();
+  let data=calcCartData(); updateTotals(data); update折扣UI();
 }
 function updateTotals(data){
   let s=document.getElementById("subTotal"),d=document.getElementById("discountVal"),f=document.getElementById("finalTotal"),r=document.getElementById("discountRow");
   if(s)s.innerText=fmt(data.subtotal); if(d)d.innerText="- "+fmt(data.discount); if(f)f.innerText=fmt(data.final); if(r)r.classList.toggle("active",data.discount>0);
 }
 
-function openDiscount(){if(!bossRequire())return; if(!cart.length){alert("ðŸ›’ è´­ç‰©è½¦ä¸ºç©º");return} updateDiscountPreview(discount); openModal("discountBox"); let input=document.getElementById("discountInput"); if(input){input.value=discount||""; setTimeout(()=>{input.focus();input.select()},50); input.oninput=function(){let val=Number(input.value)||0;let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(val>sub){val=sub;input.value=sub} updateDiscountPreview(val)}; input.onkeydown=function(e){if(e.key==="Enter")applyDiscount()}}}
-function closeDiscount(){closeModal("discountBox"); let i=document.getElementById("discountInput"); if(i)i.blur()}
-function addDiscount(v){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); discount=Number(discount)||0; discount+=Number(v)||0; if(discount>sub)discount=sub; if(discount<0)discount=0; discount=Number(discount.toFixed(2)); closeDiscount(); showCart()}
-function applyDiscount(){let input=document.getElementById("discountInput"); let val=Number(input.value); let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(isNaN(val)){alert("è¯·è¾“å…¥Discount");return} if(val>sub){alert("â—Discountä¸èƒ½è¶…è¿‡æ€»é‡‘é¢");return} if(val>sub*.5 && !confirm("âš ï¸ Discountè¶…è¿‡50%ï¼Œç¡®è®¤ï¼Ÿ"))return; discount=Number(val.toFixed(2)); closeDiscount(); showCart()}
-function resetDiscount(){discount=0; let i=document.getElementById("discountInput"); if(i)i.value=""; updateDiscountPreview(0); showCart()}
-function updateDiscountUI(){let e=document.getElementById("dVal"); if(e)e.innerText=Number(discount||0).toFixed(2)}
-function updateDiscountPreview(val){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); let d=Number(val!==undefined?val:discount)||0; let final=Math.max(0,sub-d); let s=document.getElementById("dSubtotal"),c=document.getElementById("dCurrent"),f=document.getElementById("dFinal"); if(s)s.innerText=sub.toFixed(2); if(c)c.innerText=d.toFixed(2); if(f)f.innerText=final.toFixed(2)}
+function open折扣(){if(!bossRequire())return; if(!cart.length){alert("🛒 购物车为空");return} update折扣Preview(discount); openModal("discountBox"); let input=document.getElementById("discountInput"); if(input){input.value=discount||""; setTimeout(()=>{input.focus();input.select()},50); input.oninput=function(){let val=Number(input.value)||0;let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(val>sub){val=sub;input.value=sub} update折扣Preview(val)}; input.onkeydown=function(e){if(e.key==="Enter")apply折扣()}}}
+function close折扣(){closeModal("discountBox"); let i=document.getElementById("discountInput"); if(i)i.blur()}
+function add折扣(v){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); discount=Number(discount)||0; discount+=Number(v)||0; if(discount>sub)discount=sub; if(discount<0)discount=0; discount=Number(discount.toFixed(2)); close折扣(); showCart()}
+function apply折扣(){let input=document.getElementById("discountInput"); let val=Number(input.value); let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(isNaN(val)){alert("请输入折扣");return} if(val>sub){alert("❗折扣不能超过总金额");return} if(val>sub*.5 && !confirm("⚠️ 折扣超过50%，确认？"))return; discount=Number(val.toFixed(2)); close折扣(); showCart()}
+function reset折扣(){discount=0; let i=document.getElementById("discountInput"); if(i)i.value=""; update折扣Preview(0); showCart()}
+function update折扣UI(){let e=document.getElementById("dVal"); if(e)e.innerText=Number(discount||0).toFixed(2)}
+function update折扣Preview(val){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); let d=Number(val!==undefined?val:discount)||0; let final=Math.max(0,sub-d); let s=document.getElementById("dSubtotal"),c=document.getElementById("dCurrent"),f=document.getElementById("dFinal"); if(s)s.innerText=sub.toFixed(2); if(c)c.innerText=d.toFixed(2); if(f)f.innerText=final.toFixed(2)}
 
-function openPay(){if(isCheckingOut)return; if(!cart.length){alert("ðŸ›’ æ²¡å•†å“");return} openModal("payModal")}
+function openPay(){if(isCheckingOut)return; if(!cart.length){alert("🛒 没商品");return} openModal("payModal")}
 function closePay(){closeModal("payModal")}
 function openCash(){
   if(!cart.length){
-    alert("æ²¡å•†å“");
+    alert("没商品");
     return;
   }
 
@@ -1232,9 +1232,9 @@ function openCash(){
   let e = document.getElementById("cashTotal");
   if(e){
     e.innerText =
-      `åŽŸä»· ${fmt(data.subtotal)}
-Discount -${fmt(data.discount)}
-åº”ä»˜ ${fmt(data.final)}`;
+      `原价 ${fmt(data.subtotal)}
+折扣 -${fmt(data.discount)}
+应付 ${fmt(data.final)}`;
   }
 
   openModal("cashBox");
@@ -1255,26 +1255,26 @@ Discount -${fmt(data.discount)}
 function closeCash(){closeModal("cashBox")}
 function quick(v){let i=document.getElementById("cashInput"); if(!i)return; i.value=v; calcChange()}
 function quickExact(){let i=document.getElementById("cashInput"); if(!i)return; i.value=moneyNum(cashTotal).toFixed(2); calcChange()}
-function calcChange(){let pay=moneyNum(document.getElementById("cashInput").value); let change=fromCents(Math.max(0,cents(pay)-cents(cashTotal))); document.getElementById("change").innerText="æ‰¾é›¶ RM "+change.toFixed(2)}
-function confirmCash(){let raw=document.getElementById("cashInput").value; let pay = raw === "" ? cashTotal : moneyNum(raw); if(isNaN(pay)){alert("è¯·è¾“å…¥æ­£ç¡®é‡‘é¢");return} if(cents(pay)<cents(cashTotal)){alert("é’±ä¸å¤Ÿï¼");return} let change=fromCents(cents(pay)-cents(cashTotal)); closeCash(); checkout("cash",pay,change)}
+function calcChange(){let pay=moneyNum(document.getElementById("cashInput").value); let change=fromCents(Math.max(0,cents(pay)-cents(cashTotal))); document.getElementById("change").innerText="找零 RM "+change.toFixed(2)}
+function confirmCash(){let raw=document.getElementById("cashInput").value; let pay = raw === "" ? cashTotal : moneyNum(raw); if(isNaN(pay)){alert("请输入正确金额");return} if(cents(pay)<cents(cashTotal)){alert("钱不够！");return} let change=fromCents(cents(pay)-cents(cashTotal)); closeCash(); checkout("cash",pay,change)}
 function confirmDirectCheckout(payment,label){
   if(isCheckingOut)return;
-  if(!cart.length){alert("æ²¡å•†å“");return}
+  if(!cart.length){alert("没商品");return}
   const data=calcCartData();
-  const msg=`ç¡®è®¤ ${label} å·²æ”¶æ¬¾ï¼Ÿ
+  const msg=`确认 ${label} 已收款？
 
-åº”ä»˜ï¼š${fmt(data.final)}
+应付：${fmt(data.final)}
 
-æŒ‰ç¡®è®¤åŽä¼šé©¬ä¸Šä¿å­˜è®¢å•ã€‚`;
+按确认后会马上保存订单。`;
   if(!window.confirm(msg))return;
   checkout(payment, data.final, 0);
 }
 
 function checkout(payment,paid=0,change=0){
   if(isCheckingOut)return;
-  if(!cart.length){alert("æ²¡å•†å“");return}
+  if(!cart.length){alert("没商品");return}
 
-  // V4.3ï¼šä»˜æ¬¾æŒ‰é’®ä¸€æŒ‰ï¼Œç«‹åˆ»é”ä½ POS å¹¶ç›´æŽ¥ä¿å­˜ï¼›ä¸å†ç­‰å¾…ç¬¬äºŒä¸ªç¡®è®¤å¼¹çª—ã€‚
+  // V4.3：付款按钮一按，立刻锁住 POS 并直接保存；不再等待第二个确认弹窗。
   setCheckoutBusy(true);
   closePay();
   closeCash();
@@ -1286,38 +1286,38 @@ function checkout(payment,paid=0,change=0){
   lastChange=moneyNum(change||0);
 
   let send=cart.map(i=>{let p=products.find(x=>x.name===i.name)||{}; return {name:i.name,price:moneyNum(i.price),qty:i.qty,cost:p.cost||0}});
-  let sendDiscount=moneyNum(discount);
+  let send折扣=moneyNum(discount);
 
   if(!navigator.onLine){
     let offline=JSON.parse(localStorage.getItem("offlineOrders")||"[]");
-    offline.push({id:Date.now(),cart:send,payment,discount:sendDiscount,paid:lastPaid,change:lastChange,date:new Date().toISOString()});
+    offline.push({id:Date.now(),cart:send,payment,discount:send折扣,paid:lastPaid,change:lastChange,date:new Date().toISOString()});
     localStorage.setItem("offlineOrders",JSON.stringify(offline));
-    lastCart=JSON.parse(JSON.stringify(cart)); lastDiscount=sendDiscount;
-    showToast("âš ï¸ ç¦»çº¿æ¨¡å¼ï¼Œè®¢å•å·²ä¿å­˜");
+    lastCart=JSON.parse(JSON.stringify(cart)); last折扣=send折扣;
+    showToast("⚠️ 离线模式，订单已保存");
     cart=[];discount=0;showCart();setCheckoutBusy(false);return
   }
 
-  apiCall("saveOrder",[send,payment,sendDiscount,lastPaid,lastChange])
+  apiCall("saveOrder",[send,payment,send折扣,lastPaid,lastChange])
     .then(function(res){
       let orderId=res&&res.orderId;
-      if(!orderId){alert("âŒ æ²¡æœ‰æ‹¿åˆ°è®¢å•å·");return}
+      if(!orderId){alert("❌ 没有拿到订单号");return}
       cart.forEach(i=>i.orderId=orderId);
       lastCart=JSON.parse(JSON.stringify(cart));
-      lastDiscount=sendDiscount;
+      last折扣=send折扣;
       printReceipt(false);
       cart=[];discount=0;showCart();loadTodayStats();load();
     })
-    .catch(function(err){alert("âŒ ä¿å­˜å¤±è´¥ï¼š"+(err.message||err));})
+    .catch(function(err){alert("❌ 保存失败："+(err.message||err));})
     .finally(function(){setCheckoutBusy(false)});
 }
 
 function openMixedPayment(){
-  if(!cart.length){alert("æ²¡å•†å“");return}
+  if(!cart.length){alert("没商品");return}
   const data=calcCartData();
   cashTotal=data.final;
   closePay();
   const t=document.getElementById("mixedTotal"); if(t)t.textContent="Total "+fmt(data.final);
-  ["mixedCash","mixedQr","mixedTransfer"].forEach(id=>{let e=document.getElementById(id); if(e)e.value=""});
+  ["mixedCash","mixedQr","mixed转账"].forEach(id=>{let e=document.getElementById(id); if(e)e.value=""});
   calcMixed();
   openModal("mixedBox");
 }
@@ -1325,7 +1325,7 @@ function calcMixed(){
   const data=calcCartData();
   const cash=moneyNum((document.getElementById("mixedCash")||{}).value||0);
   const qr=moneyNum((document.getElementById("mixedQr")||{}).value||0);
-  const tr=moneyNum((document.getElementById("mixedTransfer")||{}).value||0);
+  const tr=moneyNum((document.getElementById("mixed转账")||{}).value||0);
   const paid=fromCents(cents(cash)+cents(qr)+cents(tr));
   const remain=fromCents(cents(data.final)-cents(paid));
   const el=document.getElementById("mixedRemain");
@@ -1335,9 +1335,9 @@ function confirmMixed(){
   const data=calcCartData();
   const cash=moneyNum((document.getElementById("mixedCash")||{}).value||0);
   const qr=moneyNum((document.getElementById("mixedQr")||{}).value||0);
-  const tr=moneyNum((document.getElementById("mixedTransfer")||{}).value||0);
+  const tr=moneyNum((document.getElementById("mixed转账")||{}).value||0);
   const paid=fromCents(cents(cash)+cents(qr)+cents(tr));
-  if(cents(paid)<cents(data.final)){alert("Mixed ä»˜æ¬¾ä¸å¤Ÿ");return}
+  if(cents(paid)<cents(data.final)){alert("Mixed 付款不够");return}
   const change=fromCents(Math.max(0,cents(paid)-cents(data.final)));
   checkout("mixed",paid,change);
 }
@@ -1348,16 +1348,16 @@ function printReceipt(auto=false){
   let time = now.toLocaleTimeString();
 
   let useCart = lastCart.length ? lastCart : cart;
-  let usedDiscount = lastCart.length ? lastDiscount : discount;
+  let used折扣 = lastCart.length ? last折扣 : discount;
 
   if(!useCart.length){
-    alert("æ²¡æœ‰å¯æ‰“å°çš„è®¢å•");
+    alert("没有可打印的订单");
     return;
   }
 
   let orderId = useCart[0]?.orderId || "PENDING";
   let subtotal = fromCents(useCart.reduce((a,b)=>a + cents(b.price) * Number(b.qty||0), 0));
-  let finalTotal = fromCents(Math.max(0, cents(subtotal) - cents(usedDiscount)));
+  let finalTotal = fromCents(Math.max(0, cents(subtotal) - cents(used折扣)));
 
   const RECEIPT_WIDTH = 32;
   const LEFT = 18;
@@ -1410,7 +1410,7 @@ ITEMS
   text +=
 `--------------------------------
 ${line("Subtotal", subtotal)}
-${usedDiscount > 0 ? line("Discount", usedDiscount) + "\n" : ""}--------------------------------
+${used折扣 > 0 ? line("折扣", used折扣) + "\n" : ""}--------------------------------
 ${line("TOTAL", finalTotal)}
 ${(lastPayment === "cash" || lastPayment === "mixed") ? line("Paid", lastPaid || finalTotal) + "\n" + line("Change", lastChange || 0) + "\n" : ""}${line("Payment", payLabel(lastPayment))}
 --------------------------------
@@ -1423,7 +1423,7 @@ ${(lastPayment === "cash" || lastPayment === "mixed") ? line("Paid", lastPaid ||
 
   if(navigator.clipboard){
     navigator.clipboard.writeText(text)
-      .then(()=>showToast("âœ… æ”¶æ®å·²ç”Ÿæˆ + å·²å¤åˆ¶"))
+      .then(()=>showToast("✅ 收据已生成 + 已复制"))
       .catch(()=>alert(text));
   }else{
     alert(text);
@@ -1441,19 +1441,19 @@ function smartPrintLast(){
   }
 
   if(!lastReceiptText){
-    alert("è¿˜æ²¡æœ‰æ”¶æ®");
+    alert("还没有收据");
     return;
   }
 
   let ua = navigator.userAgent || "";
 
-  // å®‰å“æ‰‹æœºï¼šç›´æŽ¥å°è¯•æ‰“å¼€ RawBT æ‰“å°
+  // 安卓手机：直接尝试打开 RawBT 打印
   if(/Android/i.test(ua)){
     openRawBT(lastReceiptText);
     return;
   }
 
-  // iPad / iPhone / ç”µè„‘ï¼šæ‰“å¼€ Telegram åˆ†äº«
+  // iPad / iPhone / 电脑：打开 Telegram 分享
   sendToTelegram(lastReceiptText);
 }
 
@@ -1461,7 +1461,7 @@ async function sendToTelegram(text){
   const ua = navigator.userAgent || "";
   const isIOS = /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-  // iPad / iPhoneï¼šä¼˜å…ˆä½¿ç”¨ç³»ç»Ÿåˆ†äº«èœå•ï¼Œä¸å†è·³ Telegram ç½‘é¡µç‰ˆ
+  // iPad / iPhone：优先使用系统分享菜单，不再跳 Telegram 网页版
   if(isIOS && navigator.share){
     try{
       await navigator.share({
@@ -1470,12 +1470,12 @@ async function sendToTelegram(text){
       });
       return;
     }catch(e){
-      // ç”¨æˆ·å–æ¶ˆåˆ†äº«æ—¶ä¸è¦æŠ¥é”™
+      // 用户取消分享时不要报错
       if(e && e.name === "AbortError") return;
     }
   }
 
-  // å…¶ä»–æ”¯æŒç³»ç»Ÿåˆ†äº«çš„è®¾å¤‡ï¼Œä¹Ÿå…ˆç”¨ç³»ç»Ÿåˆ†äº«
+  // 其他支持系统分享的设备，也先用系统分享
   if(navigator.share){
     try{
       await navigator.share({
@@ -1486,7 +1486,7 @@ async function sendToTelegram(text){
     }catch(e){}
   }
 
-  // ç”µè„‘å¤‡ç”¨ï¼šæ‰æ‰“å¼€ Telegram ç½‘é¡µç‰ˆ
+  // 电脑备用：才打开 Telegram 网页版
   window.open(
     "https://t.me/share/url?url=&text="+
     encodeURIComponent(text),
@@ -1495,7 +1495,7 @@ async function sendToTelegram(text){
 }
 
 function sendLastReceipt(){
-  if(!lastReceiptText){alert("è¿˜æ²¡æœ‰æ”¶æ®");return}
+  if(!lastReceiptText){alert("还没有收据");return}
   sendToTelegram(lastReceiptText);
 }
 
@@ -1503,7 +1503,7 @@ function printRawBTLast(){
   if(!lastReceiptText){
     printReceipt(false);
   }
-  if(!lastReceiptText){alert("è¿˜æ²¡æœ‰æ”¶æ®");return}
+  if(!lastReceiptText){alert("还没有收据");return}
   openRawBT(lastReceiptText);
 }
 
@@ -1511,9 +1511,9 @@ function openRawBT(text){
   try{
     const b64 = btoa(unescape(encodeURIComponent(text)));
     window.location.href = "rawbt:base64," + b64;
-    setTimeout(()=>showToast("ðŸ–¨ï¸ å·²å°è¯•æ‰“å¼€ RawBTï¼ˆå®‰å“æ‰‹æœºæœ‰æ•ˆï¼‰"),500);
+    setTimeout(()=>showToast("🖨️ 已尝试打开 RawBT（安卓手机有效）"),500);
   }catch(e){
-    alert("RawBT æ‰“å°å¤±è´¥ï¼š" + e.message);
+    alert("RawBT 打印失败：" + e.message);
   }
 }
 
@@ -1530,18 +1530,18 @@ function togglePrintMode(){
   const mode = getPrintMode();
   const next = mode === "telegram" ? "rawbt" : (mode === "rawbt" ? "off" : "telegram");
   setPrintMode(next);
-  if(next === "telegram") showToast("è‡ªåŠ¨æ‰“å°ï¼šTelegram åˆ†äº«ï¼ˆé€‚åˆ iPad â†’ å®‰å“æ‰‹æœºï¼‰");
-  else if(next === "rawbt") showToast("è‡ªåŠ¨æ‰“å°ï¼šRawBTï¼ˆé€‚åˆå®‰å“æ‰‹æœºç›´æŽ¥æ”¶é“¶ï¼‰");
-  else showToast("è‡ªåŠ¨æ‰“å°ï¼šå…³é—­ï¼Œåªå¤åˆ¶æ”¶æ®");
+  if(next === "telegram") showToast("自动打印：Telegram 分享（适合 iPad → 安卓手机）");
+  else if(next === "rawbt") showToast("自动打印：RawBT（适合安卓手机直接收银）");
+  else showToast("自动打印：关闭，只复制收据");
 }
 
 function updateAutoPrintButton(){
   const btn = document.getElementById("autoPrintBtn");
   if(!btn) return;
   const mode = getPrintMode();
-  if(mode === "telegram") btn.innerText = "ðŸ” è‡ªåŠ¨ï¼šTelegram";
-  else if(mode === "rawbt") btn.innerText = "ðŸ” è‡ªåŠ¨ï¼šRawBT";
-  else btn.innerText = "ðŸ” è‡ªåŠ¨ï¼šå…³é—­";
+  if(mode === "telegram") btn.innerText = "🔁 自动：Telegram";
+  else if(mode === "rawbt") btn.innerText = "🔁 自动：RawBT";
+  else btn.innerText = "🔁 自动：关闭";
 }
 
 function runAutoPrint(){
@@ -1558,13 +1558,13 @@ function openReport(){let today=new Date().toISOString().split("T")[0]; document
 function closeReport(){closeModal("reportBox")}
 function loadReport(){
   let start=document.getElementById("startDate").value,end=document.getElementById("endDate").value;
-  if(!start||!end){alert("è¯·é€‰æ‹©æ—¥æœŸ");return}
+  if(!start||!end){alert("请选择日期");return}
   let box=document.getElementById("reportResult"),btn=document.querySelector(".search-btn");
-  if(box)box.innerHTML="â³ æŸ¥è¯¢ä¸­...";
+  if(box)box.innerHTML="⏳ 查询中...";
   if(btn)btn.disabled=true;
   apiCall("getFullReport",[start,end])
     .then(function(res){if(btn)btn.disabled=false; showReport(res||{})})
-    .catch(function(err){if(btn)btn.disabled=false; if(box)box.innerHTML="âŒ æŸ¥è¯¢å¤±è´¥ï¼š"+(err.message||err)});
+    .catch(function(err){if(btn)btn.disabled=false; if(box)box.innerHTML="❌ 查询失败："+(err.message||err)});
 }
 function showReport(res){
   let fix=v=>Number(v||0).toFixed(2);
@@ -1572,7 +1572,7 @@ function showReport(res){
   if(res.categories){
     Object.keys(res.categories).sort((a,b)=>(res.categories[b].total||0)-(res.categories[a].total||0)).forEach(cat=>{
       let c=res.categories[cat];
-      let catLabel = /é¦™çƒŸ|cigarette|rokok|smoke|ðŸš¬/i.test(cat) ? "ðŸš¬ " + cat : cat;
+      let catLabel = /香烟|cigarette|rokok|smoke|🚬/i.test(cat) ? "🚬 " + cat : cat;
       catHtml += `<div style="display:flex;justify-content:space-between;gap:8px;margin:6px 0"><span>${catLabel} <small style="color:#94a3b8">Qty ${c.qty||0}</small></span><b>RM ${fix(c.total)}</b></div>`;
     });
   }
@@ -1583,10 +1583,10 @@ function showReport(res){
     });
   }
   document.getElementById("reportResult").innerHTML=`
-    <div class="report-card"><h3>ðŸ“Š æŠ¥è¡¨æ€»è§ˆ</h3><div>è®¢å•æ•°ï¼š<b>${res.count||0}</b></div><div>é”€å”®ï¼š<b>RM ${fix(res.total)}</b></div><div>åˆ©æ¶¦ï¼š<b>RM ${fix(res.profit)}</b></div></div>
-    <div class="report-card"><h3>ðŸ’³ æ”¶æ¬¾åˆ†å¸ƒ</h3><div>ðŸ’µ Cashï¼š<b>RM ${fix(res.Cash)}</b></div><div>ðŸ¦ Transferï¼š<b>RM ${fix(res.Transfer)}</b></div><div>ðŸ“± QRï¼š<b>RM ${fix(res.MBB_QR)}</b></div></div>
-    <div class="report-card"><h3>ðŸ· åˆ†ç±»é”€å”®</h3>${catHtml||"æš‚æ— åˆ†ç±»æ•°æ®"}</div>
-    <div class="report-card"><h3>ðŸ”¥ çƒ­å–å•†å“</h3>${topHtml||"æš‚æ— å•†å“æ•°æ®"}</div>`;
+    <div class="report-card"><h3>📊 报表总览</h3><div>订单数：<b>${res.count||0}</b></div><div>销售：<b>RM ${fix(res.total)}</b></div><div>利润：<b>RM ${fix(res.profit)}</b></div></div>
+    <div class="report-card"><h3>💳 收款分布</h3><div>💵 Cash：<b>RM ${fix(res.Cash)}</b></div><div>🏦 转账：<b>RM ${fix(res.转账)}</b></div><div>📱 QR：<b>RM ${fix(res.MBB_QR)}</b></div></div>
+    <div class="report-card"><h3>🏷 分类销售</h3>${catHtml||"暂无分类数据"}</div>
+    <div class="report-card"><h3>🔥 热卖商品</h3>${topHtml||"暂无商品数据"}</div>`;
 }
 function loadTodayStats(){
   apiCall("getTodayReport",[])
@@ -1599,10 +1599,10 @@ function loadTodayStats(){
     .catch(function(err){console.error("Today report failed",err);});
 }
 function closeDay(){
-  showConfirm("ç¡®å®šè¦åšä»Šæ—¥ç»“è´¦ï¼Ÿ",function(){
+  showConfirm("确定要做今日结账？",function(){
     apiCall("closeDayReport",[])
-      .then(function(r){alert(`ðŸ“… ä»Šæ—¥æ€»ç»“\nè®¢å•æ•°ï¼š${r.count}\nè¥ä¸šé¢ï¼šRM ${r.total}\nåˆ©æ¶¦ï¼šRM ${r.profit}`)})
-      .catch(function(err){alert("âŒ ç»“è´¦å¤±è´¥ï¼š"+(err.message||err));});
+      .then(function(r){alert(`📅 今日总结\n订单数：${r.count}\n营业额：RM ${r.total}\n利润：RM ${r.profit}`)})
+      .catch(function(err){alert("❌ 结账失败："+(err.message||err));});
   });
 }
 
@@ -1616,16 +1616,16 @@ function updateParcelPreview(){
   let d=moneyNum((document.getElementById("parcelDelivered")||{}).value||0);
   let r=moneyNum((document.getElementById("parcelReturned")||{}).value||0);
   let est=fromCents(cents(d*0.30)+cents(r*0.15));
-  let p=document.getElementById("parcelPreview"); if(p)p.textContent=`é¢„è®¡ï¼š${fmt(est)} ï¼ˆæ´¾ä»¶ ${d} Ã—0.30ï¼Œé€€å›ž ${r} Ã—0.15ï¼‰`;
+  let p=document.getElementById("parcelPreview"); if(p)p.textContent=`预计：${fmt(est)} （派件 ${d} ×0.30，退回 ${r} ×0.15）`;
 }
 async function saveParcelLog(){
   let trip=Number((document.getElementById("parcelTrip")||{}).value||1);
   let delivered=Number((document.getElementById("parcelDelivered")||{}).value||0);
   let returned=Number((document.getElementById("parcelReturned")||{}).value||0);
   let note=(document.getElementById("parcelNote")||{}).value||"";
-  if(delivered<0||returned<0||(!delivered&&!returned)){alert("è¯·è¾“å…¥åŒ…è£¹æ•°é‡");return}
-  try{let r=await apiCall("saveParcelLog",[{trip,delivered,returned,note}]); closeModal("parcelBox"); showToast("âœ… Shopee å·²è®°å½•ï¼š"+fmt(r.estimated||0));}
-  catch(e){alert("Shopee ä¿å­˜å¤±è´¥ï¼š"+(e.message||e))}
+  if(delivered<0||returned<0||(!delivered&&!returned)){alert("请输入包裹数量");return}
+  try{let r=await apiCall("saveParcelLog",[{trip,delivered,returned,note}]); closeModal("parcelBox"); showToast("✅ Shopee 已记录："+fmt(r.estimated||0));}
+  catch(e){alert("Shopee 保存失败："+(e.message||e))}
 }
 let refundSubmitting=false;
 function openRefundBox(){
@@ -1637,28 +1637,28 @@ function openRefundBox(){
 function setRefundBusy(on){
   refundSubmitting=!!on;
   const btn=document.getElementById("refundSubmitBtn");
-  if(btn){btn.disabled=!!on; btn.classList.toggle("busy-btn",!!on); btn.textContent=on?"å¤„ç†ä¸­ï¼Œè¯·å‹¿é‡å¤ç‚¹å‡»...":"âœ… ç¡®è®¤é€€è´§";}
+  if(btn){btn.disabled=!!on; btn.classList.toggle("busy-btn",!!on); btn.textContent=on?"处理中，请勿重复点击...":"✅ 确认退货";}
   const box=document.getElementById("refundBox");
   if(box){box.querySelectorAll("input,button").forEach(el=>{ if(el.id!=="refundSubmitBtn") el.disabled=!!on; });}
 }
 async function submitRefund(){
   if(refundSubmitting)return;
   let payload={orderId:(document.getElementById("refundOrderId")||{}).value||"", item:(document.getElementById("refundItem")||{}).value||"", amount:Number((document.getElementById("refundAmount")||{}).value||0), reason:(document.getElementById("refundReason")||{}).value||"", bossId:(document.getElementById("refundBossId")||{}).value||"", bossPassword:(document.getElementById("refundBossPassword")||{}).value||""};
-  if(!payload.orderId||!payload.amount){alert("è¯·è¾“å…¥è®¢å•å·å’Œé‡‘é¢");return}
-  if(!payload.bossId||!payload.bossPassword){let d=document.getElementById("refundAuthDetails"); if(d)d.open=true; alert("è¯·å…ˆæ‰“å¼€æŽˆæƒéªŒè¯å¹¶è¾“å…¥ ID / Password"); return;}
-  if(!window.confirm(`ç¡®è®¤é€€è´§ï¼Ÿ
+  if(!payload.orderId||!payload.amount){alert("请输入订单号和金额");return}
+  if(!payload.bossId||!payload.bossPassword){let d=document.getElementById("refundAuthDetails"); if(d)d.open=true; alert("请先打开授权验证并输入 ID / Password"); return;}
+  if(!window.confirm(`确认退货？
 
-è®¢å•ï¼š${payload.orderId}
-é‡‘é¢ï¼šRM ${Number(payload.amount||0).toFixed(2)}
+订单：${payload.orderId}
+金额：RM ${Number(payload.amount||0).toFixed(2)}
 
-æäº¤åŽä¼šè®°å½•åœ¨ç³»ç»Ÿé‡Œã€‚`))return;
+提交后会记录在系统里。`))return;
   setRefundBusy(true);
-  try{await apiCall("refundOrder",[payload]); closeModal("refundBox"); showToast("âœ… é€€è´§å·²è®°å½•"); loadTodayStats();}
-  catch(e){alert("é€€è´§å¤±è´¥ï¼š"+(e.message||e))}
+  try{await apiCall("refundOrder",[payload]); closeModal("refundBox"); showToast("✅ 退货已记录"); loadTodayStats();}
+  catch(e){alert("退货失败："+(e.message||e))}
   finally{setRefundBusy(false);}
 }
 function updateCashDrawerAlert(data){
-  // V4.3.1ï¼šå‘˜å·¥ POS ä¸æ˜¾ç¤ºå»ºè®®æ”¶çŽ°é‡‘ï¼›åªåœ¨ Boss â†’ æ”¶çŽ°é‡‘ é‡Œçœ‹ã€‚
+  // V4.3.1：员工 POS 不显示建议收现金；只在 Boss → 收现金 里看。
   let box=document.getElementById("cashDrawerAlert"); if(box){box.classList.remove("active"); box.textContent="";}
 }
 function bossHideBossPanels(){["bossOverviewPanel","bossReportsPanel","bossRangeBox","bossExportBox","bossCredentialBox","bossCashBox","bossParcelBox","bossOtherIncomeBox","bossLowStockBox"].forEach(id=>{let e=document.getElementById(id);if(e){e.style.display="none"; e.classList.remove("active");}})}
@@ -1667,7 +1667,7 @@ async function bossOpenOverview(){
   if(!bossRequire())return;
   bossHideBossPanels();
   let p=document.getElementById("bossOverviewPanel"); if(p){p.style.display="block";p.classList.add("active");}
-  let box=document.getElementById("bossOverviewResult"); if(box)box.innerHTML="è½½å…¥ä¸­...";
+  let box=document.getElementById("bossOverviewResult"); if(box)box.innerHTML="载入中...";
   try{
     const r=await apiCall("getBossOverview",[]);
     const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[];
@@ -1675,12 +1675,12 @@ async function bossOpenOverview(){
     const limit=moneyNum(cash.cashDrawerLimit||500);
     const warnCash=can>=limit;
     box.innerHTML=`
-      <div class="overview-card ${warnCash?'warn':''}"><small>å¯æ”¶çŽ°é‡‘</small><b>${fmt(can)}</b><span>æ”¶é“¶æœº ${fmt(cash.cashDrawer||0)} / æ‰¾é›¶æœ¬é‡‘ ${fmt(cash.floatCash||0)} / æé†’ ${fmt(limit)}</span></div>
-      <div class="overview-card ${(parcel.pendingEstimated||0)>0?'warn':''}"><small>Shopee å¾…å¯¹è´¦</small><b>${fmt(parcel.pendingEstimated||0)}</b><span>è®°å½• ${parcel.count||0} ç¬”ï¼Œå®žé™…å·²æ”¶ ${fmt(parcel.actualPaid||0)}</span></div>
-      <div class="overview-card ${(other.pending||0)>0?'warn':''}"><small>å…¶å®ƒæ”¶å…¥å¾…ç¡®è®¤</small><b>${fmt(other.pending||0)}</b><span>å·²ç¡®è®¤ ${fmt(other.received||0)}</span></div>
-      <div class="overview-card ${low.length?'warn':''}"><small>åº“å­˜æé†’</small><b>${low.length||0} é¡¹</b><span>${low.length?low.slice(0,3).map(x=>x.name).join('ã€'):'æš‚æ—¶æ²¡æœ‰ä½Žåº“å­˜'}</span></div>
+      <div class="overview-card ${warnCash?'warn':''}"><small>可收现金</small><b>${fmt(can)}</b><span>收银机 ${fmt(cash.cashDrawer||0)} / 找零本金 ${fmt(cash.floatCash||0)} / 提醒 ${fmt(limit)}</span></div>
+      <div class="overview-card ${(parcel.pendingEstimated||0)>0?'warn':''}"><small>Shopee 待对账</small><b>${fmt(parcel.pendingEstimated||0)}</b><span>记录 ${parcel.count||0} 笔，实际已收 ${fmt(parcel.actualPaid||0)}</span></div>
+      <div class="overview-card ${(other.pending||0)>0?'warn':''}"><small>其它收入待确认</small><b>${fmt(other.pending||0)}</b><span>已确认 ${fmt(other.received||0)}</span></div>
+      <div class="overview-card ${low.length?'warn':''}"><small>库存提醒</small><b>${low.length||0} 项</b><span>${low.length?low.slice(0,3).map(x=>x.name).join('、'):'暂时没有低库存'}</span></div>
     `;
-  }catch(e){ if(box)box.textContent="è½½å…¥å¤±è´¥ï¼š"+(e.message||e); }
+  }catch(e){ if(box)box.textContent="载入失败："+(e.message||e); }
 }
 async function bossOpenCashCollect(){
   if(!bossRequire())return;
@@ -1697,47 +1697,47 @@ async function bossOpenCashCollect(){
   let warn=document.getElementById("bossCashWarning");
   if(warn){
     warn.style.display = can>=limit ? "block" : "none";
-    warn.textContent = `ðŸŸ  å¯æ”¶çŽ°é‡‘ ${fmt(can)} å·²è¶…è¿‡æé†’ ${fmt(limit)}ï¼Œå»ºè®®æ”¶çŽ°é‡‘ã€‚`;
+    warn.textContent = `🟠 可收现金 ${fmt(can)} 已超过提醒 ${fmt(limit)}，建议收现金。`;
   }
-  document.getElementById("bossCashInfo").textContent=`å·²æ”¶èµ°: ${fmt(r.collected||0)}\né€€è´§çŽ°é‡‘æ‰£å›ž: ${fmt(r.refunds||0)}\næé†’é‡‘é¢å¯åœ¨ Settings é‡Œçš„ CashDrawerLimit è°ƒæ•´ã€‚`;
+  document.getElementById("bossCashInfo").textContent=`已收走: ${fmt(r.collected||0)}\n退货现金扣回: ${fmt(r.refunds||0)}\n提醒金额可在 Settings 里的 CashDrawerLimit 调整。`;
 }
-async function bossCollectCash(){let amount=Number((document.getElementById("collectCashAmount")||{}).value||0), note=(document.getElementById("collectCashNote")||{}).value||""; if(amount<=0){alert("è¯·è¾“å…¥æ”¶èµ°é‡‘é¢");return} try{await apiCall("collectCash",[amount,note]); showToast("âœ… å·²è®°å½•æ”¶çŽ°é‡‘"); bossOpenCashCollect(); loadTodayStats();}catch(e){alert("è®°å½•å¤±è´¥ï¼š"+(e.message||e))}}
-async function bossOpenParcelBoss(){if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossParcelBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; let r=await apiCall("getParcelSummary",[]); document.getElementById("bossParcelResult").textContent=`é¢„è®¡æœªæ”¶ Shopee: ${fmt(r.pendingEstimated||0)}
-å®žé™…å·²æ”¶: ${fmt(r.actualPaid||0)}
-è®°å½•æ•°: ${r.count||0}`;}
-async function bossConfirmShopeePaid(){let amount=Number((document.getElementById("shopeePaidAmount")||{}).value||0), note=(document.getElementById("shopeePaidNote")||{}).value||""; if(amount<=0){alert("è¯·è¾“å…¥å®žé™…é‡‘é¢");return} try{await apiCall("recordShopeePayout",[amount,note]); showToast("âœ… Shopee å®žæ”¶å·²è®°å½•"); bossOpenParcelBoss();}catch(e){alert("è®°å½•å¤±è´¥ï¼š"+(e.message||e))}}
-async function bossOpenOtherIncome(){if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossOtherIncomeBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; let r=await apiCall("getOtherIncomeSummary",[]); document.getElementById("bossOtherIncomeResult").textContent=`å¾…ç¡®è®¤: ${fmt(r.pending||0)}
+async function bossCollectCash(){let amount=Number((document.getElementById("collectCashAmount")||{}).value||0), note=(document.getElementById("collectCashNote")||{}).value||""; if(amount<=0){alert("请输入收走金额");return} try{await apiCall("collectCash",[amount,note]); showToast("✅ 已记录收现金"); bossOpenCashCollect(); loadTodayStats();}catch(e){alert("记录失败："+(e.message||e))}}
+async function bossOpenParcelBoss(){if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossParcelBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; let r=await apiCall("getParcelSummary",[]); document.getElementById("bossParcelResult").textContent=`预计未收 Shopee: ${fmt(r.pendingEstimated||0)}
+实际已收: ${fmt(r.actualPaid||0)}
+记录数: ${r.count||0}`;}
+async function bossConfirmShopeePaid(){let amount=Number((document.getElementById("shopeePaidAmount")||{}).value||0), note=(document.getElementById("shopeePaidNote")||{}).value||""; if(amount<=0){alert("请输入实际金额");return} try{await apiCall("recordShopeePayout",[amount,note]); showToast("✅ Shopee 实收已记录"); bossOpenParcelBoss();}catch(e){alert("记录失败："+(e.message||e))}}
+async function bossOpenOtherIncome(){if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossOtherIncomeBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; let r=await apiCall("getOtherIncomeSummary",[]); document.getElementById("bossOtherIncomeResult").textContent=`待确认: ${fmt(r.pending||0)}
 Received: ${fmt(r.received||0)}
-è®°å½•æ•°: ${r.count||0}`;}
-async function bossAddOtherIncome(){let type=(document.getElementById("otherIncomeType")||{}).value||"æ°´æœº", amount=Number((document.getElementById("otherIncomeAmount")||{}).value||0); if(amount<=0){alert("è¯·è¾“å…¥é‡‘é¢");return} try{await apiCall("addOtherIncome",[{type,amount,status:"å¾…ç¡®è®¤"}]); showToast("âœ… å·²åŠ å…¥å¾…ç¡®è®¤"); bossOpenOtherIncome();}catch(e){alert("åŠ å…¥å¤±è´¥ï¼š"+(e.message||e))}}
+记录数: ${r.count||0}`;}
+async function bossAddOtherIncome(){let type=(document.getElementById("otherIncomeType")||{}).value||"水机", amount=Number((document.getElementById("otherIncomeAmount")||{}).value||0); if(amount<=0){alert("请输入金额");return} try{await apiCall("addOtherIncome",[{type,amount,status:"待确认"}]); showToast("✅ 已加入待确认"); bossOpenOtherIncome();}catch(e){alert("加入失败："+(e.message||e))}}
 
 async function checkSystemStatus(showOk){
   try{
     const r = await apiCall("getSystemStatus",[]);
     const locked = !!(r && r.locked);
     const box=document.getElementById("systemLock"); if(box)box.classList.toggle("active",locked);
-    if(showOk && !locked) showToast("âœ… ç³»ç»Ÿæ­£å¸¸");
+    if(showOk && !locked) showToast("✅ 系统正常");
     return locked;
   }catch(e){
-    if(showOk) alert("æ£€æŸ¥çŠ¶æ€å¤±è´¥ï¼š"+(e.message||e));
+    if(showOk) alert("检查状态失败："+(e.message||e));
     return false;
   }
 }
 async function recoveryUnlock(){
   const code=(document.getElementById("recoveryCodeInput")||{}).value||"";
-  if(!code){alert("è¯·è¾“å…¥ æ¢å¤ç ");return}
+  if(!code){alert("请输入 恢复码");return}
   try{
     const r=await apiCall("recoveryUnlock",[code]);
     if(r && r.ok){
       sessionStorage.removeItem("bossSessionUntil");
       if(document.getElementById("recoveryCodeInput"))document.getElementById("recoveryCodeInput").value="";
       await checkSystemStatus(true);
-      showToast("âœ… å·²è§£é”ï¼Œæ¢å¤ç å·²è‡ªåŠ¨æ›´æ¢");
-      alert("âœ… å·²è§£é”ã€‚\n\nç³»ç»Ÿå·²è‡ªåŠ¨ç”Ÿæˆæ–°çš„æ¢å¤ç ï¼Œè¯·åˆ° Google Sheet çš„ Settings æŸ¥çœ‹ RecoveryCodeã€‚æ—§æ¢å¤ç å·²ç»å¤±æ•ˆã€‚");
+      showToast("✅ 已解锁，恢复码已自动更换");
+      alert("✅ 已解锁。\n\n系统已自动生成新的恢复码，请到 Google Sheet 的 Settings 查看 RecoveryCode。旧恢复码已经失效。");
       return;
     }
-    alert((r && r.error) ? r.error : "æ¢å¤ç é”™è¯¯");
-  }catch(e){alert("è§£é”å¤±è´¥ï¼š"+(e.message||e))}
+    alert((r && r.error) ? r.error : "恢复码错误");
+  }catch(e){alert("解锁失败："+(e.message||e))}
 }
 
 function openBossLogin(){
@@ -1754,9 +1754,9 @@ async function bossLogin(){
   const pw=(document.getElementById("bossPassword")||{}).value||"";
   const msg=document.getElementById("bossLoginMsg");
   const btn=document.getElementById("bossLoginBtn");
-  if(!id||!pw){ if(msg){msg.style.display="block";msg.textContent="è¯·è¾“å…¥å¸å·å’Œå¯†ç ã€‚";} return; }
-  if(btn){btn.disabled=true;btn.classList.add("busy-btn");btn.dataset.oldText=btn.textContent;btn.textContent="ç™»å…¥ä¸­...";}
-  if(msg){msg.style.display="block";msg.textContent="ç™»å…¥ä¸­...";}
+  if(!id||!pw){ if(msg){msg.style.display="block";msg.textContent="请输入帐号和密码。";} return; }
+  if(btn){btn.disabled=true;btn.classList.add("busy-btn");btn.dataset.oldText=btn.textContent;btn.textContent="登入中...";}
+  if(msg){msg.style.display="block";msg.textContent="登入中...";}
   try{
     const r=await apiCall("bossLogin",[id,pw]);
     if(r && r.locked){ closeAllModal(); await checkSystemStatus(false); return; }
@@ -1768,14 +1768,14 @@ async function bossLogin(){
       if(document.getElementById("bossPassword"))document.getElementById("bossPassword").value="";
       closeModal("bossLoginBox");
       openModal("bossDashboard");
-      const ov=document.getElementById("bossOverviewResult"); if(ov) ov.innerHTML="<div class='overview-card'><small>çŠ¶æ€</small><b>è½½å…¥ä¸­...</b><span>æ­£åœ¨è¯»å–ç®¡ç†èµ„æ–™ã€‚</span></div>";
-      const br=document.getElementById("bossResult"); if(br)br.textContent="å·²è¿›å…¥ç®¡ç†æ¨¡å¼ã€‚";
+      const ov=document.getElementById("bossOverviewResult"); if(ov) ov.innerHTML="<div class='overview-card'><small>状态</small><b>载入中...</b><span>正在读取管理资料。</span></div>";
+      const br=document.getElementById("bossResult"); if(br)br.textContent="已进入管理模式。";
       setTimeout(()=>{ try{ bossOpenOverview(true); }catch(e){ console.error(e); } },30);
       return;
     }
-    if(msg){msg.style.display="block"; msg.textContent="å¸å·æˆ–å¯†ç é”™è¯¯ï¼Œå‰©ä½™ "+(r.remaining??0)+" æ¬¡ã€‚";}
-  }catch(e){ if(msg){msg.style.display="block"; msg.textContent="ç™»å…¥å¤±è´¥ï¼š"+(e.message||e);} }
-  finally{if(btn){btn.disabled=false;btn.classList.remove("busy-btn");btn.textContent=btn.dataset.oldText||"ç™»å…¥";}}
+    if(msg){msg.style.display="block"; msg.textContent="帐号或密码错误，剩余 "+(r.remaining??0)+" 次。";}
+  }catch(e){ if(msg){msg.style.display="block"; msg.textContent="登入失败："+(e.message||e);} }
+  finally{if(btn){btn.disabled=false;btn.classList.remove("busy-btn");btn.textContent=btn.dataset.oldText||"登入";}}
 }
 let BOSS_IDLE_MS = 10*60*1000;
 let bossIdleTimer=null;
@@ -1794,15 +1794,15 @@ function bossStartIdleTimer(){
 }
 ["click","keydown","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{ if(document.getElementById("bossDashboard")?.classList.contains("active")) bossTouch(); },{passive:true}));
 function bossRequire(){ if(Number(sessionStorage.getItem("bossSessionUntil")||0)<Date.now()){bossLogout(true);openBossLogin();return false} bossTouch(); return true }
-function bossLogout(auto=false){sessionStorage.removeItem("bossSessionUntil"); closeModal("bossDashboard"); if(auto)showToast("ç®¡ç†æ¨¡å¼å·²è‡ªåŠ¨é€€å‡º"); else showToast("å·²é€€å‡ºç®¡ç†æ¨¡å¼")}
+function bossLogout(auto=false){sessionStorage.removeItem("bossSessionUntil"); closeModal("bossDashboard"); if(auto)showToast("管理模式已自动退出"); else showToast("已退出管理模式")}
 function bossDates(type){let n=new Date(), y=n.getFullYear(), m=n.getMonth(), d=n.getDate(); let s,e; if(type==='today'){s=new Date(y,m,d);e=new Date(y,m,d);} else if(type==='yesterday'){s=new Date(y,m,d-1);e=new Date(y,m,d-1);} else if(type==='week'){let day=(n.getDay()+6)%7; s=new Date(y,m,d-day); e=new Date(y,m,d-day+6);} else if(type==='lastWeek'){let day=(n.getDay()+6)%7; s=new Date(y,m,d-day-7); e=new Date(y,m,d-day-1);} else if(type==='month'){s=new Date(y,m,1);e=new Date(y,m+1,0);} else if(type==='lastMonth'){s=new Date(y,m-1,1);e=new Date(y,m,0);} else {s=new Date(y,0,1);e=new Date(y,11,31);} let f=d=>d.toLocaleDateString('en-CA'); return [f(s),f(e)];}
 async function bossLoadReport(type){ if(!bossRequire())return; bossHideBossPanels(); let [s,e]=bossDates(type); return bossLoadReportRange(s,e,type);}
-async function bossLoadReportRange(s,e,label){ let box=document.getElementById("bossResult"); box.textContent="è½½å…¥ä¸­..."; try{let r=await apiCall("getFullReport",[s,e]); box.innerHTML=`<b>${label||"æŠ¥è¡¨"}ï¼š${s} è‡³ ${e}</b><br><br>è®¢å•ï¼š${r.count||0}<br>é”€å”®ï¼šRM ${moneyNum(r.total).toFixed(2)}<br>Discountï¼šRM ${moneyNum(r.discount||0).toFixed(2)}<br>é€€è´§ï¼šRM ${moneyNum(r.refund||0).toFixed(2)}<br>å‡€é”€å”®ï¼šRM ${moneyNum(r.netSales||r.total).toFixed(2)}<br>åˆ©æ¶¦ï¼šRM ${moneyNum(r.profit).toFixed(2)}<br><br>Cashï¼šRM ${moneyNum(r.Cash).toFixed(2)}<br>Transferï¼šRM ${moneyNum(r.Transfer).toFixed(2)}<br>QRï¼šRM ${moneyNum(r.MBB_QR).toFixed(2)}`;}catch(err){box.textContent="å¤±è´¥ï¼š"+(err.message||err)}}
-function bossOpenRangeReport(){ if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossRangeBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; let [s,e]=bossDates("today"); document.getElementById("bossStartDate").value=s; document.getElementById("bossEndDate").value=e; document.getElementById("bossResult").textContent="é€‰æ‹©æ—¥æœŸåŽæŸ¥è¯¢ã€‚";}
-function bossLoadCustomReport(){ let s=document.getElementById("bossStartDate").value; let e=document.getElementById("bossEndDate").value; if(!s||!e){alert("è¯·é€‰æ‹©æ—¥æœŸ");return} return bossLoadReportRange(s,e,"è‡ªè®¢");}
+async function bossLoadReportRange(s,e,label){ let box=document.getElementById("bossResult"); box.textContent="载入中..."; try{let r=await apiCall("getFullReport",[s,e]); box.innerHTML=`<b>${label||"报表"}：${s} 至 ${e}</b><br><br>订单：${r.count||0}<br>销售：RM ${moneyNum(r.total).toFixed(2)}<br>折扣：RM ${moneyNum(r.discount||0).toFixed(2)}<br>退货：RM ${moneyNum(r.refund||0).toFixed(2)}<br>净销售：RM ${moneyNum(r.netSales||r.total).toFixed(2)}<br>利润：RM ${moneyNum(r.profit).toFixed(2)}<br><br>Cash：RM ${moneyNum(r.Cash).toFixed(2)}<br>转账：RM ${moneyNum(r.Transfer).toFixed(2)}<br>QR：RM ${moneyNum(r.MBB_QR).toFixed(2)}`;}catch(err){box.textContent="失败："+(err.message||err)}}
+function bossOpenRangeReport(){ if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossRangeBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; let [s,e]=bossDates("today"); document.getElementById("bossStartDate").value=s; document.getElementById("bossEndDate").value=e; document.getElementById("bossResult").textContent="选择日期后查询。";}
+function bossLoadCustomReport(){ let s=document.getElementById("bossStartDate").value; let e=document.getElementById("bossEndDate").value; if(!s||!e){alert("请选择日期");return} return bossLoadReportRange(s,e,"自订");}
 function bossHideBossPanels(){["bossOverviewPanel","bossReportsPanel","bossRangeBox","bossExportBox","bossCredentialBox","bossCashBox","bossParcelBox","bossOtherIncomeBox","bossLowStockBox"].forEach(id=>{let e=document.getElementById(id); if(e){e.style.display="none"; e.classList.remove("active");}});}
-function bossOpenExport(){ if(!bossRequire())return; bossHideBossPanels(); let y=new Date().getFullYear(); document.getElementById("exportYear").value=y; document.getElementById("exportMonth").value=""; let __p=document.getElementById("bossExportBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; document.getElementById("bossResult").textContent="é€‰æ‹©å¹´ä»½/æœˆï¼Œç„¶åŽç”Ÿæˆ Excelã€‚";}
-function bossOpenCredentialBox(){ if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossCredentialBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; document.getElementById("bossResult").textContent="åªå¡«å†™è¦ä¿®æ”¹çš„é¡¹ç›®ã€‚"; ["newBossId","newBossPassword","newRecoveryCode","newCashLimit","newFloatCash","newAutoLogout","newParcelRate","newParcelReturnRate"].forEach(id=>{let e=document.getElementById(id); if(e)e.value="";}); }
+function bossOpenExport(){ if(!bossRequire())return; bossHideBossPanels(); let y=new Date().getFullYear(); document.getElementById("exportYear").value=y; document.getElementById("exportMonth").value=""; let __p=document.getElementById("bossExportBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; document.getElementById("bossResult").textContent="选择年份/月，然后生成 Excel。";}
+function bossOpenCredentialBox(){ if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossCredentialBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; document.getElementById("bossResult").textContent="只填写要修改的项目。"; ["newBossId","newBossPassword","newRecoveryCode","newCashLimit","newFloatCash","newAutoLogout","newParcelRate","newParcelReturnRate"].forEach(id=>{let e=document.getElementById(id); if(e)e.value="";}); }
 async function bossSaveSettings(){
   if(!bossRequire())return;
   const payload={
@@ -1815,27 +1815,27 @@ async function bossSaveSettings(){
     parcelDeliveredRate:((document.getElementById("newParcelRate")||{}).value||""),
     parcelReturnRate:((document.getElementById("newParcelReturnRate")||{}).value||"")
   };
-  if(!Object.values(payload).some(v=>String(v||"").trim()!=="")){alert("è¯·è‡³å°‘å¡«å†™ä¸€ä¸ªè¦ä¿®æ”¹çš„é¡¹ç›®");return}
-  let box=document.getElementById("bossResult"); box.textContent="æ­£åœ¨å‚¨å­˜...";
+  if(!Object.values(payload).some(v=>String(v||"").trim()!=="")){alert("请至少填写一个要修改的项目");return}
+  let box=document.getElementById("bossResult"); box.textContent="正在储存...";
   try{
     let r=await apiCall("saveBossSettings",[payload]);
     if(r && r.ok){
-      alert("å·²å‚¨å­˜ã€‚ä¸ºäº†å®‰å…¨ï¼Œè¯·é‡æ–°ç™»å…¥ç®¡ç†æ¨¡å¼ã€‚");
+      alert("已储存。为了安全，请重新登入管理模式。");
       sessionStorage.removeItem("bossSessionUntil");
       closeModal("bossDashboard");
       return;
     }
-    box.textContent="å‚¨å­˜å¤±è´¥";
-  }catch(e){box.textContent="å‚¨å­˜å¤±è´¥ï¼š"+(e.message||e)}
+    box.textContent="储存失败";
+  }catch(e){box.textContent="储存失败："+(e.message||e)}
 }
 async function bossChangeCredentials(){return bossSaveSettings()}
-async function bossExportXlsx(){ if(!bossRequire())return; let y=Number(document.getElementById("exportYear").value); let m=Number(document.getElementById("exportMonth").value||0); if(!y){alert("è¯·è¾“å…¥å¹´ä»½");return} let box=document.getElementById("bossResult"); box.textContent="æ­£åœ¨ç”Ÿæˆ Excel..."; try{let r=await apiCall("exportAccountingXlsx",[y,m]); box.innerHTML=`âœ… å·²ç”Ÿæˆï¼š${r.fileName}<br><br><a href="${r.url}" target="_blank" style="color:#93c5fd">æ‰“å¼€ / ä¸‹è½½ XLSX</a>`; window.open(r.url,"_blank");}catch(e){box.textContent="ç”Ÿæˆå¤±è´¥ï¼š"+(e.message||e)}}
+async function bossExportXlsx(){ if(!bossRequire())return; let y=Number(document.getElementById("exportYear").value); let m=Number(document.getElementById("exportMonth").value||0); if(!y){alert("请输入年份");return} let box=document.getElementById("bossResult"); box.textContent="正在生成 Excel..."; try{let r=await apiCall("exportAccountingXlsx",[y,m]); box.innerHTML=`✅ 已生成：${r.fileName}<br><br><a href="${r.url}" target="_blank" style="color:#93c5fd">打开 / 下载 XLSX</a>`; window.open(r.url,"_blank");}catch(e){box.textContent="生成失败："+(e.message||e)}}
 async function bossLoadLowStock(){
   if(!bossRequire())return;
   bossHideBossPanels();
   let p=document.getElementById("bossLowStockBox"); if(p){p.style.display="block";p.classList.add("active");}
-  let box=document.getElementById("bossLowStockResult"); box.textContent="è½½å…¥ä¸­...";
-  try{let rows=await apiCall("getLowStock",[5]); box.textContent=(rows||[]).map(p=>`${p.name} | Stock: ${p.stock}`).join("\n")||"æ²¡æœ‰ä½Žåº“å­˜";}catch(e){box.textContent="å¤±è´¥ï¼š"+(e.message||e)}
+  let box=document.getElementById("bossLowStockResult"); box.textContent="载入中...";
+  try{let rows=await apiCall("getLowStock",[5]); box.textContent=(rows||[]).map(p=>`${p.name} | Stock: ${p.stock}`).join("\n")||"没有低库存";}catch(e){box.textContent="失败："+(e.message||e)}
 }
 
 function openModal(id){closeAllModal();let m=document.getElementById(id);if(m){m.classList.add("active");m.scrollTop=0}document.body.classList.add("modal-open")}
@@ -1865,7 +1865,7 @@ function syncOfflineOrders(){
 }
 function updateThemeButton(){
   let btn = document.querySelector(".tools button:last-child");
-  if(btn) btn.innerText = document.body.classList.contains("light") ? "â˜€ï¸" : "ðŸŒ™";
+  if(btn) btn.innerText = document.body.classList.contains("light") ? "☀️" : "🌙";
 }
 
 function toggleMode(){
@@ -1902,20 +1902,20 @@ function fileToBase64(inputId){
     const input=document.getElementById(inputId);
     const file=input && input.files && input.files[0];
     if(!file){resolve(null);return;}
-    if(file.size>1024*1024*3){alert("å›¾ç‰‡å¤ªå¤§ï¼Œè¯·ç”¨å°ä¸€ç‚¹çš„æˆªå›¾/ç…§ç‰‡ï¼ˆ3MBä»¥å†…ï¼‰");resolve(null);return;}
+    if(file.size>1024*1024*3){alert("图片太大，请用小一点的截图/照片（3MB以内）");resolve(null);return;}
     const reader=new FileReader();
     reader.onload=()=>resolve({name:file.name,type:file.type||"image/jpeg",data:String(reader.result||"")});
     reader.onerror=()=>resolve(null);
     reader.readAsDataURL(file);
   });
 }
-function bossReportTitle(label){return ({today:"ä»Šæ—¥",yesterday:"æ˜¨å¤©",week:"æœ¬å‘¨",lastWeek:"ä¸Šå‘¨",month:"æœ¬æœˆ",lastMonth:"ä¸Šæœˆ",year:"ä»Šå¹´"})[label]||label||"æŠ¥è¡¨"}
+function bossReportTitle(label){return ({today:"今日",yesterday:"昨天",week:"本周",lastWeek:"上周",month:"本月",lastMonth:"上月",year:"今年"})[label]||label||"报表"}
 function bossMiniCard(title,value,sub,warn){return `<div class="overview-card ${warn?'warn':''}"><small>${title}</small><b>${value}</b><span>${sub||''}</span></div>`}
 async function bossOpenOverview(){
   if(!bossRequire())return;
   bossHideBossPanels();
   const p=document.getElementById("bossOverviewPanel"); if(p){p.style.display="block";p.classList.add("active");}
-  const box=document.getElementById("bossOverviewResult"); if(box)box.innerHTML="è½½å…¥ä¸­...";
+  const box=document.getElementById("bossOverviewResult"); if(box)box.innerHTML="载入中...";
   try{
     const [r,today]=await Promise.all([apiCall("getBossOverview",[]),apiCall("getTodayReport",[])]);
     const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[];
@@ -1923,106 +1923,106 @@ async function bossOpenOverview(){
     const can=Math.max(0,fromCents(cents(cashDrawer)-cents(flt)));
     const parcelDiff=moneyNum((parcel.pendingEstimated||0)-(parcel.actualPaid||0));
     box.innerHTML = [
-      bossMiniCard("å¯æ”¶çŽ°é‡‘",fmt(can),`æ”¶é“¶æœº ${fmt(cashDrawer)} / æ‰¾é›¶æœ¬é‡‘ ${fmt(flt)} / æé†’ ${fmt(limit)}`, can>=limit),
-      bossMiniCard("ä»Šæ—¥é”€å”®",fmt(today.total||0),`è®¢å• ${today.orders||today.count||0} ç¬” / Cash ${fmt(today.Cash||0)} / QR ${fmt(today.MBB_QR||0)}`, false),
-      bossMiniCard("Shopee å¾…å¯¹è´¦",fmt(parcel.pendingEstimated||0),`å®žé™…å·²è®° ${fmt(parcel.actualPaid||0)} / å·®é¢ ${fmt(parcelDiff)}`, Math.abs(cents(parcelDiff))>0),
-      bossMiniCard("å…¶å®ƒæ”¶å…¥å¾…ç¡®è®¤",fmt(other.pending||0),`å·²ç¡®è®¤ ${fmt(other.received||0)} / è®°å½• ${other.count||0} ç¬”`, (other.pending||0)>0),
-      bossMiniCard("åº“å­˜æé†’",(low.length||0)+" é¡¹", low.length?low.slice(0,4).map(x=>x.name).join('ã€'):"æš‚æ—¶æ²¡æœ‰ä½Žåº“å­˜", low.length>0)
+      bossMiniCard("可收现金",fmt(can),`收银机 ${fmt(cashDrawer)} / 找零本金 ${fmt(flt)} / 提醒 ${fmt(limit)}`, can>=limit),
+      bossMiniCard("今日销售",fmt(today.total||0),`订单 ${today.orders||today.count||0} 笔 / Cash ${fmt(today.Cash||0)} / QR ${fmt(today.MBB_QR||0)}`, false),
+      bossMiniCard("Shopee 待对账",fmt(parcel.pendingEstimated||0),`实际已记 ${fmt(parcel.actualPaid||0)} / 差额 ${fmt(parcelDiff)}`, Math.abs(cents(parcelDiff))>0),
+      bossMiniCard("其它收入待确认",fmt(other.pending||0),`已确认 ${fmt(other.received||0)} / 记录 ${other.count||0} 笔`, (other.pending||0)>0),
+      bossMiniCard("库存提醒",(low.length||0)+" 项", low.length?low.slice(0,4).map(x=>x.name).join('、'):"暂时没有低库存", low.length>0)
     ].join('');
-    document.getElementById("bossResult").textContent="ä»Šæ—¥æé†’å·²æ›´æ–°ã€‚";
-  }catch(e){ if(box)box.textContent="è½½å…¥å¤±è´¥ï¼š"+(e.message||e); }
+    document.getElementById("bossResult").textContent="今日提醒已更新。";
+  }catch(e){ if(box)box.textContent="载入失败："+(e.message||e); }
 }
 async function bossOpenParcelBoss(){
   if(!bossRequire())return; bossHideBossPanels();
   const p=document.getElementById("bossParcelBox"); if(p){p.style.display="block";p.classList.add("active");}
-  const box=document.getElementById("bossParcelResult"); box.textContent="è½½å…¥ä¸­...";
+  const box=document.getElementById("bossParcelResult"); box.textContent="载入中...";
   try{
     const r=await apiCall("getParcelSummary",[]);
     const logs=(r.logs||[]).slice(0,20);
     const diff=moneyNum((r.pendingEstimated||0)-(r.actualPaid||0));
-    let html=`<div style="margin-bottom:10px">é¢„è®¡æœªå¯¹è´¦ï¼š<b>${fmt(r.pendingEstimated||0)}</b><br>å®žé™…å·²è®°å½•ï¼š<b>${fmt(r.actualPaid||0)}</b><br>å·®é¢ï¼š<b>${fmt(diff)}</b><br>è®°å½•ï¼š${r.count||0} ç¬”</div>`;
-    if(logs.length){html += `<table><tr><th>æ—¥æœŸ</th><th>è¶Ÿ</th><th class="right">æ´¾ä»¶</th><th class="right">é€€å›ž</th><th class="right">é¢„è®¡</th><th>çŠ¶æ€</th></tr>` + logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.returned||0}</td><td class="right">${fmt(x.estimated||0)}</td><td><span class="boss-chip">${x.status||''}</span></td></tr>`).join('') + `</table>`;}
+    let html=`<div style="margin-bottom:10px">预计未对账：<b>${fmt(r.pendingEstimated||0)}</b><br>实际已记录：<b>${fmt(r.actualPaid||0)}</b><br>差额：<b>${fmt(diff)}</b><br>记录：${r.count||0} 笔</div>`;
+    if(logs.length){html += `<table><tr><th>日期</th><th>趟</th><th class="right">派件</th><th class="right">退回</th><th class="right">预计</th><th>状态</th></tr>` + logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.returned||0}</td><td class="right">${fmt(x.estimated||0)}</td><td><span class="boss-chip">${x.status||''}</span></td></tr>`).join('') + `</table>`;}
     box.innerHTML=html;
-  }catch(e){box.textContent="å¤±è´¥ï¼š"+(e.message||e)}
+  }catch(e){box.textContent="失败："+(e.message||e)}
 }
 async function bossConfirmShopeePaid(){
   if(!bossRequire())return;
   let amount=Number((document.getElementById("shopeePaidAmount")||{}).value||0), note=(document.getElementById("shopeePaidNote")||{}).value||"";
-  if(amount<=0){alert("è¯·è¾“å…¥å®žé™…é‡‘é¢");return}
+  if(amount<=0){alert("请输入实际金额");return}
   const evidence=await fileToBase64("shopeeEvidence");
-  try{await apiCall("recordShopeePayout",[amount,note,evidence]); showToast("âœ… Shopee å®žæ”¶å·²è®°å½•"); ["shopeePaidAmount","shopeePaidNote"].forEach(id=>{let e=document.getElementById(id);if(e)e.value=""}); let f=document.getElementById("shopeeEvidence"); if(f)f.value=""; bossOpenParcelBoss();}
-  catch(e){alert("è®°å½•å¤±è´¥ï¼š"+(e.message||e))}
+  try{await apiCall("recordShopeePayout",[amount,note,evidence]); showToast("✅ Shopee 实收已记录"); ["shopeePaidAmount","shopeePaidNote"].forEach(id=>{let e=document.getElementById(id);if(e)e.value=""}); let f=document.getElementById("shopeeEvidence"); if(f)f.value=""; bossOpenParcelBoss();}
+  catch(e){alert("记录失败："+(e.message||e))}
 }
 async function bossOpenOtherIncome(){
   if(!bossRequire())return; bossHideBossPanels();
   const p=document.getElementById("bossOtherIncomeBox"); if(p){p.style.display="block";p.classList.add("active");}
-  const box=document.getElementById("bossOtherIncomeResult"); box.textContent="è½½å…¥ä¸­...";
+  const box=document.getElementById("bossOtherIncomeResult"); box.textContent="载入中...";
   try{
     const r=await apiCall("getOtherIncomeSummary",[]);
     const pending=(r.rows||[]).filter(x=>x.status!=="Received");
-    let html=`å¾…ç¡®è®¤ï¼š<b>${fmt(r.pending||0)}</b><br>å·²ç¡®è®¤ï¼š<b>${fmt(r.received||0)}</b><br>è®°å½•ï¼š${r.count||0} ç¬”<br><br>`;
-    if(pending.length){html += `<table><tr><th>æ—¥æœŸ</th><th>ç±»åž‹</th><th class="right">é‡‘é¢</th><th>æ“ä½œ</th></tr>` + pending.map(x=>`<tr><td>${x.date||''}</td><td>${x.type||''}</td><td class="right">${fmt(x.amount||0)}</td><td><button class="green" style="padding:6px 8px" onclick="bossConfirmOtherIncome('${x.id}')">ç¡®è®¤å·²æ”¶æ¬¾</button></td></tr>`).join('') + `</table>`;} else html += "æ²¡æœ‰å¾…ç¡®è®¤æ”¶å…¥ã€‚";
+    let html=`待确认：<b>${fmt(r.pending||0)}</b><br>已确认：<b>${fmt(r.received||0)}</b><br>记录：${r.count||0} 笔<br><br>`;
+    if(pending.length){html += `<table><tr><th>日期</th><th>类型</th><th class="right">金额</th><th>操作</th></tr>` + pending.map(x=>`<tr><td>${x.date||''}</td><td>${x.type||''}</td><td class="right">${fmt(x.amount||0)}</td><td><button class="green" style="padding:6px 8px" onclick="bossConfirmOtherIncome('${x.id}')">确认已收款</button></td></tr>`).join('') + `</table>`;} else html += "没有待确认收入。";
     box.innerHTML=html;
-  }catch(e){box.textContent="å¤±è´¥ï¼š"+(e.message||e)}
+  }catch(e){box.textContent="失败："+(e.message||e)}
 }
 async function bossAddOtherIncome(){
-  let type=(document.getElementById("otherIncomeType")||{}).value||"æ°´æœº", amount=Number((document.getElementById("otherIncomeAmount")||{}).value||0);
-  if(amount<=0){alert("è¯·è¾“å…¥é‡‘é¢");return}
+  let type=(document.getElementById("otherIncomeType")||{}).value||"水机", amount=Number((document.getElementById("otherIncomeAmount")||{}).value||0);
+  if(amount<=0){alert("请输入金额");return}
   const evidence=await fileToBase64("otherEvidence");
-  try{await apiCall("addOtherIncome",[{type,amount,status:"Pending",evidence}]); showToast("âœ… å·²åŠ å…¥å¾…ç¡®è®¤"); ["otherIncomeAmount"].forEach(id=>{let e=document.getElementById(id);if(e)e.value=""}); let f=document.getElementById("otherEvidence"); if(f)f.value=""; bossOpenOtherIncome();}
-  catch(e){alert("åŠ å…¥å¤±è´¥ï¼š"+(e.message||e))}
+  try{await apiCall("addOtherIncome",[{type,amount,status:"Pending",evidence}]); showToast("✅ 已加入待确认"); ["otherIncomeAmount"].forEach(id=>{let e=document.getElementById(id);if(e)e.value=""}); let f=document.getElementById("otherEvidence"); if(f)f.value=""; bossOpenOtherIncome();}
+  catch(e){alert("加入失败："+(e.message||e))}
 }
 async function bossConfirmOtherIncome(id){
   if(!bossRequire())return;
-  if(!confirm("ç¡®è®¤è¿™ç¬”å·²ç»æ”¶åˆ°é’±ï¼Ÿ"))return;
+  if(!confirm("确认这笔已经收到钱？"))return;
   const evidence=await fileToBase64("otherEvidence");
-  try{await apiCall("confirmOtherIncome",[id,evidence]); showToast("âœ… å·²ç¡®è®¤æ”¶æ¬¾"); bossOpenOtherIncome(); bossOpenOverview();}
-  catch(e){alert("ç¡®è®¤å¤±è´¥ï¼š"+(e.message||e))}
+  try{await apiCall("confirmOtherIncome",[id,evidence]); showToast("✅ 已确认收款"); bossOpenOtherIncome(); bossOpenOverview();}
+  catch(e){alert("确认失败："+(e.message||e))}
 }
 async function bossLoadReportRange(s,e,label){
-  const box=document.getElementById("bossResult"); box.textContent="è½½å…¥ä¸­...";
-  try{let r=await apiCall("getFullReport",[s,e]); box.innerHTML=`<b>${bossReportTitle(label)}ï¼š${s} è‡³ ${e}</b><br><br><table><tr><th>é¡¹ç›®</th><th class="right">é‡‘é¢ / æ•°é‡</th></tr><tr><td>è®¢å•</td><td class="right">${r.count||0}</td></tr><tr><td>é”€å”®</td><td class="right">${fmt(r.total||0)}</td></tr><tr><td>Discount</td><td class="right">${fmt(r.discount||0)}</td></tr><tr><td>é€€è´§</td><td class="right">${fmt(r.refund||0)}</td></tr><tr><td>å‡€é”€å”®</td><td class="right">${fmt(r.netSales||r.total||0)}</td></tr><tr><td>åˆ©æ¶¦</td><td class="right">${fmt(r.profit||0)}</td></tr><tr><td>çŽ°é‡‘</td><td class="right">${fmt(r.Cash||0)}</td></tr><tr><td>Transfer</td><td class="right">${fmt(r.Transfer||0)}</td></tr><tr><td>QR</td><td class="right">${fmt(r.MBB_QR||0)}</td></tr><tr><td>æ··åˆä»˜æ¬¾</td><td class="right">${fmt(r.Mixed||0)}</td></tr></table>`;}
-  catch(err){box.textContent="å¤±è´¥ï¼š"+(err.message||err)}
+  const box=document.getElementById("bossResult"); box.textContent="载入中...";
+  try{let r=await apiCall("getFullReport",[s,e]); box.innerHTML=`<b>${bossReportTitle(label)}：${s} 至 ${e}</b><br><br><table><tr><th>项目</th><th class="right">金额 / 数量</th></tr><tr><td>订单</td><td class="right">${r.count||0}</td></tr><tr><td>销售</td><td class="right">${fmt(r.total||0)}</td></tr><tr><td>折扣</td><td class="right">${fmt(r.discount||0)}</td></tr><tr><td>退货</td><td class="right">${fmt(r.refund||0)}</td></tr><tr><td>净销售</td><td class="right">${fmt(r.netSales||r.total||0)}</td></tr><tr><td>利润</td><td class="right">${fmt(r.profit||0)}</td></tr><tr><td>现金</td><td class="right">${fmt(r.Cash||0)}</td></tr><tr><td>转账</td><td class="right">${fmt(r.Transfer||0)}</td></tr><tr><td>QR</td><td class="right">${fmt(r.MBB_QR||0)}</td></tr><tr><td>混合付款</td><td class="right">${fmt(r.Mixed||0)}</td></tr></table>`;}
+  catch(err){box.textContent="失败："+(err.message||err)}
 }
 function calcMixed(){
   const data=calcCartData();
   const cash=moneyNum((document.getElementById("mixedCash")||{}).value||0);
   const qr=moneyNum((document.getElementById("mixedQr")||{}).value||0);
-  const tr=moneyNum((document.getElementById("mixedTransfer")||{}).value||0);
+  const tr=moneyNum((document.getElementById("mixed转账")||{}).value||0);
   const paid=fromCents(cents(cash)+cents(qr)+cents(tr));
   const remain=fromCents(cents(data.final)-cents(paid));
   const el=document.getElementById("mixedRemain");
-  if(el)el.textContent=(remain>0?"å‰©ä½™ ":"æ‰¾é›¶ ")+fmt(Math.abs(remain));
+  if(el)el.textContent=(remain>0?"剩余 ":"找零 ")+fmt(Math.abs(remain));
 }
 async function bossExportXlsx(){
   if(!bossRequire())return;
-  let y=Number(document.getElementById("exportYear").value); let m=Number(document.getElementById("exportMonth").value||0); if(!y){alert("è¯·è¾“å…¥å¹´ä»½");return}
+  let y=Number(document.getElementById("exportYear").value); let m=Number(document.getElementById("exportMonth").value||0); if(!y){alert("请输入年份");return}
   const opts={pos:document.getElementById("exPos")?.checked!==false, refund:document.getElementById("exRefund")?.checked!==false, shopee:!!document.getElementById("exShopee")?.checked, other:!!document.getElementById("exOther")?.checked, cigarette:!!document.getElementById("exCigarette")?.checked};
-  let box=document.getElementById("bossResult"); box.textContent="æ­£åœ¨ç”Ÿæˆ Excel...";
-  try{let r=await apiCall("exportAccountingXlsx",[y,m,opts]); box.innerHTML=`âœ… å·²ç”Ÿæˆï¼š${r.fileName}<br><br><a href="${r.url}" target="_blank" style="color:#93c5fd">æ‰“å¼€ / ä¸‹è½½ XLSX</a>`; window.open(r.url,"_blank");}
-  catch(e){box.textContent="ç”Ÿæˆå¤±è´¥ï¼š"+(e.message||e)}
+  let box=document.getElementById("bossResult"); box.textContent="正在生成 Excel...";
+  try{let r=await apiCall("exportAccountingXlsx",[y,m,opts]); box.innerHTML=`✅ 已生成：${r.fileName}<br><br><a href="${r.url}" target="_blank" style="color:#93c5fd">打开 / 下载 XLSX</a>`; window.open(r.url,"_blank");}
+  catch(e){box.textContent="生成失败："+(e.message||e)}
 }
 function printReceipt(auto=false){
   let now = new Date();
   let date = now.toLocaleDateString("en-GB");
   let time = now.toLocaleTimeString();
   let useCart = lastCart.length ? lastCart : cart;
-  let usedDiscount = lastCart.length ? lastDiscount : discount;
-  if(!useCart.length){alert("æ²¡æœ‰å¯æ‰“å°çš„è®¢å•");return;}
+  let used折扣 = lastCart.length ? last折扣 : discount;
+  if(!useCart.length){alert("没有可打印的订单");return;}
   let orderId = useCart[0]?.orderId || "PENDING";
   let subtotal = fromCents(useCart.reduce((a,b)=>a + cents(b.price) * Number(b.qty||0), 0));
-  let finalTotal = fromCents(Math.max(0, cents(subtotal) - cents(usedDiscount)));
+  let finalTotal = fromCents(Math.max(0, cents(subtotal) - cents(used折扣)));
   const WIDTH=32, LABEL=16;
   const money=v=>"RM "+Number(v||0).toFixed(2);
   const line=(label,value)=>String(label).padEnd(LABEL," ")+money(value).padStart(WIDTH-LABEL," ");
   const payLabel=p=>p==="mbb_qr"?"QR":p==="transfer"?"TRANSFER":p==="mixed"?"MIXED":"CASH";
   let text=`================================\n    YLL FEEDS ENTERPRISE\n(202303217794 - KT0553187-P)\n            INVOICE\n================================\nAddress:\nGround Floor No 2,\nJalan Springhill 9/12\nBandar Springhill\n71010 Port Dickson\nNegeri Sembilan\n\nDate : ${date}\nTime : ${time}\nOrder: ${orderId}\n\n--------------------------------\nITEMS\n--------------------------------\n`;
   useCart.forEach(i=>{let amount=i.qty*i.price;text+=`${i.name}\n`;text+=`${i.qty} x RM ${Number(i.price).toFixed(2)}`.padEnd(LABEL," ")+money(amount).padStart(WIDTH-LABEL," ")+"\n";});
-  text += `--------------------------------\n${line("SUBTOTAL",subtotal)}\n${usedDiscount>0?line("DISCOUNT",usedDiscount)+"\n":""}--------------------------------\n${line("TOTAL",finalTotal)}\n`;
+  text += `--------------------------------\n${line("SUBTOTAL",subtotal)}\n${used折扣>0?line("DISCOUNT",used折扣)+"\n":""}--------------------------------\n${line("TOTAL",finalTotal)}\n`;
   if(lastPayment==="cash"||lastPayment==="mixed") text += `${line("PAID",lastPaid||finalTotal)}\n${line("CHANGE",lastChange||0)}\n`;
   text += `${line("PAYMENT",0).replace(money(0),payLabel(lastPayment))}\n--------------------------------\n\n================================\n   Thank you & please come again\n================================`;
   lastReceiptText=text;
-  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast("âœ… æ”¶æ®å·²ç”Ÿæˆ + å·²å¤åˆ¶")).catch(()=>alert(text));}else alert(text);
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast("✅ 收据已生成 + 已复制")).catch(()=>alert(text));}else alert(text);
   if(auto)runAutoPrint();
 }
 
@@ -2030,8 +2030,8 @@ function printReceipt(auto=false){
 if("serviceWorker" in navigator){
   window.addEventListener("load", function(){
     navigator.serviceWorker.register("sw.js")
-      .then(function(){ console.log("âœ… PWA ready"); })
-      .catch(function(err){ console.log("âŒ PWA failed", err); });
+      .then(function(){ console.log("✅ PWA ready"); })
+      .catch(function(err){ console.log("❌ PWA failed", err); });
   });
 }
 
@@ -2052,15 +2052,15 @@ const __oldBossShowPanel = bossShowPanel;
 bossShowPanel = function(id){
   if(!bossRequire())return;
   __oldBossShowPanel(id);
-  const map={bossReportsPanel:'æŠ¥è¡¨',bossRangeBox:'æŠ¥è¡¨',bossExportBox:'æ±‡å‡º',bossCredentialBox:'ç³»ç»Ÿ',bossLowStockBox:'åº“å­˜'};
+  const map={bossReportsPanel:'报表',bossRangeBox:'报表',bossExportBox:'汇出',bossCredentialBox:'系统',bossLowStockBox:'库存'};
   if(map[id]) bossSetNav(map[id]);
 };
 
 bossOpenOverview = async function(){
   if(!bossRequire())return;
-  bossHideBossPanels(); bossSetNav('ä»Šæ—¥');
+  bossHideBossPanels(); bossSetNav('今日');
   const p=document.getElementById('bossOverviewPanel'); if(p){p.style.display='block';p.classList.add('active');}
-  const box=document.getElementById('bossOverviewResult'); if(box)box.innerHTML='è½½å…¥ä¸­...';
+  const box=document.getElementById('bossOverviewResult'); if(box)box.innerHTML='载入中...';
   try{
     const [r,today]=await Promise.all([apiCall('getBossOverview',[]),apiCall('getTodayReport',[])]);
     const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[];
@@ -2069,19 +2069,19 @@ bossOpenOverview = async function(){
     const parcelPending=moneyNum(parcel.pendingEstimated||0);
     const otherPending=moneyNum(other.pending||0);
     const cards=[];
-    cards.push(bossMiniCard('æ”¶é“¶æœºå¯æ”¶çŽ°é‡‘',fmt(can),`æ”¶é“¶æœº ${fmt(cashDrawer)} / æ‰¾é›¶æœ¬é‡‘ ${fmt(flt)} / æé†’ ${fmt(limit)}`, can>=limit));
-    cards.push(bossMiniCard('ä»Šæ—¥é”€å”®',fmt(today.total||0),`è®¢å• ${today.orders||today.count||0} ç¬” / Cash ${fmt(today.Cash||0)} / QR ${fmt(today.MBB_QR||0)}`, false));
-    if(parcelPending>0) cards.push(bossMiniCard('Shopee å¾…å¯¹è´¦',fmt(parcelPending),`å·²è®°å½•å®žé™…æ”¶åˆ° ${fmt(parcel.actualPaid||0)} / å…± ${parcel.count||0} ç¬”`, true));
-    if(otherPending>0) cards.push(bossMiniCard('å…¶å®ƒæ”¶å…¥å¾…ç¡®è®¤',fmt(otherPending),`å·²ç¡®è®¤ ${fmt(other.received||0)} / å…± ${other.count||0} ç¬”`, true));
-    if(low.length) cards.push(bossMiniCard('åº“å­˜ä¸è¶³',low.length+' é¡¹',low.slice(0,4).map(x=>x.name).join('ã€'),true));
-    if(!cards.some(x=>x.includes('warn'))) cards.push(`<div class="overview-card good"><small>ä»Šæ—¥å¾…å¤„ç†</small><b>æ²¡æœ‰æé†’</b><span>ç›®å‰æ²¡æœ‰éœ€è¦é©¬ä¸Šå¤„ç†çš„æ”¶çŽ°é‡‘ã€Shopeeã€æ°´æœºæˆ–åº“å­˜æé†’ã€‚</span></div>`);
+    cards.push(bossMiniCard('收银机可收现金',fmt(can),`收银机 ${fmt(cashDrawer)} / 找零本金 ${fmt(flt)} / 提醒 ${fmt(limit)}`, can>=limit));
+    cards.push(bossMiniCard('今日销售',fmt(today.total||0),`订单 ${today.orders||today.count||0} 笔 / Cash ${fmt(today.Cash||0)} / QR ${fmt(today.MBB_QR||0)}`, false));
+    if(parcelPending>0) cards.push(bossMiniCard('Shopee 待对账',fmt(parcelPending),`已记录实际收到 ${fmt(parcel.actualPaid||0)} / 共 ${parcel.count||0} 笔`, true));
+    if(otherPending>0) cards.push(bossMiniCard('其它收入待确认',fmt(otherPending),`已确认 ${fmt(other.received||0)} / 共 ${other.count||0} 笔`, true));
+    if(low.length) cards.push(bossMiniCard('库存不足',low.length+' 项',low.slice(0,4).map(x=>x.name).join('、'),true));
+    if(!cards.some(x=>x.includes('warn'))) cards.push(`<div class="overview-card good"><small>今日待处理</small><b>没有提醒</b><span>目前没有需要马上处理的收现金、Shopee、水机或库存提醒。</span></div>`);
     box.innerHTML=cards.join('');
-    document.getElementById('bossResult').textContent='ä»Šæ—¥æé†’å·²æ›´æ–°ã€‚';
-  }catch(e){ if(box)box.textContent='è½½å…¥å¤±è´¥ï¼š'+(e.message||e); }
+    document.getElementById('bossResult').textContent='今日提醒已更新。';
+  }catch(e){ if(box)box.textContent='载入失败：'+(e.message||e); }
 };
 
 bossOpenCashCollect = async function(){
-  if(!bossRequire())return; bossHideBossPanels(); bossSetNav('è´¢åŠ¡');
+  if(!bossRequire())return; bossHideBossPanels(); bossSetNav('财务');
   const p=document.getElementById('bossCashBox'); if(p){p.style.display='block';p.classList.add('active');}
   try{
     const r=await apiCall('getCashDrawer',[]);
@@ -2090,58 +2090,58 @@ bossOpenCashCollect = async function(){
     const set=(id,val)=>{let e=document.getElementById(id); if(e)e.textContent=fmt(val)};
     set('cashDrawerAmount', cash); set('floatCashAmount', flt); set('collectableAmount', can);
     const warn=document.getElementById('bossCashWarning');
-    if(warn){warn.style.display=can>=limit?'block':'none';warn.textContent=`ðŸŸ  å¯æ”¶çŽ°é‡‘ ${fmt(can)} å·²è¶…è¿‡æé†’ ${fmt(limit)}ï¼Œå»ºè®®æ”¶çŽ°é‡‘ã€‚`;}
-    document.getElementById('bossCashInfo').innerHTML=`<table><tr><th>é¡¹ç›®</th><th class="right">é‡‘é¢</th></tr><tr><td>å·²æ”¶èµ°çŽ°é‡‘</td><td class="right">${fmt(r.collected||0)}</td></tr><tr><td>é€€è´§çŽ°é‡‘æ‰£å›ž</td><td class="right">${fmt(r.refunds||0)}</td></tr><tr><td>æé†’é‡‘é¢</td><td class="right">${fmt(limit)}</td></tr></table>`;
-  }catch(e){document.getElementById('bossCashInfo').textContent='è½½å…¥å¤±è´¥ï¼š'+(e.message||e)}
+    if(warn){warn.style.display=can>=limit?'block':'none';warn.textContent=`🟠 可收现金 ${fmt(can)} 已超过提醒 ${fmt(limit)}，建议收现金。`;}
+    document.getElementById('bossCashInfo').innerHTML=`<table><tr><th>项目</th><th class="right">金额</th></tr><tr><td>已收走现金</td><td class="right">${fmt(r.collected||0)}</td></tr><tr><td>退货现金扣回</td><td class="right">${fmt(r.refunds||0)}</td></tr><tr><td>提醒金额</td><td class="right">${fmt(limit)}</td></tr></table>`;
+  }catch(e){document.getElementById('bossCashInfo').textContent='载入失败：'+(e.message||e)}
 };
 
 bossOpenParcelBoss = async function(){
   if(!bossRequire())return; bossHideBossPanels(); bossSetNav('Shopee');
   const p=document.getElementById('bossParcelBox'); if(p){p.style.display='block';p.classList.add('active');}
-  const box=document.getElementById('bossParcelResult'); box.textContent='è½½å…¥ä¸­...';
+  const box=document.getElementById('bossParcelResult'); box.textContent='载入中...';
   try{
     const r=await apiCall('getParcelSummary',[]);
     const logs=(r.logs||[]).slice(0,30);
     const diff=moneyNum((r.pendingEstimated||0)-(r.actualPaid||0));
-    let html=`<div class="boss-overview-grid" style="margin-bottom:12px"><div class="overview-card ${diff>0?'warn':''}"><small>é¢„è®¡æœªå¯¹è´¦</small><b>${fmt(r.pendingEstimated||0)}</b><span>ç³»ç»ŸæŒ‰ä»¶æ•°ä¼°ç®—</span></div><div class="overview-card"><small>å®žé™…å·²è®°å½•</small><b>${fmt(r.actualPaid||0)}</b><span>ä»¥ä½ å¡«å†™çš„ payout ä¸ºå‡†</span></div><div class="overview-card ${Math.abs(cents(diff))>0?'warn':''}"><small>å·®é¢</small><b>${fmt(diff)}</b><span>å¯èƒ½æ˜¯åŒ…è£¹è¿˜æœªç»“ç®—æˆ–ä¸‹æœŸå†ç®—</span></div><div class="overview-card"><small>è®°å½•æ•°</small><b>${r.count||0} ç¬”</b><span>æœ€è¿‘ 30 ç¬”æ˜¾ç¤ºåœ¨ä¸‹é¢</span></div></div>`;
-    if(logs.length){html += `<table><tr><th>æ—¥æœŸ</th><th>è¶Ÿ</th><th class="right">æ´¾ä»¶</th><th class="right">é€€å›ž</th><th class="right">é¢„è®¡</th><th>çŠ¶æ€</th></tr>` + logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.returned||0}</td><td class="right">${fmt(x.estimated||0)}</td><td><span class="boss-chip">${x.status||''}</span></td></tr>`).join('') + `</table>`;} else html += 'è¿˜æ²¡æœ‰ Shopee åŒ…è£¹è®°å½•ã€‚';
+    let html=`<div class="boss-overview-grid" style="margin-bottom:12px"><div class="overview-card ${diff>0?'warn':''}"><small>预计未对账</small><b>${fmt(r.pendingEstimated||0)}</b><span>系统按件数估算</span></div><div class="overview-card"><small>实际已记录</small><b>${fmt(r.actualPaid||0)}</b><span>以你填写的 payout 为准</span></div><div class="overview-card ${Math.abs(cents(diff))>0?'warn':''}"><small>差额</small><b>${fmt(diff)}</b><span>可能是包裹还未结算或下期再算</span></div><div class="overview-card"><small>记录数</small><b>${r.count||0} 笔</b><span>最近 30 笔显示在下面</span></div></div>`;
+    if(logs.length){html += `<table><tr><th>日期</th><th>趟</th><th class="right">派件</th><th class="right">退回</th><th class="right">预计</th><th>状态</th></tr>` + logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.returned||0}</td><td class="right">${fmt(x.estimated||0)}</td><td><span class="boss-chip">${x.status||''}</span></td></tr>`).join('') + `</table>`;} else html += '还没有 Shopee 包裹记录。';
     box.innerHTML=html;
-  }catch(e){box.textContent='å¤±è´¥ï¼š'+(e.message||e)}
+  }catch(e){box.textContent='失败：'+(e.message||e)}
 };
 
 bossConfirmShopeePaid = async function(){
   if(!bossRequire())return;
   const amount=Number((document.getElementById('shopeePaidAmount')||{}).value||0), note=(document.getElementById('shopeePaidNote')||{}).value||'';
-  if(amount<=0){alert('è¯·è¾“å…¥å®žé™…é‡‘é¢');return}
-  try{await apiCall('recordShopeePayout',[amount,note,null]); showToast('âœ… Shopee å®žæ”¶å·²è®°å½•'); ['shopeePaidAmount','shopeePaidNote'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''}); bossOpenParcelBoss();}
-  catch(e){alert('è®°å½•å¤±è´¥ï¼š'+(e.message||e))}
+  if(amount<=0){alert('请输入实际金额');return}
+  try{await apiCall('recordShopeePayout',[amount,note,null]); showToast('✅ Shopee 实收已记录'); ['shopeePaidAmount','shopeePaidNote'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''}); bossOpenParcelBoss();}
+  catch(e){alert('记录失败：'+(e.message||e))}
 };
 
 bossOpenOtherIncome = async function(){
-  if(!bossRequire())return; bossHideBossPanels(); bossSetNav('å…¶å®ƒ');
+  if(!bossRequire())return; bossHideBossPanels(); bossSetNav('其它');
   const p=document.getElementById('bossOtherIncomeBox'); if(p){p.style.display='block';p.classList.add('active');}
-  const box=document.getElementById('bossOtherIncomeResult'); box.textContent='è½½å…¥ä¸­...';
+  const box=document.getElementById('bossOtherIncomeResult'); box.textContent='载入中...';
   try{
     const r=await apiCall('getOtherIncomeSummary',[]);
     const pending=(r.rows||[]).filter(x=>x.status!=='Received');
-    let html=`<div class="boss-overview-grid" style="margin-bottom:12px"><div class="overview-card ${(r.pending||0)>0?'warn':''}"><small>å¾…ç¡®è®¤</small><b>${fmt(r.pending||0)}</b><span>è¿˜æ²¡ç¡®è®¤æ”¶åˆ°çš„é’±</span></div><div class="overview-card"><small>å·²ç¡®è®¤</small><b>${fmt(r.received||0)}</b><span>å·²æ”¶åˆ°çš„é’±</span></div></div>`;
-    if(pending.length){html += `<table><tr><th>æ—¥æœŸ</th><th>ç±»åž‹</th><th class="right">é‡‘é¢</th><th>æ“ä½œ</th></tr>` + pending.map(x=>`<tr><td>${x.date||''}</td><td>${x.type||''}</td><td class="right">${fmt(x.amount||0)}</td><td><button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${x.id}')">ç¡®è®¤å·²æ”¶æ¬¾</button></td></tr>`).join('') + `</table>`;} else html += 'æ²¡æœ‰å¾…ç¡®è®¤æ”¶å…¥ã€‚';
+    let html=`<div class="boss-overview-grid" style="margin-bottom:12px"><div class="overview-card ${(r.pending||0)>0?'warn':''}"><small>待确认</small><b>${fmt(r.pending||0)}</b><span>还没确认收到的钱</span></div><div class="overview-card"><small>已确认</small><b>${fmt(r.received||0)}</b><span>已收到的钱</span></div></div>`;
+    if(pending.length){html += `<table><tr><th>日期</th><th>类型</th><th class="right">金额</th><th>操作</th></tr>` + pending.map(x=>`<tr><td>${x.date||''}</td><td>${x.type||''}</td><td class="right">${fmt(x.amount||0)}</td><td><button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${x.id}')">确认已收款</button></td></tr>`).join('') + `</table>`;} else html += '没有待确认收入。';
     box.innerHTML=html;
-  }catch(e){box.textContent='å¤±è´¥ï¼š'+(e.message||e)}
+  }catch(e){box.textContent='失败：'+(e.message||e)}
 };
 
 bossAddOtherIncome = async function(){
-  const type=(document.getElementById('otherIncomeType')||{}).value||'æ°´æœº', amount=Number((document.getElementById('otherIncomeAmount')||{}).value||0);
-  if(amount<=0){alert('è¯·è¾“å…¥é‡‘é¢');return}
-  try{await apiCall('addOtherIncome',[{type,amount,status:'Pending',evidence:null}]); showToast('âœ… å·²åŠ å…¥å¾…ç¡®è®¤'); ['otherIncomeAmount'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''}); bossOpenOtherIncome();}
-  catch(e){alert('åŠ å…¥å¤±è´¥ï¼š'+(e.message||e))}
+  const type=(document.getElementById('otherIncomeType')||{}).value||'水机', amount=Number((document.getElementById('otherIncomeAmount')||{}).value||0);
+  if(amount<=0){alert('请输入金额');return}
+  try{await apiCall('addOtherIncome',[{type,amount,status:'Pending',evidence:null}]); showToast('✅ 已加入待确认'); ['otherIncomeAmount'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''}); bossOpenOtherIncome();}
+  catch(e){alert('加入失败：'+(e.message||e))}
 };
 
 bossConfirmOtherIncome = async function(id){
   if(!bossRequire())return;
-  if(!confirm('ç¡®è®¤è¿™ç¬”å·²ç»æ”¶åˆ°é’±ï¼Ÿ'))return;
-  try{await apiCall('confirmOtherIncome',[id,null]); showToast('âœ… å·²ç¡®è®¤æ”¶æ¬¾'); bossOpenOtherIncome();}
-  catch(e){alert('ç¡®è®¤å¤±è´¥ï¼š'+(e.message||e))}
+  if(!confirm('确认这笔已经收到钱？'))return;
+  try{await apiCall('confirmOtherIncome',[id,null]); showToast('✅ 已确认收款'); bossOpenOtherIncome();}
+  catch(e){alert('确认失败：'+(e.message||e))}
 };
 
 
@@ -2152,11 +2152,11 @@ bossConfirmOtherIncome = async function(id){
   window.showAppAlert = function(msg,title){
     const box=document.getElementById('appAlertBox'), text=document.getElementById('appAlertText'), h=document.getElementById('appAlertTitle');
     if(!box||!text){ nativeAlert(String(msg||'')); return; }
-    if(h) h.textContent=title||'æç¤º';
+    if(h) h.textContent=title||'提示';
     text.textContent=String(msg||'');
     openModal('appAlertBox');
   };
-  window.alert = function(msg){ window.showAppAlert(msg,'æç¤º'); };
+  window.alert = function(msg){ window.showAppAlert(msg,'提示'); };
 })();
 
 function showPaymentConfirm(payment,label){
@@ -2210,17 +2210,17 @@ openMixedPayment = function(){
   if(!cart.length){alert('No item in cart');return;}
   const data=calcCartData(); cashTotal=data.final; closePay();
   const t=document.getElementById('mixedTotal'); if(t)t.textContent='Total '+fmt(data.final);
-  const h=document.querySelector('#mixedBox h3'); if(h)h.textContent='âž— Mixed Payment';
-  const map={mixedCash:'Cash amount',mixedQr:'QR amount','mixedTransfer':'Transfer amount'};
+  const h=document.querySelector('#mixedBox h3'); if(h)h.textContent='➗ Mixed Payment';
+  const map={mixedCash:'Cash amount',mixedQr:'QR amount','mixed转账':'Transfer amount'};
   Object.keys(map).forEach(id=>{let e=document.getElementById(id); if(e){e.value=''; e.placeholder=map[id];}});
-  const btn=document.querySelector('#mixedBox button.green'); if(btn)btn.textContent='âœ… Confirm Mixed Payment';
+  const btn=document.querySelector('#mixedBox button.green'); if(btn)btn.textContent='✅ Confirm Mixed Payment';
   calcMixed(); openModal('mixedBox');
 };
 calcMixed = function(){
   const data=calcCartData();
   const cash=moneyNum((document.getElementById('mixedCash')||{}).value||0);
   const qr=moneyNum((document.getElementById('mixedQr')||{}).value||0);
-  const tr=moneyNum((document.getElementById('mixedTransfer')||{}).value||0);
+  const tr=moneyNum((document.getElementById('mixed转账')||{}).value||0);
   const paid=fromCents(cents(cash)+cents(qr)+cents(tr));
   const remain=fromCents(cents(data.final)-cents(paid));
   const el=document.getElementById('mixedRemain');
@@ -2230,7 +2230,7 @@ confirmMixed = function(){
   const data=calcCartData();
   const cash=moneyNum((document.getElementById('mixedCash')||{}).value||0);
   const qr=moneyNum((document.getElementById('mixedQr')||{}).value||0);
-  const tr=moneyNum((document.getElementById('mixedTransfer')||{}).value||0);
+  const tr=moneyNum((document.getElementById('mixed转账')||{}).value||0);
   const paid=fromCents(cents(cash)+cents(qr)+cents(tr));
   if(cents(paid)<cents(data.final)){alert('Mixed payment is not enough.');return;}
   const change=fromCents(Math.max(0,cents(paid)-cents(data.final)));
@@ -2241,15 +2241,15 @@ function installRefundUI(){
   const box=document.querySelector('#refundBox .modal-content');
   if(!box) return;
   box.innerHTML=`
-    <h3>â†©ï¸ Refund Request</h3>
+    <h3>↩️ Refund Request</h3>
     <p style="color:#94a3b8;font-size:13px">Select an order from the last 3 days, choose item/amount, then submit for approval.</p>
-    <button class="green" onclick="loadRecentRefundOrders()">ðŸ” Load Recent Orders</button>
+    <button class="green" onclick="loadRecentRefundOrders()">🔍 Load Recent Orders</button>
     <div id="refundRecentBox">Press Load Recent Orders to show last 3 days orders.</div>
     <input id="refundOrderId" type="text" placeholder="Order No" readonly>
     <input id="refundItem" type="text" placeholder="Item / Note">
     <input id="refundAmount" type="number" placeholder="Refund Amount RM">
     <input id="refundReason" type="text" placeholder="Reason, e.g. customer return">
-    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">âœ… Submit Refund Request</button>
+    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ Submit Refund Request</button>
     <button onclick="closeModal('refundBox')">Close</button>`;
 }
 /* older refund patch disabled: selectedRefundOrder declared once later */
@@ -2286,7 +2286,7 @@ submitRefund = async function(){
   };
   if(!payload.orderId||!payload.amount){alert('Please select order and enter refund amount.');return;}
   setRefundBusy(true);
-  try{await apiCall('requestRefund',[payload]); closeModal('refundBox'); showToast('âœ… Refund request submitted');}
+  try{await apiCall('requestRefund',[payload]); closeModal('refundBox'); showToast('✅ Refund request submitted');}
   catch(e){alert('Refund failed: '+(e.message||e));}
   finally{setRefundBusy(false);}
 };
@@ -2299,7 +2299,7 @@ openBossLogin = function(){
 bossLogin = async function(){
   const idEl=document.getElementById('bossId'), pwEl=document.getElementById('bossPassword'), msg=document.getElementById('bossLoginMsg');
   const id=(idEl||{}).value||'', pw=(pwEl||{}).value||'';
-  if(msg){msg.style.display='block';msg.textContent='ç™»å…¥ä¸­...';}
+  if(msg){msg.style.display='block';msg.textContent='登入中...';}
   try{
     const r=await apiCall('bossLogin',[id,pw]);
     if(r&&r.locked){ closeAllModal(); await checkSystemStatus(false); return; }
@@ -2308,10 +2308,10 @@ bossLogin = async function(){
       sessionStorage.setItem('bossSessionUntil',String(Date.now()+BOSS_IDLE_MS)); bossStartIdleTimer();
       if(idEl)idEl.value=''; if(pwEl)pwEl.value='';
       closeModal('bossLoginBox'); openModal('bossDashboard'); await bossOpenOverview();
-      const br=document.getElementById('bossResult'); if(br)br.textContent='å·²è¿›å…¥ç®¡ç†æ¨¡å¼ã€‚'; return;
+      const br=document.getElementById('bossResult'); if(br)br.textContent='已进入管理模式。'; return;
     }
-    if(msg){msg.textContent='å¸å· æˆ–å¯†ç é”™è¯¯ï¼Œå‰©ä½™ '+(r.remaining??0)+' æ¬¡ã€‚';}
-  }catch(e){ if(msg){msg.textContent='ç™»å…¥å¤±è´¥ï¼š'+(e.message||e);} }
+    if(msg){msg.textContent='帐号 或密码错误，剩余 '+(r.remaining??0)+' 次。';}
+  }catch(e){ if(msg){msg.textContent='登入失败：'+(e.message||e);} }
 };
 
 function installEnterHandlers(){
@@ -2324,7 +2324,7 @@ setTimeout(installEnterHandlers,500);
 
 printReceipt = function(auto=false){
   let now=new Date(), date=now.toLocaleDateString('en-GB'), time=now.toLocaleTimeString();
-  let useCart=lastCart.length?lastCart:cart, usedDiscount=lastCart.length?lastDiscount:discount;
+  let useCart=lastCart.length?lastCart:cart, usedDiscount=lastCart.length?last折扣:discount;
   if(!useCart.length){alert('No receipt to print');return;}
   let orderId=useCart[0]?.orderId||'PENDING';
   let subtotal=fromCents(useCart.reduce((a,b)=>a+cents(b.price)*Number(b.qty||0),0));
@@ -2341,7 +2341,7 @@ printReceipt = function(auto=false){
   if(lastPayment==='cash'||lastPayment==='mixed') text+=line('PAID',money(lastPaid||finalTotal))+'\n'+line('CHANGE',money(lastChange||0))+'\n';
   text+=line('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
   lastReceiptText=text;
-  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('âœ… Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));}else showAppAlert(text,'Receipt');
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));}else showAppAlert(text,'Receipt');
   if(auto)runAutoPrint();
 };
 
@@ -2373,8 +2373,8 @@ function installSettingLabels(){
   const grid=document.querySelector('#bossCredentialBox .settings-grid');
   if(!grid || grid.dataset.labeled==='1') return;
   const labels={
-    newBossId:'æ–°å¸å·', newBossPassword:'æ–°å¯†ç ', newRecoveryCode:'æ–°æ¢å¤ç ', newCashLimit:'æ”¶çŽ°é‡‘æé†’é‡‘é¢',
-    newFloatCash:'æ‰¾é›¶æœ¬é‡‘', newAutoLogout:'è‡ªåŠ¨é€€å‡ºåˆ†é’Ÿ', newParcelRate:'Shopee æ´¾ä»¶å•ä»·', newParcelReturnRate:'Shopee é€€å›žå•ä»·'
+    newBossId:'新帐号', newBossPassword:'新密码', newRecoveryCode:'新恢复码', newCashLimit:'收现金提醒金额',
+    newFloatCash:'找零本金', newAutoLogout:'自动退出分钟', newParcelRate:'Shopee 派件单价', newParcelReturnRate:'Shopee 退回单价'
   };
   [...grid.children].forEach(input=>{
     if(!input.id || !labels[input.id]) return;
@@ -2394,13 +2394,13 @@ function installParcelUI(){
   const box=document.querySelector('#parcelBox .modal-content');
   if(!box || box.dataset.v462==='1') return;
   box.innerHTML=`
-    <h3>ðŸ“¦ Shopee Parcel</h3>
+    <h3>📦 Shopee Parcel</h3>
     <p style="color:#94a3b8;font-size:13px">Fill today parcel count only. Trip number is auto counted by system.</p>
     <div class="parcel-auto-note" id="parcelTripNote">Today trip: Auto</div>
     <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="Arrived parcels">
     <input id="parcelReturned" type="number" inputmode="numeric" placeholder="Returned parcels">
     <input id="parcelNote" type="text" placeholder="Note optional">
-    <button class="green" onclick="saveParcelLog()">âœ… Save Parcel Record</button>
+    <button class="green" onclick="saveParcelLog()">✅ Save Parcel Record</button>
     <button onclick="closeModal('parcelBox')">Close</button>`;
   box.dataset.v462='1';
 }
@@ -2418,7 +2418,7 @@ saveParcelLog=async function(){
   try{
     const r=await apiCall('saveParcelLog',[{delivered,returned,note}]);
     closeModal('parcelBox');
-    showToast(`âœ… Shopee saved. Trip ${r.trip||''}`);
+    showToast(`✅ Shopee saved. Trip ${r.trip||''}`);
   }catch(e){showAppAlert('Shopee save failed: '+(e.message||e),'Shopee Parcel')}
 };
 
@@ -2427,15 +2427,15 @@ function installRefundUI(){
   const box=document.querySelector('#refundBox .modal-content');
   if(!box) return;
   box.innerHTML=`
-    <h3>â†©ï¸ Refund Request</h3>
+    <h3>↩️ Refund Request</h3>
     <p style="color:#94a3b8;font-size:13px">Select an order from last 3 days, then choose returned item and quantity. Submitted orders will disappear from the list.</p>
-    <button class="green" onclick="loadRecentRefundOrders()">ðŸ” Load Recent Orders</button>
+    <button class="green" onclick="loadRecentRefundOrders()">🔍 Load Recent Orders</button>
     <div id="refundRecentBox">Loading recent orders...</div>
     <input id="refundOrderId" type="text" placeholder="Order No" readonly>
     <div id="refundItemList" class="refund-item-list">Select an order first.</div>
     <div id="refundTotalBox" class="refund-summary">Refund Total: RM 0.00</div>
     <input id="refundReason" type="text" placeholder="Reason, e.g. customer return">
-    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">âœ… Submit Refund Request</button>
+    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ Submit Refund Request</button>
     <button onclick="closeModal('refundBox')">Close</button>`;
 }
 openRefundBox=function(){
@@ -2467,7 +2467,7 @@ function selectRefundOrder(idx){
   if(list){
     list.innerHTML=(o.items||[]).map((it,i)=>`<div class="refund-item-row">
       <input type="checkbox" id="rfChk${i}" onchange="toggleRefundItem(${i})">
-      <div><div class="refund-item-name">${it.name}</div><div class="refund-item-meta">Sold Qty: ${it.qty} Ã— RM ${Number(it.price||0).toFixed(2)} / Max ${fmt(it.subtotal||0)}</div></div>
+      <div><div class="refund-item-name">${it.name}</div><div class="refund-item-meta">Sold Qty: ${it.qty} × RM ${Number(it.price||0).toFixed(2)} / Max ${fmt(it.subtotal||0)}</div></div>
       <input id="rfQty${i}" type="number" inputmode="numeric" min="1" max="${it.qty}" step="1" value="1" disabled oninput="updateRefundTotal()">
       <div class="refund-amount-chip" id="rfAmt${i}">RM 0.00</div>
     </div>`).join('');
@@ -2508,14 +2508,14 @@ submitRefund=async function(){
   const ok=await appConfirm(`Submit refund request?\n\nOrder: ${orderId}\nRefund: ${fmt(sel.amount)}\n\nThis order will not appear again in recent refund list.`,'Refund Request');
   if(!ok)return;
   setRefundBusy(true);
-  try{await apiCall('requestRefund',[{orderId,items:sel.items,amount:sel.amount,reason}]); closeModal('refundBox'); showToast('âœ… Refund request submitted');}
+  try{await apiCall('requestRefund',[{orderId,items:sel.items,amount:sel.amount,reason}]); closeModal('refundBox'); showToast('✅ Refund request submitted');}
   catch(e){showAppAlert('Refund failed: '+(e.message||e),'Refund');}
   finally{setRefundBusy(false);}
 };
 
 printReceipt=function(auto=false){
   let now=new Date(), date=now.toLocaleDateString('en-GB'), time=now.toLocaleTimeString();
-  let useCart=lastCart.length?lastCart:cart, usedDiscount=lastCart.length?lastDiscount:discount;
+  let useCart=lastCart.length?lastCart:cart, usedDiscount=lastCart.length?last折扣:discount;
   if(!useCart.length){showAppAlert('No receipt to print','Receipt');return;}
   let orderId=useCart[0]?.orderId||'PENDING';
   let subtotal=fromCents(useCart.reduce((a,b)=>a+cents(b.price)*Number(b.qty||0),0));
@@ -2531,7 +2531,7 @@ printReceipt=function(auto=false){
   if(lastPayment==='cash'||lastPayment==='mixed') text+=meta('PAID',money(lastPaid||finalTotal))+'\n'+meta('CHANGE',money(lastChange||0))+'\n';
   text+=meta('PAYMENT',payLabel(lastPayment))+'\n------------------------------------\n\n====================================\n   Thank you & please come again\n====================================';
   lastReceiptText=text;
-  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('âœ… Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));}else showAppAlert(text,'Receipt');
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('✅ Receipt copied')).catch(()=>showAppAlert(text,'Receipt'));}else showAppAlert(text,'Receipt');
   if(auto)runAutoPrint();
 };
 
@@ -2543,8 +2543,8 @@ function installBossEnterHandlersFinal(){
 document.addEventListener('DOMContentLoaded',()=>{installParcelUI(); installRefundUI(); installSettingLabels(); installBossEnterHandlersFinal();});
 setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); installBossEnterHandlersFinal();},500);
 
-</script>
-<script>
+
+;
 /* CLEAN REBUILD 20260703
    One final override layer only. Keep the original base app, remove all later stacked patches. */
 (function(){
@@ -2572,7 +2572,26 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       loginFailed:'Login failed: ', choose:'Choose a function.', notice:'Notice', loading:'Loading...',
       today:'Today', finance:'Finance', reports:'Reports', shopee:'Shopee', otherIncome:'Other Income', lowStock:'Low Stock', exportExcel:'Export Excel', settings:'Settings',
       recordShopee:'Record actual payout received from Shopee.', shopeePaid:'Shopee paid amount', payoutNote:'Note / payout date', recordPaid:'Record Paid',
-      pendingShopee:'Pending Shopee', actualPaid:'Actual Paid', difference:'Difference', trips:'Trips', noRecords:'No records', saved:'Saved'
+      pendingShopee:'Pending Shopee', actualPaid:'Actual Paid', difference:'Difference', trips:'Trips', noRecords:'No records', saved:'Saved',
+      processingCheckout:'Processing checkout, please wait...', page:'Page', noProducts:'No products', transfer:'Transfer', collected:'Collected',
+      payment:'Payment', confirm:'Confirm', mixed:'Mixed', validAmount:'Please enter valid amount', paymentNotEnough:'Payment is not enough.',
+      cashNotEnough:'Cash received is not enough.', confirmPaymentReceived:'Confirm {label} payment received?',
+      offlineSaved:'Offline order saved. It will sync when online.', orderSlow:'Order saved. Connection was slow.',
+      saveUnconfirmed:'Save not confirmed. Please check Orders_Main before pressing checkout again.',
+      noOrderNumber:'No order number returned', noLowStock:'No low stock products', change:'Change', remaining:'Remaining',
+      discountTooHigh:'Discount cannot exceed total.', discountNeedsBoss:'Discount above RM10 needs boss authorization.', discountRejected:'Discount rejected: ',
+      normalParcel:'Normal day: fill Shopee system parcels only. Open shortage only when parcels are missing.', todayTrip:'Today trip: Auto',
+      systemParcels:'Shopee system parcels, e.g. 65', returnedParcels:'Returned parcels', shortParcels:'Short parcels / actual received',
+      actualReceived:'Actual received, e.g. 62', missing:'Missing', previousMissing:'Previous missing parcels', stillMissing:'Still missing',
+      recovered:'Recovered', recoveredToday:'Recovered today', noteOptional:'Note optional', saveParcelRecord:'Save Parcel Record',
+      actualParcelsRequired:'Please fill actual received parcels.', parcelRequired:'Please fill Shopee system parcels.',
+      saving:'Saving...', alreadySaved:'Already saved', shopeeSaved:'Shopee saved', shopeeSaveFailed:'Shopee save failed: ',
+      loadFailed:'Load failed: ', item:'Item', amount:'Amount', date:'Date', note:'Note', collectable:'Collectable',
+      cashCurrentlyDrawer:'Cash currently in drawer', cashAlreadyCollected:'Cash already collected',
+      approvedRefundsDeducted:'Approved cash refunds deducted', floatCash:'Float cash', todayCash:'Today Cash', todayTotal:'Today Total',
+      cashReminderReached:'Collectable cash {amount} reached reminder {limit}.', paid:'Paid', otherPending:'Other Pending',
+      received:'Received', pendingRefunds:'Pending Refunds', requests:'requests', records:'Records', pending:'Pending', last30:'Last 30 records',
+      actualPaidRequired:'Please enter actual paid amount.', saveFailed:'Save failed: ', receiptFailed:'Order saved. Receipt failed; tap Print Receipt.'
     },
     zh: {
       all:'\u5168\u90e8\u5546\u54c1', home:'\u9996\u9875', search:'\u641c\u7d22\u5546\u54c1 / \u5206\u7c7b / \u4ef7\u94b1', low:'\u4f4e\u5e93\u5b58', prev:'\u4e0a\u4e00\u9875', next:'\u4e0b\u4e00\u9875',
@@ -2585,11 +2604,31 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       loginFailed:'\u767b\u5165\u5931\u8d25\uff1a', choose:'\u9009\u62e9\u529f\u80fd\u3002', notice:'\u63d0\u793a', loading:'\u8f7d\u5165\u4e2d...',
       today:'\u4eca\u65e5', finance:'\u8d22\u52a1', reports:'\u62a5\u8868', shopee:'Shopee', otherIncome:'\u5176\u5b83\u6536\u5165', lowStock:'\u4f4e\u5e93\u5b58', exportExcel:'\u6c47\u51fa Excel', settings:'\u7cfb\u7edf\u8bbe\u5b9a',
       recordShopee:'\u8bb0\u5f55 Shopee \u5b9e\u9645\u6536\u5230\u7684\u6b3e\u9879\u3002', shopeePaid:'Shopee \u5b9e\u6536\u91d1\u989d', payoutNote:'\u5907\u6ce8 / payout \u65e5\u671f', recordPaid:'\u8bb0\u5f55\u5b9e\u6536',
-      pendingShopee:'Shopee \u672a\u6536', actualPaid:'\u5df2\u5b9e\u6536', difference:'\u5dee\u989d', trips:'\u8d9f\u6570', noRecords:'\u6ca1\u6709\u8bb0\u5f55', saved:'\u5df2\u8bb0\u5f55'
+      pendingShopee:'Shopee \u672a\u6536', actualPaid:'\u5df2\u5b9e\u6536', difference:'\u5dee\u989d', trips:'\u8d9f\u6570', noRecords:'\u6ca1\u6709\u8bb0\u5f55', saved:'\u5df2\u8bb0\u5f55',
+      processingCheckout:'\u6b63\u5728\u4e70\u5355\uff0c\u8bf7\u7a0d\u7b49...', page:'\u7b2c', noProducts:'\u6ca1\u6709\u5546\u54c1', transfer:'\u8f6c\u8d26', collected:'\u5df2\u6536\u8d70',
+      payment:'\u4ed8\u6b3e', confirm:'\u786e\u8ba4', mixed:'\u6df7\u5408\u4ed8\u6b3e', validAmount:'\u8bf7\u8f93\u5165\u6b63\u786e\u91d1\u989d', paymentNotEnough:'\u4ed8\u6b3e\u91d1\u989d\u4e0d\u8db3\u3002',
+      cashNotEnough:'\u6536\u5230\u7684\u73b0\u91d1\u4e0d\u8db3\u3002', confirmPaymentReceived:'\u786e\u8ba4\u5df2\u6536\u5230 {label} \u4ed8\u6b3e\uff1f',
+      offlineSaved:'\u79bb\u7ebf\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u6709\u7f51\u540e\u4f1a\u81ea\u52a8\u540c\u6b65\u3002', orderSlow:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u53ea\u662f\u7f51\u7edc\u8f83\u6162\u3002',
+      saveUnconfirmed:'\u8fd8\u4e0d\u80fd\u786e\u8ba4\u5df2\u4fdd\u5b58\u3002\u8bf7\u5148\u68c0\u67e5 Orders_Main\uff0c\u518d\u51b3\u5b9a\u662f\u5426\u91cd\u65b0\u4e70\u5355\u3002',
+      noOrderNumber:'\u6ca1\u6709\u56de\u4f20\u8ba2\u5355\u53f7', noLowStock:'\u6ca1\u6709\u4f4e\u5e93\u5b58\u5546\u54c1', change:'\u627e\u96f6', remaining:'\u8fd8\u5dee',
+      discountTooHigh:'\u6298\u6263\u4e0d\u80fd\u8d85\u8fc7\u603b\u6570\u3002', discountNeedsBoss:'RM10 \u4ee5\u4e0a\u6298\u6263\u9700\u8981\u8001\u677f\u6743\u9650\u3002', discountRejected:'\u6298\u6263\u88ab\u62d2\u7edd\uff1a',
+      normalParcel:'\u5e73\u65f6\u53ea\u9700\u8981\u586b Shopee \u7cfb\u7edf\u5305\u88f9\u6570\uff0c\u6709\u5c11\u5305\u88f9\u624d\u6253\u5f00\u7f3a\u5c11\u90e8\u5206\u3002', todayTrip:'\u4eca\u65e5\u8d9f\u6570\uff1a\u81ea\u52a8',
+      systemParcels:'Shopee \u7cfb\u7edf\u5305\u88f9\uff0c\u4f8b\u5982 65', returnedParcels:'\u9000\u56de\u5305\u88f9', shortParcels:'\u5c11\u5305\u88f9 / \u5b9e\u9645\u6536\u5230',
+      actualReceived:'\u5b9e\u9645\u6536\u5230\uff0c\u4f8b\u5982 62', missing:'\u7f3a\u5c11', previousMissing:'\u4e4b\u524d\u7f3a\u5c11\u7684\u5305\u88f9', stillMissing:'\u8fd8\u7f3a',
+      recovered:'\u5df2\u8865\u56de', recoveredToday:'\u4eca\u5929\u8865\u56de', noteOptional:'\u5907\u6ce8\uff08\u53ef\u4e0d\u586b\uff09', saveParcelRecord:'\u4fdd\u5b58\u5305\u88f9\u8bb0\u5f55',
+      actualParcelsRequired:'\u8bf7\u586b\u5199\u5b9e\u9645\u6536\u5230\u7684\u5305\u88f9\u6570\u3002', parcelRequired:'\u8bf7\u586b\u5199 Shopee \u7cfb\u7edf\u5305\u88f9\u6570\u3002',
+      saving:'\u4fdd\u5b58\u4e2d...', alreadySaved:'\u5df2\u7ecf\u4fdd\u5b58', shopeeSaved:'Shopee \u5df2\u4fdd\u5b58', shopeeSaveFailed:'Shopee \u4fdd\u5b58\u5931\u8d25\uff1a',
+      loadFailed:'\u8f7d\u5165\u5931\u8d25\uff1a', item:'\u9879\u76ee', amount:'\u91d1\u989d', date:'\u65e5\u671f', note:'\u5907\u6ce8', collectable:'\u53ef\u6536\u8d70',
+      cashCurrentlyDrawer:'\u76ee\u524d\u6536\u94f6\u673a\u73b0\u91d1', cashAlreadyCollected:'\u5df2\u6536\u8d70\u73b0\u91d1',
+      approvedRefundsDeducted:'\u5df2\u6279\u51c6\u9000\u6b3e\u5df2\u6263\u9664', floatCash:'\u5907\u7528\u73b0\u91d1', todayCash:'\u4eca\u65e5\u73b0\u91d1', todayTotal:'\u4eca\u65e5\u603b\u6570',
+      cashReminderReached:'\u53ef\u6536\u8d70\u73b0\u91d1 {amount} \u5df2\u8fbe\u5230\u63d0\u9192\u91d1\u989d {limit}\u3002', paid:'\u5df2\u6536', otherPending:'\u5176\u5b83\u672a\u6536',
+      received:'\u5df2\u6536', pendingRefunds:'\u5f85\u6279\u9000\u6b3e', requests:'\u7533\u8bf7', records:'\u8bb0\u5f55', pending:'\u672a\u6536', last30:'\u6700\u8fd1 30 \u7b14',
+      actualPaidRequired:'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002', saveFailed:'\u8bb0\u5f55\u5931\u8d25\uff1a', receiptFailed:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u4f46\u6536\u636e\u5217\u5370\u5931\u8d25\uff0c\u8bf7\u70b9\u51fb\u6253\u5370\u6536\u636e\u3002'
     }
   };
   const lang = () => localStorage.getItem('yllLang') || 'en';
   const tr = key => (I18N[lang()] && I18N[lang()][key]) || I18N.en[key] || key;
+  const trf = (key, vars={}) => Object.keys(vars).reduce((s,k)=>s.replaceAll('{'+k+'}', vars[k]), tr(key));
 
   function ensureCleanUiCss(){
     if(document.getElementById('cleanThemeCss'))return;
@@ -2685,11 +2724,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const note=$('shopeePaidNote'); if(note)note.placeholder=tr('payoutNote');
       const btn=shopeePanel.querySelector('button.green'); if(btn)btn.textContent=tr('recordPaid');
     }
-    const bossResult = $('bossResult'); if(bossResult && /[ÃƒÃ‚]|Ã¥|Ã¨|Ã¦|Ã§/.test(bossResult.textContent||''))bossResult.textContent=tr('choose');
-    const alertTitle = $('appAlertTitle'); if(alertTitle && /[ÃƒÃ‚]|Ã¥|Ã¨|Ã¦|Ã§/.test(alertTitle.textContent||''))alertTitle.textContent=tr('notice');
+    const bossResult = $('bossResult'); if(bossResult && /[ÃÂ]|å|è|æ|ç/.test(bossResult.textContent||''))bossResult.textContent=tr('choose');
+    const alertTitle = $('appAlertTitle'); if(alertTitle && /[ÃÂ]|å|è|æ|ç/.test(alertTitle.textContent||''))alertTitle.textContent=tr('notice');
     const alertBtn = document.querySelector('#appAlertBox button');
     if(alertBtn)alertBtn.textContent=tr('close');
-    const busy = $('checkoutBusy'); if(busy)busy.textContent='Processing checkout, please wait...';
+    const busy = $('checkoutBusy'); if(busy)busy.textContent=tr('processingCheckout');
   }
 
   function setStatDetail(id, html){
@@ -2707,7 +2746,21 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   function cleanMessage(msg){
     let s=String(msg||'');
-    s=s.replace(/[ÃƒÃ‚][^\n:ï¼š]{0,40}[:ï¼š]?\s*/g,'').replace(/[Ã¥Ã¦Ã¨Ã§][^\n:ï¼š]{0,40}[:ï¼š]?\s*/g,'');
+    s=s.replace(/[ÃÂ][^\n:：]{0,40}[:：]?\s*/g,'').replace(/[åæèç][^\n:：]{0,40}[:：]?\s*/g,'');
+    if(lang()==='zh'){
+      const exact = {
+        'Please fill arrived or returned parcels.':'\u8bf7\u586b\u5199\u6536\u5230\u6216\u9000\u56de\u7684\u5305\u88f9\u6570\u3002',
+        'Please select an order.':'\u8bf7\u5148\u9009\u62e9\u8ba2\u5355\u3002',
+        'Please choose returned item and quantity.':'\u8bf7\u9009\u62e9\u8981\u9000\u7684\u5546\u54c1\u548c\u6570\u91cf\u3002',
+        'No receipt to print':'\u6ca1\u6709\u6536\u636e\u53ef\u4ee5\u6253\u5370',
+        'Receipt copied':'\u6536\u636e\u5df2\u590d\u5236'
+      };
+      const noIcon=s.replace(/^[^\w\u4e00-\u9fff]+/,'').trim();
+      if(exact[s])return exact[s];
+      if(exact[noIcon])return exact[noIcon];
+      if(/^Shopee save failed:/i.test(s))return tr('shopeeSaveFailed')+s.replace(/^Shopee save failed:\s*/i,'');
+      if(/^Refund failed:/i.test(s))return '\u9000\u8d27\u5931\u8d25\uff1a'+s.replace(/^Refund failed:\s*/i,'');
+    }
     if(/timeout after 30 seconds|Apps Script timeout/i.test(s)){
       return lang()==='zh'
         ? 'Google Apps Script \u56de\u5e94\u8d85\u65f6\u3002\u5546\u54c1\u4f1a\u5148\u7528\u672c\u673a\u7f13\u5b58\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u6216\u90e8\u7f72 URL\u3002'
@@ -2719,6 +2772,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         : 'Apps Script Web App URL is wrong or expired. Put the latest /exec URL in api/pos.js or GAS_URL, then redeploy.';
     }
     return s;
+  }
+  function cleanTitle(title){
+    const s=String(title||'');
+    if(lang()!=='zh')return s || tr('notice');
+    const map={
+      'Payment':tr('payment'),
+      'Cash':tr('cash'),
+      'Mixed':tr('mixed'),
+      'Discount':tr('discount'),
+      'Shopee':tr('shopee'),
+      'Shopee Parcel':tr('parcel'),
+      'Refund':tr('refund'),
+      'Receipt':tr('print'),
+      'Confirm':tr('confirm'),
+      'Notice':tr('notice')
+    };
+    return map[s] || s || tr('notice');
   }
 
   function applyProducts(list, fromCache=false){
@@ -2780,9 +2850,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const drawer = top && top.cashDrawer ? top.cashDrawer : await timeout(apiCall('getCashDrawer',[]), 6000, 'Cash drawer');
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
       if(sales)sales.textContent=money(today.total||0);
-      setStatDetail('todaySales', `Cash ${money(today.Cash||0)} | QR ${money(today.MBB_QR||0)} | Transfer ${money(today.Transfer||0)}`);
+      setStatDetail('todaySales', `${tr('cash')} ${money(today.Cash||0)} | QR ${money(today.MBB_QR||0)} | ${tr('transfer')} ${money(today.Transfer||0)}`);
       if(cash)cash.textContent=money(drawer.cashDrawer||0);
-      setStatDetail('todayCash', `Collected ${money(drawer.collected||0)}`);
+      setStatDetail('todayCash', `${tr('collected')} ${money(drawer.collected||0)}`);
       if(orders)orders.textContent=today.orders||today.count||0;
       if(items)items.textContent=(currentProducts()||[]).length || (window.products||[]).length || 0;
       if(typeof updateCashDrawerAlert === 'function')updateCashDrawerAlert(drawer);
@@ -2794,7 +2864,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.render = function(list){
     const box=$('list'); if(!box)return;
     list = list || currentList || [];
-    if(!list.length){ box.innerHTML='<div class="empty">'+(lang()==='zh'?'\u6ca1\u6709\u5546\u54c1':'No products')+'</div>'; updatePageInfo(list); return; }
+    if(!list.length){ box.innerHTML='<div class="empty">'+tr('noProducts')+'</div>'; updatePageInfo(list); return; }
     const start=(currentPage-1)*perPage;
     const pageList=list.slice(start,start+perPage);
     box.innerHTML=pageList.map(p=>{
@@ -2811,7 +2881,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.updatePageInfo = function(list){
     list = list || currentList || [];
     const totalPages=Math.max(1,Math.ceil(list.length/perPage));
-    const e=$('pageInfo'); if(e)e.textContent=`Page ${currentPage} / ${totalPages}`;
+    const e=$('pageInfo'); if(e)e.textContent=lang()==='zh' ? `${tr('page')} ${currentPage} / ${totalPages} \u9875` : `${tr('page')} ${currentPage} / ${totalPages}`;
   };
 
   window.renderCategories = function(){
@@ -2826,7 +2896,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     currentList=products.filter(p=>Number(p.stock||0)<=5).sort((a,b)=>Number(a.stock||0)-Number(b.stock||0));
     document.querySelectorAll('.cat-btn').forEach(x=>x.classList.remove('active'));
     render(currentList);
-    if(!currentList.length && typeof showToast==='function')showToast('No low stock products');
+    if(!currentList.length && typeof showToast==='function')showToast(tr('noLowStock'));
   };
 
   function cartEmptyMessage(){
@@ -2895,17 +2965,17 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   window.openCash = function(){
-    if(!currentCart().length){ showAppAlert(cartEmptyMessage(),'Cash'); return; }
+    if(!currentCart().length){ showAppAlert(cartEmptyMessage(),tr('cash')); return; }
     const d=calcDue();
     try{ cashTotal=d.final; }catch(e){}
-    const t=$('cashTotal'); if(t)t.textContent=`Subtotal ${money(d.subtotal)} | Discount -${money(d.discount)} | Total ${money(d.final)}`;
+    const t=$('cashTotal'); if(t)t.textContent=`${tr('subtotal')} ${money(d.subtotal)} | ${tr('discount')} -${money(d.discount)} | ${tr('total')} ${money(d.final)}`;
     const input=$('cashInput'); if(input)input.value='';
-    const ch=$('change'); if(ch)ch.textContent='Change RM 0.00';
+    const ch=$('change'); if(ch)ch.textContent=`${tr('change')} RM 0.00`;
     openModal('cashBox');
     setTimeout(()=>input&&input.focus(),50);
   };
 
-  window.appConfirm = function(message, title='Confirm', total=''){
+  window.appConfirm = function(message, title=tr('confirm'), total=''){
     return new Promise(resolve => {
       const box=$('paymentConfirmBox'), h=$('paymentConfirmTitle'), t=$('paymentConfirmText'), ttl=$('paymentConfirmTotal'), ok=$('paymentConfirmBtn');
       const cancel=box ? box.querySelector('.cancel-pay-btn') : null;
@@ -2921,10 +2991,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
   window.showAppAlert = function(msg,title){
     const h=$('appAlertTitle'), t=$('appAlertText');
-    if(h)h.textContent=title || tr('notice');
+    if(h)h.textContent=cleanTitle(title);
     if(t)t.textContent=cleanMessage(msg);
     const btn=document.querySelector('#appAlertBox button'); if(btn)btn.textContent=tr('close');
     openModal('appAlertBox');
+  };
+  window.setCheckoutBusy = function(on){
+    window.isCheckingOut=!!on;
+    try{ isCheckingOut=!!on; }catch(e){}
+    const busy=$('checkoutBusy');
+    if(busy){
+      busy.textContent=tr('processingCheckout');
+      busy.classList.toggle('active', !!on);
+    }
+    document.body.classList.toggle('pos-busy', !!on);
   };
   window.alert = function(msg){ window.showAppAlert(String(msg||''), tr('notice')); };
 
@@ -2974,8 +3054,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     c.forEach(i => i.orderId = orderId);
     window.lastCart = JSON.parse(JSON.stringify(c));
     try{ lastCart = window.lastCart; }catch(e){}
-    window.lastDiscount = sendDiscount;
-    try{ lastDiscount = sendDiscount; }catch(e){}
+    window.last折扣 = sendDiscount;
+    try{ last折扣 = sendDiscount; }catch(e){}
     window.lastDiscount = sendDiscount;
     try{ lastDiscount = sendDiscount; }catch(e){}
     reduceLocalStock(window.lastCart);
@@ -2983,18 +3063,18 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{ discount = 0; }catch(e){ window.discount = 0; }
     showCart();
     setCheckoutBusy(false);
-    try{ printReceipt(false); }catch(e){ console.error(e); if(typeof showToast === 'function')showToast('Order saved. Receipt failed; tap Print Receipt.'); }
+    try{ printReceipt(false); }catch(e){ console.error(e); if(typeof showToast === 'function')showToast(tr('receiptFailed')); }
     if(typeof loadTodayStats === 'function')setTimeout(()=>loadTodayStats(), 100);
   }
 
   window.checkout = async function(payment, paid=0, change=0){
     if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut)) return;
     const c = currentCart();
-    if(!c.length){ showAppAlert(cartEmptyMessage(),'Payment'); return; }
+    if(!c.length){ showAppAlert(cartEmptyMessage(),tr('payment')); return; }
     const method = String(payment || '').toLowerCase();
     const due = calcDue();
     if((method === 'cash' || method === 'mixed') && cents(paid) < cents(due.final)){
-      showAppAlert(`Payment is not enough.\n\nTotal: ${money(due.final)}\nPaid: ${money(paid)}`,'Payment');
+      showAppAlert(`${tr('paymentNotEnough')}\n\n${tr('total')}: ${money(due.final)}\n${tr('paid')}: ${money(paid)}`,tr('payment'));
       return;
     }
     setCheckoutBusy(true);
@@ -3016,12 +3096,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       offline.push({id:clientId, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, date:new Date().toISOString()});
       localStorage.setItem('offlineOrders', JSON.stringify(offline));
       finishSavedOrder('OFFLINE-' + clientId, sendDiscount);
-      if(typeof showToast === 'function')showToast('Offline order saved. It will sync when online.');
+      if(typeof showToast === 'function')showToast(tr('offlineSaved'));
       return;
     }
     try{
       const res = await timeout(apiCall('saveOrder',[send,payment,sendDiscount,window.lastPaid,window.lastChange,clientId]), 18000, 'Save order');
-      if(!res || !res.orderId) throw new Error('No order number returned');
+      if(!res || !res.orderId) throw new Error(tr('noOrderNumber'));
       finishSavedOrder(res.orderId, sendDiscount);
     }catch(err){
       for(let i=0;i<5;i++){
@@ -3030,13 +3110,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
           const saved = await timeout(apiCall('getOrderByClientId',[clientId]), 6000, 'Check saved order');
           if(saved && saved.orderId){
             finishSavedOrder(saved.orderId, sendDiscount);
-            if(typeof showToast === 'function')showToast('Order saved. Connection was slow.');
+            if(typeof showToast === 'function')showToast(tr('orderSlow'));
             return;
           }
         }catch(e){}
       }
       setCheckoutBusy(false);
-      showAppAlert('Save not confirmed. Please check Orders_Main before pressing checkout again.\n\n' + (err.message || err), 'Payment');
+      showAppAlert(tr('saveUnconfirmed') + '\n\n' + (err.message || err), tr('payment'));
     }
   };
 
@@ -3044,18 +3124,18 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const raw = ($('cashInput') || {}).value;
     const due = calcDue().final;
     const pay = raw === '' ? due : moneyNum(raw);
-    if(!Number.isFinite(pay)){ showAppAlert('Please enter valid amount','Cash'); return; }
+    if(!Number.isFinite(pay)){ showAppAlert(tr('validAmount'),tr('cash')); return; }
     if(cents(pay) < cents(due)){
-      showAppAlert(`Cash received is not enough.\n\nTotal: ${money(due)}\nPaid: ${money(pay)}`,'Payment');
+      showAppAlert(`${tr('cashNotEnough')}\n\n${tr('total')}: ${money(due)}\n${tr('paid')}: ${money(pay)}`,tr('payment'));
       return;
     }
     closeCash();
     checkout('cash', pay, moneyNum(pay - due));
   };
   window.confirmDirectCheckout = function(payment,label){
-    if(!currentCart().length){ showAppAlert(cartEmptyMessage(),'Payment'); return; }
+    if(!currentCart().length){ showAppAlert(cartEmptyMessage(),tr('payment')); return; }
     const due = calcDue().final;
-    appConfirm(`Confirm ${label} payment received?`, 'Payment', money(due)).then(ok => {
+    appConfirm(trf('confirmPaymentReceived',{label}), tr('payment'), money(due)).then(ok => {
       if(ok) checkout(payment, due, 0);
     });
   };
@@ -3063,9 +3143,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const due = calcDue().final;
     const cash = num(($('mixedCash')||{}).value);
     const qr = num(($('mixedQr')||{}).value);
-    const tr = num(($('mixedTransfer')||{}).value);
+    const tr = num(($('mixed转账')||{}).value);
     const paid = moneyNum(cash + qr + tr);
-    if(cents(paid) < cents(due)){ showAppAlert('Mixed payment is not enough.','Mixed'); return; }
+    if(cents(paid) < cents(due)){ showAppAlert(tr('paymentNotEnough'),tr('mixed')); return; }
     checkout('mixed', paid, Math.max(0, moneyNum(paid - due)));
   };
 
@@ -3087,35 +3167,35 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
   window.addEventListener('online', window.syncOfflineOrders);
 
-  window.openDiscount = function(){
-    if(!currentCart().length){ showAppAlert(cartEmptyMessage(),'Discount'); return; }
+  window.open折扣 = function(){
+    if(!currentCart().length){ showAppAlert(cartEmptyMessage(),tr('discount')); return; }
     const input=$('discountInput');
-    if(input){ input.value = (typeof discount !== 'undefined' ? discount : 0) || ''; input.oninput = () => updateDiscountPreview(num(input.value)); }
+    if(input){ input.value = (typeof discount !== 'undefined' ? discount : 0) || ''; input.oninput = () => update折扣Preview(num(input.value)); }
     const auth=$('discountAuthDetails'); if(auth)auth.open=false;
     ['discountBossId','discountBossPassword'].forEach(id=>{ const e=$(id); if(e)e.value=''; });
     const msg=$('discountStatusMsg'); if(msg){msg.style.display='none'; msg.textContent='';}
-    updateDiscountPreview(num(input && input.value));
+    update折扣Preview(num(input && input.value));
     openModal('discountBox');
   };
-  window.closeDiscount = function(){ closeModal('discountBox'); };
-  window.addDiscount = function(v){ const input=$('discountInput'); const val=moneyNum(num(input && input.value) + num(v)); if(input)input.value=val; updateDiscountPreview(val); };
-  window.applyDiscount = async function(){
+  window.close折扣 = function(){ closeModal('discountBox'); };
+  window.add折扣 = function(v){ const input=$('discountInput'); const val=moneyNum(num(input && input.value) + num(v)); if(input)input.value=val; update折扣Preview(val); };
+  window.apply折扣 = async function(){
     const input=$('discountInput');
     let val = moneyNum(input ? input.value : 0);
     const subtotal = calcDue().subtotal;
-    if(val < 0 || val > subtotal){ showAppAlert('Discount cannot exceed total.','Discount'); return; }
+    if(val < 0 || val > subtotal){ showAppAlert(tr('discountTooHigh'),tr('discount')); return; }
     if(val > 10){
       const id=($('discountBossId')||{}).value||'', pw=($('discountBossPassword')||{}).value||'';
-      if(!id || !pw){ const auth=$('discountAuthDetails'); if(auth)auth.open=true; showAppAlert('Discount above RM10 needs boss authorization.','Discount'); return; }
+      if(!id || !pw){ const auth=$('discountAuthDetails'); if(auth)auth.open=true; showAppAlert(tr('discountNeedsBoss'),tr('discount')); return; }
       try{ await apiCall('approveDiscount',[val,id,pw,subtotal]); }
-      catch(e){ const auth=$('discountAuthDetails'); if(auth)auth.open=true; showAppAlert('Discount rejected: '+(e.message||e),'Discount'); return; }
+      catch(e){ const auth=$('discountAuthDetails'); if(auth)auth.open=true; showAppAlert(tr('discountRejected')+(e.message||e),tr('discount')); return; }
     }
     try{ discount = val; }catch(e){ window.discount = val; }
     closeModal('discountBox');
     showCart();
   };
-  window.resetDiscount = function(){ try{ discount = 0; }catch(e){ window.discount = 0; } const input=$('discountInput'); if(input)input.value=''; updateDiscountPreview(0); showCart(); };
-  function updateDiscountPreview(v){
+  window.reset折扣 = function(){ try{ discount = 0; }catch(e){ window.discount = 0; } const input=$('discountInput'); if(input)input.value=''; update折扣Preview(0); showCart(); };
+  function update折扣Preview(v){
     const subtotal = currentCart().reduce((s,i)=>s+num(i.price)*num(i.qty),0);
     const d = Math.min(Math.max(0,num(v)), subtotal);
     const a=$('dSubtotal'), b=$('dCurrent'), c=$('dFinal');
@@ -3126,24 +3206,24 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.openParcelBox = async function(){
     const box=document.querySelector('#parcelBox .modal-content');
-    if(box)box.innerHTML=`<h3>Shopee Parcel</h3>
-      <p style="color:#94a3b8;font-size:13px">Normal day: fill Shopee system parcels only. Open shortage only when parcels are missing.</p>
-      <div class="parcel-auto-note" id="parcelTripNote">Today trip: Auto</div>
-      <input id="parcelExpected" type="number" inputmode="numeric" placeholder="Shopee system parcels, e.g. 65">
-      <input id="parcelReturned" type="number" inputmode="numeric" placeholder="Returned parcels">
+    if(box)box.innerHTML=`<h3>${esc(tr('parcel'))}</h3>
+      <p style="color:#94a3b8;font-size:13px">${esc(tr('normalParcel'))}</p>
+      <div class="parcel-auto-note" id="parcelTripNote">${esc(tr('todayTrip'))}</div>
+      <input id="parcelExpected" type="number" inputmode="numeric" placeholder="${esc(tr('systemParcels'))}">
+      <input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}">
       <details class="refund-auth" id="parcelShortDetails">
-        <summary>Short parcels / actual received</summary>
-        <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="Actual received, e.g. 62">
-        <div id="parcelShortPreview" class="discount-preview">Missing: 0</div>
+        <summary>${esc(tr('shortParcels'))}</summary>
+        <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="${esc(tr('actualReceived'))}">
+        <div id="parcelShortPreview" class="discount-preview">${esc(tr('missing'))}: 0</div>
       </details>
       <div id="parcelRecoveryWrap" style="display:none">
-        <div class="discount-preview">Previous missing parcels</div>
+        <div class="discount-preview">${esc(tr('previousMissing'))}</div>
         <div id="parcelRecoveryList"></div>
-        <input id="parcelRecovered" type="number" inputmode="numeric" placeholder="Recovered today">
+        <input id="parcelRecovered" type="number" inputmode="numeric" placeholder="${esc(tr('recoveredToday'))}">
       </div>
-      <input id="parcelNote" type="text" placeholder="Note optional">
-      <button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">Save Parcel Record</button>
-      <button onclick="closeModal('parcelBox')">Close</button>`;
+      <input id="parcelNote" type="text" placeholder="${esc(tr('noteOptional'))}">
+      <button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">${esc(tr('saveParcelRecord'))}</button>
+      <button onclick="closeModal('parcelBox')">${esc(tr('close'))}</button>`;
     ['parcelExpected','parcelReturned','parcelDelivered','parcelRecovered'].forEach(id=>{ const e=$(id); if(e)e.oninput=updateParcelPreview; });
     updateParcelPreview();
     openModal('parcelBox');
@@ -3153,7 +3233,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const wrap=$('parcelRecoveryWrap'), list=$('parcelRecoveryList');
       if(wrap && list && rows.length){
         wrap.style.display='block';
-        list.innerHTML='<table><tr><th>Date</th><th class="right">Missing</th><th class="right">Recovered</th><th class="right">Still missing</th></tr>'+rows.map(x=>`<tr><td>${esc(x.date)}</td><td class="right">${x.missing||0}</td><td class="right">${x.recovered||0}</td><td class="right">${x.outstanding||0}</td></tr>`).join('')+'</table>';
+        list.innerHTML=`<table><tr><th>${esc(tr('date'))}</th><th class="right">${esc(tr('missing'))}</th><th class="right">${esc(tr('recovered'))}</th><th class="right">${esc(tr('stillMissing'))}</th></tr>`+rows.map(x=>`<tr><td>${esc(x.date)}</td><td class="right">${x.missing||0}</td><td class="right">${x.recovered||0}</td><td class="right">${x.outstanding||0}</td></tr>`).join('')+'</table>';
       }
     }catch(e){}
   };
@@ -3163,7 +3243,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const raw=($('parcelDelivered')||{}).value;
     const delivered=open && raw!=='' ? num(raw) : expected;
     const s=$('parcelShortPreview');
-    if(s)s.textContent='Missing: '+Math.max(0, expected-delivered);
+    if(s)s.textContent=tr('missing')+': '+Math.max(0, expected-delivered);
   };
   window.saveParcelLog = async function(){
     const expected=num(($('parcelExpected')||{}).value), returned=num(($('parcelReturned')||{}).value), recovered=num(($('parcelRecovered')||{}).value);
@@ -3171,14 +3251,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const raw=($('parcelDelivered')||{}).value;
     const delivered=open ? num(raw) : expected;
     let note=($('parcelNote')||{}).value||'';
-    if(open && raw===''){ showAppAlert('Please fill actual received parcels.','Shopee'); return; }
-    if(!expected && !returned && !recovered){ showAppAlert('Please fill Shopee system parcels.','Shopee'); return; }
+    if(open && raw===''){ showAppAlert(tr('actualParcelsRequired'),tr('shopee')); return; }
+    if(!expected && !returned && !recovered){ showAppAlert(tr('parcelRequired'),tr('shopee')); return; }
     if(expected && delivered < expected){ const missing=expected-delivered; note = note ? `${note} | System ${expected}, actual ${delivered}, missing ${missing}` : `System ${expected}, actual ${delivered}, missing ${missing}`; }
     if(recovered>0) note = note ? `${note} | Recovered ${recovered}` : `Recovered ${recovered}`;
-    const btn=$('parcelSubmitBtn'); if(btn){btn.disabled=true; btn.textContent='Saving...';}
-    try{ const r=await timeout(apiCall('saveParcelLog',[{expected,delivered,returned,recovered,note}]),30000,'Shopee save'); closeModal('parcelBox'); if(typeof showToast==='function')showToast(r.duplicate?'Already saved':'Shopee saved'); }
-    catch(e){ showAppAlert('Shopee save failed: '+(e.message||e),'Shopee'); }
-    finally{ if(btn){btn.disabled=false; btn.textContent='Save Parcel Record';} }
+    const btn=$('parcelSubmitBtn'); if(btn){btn.disabled=true; btn.textContent=tr('saving');}
+    try{ const r=await timeout(apiCall('saveParcelLog',[{expected,delivered,returned,recovered,note}]),30000,'Shopee save'); closeModal('parcelBox'); if(typeof showToast==='function')showToast(r.duplicate?tr('alreadySaved'):tr('shopeeSaved')); }
+    catch(e){ showAppAlert(tr('shopeeSaveFailed')+(e.message||e),tr('shopee')); }
+    finally{ if(btn){btn.disabled=false; btn.textContent=tr('saveParcelRecord');} }
   };
 
   window.bossOpenCashCollect = async function(){
@@ -3189,7 +3269,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const panel=$('bossCashBox');
     if(panel){panel.style.display='block';panel.classList.add('active');}
     const info=$('bossCashInfo');
-    if(info)info.textContent='Loading...';
+    if(info)info.textContent=tr('loading');
     try{
       const r=await apiCall('getCashDrawer',[]);
       const drawer=num(r.cashDrawer||0), collected=num(r.collected||0), refunds=num(r.refunds||0), flt=num(r.floatCash||0), collectable=drawer-flt;
@@ -3200,22 +3280,22 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const warn=$('bossCashWarning');
       if(warn){
         warn.style.display=collectable>=num(r.cashDrawerLimit||500)?'block':'none';
-        warn.textContent=`Collectable cash ${money(collectable)} reached reminder ${money(r.cashDrawerLimit||500)}.`;
+        warn.textContent=trf('cashReminderReached',{amount:money(collectable),limit:money(r.cashDrawerLimit||500)});
       }
-      let html=`<table><tr><th>Item</th><th class="right">Amount</th></tr>
-        <tr><td>Cash currently in drawer</td><td class="right">${money(drawer)}</td></tr>
-        <tr><td>Cash already collected</td><td class="right">${money(collected)}</td></tr>
-        <tr><td>Approved cash refunds deducted</td><td class="right">${money(refunds)}</td></tr>
-        <tr><td>Float cash</td><td class="right">${money(flt)}</td></tr></table>`;
+      let html=`<table><tr><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th></tr>
+        <tr><td>${esc(tr('cashCurrentlyDrawer'))}</td><td class="right">${money(drawer)}</td></tr>
+        <tr><td>${esc(tr('cashAlreadyCollected'))}</td><td class="right">${money(collected)}</td></tr>
+        <tr><td>${esc(tr('approvedRefundsDeducted'))}</td><td class="right">${money(refunds)}</td></tr>
+        <tr><td>${esc(tr('floatCash'))}</td><td class="right">${money(flt)}</td></tr></table>`;
       const logs=r.collections||[];
       if(logs.length){
-        html+=`<table style="margin-top:12px"><tr><th>Date</th><th class="right">Collected</th><th>Note</th></tr>`+
+        html+=`<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th class="right">${esc(tr('collected'))}</th><th>${esc(tr('note'))}</th></tr>`+
           logs.map(x=>`<tr><td>${esc(x.date||'')}</td><td class="right">${money(x.amount||0)}</td><td>${esc(x.note||'')}</td></tr>`).join('')+
           `</table>`;
       }
       if(info)info.innerHTML=html;
     }catch(e){
-      if(info)info.textContent='Load failed: '+(e.message||e);
+      if(info)info.textContent=tr('loadFailed')+(e.message||e);
     }
   };
 
@@ -3225,23 +3305,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const panel=$('bossOverviewPanel');
     if(panel){panel.style.display='block';panel.classList.add('active');}
     const box=$('bossOverviewResult');
-    if(box)box.textContent='Loading...';
+    if(box)box.textContent=tr('loading');
     try{
       const [overview,today]=await Promise.all([apiCall('getBossDashboardFast',[]).catch(()=>apiCall('getBossOverview',[])), apiCall('getTodayReport',[])]);
       const cash=overview.cash||{}, parcel=overview.parcel||{}, other=overview.other||{};
       const drawer=num(cash.cashDrawer||0), flt=num(cash.floatCash||0), collectable=drawer-flt;
       const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
       const html=[
-        card('Today Cash',money(today.Cash||0),`QR ${money(today.MBB_QR||0)} / Transfer ${money(today.Transfer||0)}`,false),
-        card('Today Total',money(today.total||0),`Orders ${today.orders||today.count||0}`,false),
-        card('Cash Drawer',money(drawer),`Collectable ${money(collectable)} / Collected ${money(cash.collected||0)}`,collectable>=num(cash.cashDrawerLimit||500)),
-        card('Shopee Pending',money(parcel.pendingEstimated||0),`Paid ${money(parcel.actualPaid||0)}`,num(parcel.pendingEstimated)>0),
-        card('Other Pending',money(other.pending||0),`Received ${money(other.received||0)}`,num(other.pending)>0),
-        card('Pending Refunds',money(overview.refundPendingAmount||0),`${overview.refundPending||0} requests`,num(overview.refundPending)>0)
+        card(tr('todayCash'),money(today.Cash||0),`QR ${money(today.MBB_QR||0)} / ${tr('transfer')} ${money(today.Transfer||0)}`,false),
+        card(tr('todayTotal'),money(today.total||0),`${tr('orders')} ${today.orders||today.count||0}`,false),
+        card(tr('cashDrawer'),money(drawer),`${tr('collectable')} ${money(collectable)} / ${tr('collected')} ${money(cash.collected||0)}`,collectable>=num(cash.cashDrawerLimit||500)),
+        card(tr('pendingShopee'),money(parcel.pendingEstimated||0),`${tr('paid')} ${money(parcel.actualPaid||0)}`,num(parcel.pendingEstimated)>0),
+        card(tr('otherPending'),money(other.pending||0),`${tr('received')} ${money(other.received||0)}`,num(other.pending)>0),
+        card(tr('pendingRefunds'),money(overview.refundPendingAmount||0),`${overview.refundPending||0} ${tr('requests')}`,num(overview.refundPending)>0)
       ].join('');
       if(box)box.innerHTML=html;
     }catch(e){
-      if(box)box.textContent='Load failed: '+(e.message||e);
+      if(box)box.textContent=tr('loadFailed')+(e.message||e);
     }
   };
 
@@ -3257,12 +3337,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
       let html='<div class="boss-overview-grid">'+[
         card(tr('pendingShopee'), money(r.pendingEstimated||0), tr('shopee'), num(r.pendingEstimated)>0),
-        card(tr('actualPaid'), money(r.actualPaid||0), 'Shopee payout', false),
+        card(tr('actualPaid'), money(r.actualPaid||0), tr('paid'), false),
         card(tr('difference'), money(r.difference||0), '', num(r.difference)>0),
-        card(tr('trips'), String(r.count||0), 'Last 30 records', false)
+        card(tr('trips'), String(r.count||0), tr('last30'), false)
       ].join('')+'</div>';
       if(logs.length){
-        html += '<table style="margin-top:12px"><tr><th>Date</th><th>Trip</th><th class="right">Parcels</th><th class="right">Estimated</th><th>Note</th></tr>' +
+        html += `<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('trips'))}</th><th class="right">${esc(tr('parcel'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('note'))}</th></tr>` +
           logs.map(x=>`<tr><td>${esc(x.date||'')}</td><td>${esc(x.trip||'')}</td><td class="right">${esc((x.delivered||0)+' / '+(x.returned||0))}</td><td class="right">${money(x.estimated||0)}</td><td>${esc(x.note||'')}</td></tr>`).join('') +
           '</table>';
       }else{
@@ -3270,7 +3350,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       }
       if(box)box.innerHTML=html;
     }catch(e){
-      if(box)box.textContent='Load failed: '+(e.message||e);
+      if(box)box.textContent=tr('loadFailed')+(e.message||e);
     }
   };
 
@@ -3278,14 +3358,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(typeof bossRequire === 'function' && !bossRequire())return;
     const amount=num(($('shopeePaidAmount')||{}).value);
     const note=($('shopeePaidNote')||{}).value||'';
-    if(amount<=0){showAppAlert(lang()==='zh'?'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002':'Please enter actual paid amount.',tr('shopee'));return;}
+    if(amount<=0){showAppAlert(tr('actualPaidRequired'),tr('shopee'));return;}
     try{
       await apiCall('recordShopeePayout',[amount,note,null]);
       ['shopeePaidAmount','shopeePaidNote'].forEach(id=>{const e=$(id); if(e)e.value='';});
       if(typeof showToast==='function')showToast(tr('saved'));
       bossOpenParcelBoss();
     }catch(e){
-      showAppAlert((lang()==='zh'?'\u8bb0\u5f55\u5931\u8d25\uff1a':'Save failed: ')+(e.message||e),tr('shopee'));
+      showAppAlert(tr('saveFailed')+(e.message||e),tr('shopee'));
     }
   };
 
@@ -3296,9 +3376,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(box)box.textContent=tr('loading');
     try{
       const r=await apiCall('getOtherIncomeSummary',[]);
-      if(box)box.innerHTML=`<table><tr><th>Item</th><th class="right">Amount</th></tr><tr><td>Pending</td><td class="right">${money(r.pending||0)}</td></tr><tr><td>Received</td><td class="right">${money(r.received||0)}</td></tr><tr><td>Records</td><td class="right">${esc(r.count||0)}</td></tr></table>`;
+      if(box)box.innerHTML=`<table><tr><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th></tr><tr><td>${esc(tr('pending'))}</td><td class="right">${money(r.pending||0)}</td></tr><tr><td>${esc(tr('received'))}</td><td class="right">${money(r.received||0)}</td></tr><tr><td>${esc(tr('records'))}</td><td class="right">${esc(r.count||0)}</td></tr></table>`;
     }catch(e){
-      if(box)box.textContent='Load failed: '+(e.message||e);
+      if(box)box.textContent=tr('loadFailed')+(e.message||e);
     }
   };
 
@@ -3370,7 +3450,50 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 })();
 
 </script>
-</body>
+<div id="toast" class="toast"></div>
+
+
+
+
+
+
+
+
+
+
+
+
 </html>
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
