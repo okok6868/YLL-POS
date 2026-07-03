@@ -2713,6 +2713,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         ? 'Google Apps Script \u56de\u5e94\u8d85\u65f6\u3002\u5546\u54c1\u4f1a\u5148\u7528\u672c\u673a\u7f13\u5b58\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u6216\u90e8\u7f72 URL\u3002'
         : 'Google Apps Script timed out. POS will keep using local product cache. Please check connection or deployment URL.';
     }
+    if(/deployment URL is wrong|Web App URL is wrong|Page Not Found|RAW:\s*<!DOCTYPE/i.test(s)){
+      return lang()==='zh'
+        ? 'Apps Script Web App URL \u9519\u4e86\u6216\u5df2\u5931\u6548\u3002\u8bf7\u91cd\u65b0\u90e8\u7f72 Apps Script Web app\uff0c\u628a\u6700\u65b0\u7684 /exec URL \u653e\u5230 api/pos.js \u6216 GAS_URL\uff0c\u7136\u540e\u91cd\u65b0\u90e8\u7f72\u3002'
+        : 'Apps Script Web App URL is wrong or expired. Put the latest /exec URL in api/pos.js or GAS_URL, then redeploy.';
+    }
     return s;
   }
 
@@ -3324,4 +3329,48 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(msg){msg.style.display='block'; msg.textContent=tr('missingLogin');}
       return;
     }
-    if(btn){b
+    if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
+    if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
+    try{
+      const r=await apiCall('bossLogin',[id,pw]);
+      if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
+      if(r&&r.ok){
+        try{
+          BOSS_IDLE_MS=Math.max(1,Number(r.autoLogoutMinutes||10))*60*1000;
+          sessionStorage.setItem('bossSessionUntil',String(Date.now()+BOSS_IDLE_MS));
+          if(typeof bossStartIdleTimer==='function')bossStartIdleTimer();
+        }catch(e){}
+        if(idEl)idEl.value='';
+        if(pwEl)pwEl.value='';
+        closeModal('bossLoginBox');
+        openModal('bossDashboard');
+        await window.bossOpenOverview();
+        const br=$('bossResult'); if(br)br.textContent=tr('enteredBoss');
+        setStaticText();
+        return;
+      }
+      if(msg)msg.textContent=tr('wrongLogin')+(r&&r.remaining!=null?r.remaining:0)+'.';
+    }catch(e){
+      if(msg)msg.textContent=tr('loginFailed')+(e.message||e);
+    }finally{
+      if(btn){btn.disabled=false; btn.textContent=tr('login');}
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setStaticText();
+    setTimeout(setStaticText, 300);
+    setTimeout(setStaticText, 1200);
+    setTimeout(()=>{ try{ window.loadTodayStats(); }catch(e){} }, 600);
+    ensureCleanUiCss();
+    if(localStorage.getItem('yllTheme') === 'light') document.body.classList.add('light');
+    setThemeButton();
+    setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
+  });
+})();
+
+</script>
+</body>
+</html>
+
+
