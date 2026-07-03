@@ -2595,6 +2595,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       actualPaidRequired:'Please enter actual paid amount.', saveFailed:'Save failed: ', receiptFailed:'Order saved. Receipt failed; tap Print Receipt.',
       receiptCopied:'Receipt copied',
       saveSentSlow:'Order sent. Network is slow, POS will confirm in background.', saveStillChecking:'Order sent. Please do not press checkout again.'
+      ,bossReady:'Boss mode opened. Choose a function.', bossFastHint:'Tap a function to load details.', bossLoginSlow:'Boss login is slow. Check Apps Script deployment URL or connection.'
     },
     zh: {
       all:'\u5168\u90e8\u5546\u54c1', home:'\u9996\u9875', search:'\u641c\u7d22\u5546\u54c1 / \u5206\u7c7b / \u4ef7\u94b1', low:'\u4f4e\u5e93\u5b58', prev:'\u4e0a\u4e00\u9875', next:'\u4e0b\u4e00\u9875',
@@ -2630,6 +2631,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       actualPaidRequired:'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002', saveFailed:'\u8bb0\u5f55\u5931\u8d25\uff1a', receiptFailed:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u4f46\u6536\u636e\u5217\u5370\u5931\u8d25\uff0c\u8bf7\u70b9\u51fb\u6253\u5370\u6536\u636e\u3002',
       receiptCopied:'\u6536\u636e\u5df2\u590d\u5236',
       saveSentSlow:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u7f51\u7edc\u6162\uff0cPOS \u4f1a\u5728\u540e\u53f0\u7ee7\u7eed\u786e\u8ba4\u3002', saveStillChecking:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u8bf7\u4e0d\u8981\u518d\u91cd\u590d\u70b9\u4e70\u5355\u3002'
+      ,bossReady:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\uff0c\u8bf7\u9009\u62e9\u529f\u80fd\u3002', bossFastHint:'\u70b9\u51fb\u529f\u80fd\u540e\u624d\u8f7d\u5165\u8be6\u7ec6\u8d44\u6599\u3002', bossLoginSlow:'\u8001\u677f\u767b\u5165\u56de\u5e94\u592a\u6162\uff0c\u8bf7\u68c0\u67e5 Apps Script \u90e8\u7f72 URL \u6216\u7f51\u7edc\u3002'
     }
   };
   const lang = () => localStorage.getItem('yllLang') || 'en';
@@ -3481,15 +3483,28 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const panel=$('bossOverviewPanel');
     if(panel){panel.style.display='block';panel.classList.add('active');}
     const box=$('bossOverviewResult');
-    if(box)box.textContent=tr('loading');
+    const localToday=num(($('todaySales')||{}).textContent && String(($('todaySales')||{}).textContent).replace(/[^\d.]/g,''));
+    const localCash=num(($('todayCash')||{}).textContent && String(($('todayCash')||{}).textContent).replace(/[^\d.]/g,''));
+    const localOrders=($('todayOrders')||{}).textContent || '0';
+    const localItems=($('todayItems')||{}).textContent || '0';
+    const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
+    if(box)box.innerHTML=[
+      card(tr('todayTotal'),money(localToday),`${tr('orders')} ${localOrders}`,false),
+      card(tr('cashDrawer'),money(localCash),tr('bossFastHint'),false),
+      card(tr('products'),String(localItems),tr('bossFastHint'),false),
+      card(tr('pendingRefunds'),'--',tr('bossFastHint'),false)
+    ].join('');
     try{
-      const [overview,today]=await Promise.all([apiCall('getBossDashboardFast',[]).catch(()=>apiCall('getBossOverview',[])), apiCall('getTodayReport',[])]);
+      const [overview,today]=await Promise.all([
+        timeout(apiCall('getBossDashboardFast',[]), 8000, 'Boss dashboard'),
+        timeout(apiCall('getTodayReport',[]), 6000, 'Today report').catch(()=>null)
+      ]);
       const cash=overview.cash||{}, parcel=overview.parcel||{}, other=overview.other||{};
       const drawer=num(cash.cashDrawer||0), flt=num(cash.floatCash||0), collectable=drawer-flt;
-      const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
+      const t=today || overview.today || {};
       const html=[
-        card(tr('todayCash'),money(today.Cash||0),`QR ${money(today.MBB_QR||0)} / ${tr('transfer')} ${money(today.Transfer||0)}`,false),
-        card(tr('todayTotal'),money(today.total||0),`${tr('orders')} ${today.orders||today.count||0}`,false),
+        card(tr('todayCash'),money(t.Cash||0),`QR ${money(t.MBB_QR||0)} / ${tr('transfer')} ${money(t.Transfer||0)}`,false),
+        card(tr('todayTotal'),money(t.total||0),`${tr('orders')} ${t.orders||t.count||0}`,false),
         card(tr('cashDrawer'),money(drawer),`${tr('collectable')} ${money(collectable)} / ${tr('collected')} ${money(cash.collected||0)}`,collectable>=num(cash.cashDrawerLimit||500)),
         card(tr('pendingShopee'),money(parcel.pendingEstimated||0),`${tr('paid')} ${money(parcel.actualPaid||0)}`,num(parcel.pendingEstimated)>0),
         card(tr('otherPending'),money(other.pending||0),`${tr('received')} ${money(other.received||0)}`,num(other.pending)>0),
@@ -3497,7 +3512,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ].join('');
       if(box)box.innerHTML=html;
     }catch(e){
-      if(box)box.textContent=tr('loadFailed')+(e.message||e);
+      const br=$('bossResult'); if(br)br.textContent=cleanMessage(e.message||e);
     }
   };
 
@@ -3588,7 +3603,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
     if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
     try{
-      const r=await apiCall('bossLogin',[id,pw]);
+      const r=await timeout(apiCall('bossLogin',[id,pw]), 8000, 'Boss login');
       if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
       if(r&&r.ok){
         try{
@@ -3600,14 +3615,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         if(pwEl)pwEl.value='';
         closeModal('bossLoginBox');
         openModal('bossDashboard');
-        await window.bossOpenOverview();
-        const br=$('bossResult'); if(br)br.textContent=tr('enteredBoss');
         setStaticText();
+        const br=$('bossResult'); if(br)br.textContent=tr('bossReady');
+        setTimeout(()=>{ try{ window.bossOpenOverview(); }catch(e){} }, 50);
         return;
       }
       if(msg)msg.textContent=tr('wrongLogin')+(r&&r.remaining!=null?r.remaining:0)+'.';
     }catch(e){
-      if(msg)msg.textContent=tr('loginFailed')+(e.message||e);
+      if(msg)msg.textContent=tr('loginFailed')+(isTimeoutError(e)?tr('bossLoginSlow'):cleanMessage(e.message||e));
     }finally{
       if(btn){btn.disabled=false; btn.textContent=tr('login');}
     }
