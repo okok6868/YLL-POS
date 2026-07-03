@@ -2596,6 +2596,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       receiptCopied:'Receipt copied',
       saveSentSlow:'Order sent. Network is slow, POS will confirm in background.', saveStillChecking:'Order sent. Please do not press checkout again.'
       ,bossReady:'Boss mode opened. Choose a function.', bossFastHint:'Tap a function to load details.', bossLoginSlow:'Boss login is slow. Check Apps Script deployment URL or connection.'
+      ,reportToday:'Today', yesterday:'Yesterday', thisWeek:'This Week', lastWeek:'Last Week', thisMonth:'This Month', lastMonth:'Last Month', thisYear:'This Year', custom:'Custom', searchBtn:'Search'
+      ,customReport:'Custom Report', yearPlaceholder:'Year, e.g. 2026', monthOptional:'Month optional', generateExcel:'Generate Excel', posSales:'POS Sales', refunds:'Refunds', shopeePage:'Shopee page', otherIncomePage:'Other income page', cigarettePage:'Cigarette page'
+      ,selectMonthExcel:'Choose year/month, then generate Excel.', otherIncomeHint:'Add pending income first, confirm after cash is received.', waterMachine:'Water Machine', addPending:'Add Pending', waitingConfirmation:'Waiting confirmation.', collectAmount:'Collect amount', confirmCollection:'Confirm Collection', openToLoad:'Open to load.'
     },
     zh: {
       all:'\u5168\u90e8\u5546\u54c1', home:'\u9996\u9875', search:'\u641c\u7d22\u5546\u54c1 / \u5206\u7c7b / \u4ef7\u94b1', low:'\u4f4e\u5e93\u5b58', prev:'\u4e0a\u4e00\u9875', next:'\u4e0b\u4e00\u9875',
@@ -2632,6 +2635,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       receiptCopied:'\u6536\u636e\u5df2\u590d\u5236',
       saveSentSlow:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u7f51\u7edc\u6162\uff0cPOS \u4f1a\u5728\u540e\u53f0\u7ee7\u7eed\u786e\u8ba4\u3002', saveStillChecking:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u8bf7\u4e0d\u8981\u518d\u91cd\u590d\u70b9\u4e70\u5355\u3002'
       ,bossReady:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\uff0c\u8bf7\u9009\u62e9\u529f\u80fd\u3002', bossFastHint:'\u70b9\u51fb\u529f\u80fd\u540e\u624d\u8f7d\u5165\u8be6\u7ec6\u8d44\u6599\u3002', bossLoginSlow:'\u8001\u677f\u767b\u5165\u56de\u5e94\u592a\u6162\uff0c\u8bf7\u68c0\u67e5 Apps Script \u90e8\u7f72 URL \u6216\u7f51\u7edc\u3002'
+      ,reportToday:'\u4eca\u5929', yesterday:'\u6628\u5929', thisWeek:'\u672c\u5468', lastWeek:'\u4e0a\u5468', thisMonth:'\u672c\u6708', lastMonth:'\u4e0a\u6708', thisYear:'\u4eca\u5e74', custom:'\u81ea\u8ba2', searchBtn:'\u67e5\u8be2'
+      ,customReport:'\u81ea\u8ba2\u62a5\u8868', yearPlaceholder:'\u5e74\u4efd\uff0c\u4f8b\u5982 2026', monthOptional:'\u6708\u4efd\uff08\u53ef\u4e0d\u586b\uff09', generateExcel:'\u751f\u6210 Excel', posSales:'POS \u9500\u552e', refunds:'\u9000\u8d27', shopeePage:'Shopee \u9875', otherIncomePage:'\u5176\u5b83\u6536\u5165\u9875', cigarettePage:'\u9999\u70df\u9875'
+      ,selectMonthExcel:'\u9009\u62e9\u5e74\u4efd/\u6708\u4efd\uff0c\u7136\u540e\u751f\u6210 Excel\u3002', otherIncomeHint:'\u5148\u52a0\u5165\u5f85\u786e\u8ba4\u6536\u5165\uff0c\u6536\u5230\u73b0\u91d1\u540e\u518d\u786e\u8ba4\u3002', waterMachine:'\u6c34\u673a', addPending:'\u52a0\u5165\u5f85\u786e\u8ba4', waitingConfirmation:'\u7b49\u5f85\u786e\u8ba4\u3002', collectAmount:'\u6536\u8d70\u91d1\u989d', confirmCollection:'\u786e\u8ba4\u6536\u8d70', openToLoad:'\u6253\u5f00\u540e\u8f7d\u5165'
     }
   };
   const lang = () => localStorage.getItem('yllLang') || 'en';
@@ -2685,6 +2691,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   function setStaticText(){
     ensureCleanUiCss();
+    const setText = (sel, text) => { const el=document.querySelector(sel); if(el)el.textContent=text; };
+    const setPh = (id, text) => { const el=$(id); if(el)el.placeholder=text; };
     const title = document.querySelector('.title'); if(title)title.textContent='YLL FEEDS ENTERPRISE';
     const bossBtn = document.querySelector('.plain-gear');
     if(bossBtn){ bossBtn.textContent='\u2699'; bossBtn.title='Settings'; bossBtn.setAttribute('aria-label','Settings'); }
@@ -2725,6 +2733,29 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const bossBtns = document.querySelectorAll('#bossDashboard .boss-tab-grid button');
     const bossKeys = ['today','finance','reports','shopee','otherIncome','lowStock','exportExcel','settings'];
     bossBtns.forEach((b,i)=>{ if(bossKeys[i]){ b.dataset.navKey=bossKeys[i]; b.textContent=tr(bossKeys[i]); } });
+    setText('#bossOverviewPanel h4', tr('today'));
+    setText('#bossReportsPanel h4', tr('reports'));
+    setText('#bossRangeBox h4', tr('customReport'));
+    setText('#bossExportBox h4', tr('exportExcel'));
+    setText('#bossCashBox h4', tr('finance'));
+    setText('#bossOtherIncomeBox h4', tr('otherIncome'));
+    setText('#bossLowStockBox h4', tr('lowStock'));
+    const reportButtons = document.querySelectorAll('#bossReportsPanel .boss-report-grid button');
+    ['reportToday','yesterday','thisWeek','lastWeek','thisMonth','lastMonth','thisYear','custom'].forEach((key,i)=>{ if(reportButtons[i])reportButtons[i].textContent=tr(key); });
+    const rangeSearch = document.querySelector('#bossRangeBox button.green'); if(rangeSearch)rangeSearch.textContent=tr('searchBtn');
+    setPh('exportYear', tr('yearPlaceholder'));
+    setPh('exportMonth', tr('monthOptional'));
+    const exportBtn = document.querySelector('#bossExportBox button.green'); if(exportBtn)exportBtn.textContent=tr('generateExcel');
+    const exportLabels = document.querySelectorAll('#bossExportBox label');
+    ['posSales','refunds','shopeePage','otherIncomePage','cigarettePage'].forEach((key,i)=>{ const input=exportLabels[i]&&exportLabels[i].querySelector('input'); if(exportLabels[i]){ exportLabels[i].textContent=' '+tr(key); if(input)exportLabels[i].prepend(input); } });
+    const exportResult = $('bossResult'); if(exportResult && /^Choose year\/month|^选择年份/.test(exportResult.textContent||''))exportResult.textContent=tr('selectMonthExcel');
+    const cashSmalls = document.querySelectorAll('#bossCashBox .boss-money-card small');
+    if(cashSmalls[0])cashSmalls[0].textContent=tr('cashDrawer');
+    if(cashSmalls[1])cashSmalls[1].textContent=tr('floatCash');
+    if(cashSmalls[2])cashSmalls[2].textContent=tr('collectable');
+    setPh('collectCashAmount', tr('collectAmount'));
+    setPh('collectCashNote', tr('noteOptional'));
+    const collectBtn = document.querySelector('#bossCashBox .boss-inline button.green'); if(collectBtn)collectBtn.textContent=tr('confirmCollection');
     const shopeePanel = $('bossParcelBox');
     if(shopeePanel){
       const h4=shopeePanel.querySelector('h4'); if(h4)h4.textContent=tr('shopee');
@@ -2732,6 +2763,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const amt=$('shopeePaidAmount'); if(amt)amt.placeholder=tr('shopeePaid');
       const note=$('shopeePaidNote'); if(note)note.placeholder=tr('payoutNote');
       const btn=shopeePanel.querySelector('button.green'); if(btn)btn.textContent=tr('recordPaid');
+      const res=$('bossParcelResult'); if(res && /^Open to load/.test(res.textContent||''))res.textContent=tr('openToLoad');
+    }
+    const otherPanel = $('bossOtherIncomeBox');
+    if(otherPanel){
+      const h4=otherPanel.querySelector('h4'); if(h4)h4.textContent=tr('otherIncome');
+      const p=otherPanel.querySelector('p'); if(p)p.textContent=tr('otherIncomeHint');
+      setPh('otherIncomeType', tr('waterMachine'));
+      setPh('otherIncomeAmount', tr('amount'));
+      const btn=otherPanel.querySelector('button.green'); if(btn)btn.textContent=tr('addPending');
+      const res=$('bossOtherIncomeResult'); if(res && /^Waiting confirmation/.test(res.textContent||''))res.textContent=tr('waitingConfirmation');
     }
     const bossResult = $('bossResult'); if(bossResult && looksGarbledText(bossResult.textContent||''))bossResult.textContent=tr('choose');
     const alertTitle = $('appAlertTitle'); if(alertTitle && looksGarbledText(alertTitle.textContent||''))alertTitle.textContent=tr('notice');
@@ -3598,7 +3639,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
     if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
     try{
-      const r=await timeout(apiCall('bossLogin',[id,pw]), 15000, 'Boss login');
+      const r=await timeout(apiCall('bossLogin',[id,pw]), 25000, 'Boss login');
       if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
       if(r&&r.ok){
         try{
