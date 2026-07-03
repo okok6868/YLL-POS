@@ -2637,6 +2637,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   const lang = () => localStorage.getItem('yllLang') || 'en';
   const tr = key => (I18N[lang()] && I18N[lang()][key]) || I18N.en[key] || key;
   const trf = (key, vars={}) => Object.keys(vars).reduce((s,k)=>s.replaceAll('{'+k+'}', vars[k]), tr(key));
+  const looksGarbledText = s => /[\u00c0-\u00ff]/.test(String(s||''));
 
   function ensureCleanUiCss(){
     if(document.getElementById('cleanThemeCss'))return;
@@ -2732,8 +2733,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const note=$('shopeePaidNote'); if(note)note.placeholder=tr('payoutNote');
       const btn=shopeePanel.querySelector('button.green'); if(btn)btn.textContent=tr('recordPaid');
     }
-    const bossResult = $('bossResult'); if(bossResult && /[ÃÂ]|å|è|æ|ç/.test(bossResult.textContent||''))bossResult.textContent=tr('choose');
-    const alertTitle = $('appAlertTitle'); if(alertTitle && /[ÃÂ]|å|è|æ|ç/.test(alertTitle.textContent||''))alertTitle.textContent=tr('notice');
+    const bossResult = $('bossResult'); if(bossResult && looksGarbledText(bossResult.textContent||''))bossResult.textContent=tr('choose');
+    const alertTitle = $('appAlertTitle'); if(alertTitle && looksGarbledText(alertTitle.textContent||''))alertTitle.textContent=tr('notice');
     const alertBtn = document.querySelector('#appAlertBox button');
     if(alertBtn)alertBtn.textContent=tr('close');
     const busy = $('checkoutBusy'); if(busy)busy.textContent=tr('processingCheckout');
@@ -2754,7 +2755,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   function cleanMessage(msg){
     let s=String(msg||'');
-    s=s.replace(/[ÃÂ][^\n:：]{0,40}[:：]?\s*/g,'').replace(/[åæèç][^\n:：]{0,40}[:：]?\s*/g,'');
+    s=s.replace(/[\u00c0-\u00ff][^\n:：]{0,40}[:：]?\s*/g,'');
     if(lang()==='zh'){
       const exact = {
         'Please fill arrived or returned parcels.':'\u8bf7\u586b\u5199\u6536\u5230\u6216\u9000\u56de\u7684\u5305\u88f9\u6570\u3002',
@@ -2905,7 +2906,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
   function allCategorySelected(cat){
     const s=String(cat||'').trim().toLowerCase();
-    return !s || s==='all' || s==='all products' || s==='全部商品' || s==='全部分类' || s.includes('å…¨');
+    return !s || s==='all' || s==='all products' || s==='全部商品' || s==='全部分类' || s.includes('\u00e5\u2026\u00a8');
   }
   window.filterCat = function(cat){
     const allProducts=currentProducts();
@@ -3483,35 +3484,29 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const panel=$('bossOverviewPanel');
     if(panel){panel.style.display='block';panel.classList.add('active');}
     const box=$('bossOverviewResult');
-    const localToday=num(($('todaySales')||{}).textContent && String(($('todaySales')||{}).textContent).replace(/[^\d.]/g,''));
-    const localCash=num(($('todayCash')||{}).textContent && String(($('todayCash')||{}).textContent).replace(/[^\d.]/g,''));
-    const localOrders=($('todayOrders')||{}).textContent || '0';
-    const localItems=($('todayItems')||{}).textContent || '0';
+    const localItems=($('todayItems')||{}).textContent || (currentProducts().length || '--');
     const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
     if(box)box.innerHTML=[
-      card(tr('todayTotal'),money(localToday),`${tr('orders')} ${localOrders}`,false),
-      card(tr('cashDrawer'),money(localCash),tr('bossFastHint'),false),
+      card(tr('todayTotal'),'--',tr('loading'),false),
+      card(tr('cashDrawer'),'--',tr('loading'),false),
       card(tr('products'),String(localItems),tr('bossFastHint'),false),
       card(tr('pendingRefunds'),'--',tr('bossFastHint'),false)
     ].join('');
     try{
-      const [overview,today]=await Promise.all([
-        timeout(apiCall('getBossDashboardFast',[]), 8000, 'Boss dashboard'),
-        timeout(apiCall('getTodayReport',[]), 6000, 'Today report').catch(()=>null)
-      ]);
-      const cash=overview.cash||{}, parcel=overview.parcel||{}, other=overview.other||{};
+      const overview=await timeout(apiCall('getBossDashboardFast',[]), 15000, 'Boss dashboard');
+      const cash=overview.cash||{};
       const drawer=num(cash.cashDrawer||0), flt=num(cash.floatCash||0), collectable=drawer-flt;
-      const t=today || overview.today || {};
+      const t=overview.today || {};
       const html=[
         card(tr('todayCash'),money(t.Cash||0),`QR ${money(t.MBB_QR||0)} / ${tr('transfer')} ${money(t.Transfer||0)}`,false),
         card(tr('todayTotal'),money(t.total||0),`${tr('orders')} ${t.orders||t.count||0}`,false),
         card(tr('cashDrawer'),money(drawer),`${tr('collectable')} ${money(collectable)} / ${tr('collected')} ${money(cash.collected||0)}`,collectable>=num(cash.cashDrawerLimit||500)),
-        card(tr('pendingShopee'),money(parcel.pendingEstimated||0),`${tr('paid')} ${money(parcel.actualPaid||0)}`,num(parcel.pendingEstimated)>0),
-        card(tr('otherPending'),money(other.pending||0),`${tr('received')} ${money(other.received||0)}`,num(other.pending)>0),
+        card(tr('products'),String(currentProducts().length||localItems||'--'),tr('bossFastHint'),false),
         card(tr('pendingRefunds'),money(overview.refundPendingAmount||0),`${overview.refundPending||0} ${tr('requests')}`,num(overview.refundPending)>0)
       ].join('');
       if(box)box.innerHTML=html;
     }catch(e){
+      if(box)box.innerHTML=`<div class="boss-result">${esc(tr('loadFailed')+cleanMessage(e.message||e))}</div>`;
       const br=$('bossResult'); if(br)br.textContent=cleanMessage(e.message||e);
     }
   };
@@ -3603,7 +3598,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
     if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
     try{
-      const r=await timeout(apiCall('bossLogin',[id,pw]), 8000, 'Boss login');
+      const r=await timeout(apiCall('bossLogin',[id,pw]), 15000, 'Boss login');
       if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
       if(r&&r.ok){
         try{
@@ -3642,49 +3637,5 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
 </script>
 <div id="toast" class="toast"></div>
-
-
-
-
-
-
-
-
-
-
-
-
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </body>
 </html>
