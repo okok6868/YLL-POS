@@ -6,8 +6,16 @@ export default async function handler(req, res) {
   const gasUrl = process.env.GAS_URL || "https://script.google.com/macros/s/AKfycbwU1ydbLBW0QrMde-_ecy4liE4oVBopuG5HAtZb6W23OjdV1LgRRl8ervlZNWuf3qPzcQ/exec";
 
   try {
+    const action = String((req.body && req.body.action) || "");
+    const timeoutMs =
+      action === "bossLogin" ? 15000 :
+      action === "getBossDashboardFast" ? 16000 :
+      action === "getBossOverview" ? 10000 :
+      action === "getTodayReport" ? 8000 :
+      action === "saveOrder" ? 16000 :
+      20000;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 30000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const r = await fetch(gasUrl, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -35,7 +43,7 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   } catch (err) {
     if (err && err.name === "AbortError") {
-      return res.status(504).json({ success:false, error:"Apps Script timeout after 30 seconds. Check deployment URL or Apps Script speed." });
+      return res.status(504).json({ success:false, error:`Apps Script timeout after ${Math.round(timeoutMs/1000)} seconds. Check deployment URL or Apps Script speed.` });
     }
     return res.status(500).json({ success:false, error:err.message || String(err) });
   }
