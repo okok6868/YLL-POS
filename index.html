@@ -2655,6 +2655,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     style.textContent = `
       .tools #themeBtn,.tools #langBtn{min-width:44px!important}
       .qtybar .trash{font-size:22px!important;line-height:1!important;padding:0!important;min-width:42px!important;width:42px!important}
+      .sidebar{overflow-y:auto!important;overflow-x:hidden!important}
+      .sidebar .cat-btn{box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;transform:none!important;align-items:center!important}
+      .sidebar .cat-btn:hover{transform:none!important}
+      .sidebar .cat-btn span:first-child{min-width:0!important;max-width:100%!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;line-height:1.18!important;word-break:break-word!important}
+      .sidebar .cat-count{flex:0 0 auto!important;min-width:28px!important;text-align:center!important;padding-left:7px!important;padding-right:7px!important}
       body.light,body.light #app,body.light .app,body.light .layout,body.light .main,body.light .products{background:#f3f4f6!important;background-color:#f3f4f6!important;color:#0f172a!important}
       body.light::after,body.light .modal::after{background:#f3f4f6!important}
       body.light .topline{background:#f3f4f6!important;border-bottom-color:rgba(15,23,42,.12)!important}
