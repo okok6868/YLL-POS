@@ -2596,6 +2596,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       actualPaidRequired:'Please enter actual paid amount.', saveFailed:'Save failed: ', receiptFailed:'Order saved. Receipt failed; tap Print Receipt.',
       receiptCopied:'Receipt copied',
       saveSentSlow:'Order sent. Network is slow, POS will confirm in background.', saveStillChecking:'Order sent. Please do not press checkout again.'
+      ,offlinePending:'Sync pending', offlineCash:'Sync pending', uploadingOffline:'Syncing data, please wait...', offlineUploaded:'Data synced', offlineStillPending:'Data sync pending'
       ,bossReady:'Boss mode opened. Choose a function.', bossFastHint:'Tap a function to load details.', bossLoginSlow:'Boss login is slow. Check Apps Script deployment URL or connection.'
       ,reportToday:'Today', yesterday:'Yesterday', thisWeek:'This Week', lastWeek:'Last Week', thisMonth:'This Month', lastMonth:'Last Month', thisYear:'This Year', custom:'Custom', searchBtn:'Search'
       ,customReport:'Custom Report', yearPlaceholder:'Year, e.g. 2026', monthOptional:'Month optional', generateExcel:'Generate Excel', posSales:'POS Sales', refunds:'Refunds', shopeePage:'Shopee page', otherIncomePage:'Other income page', cigarettePage:'Cigarette page'
@@ -2636,6 +2637,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       actualPaidRequired:'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002', saveFailed:'\u8bb0\u5f55\u5931\u8d25\uff1a', receiptFailed:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u4f46\u6536\u636e\u5217\u5370\u5931\u8d25\uff0c\u8bf7\u70b9\u51fb\u6253\u5370\u6536\u636e\u3002',
       receiptCopied:'\u6536\u636e\u5df2\u590d\u5236',
       saveSentSlow:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u7f51\u7edc\u6162\uff0cPOS \u4f1a\u5728\u540e\u53f0\u7ee7\u7eed\u786e\u8ba4\u3002', saveStillChecking:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u8bf7\u4e0d\u8981\u518d\u91cd\u590d\u70b9\u4e70\u5355\u3002'
+      ,offlinePending:'\u5f85\u540c\u6b65', offlineCash:'\u5f85\u540c\u6b65', uploadingOffline:'\u6b63\u5728\u540c\u6b65\u8d44\u6599\uff0c\u8bf7\u7a0d\u7b49...', offlineUploaded:'\u8d44\u6599\u5df2\u540c\u6b65', offlineStillPending:'\u8d44\u6599\u5f85\u540c\u6b65'
       ,bossReady:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\uff0c\u8bf7\u9009\u62e9\u529f\u80fd\u3002', bossFastHint:'\u70b9\u51fb\u529f\u80fd\u540e\u624d\u8f7d\u5165\u8be6\u7ec6\u8d44\u6599\u3002', bossLoginSlow:'\u8001\u677f\u767b\u5165\u56de\u5e94\u592a\u6162\uff0c\u8bf7\u68c0\u67e5 Apps Script \u90e8\u7f72 URL \u6216\u7f51\u7edc\u3002'
       ,reportToday:'\u4eca\u5929', yesterday:'\u6628\u5929', thisWeek:'\u672c\u5468', lastWeek:'\u4e0a\u5468', thisMonth:'\u672c\u6708', lastMonth:'\u4e0a\u6708', thisYear:'\u4eca\u5e74', custom:'\u81ea\u8ba2', searchBtn:'\u67e5\u8be2'
       ,customReport:'\u81ea\u8ba2\u62a5\u8868', yearPlaceholder:'\u5e74\u4efd\uff0c\u4f8b\u5982 2026', monthOptional:'\u6708\u4efd\uff08\u53ef\u4e0d\u586b\uff09', generateExcel:'\u751f\u6210 Excel', posSales:'POS \u9500\u552e', refunds:'\u9000\u8d27', shopeePage:'Shopee \u9875', otherIncomePage:'\u5176\u5b83\u6536\u5165\u9875', cigarettePage:'\u9999\u70df\u9875'
@@ -2945,15 +2947,32 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function saveTopStatsCache(snapshot){
     try{ localStorage.setItem('yllTopStatsCacheV1', JSON.stringify(snapshot)); }catch(e){}
   }
+  function readQueue(name){
+    try{ return JSON.parse(localStorage.getItem(name) || '[]').filter(Boolean); }catch(e){ return []; }
+  }
+  function offlineSummary(){
+    const rows=[...readQueue('offlineOrders'), ...readQueue('pendingOnlineOrders')];
+    return rows.reduce((s,o)=>{
+      const total=moneyNum((o.cart||[]).reduce((n,i)=>n+num(i.price)*num(i.qty),0)-num(o.discount||0));
+      s.count++;
+      s.total=moneyNum(s.total+total);
+      const p=String(o.payment||'').toLowerCase();
+      if(p==='cash')s.cash=moneyNum(s.cash+total);
+      else if(p==='mixed')s.cash=moneyNum(s.cash+num(o.paid||0)-num(o.change||0));
+      return s;
+    },{count:0,total:0,cash:0});
+  }
   function applyTopStats(snapshot){
     snapshot=snapshot||{};
     const today=snapshot.today||{}, drawer=snapshot.drawer||{};
+    const off=offlineSummary();
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
-      if(sales)sales.textContent=money(today.total||0);
-      setStatDetail('todaySales', `${tr('cash')} ${money(today.Cash||0)} | QR ${money(today.MBB_QR||0)} | ${tr('transfer')} ${money(today.Transfer||0)}`);
-      if(cash)cash.textContent=money(drawer.cashDrawer||0);
-      setStatDetail('todayCash', `${tr('collected')} ${money(drawer.collected||0)}`);
-      if(orders)orders.textContent=today.orders||today.count||0;
+      if(sales)sales.textContent=money(num(today.total||0)+off.total);
+      const syncNote=off.count?` | ${tr('offlinePending')}`:'';
+      setStatDetail('todaySales', `${tr('cash')} ${money(num(today.Cash||0)+off.cash)} | QR ${money(today.MBB_QR||0)} | ${tr('transfer')} ${money(today.Transfer||0)}${syncNote}`);
+      if(cash)cash.textContent=money(num(drawer.cashDrawer||0)+off.cash);
+      setStatDetail('todayCash', `${tr('collected')} ${money(drawer.collected||0)}${off.count?` | ${tr('offlineCash')}`:''}`);
+      if(orders)orders.textContent=num(today.orders||today.count||0)+off.count;
     if(items)items.textContent=snapshot.productCount || (currentProducts()||[]).length || (window.products||[]).length || 0;
       if(typeof updateCashDrawerAlert === 'function')updateCashDrawerAlert(drawer);
   }
@@ -3374,6 +3393,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       offline.push({id:clientId, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, date:new Date().toISOString()});
       localStorage.setItem('offlineOrders', JSON.stringify(offline));
       finishSavedOrder('OFFLINE-' + clientId, sendDiscount);
+      try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
       if(typeof showToast === 'function')showToast(tr('offlineSaved'));
       return;
     }
@@ -3457,38 +3477,49 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     checkout('mixed', paid, Math.max(0, moneyNum(paid - due)));
   };
 
-  window.syncOfflineOrders = function(){
-    const offline = JSON.parse(localStorage.getItem('offlineOrders') || '[]');
-    const pendingOnline = JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]');
-    if(pendingOnline.length && navigator.onLine){
-      let pDone=0, pFailed=[];
-      pendingOnline.forEach(o=>{
-        apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id])
-          .then(r=>{ if(!(r && r.orderId))pFailed.push(o); })
-          .catch(()=>pFailed.push(o))
-          .finally(()=>{
-            pDone++;
-            if(pDone===pendingOnline.length){
-              if(pFailed.length)localStorage.setItem('pendingOnlineOrders', JSON.stringify(pFailed.slice(-30)));
-              else localStorage.removeItem('pendingOnlineOrders');
-              if(typeof loadTodayStats === 'function')loadTodayStats();
-            }
-          });
-      });
+  let offlineSyncing=false;
+  function writeQueue(name, rows){
+    try{
+      const clean=(rows||[]).filter(Boolean).slice(-100);
+      if(clean.length)localStorage.setItem(name, JSON.stringify(clean));
+      else localStorage.removeItem(name);
+    }catch(e){}
+  }
+  window.syncOfflineOrders = async function(){
+    if(offlineSyncing || !navigator.onLine)return;
+    const pendingOnline = readQueue('pendingOnlineOrders');
+    const offline = readQueue('offlineOrders');
+    const jobs=[
+      ...pendingOnline.map(o=>({...o, queue:'pendingOnlineOrders'})),
+      ...offline.map(o=>({...o, queue:'offlineOrders'}))
+    ];
+    if(!jobs.length)return;
+    offlineSyncing=true;
+    const busy=$('checkoutBusy');
+    if(busy){ busy.textContent=tr('uploadingOffline'); busy.classList.add('active'); }
+    if(typeof showToast === 'function')showToast(tr('uploadingOffline'));
+    const failedPending=[], failedOffline=[];
+    for(const o of jobs){
+      try{
+        const r=await timeout(apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id]),15000,'Sync offline order');
+        if(!(r && r.orderId)){
+          (o.queue==='pendingOnlineOrders'?failedPending:failedOffline).push(o);
+        }
+      }catch(e){
+        (o.queue==='pendingOnlineOrders'?failedPending:failedOffline).push(o);
+      }
     }
-    if(!offline.length || !navigator.onLine) return;
-    let done=0, failed=[];
-    offline.forEach(o => {
-      apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id])
-        .catch(()=>failed.push(o))
-        .finally(()=>{
-          done++;
-          if(done === offline.length){
-            if(failed.length)localStorage.setItem('offlineOrders', JSON.stringify(failed));
-            else localStorage.removeItem('offlineOrders');
-          }
-        });
-    });
+    writeQueue('pendingOnlineOrders', failedPending);
+    writeQueue('offlineOrders', failedOffline);
+    offlineSyncing=false;
+    if(busy){ busy.classList.remove('active'); busy.textContent=tr('processingCheckout'); }
+    if(failedPending.length || failedOffline.length){
+      if(typeof showToast === 'function')showToast(tr('offlineStillPending'));
+    }else{
+      if(typeof showToast === 'function')showToast(tr('offlineUploaded'));
+    }
+    try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
+    if(typeof loadTodayStats === 'function')loadTodayStats();
   };
   window.addEventListener('online', window.syncOfflineOrders);
 
@@ -3817,12 +3848,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(localStorage.getItem('yllTheme') === 'light') document.body.classList.add('light');
     setThemeButton();
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
+    setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
   });
-  window.addEventListener('online', () => scheduleTopStatsRefresh(300));
-  window.addEventListener('focus', () => scheduleTopStatsRefresh(300));
-  window.addEventListener('pageshow', () => scheduleTopStatsRefresh(300));
+  window.addEventListener('online', () => { try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); });
+  window.addEventListener('focus', () => { try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); });
+  window.addEventListener('pageshow', () => { try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); });
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden)scheduleTopStatsRefresh(300);
+    if(!document.hidden){ try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); }
   });
 })();
 
