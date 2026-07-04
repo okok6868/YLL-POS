@@ -2575,6 +2575,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       pendingShopee:'Pending Shopee', actualPaid:'Actual Paid', difference:'Difference', trips:'Trips', noRecords:'No records', saved:'Saved',
       processingCheckout:'Processing checkout, please wait...', page:'Page', noProducts:'No products', transfer:'Transfer', collected:'Collected',
       payment:'Payment', confirm:'Confirm', mixed:'Mixed', validAmount:'Please enter valid amount', paymentNotEnough:'Payment is not enough.',
+      selectPayment:'Select Payment', cashPayment:'Cash Payment', customerPaid:'Customer paid amount', exactPayment:'Exact Payment', confirmPayment:'Confirm Payment', cancel:'Cancel',
       cashNotEnough:'Cash received is not enough.', confirmPaymentReceived:'Confirm {label} payment received?',
       confirmCashReceived:'Confirm cash received?',
       offlineSaved:'Offline order saved. It will sync when online.', orderSlow:'Order saved. Connection was slow.',
@@ -2586,7 +2587,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       actualReceived:'Actual received, e.g. 62', missing:'Missing', previousMissing:'Previous missing parcels', stillMissing:'Still missing',
       recovered:'Recovered', recoveredToday:'Recovered today', noteOptional:'Note optional', saveParcelRecord:'Save Parcel Record',
       actualParcelsRequired:'Please fill actual received parcels.', parcelRequired:'Please fill Shopee system parcels.',
-      saving:'Saving...', alreadySaved:'Already saved', shopeeSaved:'Shopee saved', shopeeSaveFailed:'Shopee save failed: ',
+      saving:'Saving...', submittingParcel:'Submitting Shopee parcel, please wait...', alreadySaved:'Already saved', shopeeSaved:'Shopee saved', shopeeSaveFailed:'Shopee save failed: ',
       loadFailed:'Load failed: ', item:'Item', amount:'Amount', date:'Date', note:'Note', collectable:'Collectable',
       cashCurrentlyDrawer:'Cash currently in drawer', cashAlreadyCollected:'Cash already collected',
       approvedRefundsDeducted:'Approved cash refunds deducted', floatCash:'Float cash', todayCash:'Today Cash', todayTotal:'Today Total',
@@ -2614,6 +2615,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       pendingShopee:'Shopee \u672a\u6536', actualPaid:'\u5df2\u5b9e\u6536', difference:'\u5dee\u989d', trips:'\u8d9f\u6570', noRecords:'\u6ca1\u6709\u8bb0\u5f55', saved:'\u5df2\u8bb0\u5f55',
       processingCheckout:'\u6b63\u5728\u4e70\u5355\uff0c\u8bf7\u7a0d\u7b49...', page:'\u7b2c', noProducts:'\u6ca1\u6709\u5546\u54c1', transfer:'\u8f6c\u8d26', collected:'\u5df2\u6536\u8d70',
       payment:'\u4ed8\u6b3e', confirm:'\u786e\u8ba4', mixed:'\u6df7\u5408\u4ed8\u6b3e', validAmount:'\u8bf7\u8f93\u5165\u6b63\u786e\u91d1\u989d', paymentNotEnough:'\u4ed8\u6b3e\u91d1\u989d\u4e0d\u8db3\u3002',
+      selectPayment:'\u9009\u62e9\u4ed8\u6b3e', cashPayment:'\u73b0\u91d1\u4ed8\u6b3e', customerPaid:'\u987e\u5ba2\u7ed9\u7684\u91d1\u989d', exactPayment:'\u521a\u597d\u4ed8\u6b3e', confirmPayment:'\u786e\u8ba4\u4ed8\u6b3e', cancel:'\u53d6\u6d88',
       cashNotEnough:'\u6536\u5230\u7684\u73b0\u91d1\u4e0d\u8db3\u3002', confirmPaymentReceived:'\u786e\u8ba4\u5df2\u6536\u5230 {label} \u4ed8\u6b3e\uff1f',
       confirmCashReceived:'\u786e\u8ba4\u5df2\u6536\u5230\u73b0\u91d1\uff1f',
       offlineSaved:'\u79bb\u7ebf\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u6709\u7f51\u540e\u4f1a\u81ea\u52a8\u540c\u6b65\u3002', orderSlow:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u53ea\u662f\u7f51\u7edc\u8f83\u6162\u3002',
@@ -2625,7 +2627,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       actualReceived:'\u5b9e\u9645\u6536\u5230\uff0c\u4f8b\u5982 62', missing:'\u7f3a\u5c11', previousMissing:'\u4e4b\u524d\u7f3a\u5c11\u7684\u5305\u88f9', stillMissing:'\u8fd8\u7f3a',
       recovered:'\u5df2\u8865\u56de', recoveredToday:'\u4eca\u5929\u8865\u56de', noteOptional:'\u5907\u6ce8\uff08\u53ef\u4e0d\u586b\uff09', saveParcelRecord:'\u4fdd\u5b58\u5305\u88f9\u8bb0\u5f55',
       actualParcelsRequired:'\u8bf7\u586b\u5199\u5b9e\u9645\u6536\u5230\u7684\u5305\u88f9\u6570\u3002', parcelRequired:'\u8bf7\u586b\u5199 Shopee \u7cfb\u7edf\u5305\u88f9\u6570\u3002',
-      saving:'\u4fdd\u5b58\u4e2d...', alreadySaved:'\u5df2\u7ecf\u4fdd\u5b58', shopeeSaved:'Shopee \u5df2\u4fdd\u5b58', shopeeSaveFailed:'Shopee \u4fdd\u5b58\u5931\u8d25\uff1a',
+      saving:'\u4fdd\u5b58\u4e2d...', submittingParcel:'\u6b63\u5728\u63d0\u4ea4 Shopee \u5305\u88f9\uff0c\u8bf7\u7a0d\u7b49...', alreadySaved:'\u5df2\u7ecf\u4fdd\u5b58', shopeeSaved:'Shopee \u5df2\u4fdd\u5b58', shopeeSaveFailed:'Shopee \u4fdd\u5b58\u5931\u8d25\uff1a',
       loadFailed:'\u8f7d\u5165\u5931\u8d25\uff1a', item:'\u9879\u76ee', amount:'\u91d1\u989d', date:'\u65e5\u671f', note:'\u5907\u6ce8', collectable:'\u53ef\u6536\u8d70',
       cashCurrentlyDrawer:'\u76ee\u524d\u6536\u94f6\u673a\u73b0\u91d1', cashAlreadyCollected:'\u5df2\u6536\u8d70\u73b0\u91d1',
       approvedRefundsDeducted:'\u5df2\u6279\u51c6\u9000\u6b3e\u5df2\u6263\u9664', floatCash:'\u5907\u7528\u73b0\u91d1', todayCash:'\u4eca\u65e5\u73b0\u91d1', todayTotal:'\u4eca\u65e5\u603b\u6570',
@@ -2647,6 +2649,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   let bossOverviewCache = null;
   let bossOverviewCacheAt = 0;
   let bossOverviewPromise = null;
+  let parcelSubmitting = false;
 
   function ensureCleanUiCss(){
     if(document.getElementById('cleanThemeCss'))return;
@@ -2660,6 +2663,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .sidebar .cat-btn:hover{transform:none!important}
       .sidebar .cat-btn span:first-child{min-width:0!important;max-width:100%!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;line-height:1.18!important;word-break:break-word!important}
       .sidebar .cat-count{flex:0 0 auto!important;min-width:28px!important;text-align:center!important;padding-left:7px!important;padding-right:7px!important}
+      #clock{display:none!important}
+      .exact-pay-btn{display:none!important}
       body.light,body.light #app,body.light .app,body.light .layout,body.light .main,body.light .products{background:#f3f4f6!important;background-color:#f3f4f6!important;color:#0f172a!important}
       body.light::after,body.light .modal::after{background:#f3f4f6!important}
       body.light .topline{background:#f3f4f6!important;border-bottom-color:rgba(15,23,42,.12)!important}
@@ -2789,6 +2794,17 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const alertBtn = document.querySelector('#appAlertBox button');
     if(alertBtn)alertBtn.textContent=tr('close');
     const busy = $('checkoutBusy'); if(busy)busy.textContent=tr('processingCheckout');
+    const payTitle=document.querySelector('#payModal h3'); if(payTitle)payTitle.textContent=tr('selectPayment');
+    const payCash=document.querySelector('#payModal .pay-cash-btn'); if(payCash)payCash.textContent=tr('cash');
+    const payTransfer=document.querySelector('#payModal .pay-transfer-btn'); if(payTransfer)payTransfer.textContent=tr('transfer');
+    const payQr=document.querySelector('#payModal .pay-qr-btn'); if(payQr)payQr.textContent='QR';
+    const payMixed=document.querySelector('#payModal .pay-mixed-btn'); if(payMixed)payMixed.textContent=tr('mixed');
+    const payCancel=document.querySelector('#payModal .cancel-pay-btn'); if(payCancel)payCancel.textContent=tr('cancel');
+    const cashTitle=document.querySelector('#cashBox h3'); if(cashTitle)cashTitle.textContent=tr('cashPayment');
+    const cashInput=$('cashInput'); if(cashInput)cashInput.placeholder=tr('customerPaid');
+    const exactBtn=document.querySelector('.exact-pay-btn'); if(exactBtn)exactBtn.remove();
+    const confirmCashBtn=document.querySelector('.confirm-cash-btn'); if(confirmCashBtn)confirmCashBtn.textContent=tr('confirmPayment');
+    const cashCancel=document.querySelector('#cashBox .cancel-pay-btn'); if(cashCancel)cashCancel.textContent=tr('cancel');
   }
 
   function setStatDetail(id, html){
@@ -3215,11 +3231,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
   function paymentLabel(payment){
     const p=String(payment||'').toLowerCase();
-    if(p==='cash')return tr('cash');
-    if(p==='transfer')return tr('transfer');
+    if(p==='cash')return 'CASH';
+    if(p==='transfer')return 'TRANSFER';
     if(p==='mbb_qr' || p==='qr')return 'QR';
-    if(p==='mixed')return tr('mixed');
-    return String(payment||'');
+    if(p==='mixed')return 'MIXED';
+    return String(payment||'').toUpperCase();
   }
   function buildReceiptText(){
     const c=(window.lastCart && window.lastCart.length ? window.lastCart : currentCart()) || [];
@@ -3227,26 +3243,69 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const subtotal=moneyNum(c.reduce((s,i)=>s+num(i.price)*num(i.qty),0));
     const finalTotal=moneyNum(Math.max(0, subtotal-usedDiscount));
     const orderId=(c[0] && c[0].orderId) || '';
+    const W=32;
+    const line=(ch='=')=>ch.repeat(W);
+    const center=(text)=>{
+      text=String(text||'');
+      const left=Math.max(0,Math.floor((W-text.length)/2));
+      return ' '.repeat(left)+text;
+    };
+    const row=(left,right)=>{
+      left=String(left||''); right=String(right||'');
+      return left.slice(0,W-right.length-1).padEnd(Math.max(1,W-right.length),' ')+right;
+    };
+    const wrap=(text,width=W)=>{
+      const words=String(text||'').replace(/\s+/g,' ').trim().split(' ');
+      const out=[]; let cur='';
+      words.forEach(w=>{
+        if(!cur)cur=w;
+        else if((cur+' '+w).length<=width)cur+=' '+w;
+        else{out.push(cur);cur=w;}
+      });
+      if(cur)out.push(cur);
+      return out.length?out:[''];
+    };
+    const now=new Date();
+    const date=now.toLocaleDateString('en-GB');
+    const time=now.toLocaleTimeString('en-US',{hour12:false});
     const lines=[];
-    lines.push('YLL FEEDS ENTERPRISE');
-    lines.push(new Date().toLocaleString());
-    if(orderId)lines.push('ORDER: '+orderId);
-    lines.push('------------------------------');
+    lines.push(line('='));
+    lines.push(center('YLL FEEDS ENTERPRISE'));
+    lines.push(center('(202303217794 - KT0553187-P)'));
+    lines.push(center('RECEIPT'));
+    lines.push(line('='));
+    lines.push('Address:');
+    lines.push('Ground Floor No 2,');
+    lines.push('Jalan Springhill 9/12');
+    lines.push('Bandar Springhill');
+    lines.push('71010 Port Dickson');
+    lines.push('Negeri Sembilan');
+    lines.push('');
+    lines.push('Date : '+date);
+    lines.push('Time : '+time);
+    if(orderId)lines.push('Order: '+orderId);
+    lines.push('');
+    lines.push(line('-'));
+    lines.push('ITEMS');
+    lines.push(line('-'));
     c.forEach(i=>{
-      lines.push(String(i.name||''));
-      lines.push(`${num(i.qty)} x ${money(i.price)} = ${money(num(i.qty)*num(i.price))}`);
+      wrap(String(i.name||'').toUpperCase(),W).forEach(x=>lines.push(x));
+      lines.push(row(`${num(i.qty)} X ${money(i.price)}`, money(num(i.qty)*num(i.price))));
     });
-    lines.push('------------------------------');
-    lines.push(`${tr('subtotal')}: ${money(subtotal)}`);
-    if(usedDiscount>0)lines.push(`${tr('discount')}: -${money(usedDiscount)}`);
-    lines.push(`${tr('total')}: ${money(finalTotal)}`);
+    lines.push(line('-'));
+    lines.push(row('SUBTOTAL', money(subtotal)));
+    if(usedDiscount>0)lines.push(row('DISCOUNT', '-'+money(usedDiscount)));
+    lines.push(line('-'));
+    lines.push(row('TOTAL', money(finalTotal)));
     if(window.lastPayment==='cash' || window.lastPayment==='mixed'){
-      lines.push(`${tr('paid')}: ${money(window.lastPaid||finalTotal)}`);
-      lines.push(`${tr('change')}: ${money(window.lastChange||0)}`);
+      lines.push(row('PAID', money(window.lastPaid||finalTotal)));
+      lines.push(row('CHANGE', money(window.lastChange||0)));
     }
-    lines.push(`${tr('payment')}: ${paymentLabel(window.lastPayment)}`);
-    lines.push('------------------------------');
-    lines.push('Thank you');
+    lines.push(row('PAYMENT', paymentLabel(window.lastPayment)));
+    lines.push(line('='));
+    lines.push('');
+    lines.push(center('THANK YOU & PLEASE COME AGAIN'));
+    lines.push(line('='));
     return lines.join('\n');
   }
   window.printReceipt = function(auto=false){
@@ -3353,6 +3412,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
   };
 
+  window.quickExact = function(){
+    const due = calcDue().final;
+    const input=$('cashInput');
+    if(input)input.value=money(due).replace('RM ','');
+    const ch=$('change'); if(ch)ch.textContent=`${tr('change')} RM 0.00`;
+    closeCash();
+    checkout('cash', due, 0);
+  };
+
   window.confirmCash = function(){
     const raw = ($('cashInput') || {}).value;
     const due = calcDue().final;
@@ -3363,7 +3431,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       return;
     }
     const change=moneyNum(pay - due);
-    if(cents(change)===0){
+    if(raw === ''){
       appConfirm(tr('confirmCashReceived'), tr('cash'), money(due)).then(ok=>{
         if(ok){ closeCash(); checkout('cash', pay, change); }
       });
@@ -3503,6 +3571,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(s)s.textContent=tr('missing')+': '+Math.max(0, expected-delivered);
   };
   window.saveParcelLog = async function(){
+    if(parcelSubmitting)return;
     const expected=num(($('parcelExpected')||{}).value), returned=num(($('parcelReturned')||{}).value), recovered=num(($('parcelRecovered')||{}).value);
     const open=!!($('parcelShortDetails') && $('parcelShortDetails').open);
     const raw=($('parcelDelivered')||{}).value;
@@ -3512,10 +3581,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(!expected && !returned && !recovered){ showAppAlert(tr('parcelRequired'),tr('shopee')); return; }
     if(expected && delivered < expected){ const missing=expected-delivered; note = note ? `${note} | System ${expected}, actual ${delivered}, missing ${missing}` : `System ${expected}, actual ${delivered}, missing ${missing}`; }
     if(recovered>0) note = note ? `${note} | Recovered ${recovered}` : `Recovered ${recovered}`;
-    const btn=$('parcelSubmitBtn'); if(btn){btn.disabled=true; btn.textContent=tr('saving');}
+    parcelSubmitting=true;
+    const btn=$('parcelSubmitBtn');
+    const fields=[...document.querySelectorAll('#parcelBox input,#parcelBox button')];
+    const busy=$('checkoutBusy');
+    fields.forEach(el=>{ el.disabled=true; });
+    if(btn){btn.disabled=true; btn.textContent=tr('saving');}
+    if(busy){ busy.textContent=tr('submittingParcel'); busy.classList.add('active'); }
+    document.body.classList.add('pos-busy');
     try{ const r=await timeout(apiCall('saveParcelLog',[{expected,delivered,returned,recovered,note}]),30000,'Shopee save'); closeModal('parcelBox'); if(typeof showToast==='function')showToast(r.duplicate?tr('alreadySaved'):tr('shopeeSaved')); }
     catch(e){ showAppAlert(tr('shopeeSaveFailed')+(e.message||e),tr('shopee')); }
-    finally{ if(btn){btn.disabled=false; btn.textContent=tr('saveParcelRecord');} }
+    finally{
+      parcelSubmitting=false;
+      fields.forEach(el=>{ el.disabled=false; });
+      if(btn){btn.disabled=false; btn.textContent=tr('saveParcelRecord');}
+      if(busy){ busy.classList.remove('active'); busy.textContent=tr('processingCheckout'); }
+      document.body.classList.remove('pos-busy');
+    }
   };
 
   window.bossOpenCashCollect = async function(){
