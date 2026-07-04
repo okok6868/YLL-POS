@@ -2598,7 +2598,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ,bossReady:'Boss mode opened. Choose a function.', bossFastHint:'Tap a function to load details.', bossLoginSlow:'Boss login is slow. Check Apps Script deployment URL or connection.'
       ,reportToday:'Today', yesterday:'Yesterday', thisWeek:'This Week', lastWeek:'Last Week', thisMonth:'This Month', lastMonth:'Last Month', thisYear:'This Year', custom:'Custom', searchBtn:'Search'
       ,customReport:'Custom Report', yearPlaceholder:'Year, e.g. 2026', monthOptional:'Month optional', generateExcel:'Generate Excel', posSales:'POS Sales', refunds:'Refunds', shopeePage:'Shopee page', otherIncomePage:'Other income page', cigarettePage:'Cigarette page'
-      ,selectMonthExcel:'Choose year/month, then generate Excel.', otherIncomeHint:'Add pending income first, confirm after cash is received.', waterMachine:'Water Machine', addPending:'Add Pending', waitingConfirmation:'Waiting confirmation.', collectAmount:'Collect amount', confirmCollection:'Confirm Collection', openToLoad:'Open to load.'
+      ,selectMonthExcel:'Choose year/month, then generate Excel.', otherIncomeHint:'Add pending income first, confirm after cash is received.', waterMachine:'Water Machine', addPending:'Add Pending', waitingConfirmation:'Waiting confirmation.', collectAmount:'Collect amount', confirmCollection:'Confirm Collection', openToLoad:'Open to load.', dashboardSlow:'Dashboard is still updating in background. You can continue using Boss mode.'
     },
     zh: {
       all:'\u5168\u90e8\u5546\u54c1', home:'\u9996\u9875', search:'\u641c\u7d22\u5546\u54c1 / \u5206\u7c7b / \u4ef7\u94b1', low:'\u4f4e\u5e93\u5b58', prev:'\u4e0a\u4e00\u9875', next:'\u4e0b\u4e00\u9875',
@@ -2637,13 +2637,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ,bossReady:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\uff0c\u8bf7\u9009\u62e9\u529f\u80fd\u3002', bossFastHint:'\u70b9\u51fb\u529f\u80fd\u540e\u624d\u8f7d\u5165\u8be6\u7ec6\u8d44\u6599\u3002', bossLoginSlow:'\u8001\u677f\u767b\u5165\u56de\u5e94\u592a\u6162\uff0c\u8bf7\u68c0\u67e5 Apps Script \u90e8\u7f72 URL \u6216\u7f51\u7edc\u3002'
       ,reportToday:'\u4eca\u5929', yesterday:'\u6628\u5929', thisWeek:'\u672c\u5468', lastWeek:'\u4e0a\u5468', thisMonth:'\u672c\u6708', lastMonth:'\u4e0a\u6708', thisYear:'\u4eca\u5e74', custom:'\u81ea\u8ba2', searchBtn:'\u67e5\u8be2'
       ,customReport:'\u81ea\u8ba2\u62a5\u8868', yearPlaceholder:'\u5e74\u4efd\uff0c\u4f8b\u5982 2026', monthOptional:'\u6708\u4efd\uff08\u53ef\u4e0d\u586b\uff09', generateExcel:'\u751f\u6210 Excel', posSales:'POS \u9500\u552e', refunds:'\u9000\u8d27', shopeePage:'Shopee \u9875', otherIncomePage:'\u5176\u5b83\u6536\u5165\u9875', cigarettePage:'\u9999\u70df\u9875'
-      ,selectMonthExcel:'\u9009\u62e9\u5e74\u4efd/\u6708\u4efd\uff0c\u7136\u540e\u751f\u6210 Excel\u3002', otherIncomeHint:'\u5148\u52a0\u5165\u5f85\u786e\u8ba4\u6536\u5165\uff0c\u6536\u5230\u73b0\u91d1\u540e\u518d\u786e\u8ba4\u3002', waterMachine:'\u6c34\u673a', addPending:'\u52a0\u5165\u5f85\u786e\u8ba4', waitingConfirmation:'\u7b49\u5f85\u786e\u8ba4\u3002', collectAmount:'\u6536\u8d70\u91d1\u989d', confirmCollection:'\u786e\u8ba4\u6536\u8d70', openToLoad:'\u6253\u5f00\u540e\u8f7d\u5165'
+      ,selectMonthExcel:'\u9009\u62e9\u5e74\u4efd/\u6708\u4efd\uff0c\u7136\u540e\u751f\u6210 Excel\u3002', otherIncomeHint:'\u5148\u52a0\u5165\u5f85\u786e\u8ba4\u6536\u5165\uff0c\u6536\u5230\u73b0\u91d1\u540e\u518d\u786e\u8ba4\u3002', waterMachine:'\u6c34\u673a', addPending:'\u52a0\u5165\u5f85\u786e\u8ba4', waitingConfirmation:'\u7b49\u5f85\u786e\u8ba4\u3002', collectAmount:'\u6536\u8d70\u91d1\u989d', confirmCollection:'\u786e\u8ba4\u6536\u8d70', openToLoad:'\u6253\u5f00\u540e\u8f7d\u5165', dashboardSlow:'\u4eca\u65e5\u8d44\u6599\u8fd8\u5728\u540e\u53f0\u66f4\u65b0\uff0c\u4f60\u53ef\u4ee5\u7ee7\u7eed\u4f7f\u7528\u7ba1\u7406\u6a21\u5f0f\u3002'
     }
   };
   const lang = () => localStorage.getItem('yllLang') || 'en';
   const tr = key => (I18N[lang()] && I18N[lang()][key]) || I18N.en[key] || key;
   const trf = (key, vars={}) => Object.keys(vars).reduce((s,k)=>s.replaceAll('{'+k+'}', vars[k]), tr(key));
   const looksGarbledText = s => /[\u00c0-\u00ff]/.test(String(s||''));
+  let bossOverviewCache = null;
+  let bossOverviewCacheAt = 0;
+  let bossOverviewPromise = null;
 
   function ensureCleanUiCss(){
     if(document.getElementById('cleanThemeCss'))return;
@@ -2893,23 +2896,50 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.loadTodayStats = async function(){
     try{
+      const cached = loadTopStatsCache();
+      if(cached)applyTopStats(cached);
       const [today, top] = await Promise.all([
-        timeout(apiCall('getTodayReport',[]), 6000, 'Today stats'),
-        timeout(apiCall('getPosTopStats',[]), 6000, 'Top stats').catch(()=>null)
+        timeout(apiCall('getTodayReport',[]), 9000, 'Today stats').catch(()=>null),
+        timeout(apiCall('getPosTopStats',[]), 9000, 'Top stats').catch(()=>null)
       ]);
-      const drawer = top && top.cashDrawer ? top.cashDrawer : await timeout(apiCall('getCashDrawer',[]), 6000, 'Cash drawer');
+      const drawer = top && top.cashDrawer ? top.cashDrawer : await timeout(apiCall('getCashDrawer',[]), 9000, 'Cash drawer').catch(()=>null);
+      const usableToday = today || (top ? {total:top.todaySales, orders:top.orders, count:top.orders} : null);
+      if(!usableToday && !drawer)return;
+      const snapshot = {today:usableToday||{}, drawer:drawer||{}, productCount:(currentProducts()||[]).length || (window.products||[]).length || 0, at:Date.now()};
+      saveTopStatsCache(snapshot);
+      applyTopStats(snapshot);
+    }catch(e){
+      console.error('loadTodayStats failed', e);
+    }
+  };
+
+  function loadTopStatsCache(){
+    try{
+      const cached=JSON.parse(localStorage.getItem('yllTopStatsCacheV1')||'null');
+      return cached && cached.today ? cached : null;
+    }catch(e){ return null; }
+  }
+  function saveTopStatsCache(snapshot){
+    try{ localStorage.setItem('yllTopStatsCacheV1', JSON.stringify(snapshot)); }catch(e){}
+  }
+  function applyTopStats(snapshot){
+    snapshot=snapshot||{};
+    const today=snapshot.today||{}, drawer=snapshot.drawer||{};
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
       if(sales)sales.textContent=money(today.total||0);
       setStatDetail('todaySales', `${tr('cash')} ${money(today.Cash||0)} | QR ${money(today.MBB_QR||0)} | ${tr('transfer')} ${money(today.Transfer||0)}`);
       if(cash)cash.textContent=money(drawer.cashDrawer||0);
       setStatDetail('todayCash', `${tr('collected')} ${money(drawer.collected||0)}`);
       if(orders)orders.textContent=today.orders||today.count||0;
-      if(items)items.textContent=(currentProducts()||[]).length || (window.products||[]).length || 0;
+    if(items)items.textContent=snapshot.productCount || (currentProducts()||[]).length || (window.products||[]).length || 0;
       if(typeof updateCashDrawerAlert === 'function')updateCashDrawerAlert(drawer);
-    }catch(e){
-      console.error('loadTodayStats failed', e);
-    }
-  };
+  }
+
+  let topStatsRefreshTimer=null;
+  function scheduleTopStatsRefresh(delay){
+    clearTimeout(topStatsRefreshTimer);
+    topStatsRefreshTimer=setTimeout(()=>{ try{ window.loadTodayStats(); }catch(e){} }, delay||250);
+  }
 
   window.render = function(list){
     const box=$('list'); if(!box)return;
@@ -3527,28 +3557,49 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const box=$('bossOverviewResult');
     const localItems=($('todayItems')||{}).textContent || (currentProducts().length || '--');
     const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
-    if(box)box.innerHTML=[
-      card(tr('todayTotal'),'--',tr('loading'),false),
-      card(tr('cashDrawer'),'--',tr('loading'),false),
-      card(tr('products'),String(localItems),tr('bossFastHint'),false),
-      card(tr('pendingRefunds'),'--',tr('bossFastHint'),false)
-    ].join('');
-    try{
-      const overview=await timeout(apiCall('getBossDashboardFast',[]), 15000, 'Boss dashboard');
+    const renderFallback = (note) => {
+      const localToday=num(($('todaySales')||{}).textContent && String(($('todaySales')||{}).textContent).replace(/[^\d.]/g,''));
+      const localCash=num(($('todayCash')||{}).textContent && String(($('todayCash')||{}).textContent).replace(/[^\d.]/g,''));
+      const localOrders=($('todayOrders')||{}).textContent || '--';
+      if(box)box.innerHTML=[
+        card(tr('todayTotal'),localToday?money(localToday):'--',`${tr('orders')} ${localOrders}`,false),
+        card(tr('cashDrawer'),localCash?money(localCash):'--',note || tr('loading'),false),
+        card(tr('products'),String(localItems),tr('bossFastHint'),false),
+        card(tr('pendingRefunds'),'--',tr('bossFastHint'),false)
+      ].join('');
+    };
+    const renderOverview = (overview) => {
       const cash=overview.cash||{};
       const drawer=num(cash.cashDrawer||0), flt=num(cash.floatCash||0), collectable=drawer-flt;
       const t=overview.today || {};
-      const html=[
+      if(box)box.innerHTML=[
         card(tr('todayCash'),money(t.Cash||0),`QR ${money(t.MBB_QR||0)} / ${tr('transfer')} ${money(t.Transfer||0)}`,false),
         card(tr('todayTotal'),money(t.total||0),`${tr('orders')} ${t.orders||t.count||0}`,false),
         card(tr('cashDrawer'),money(drawer),`${tr('collectable')} ${money(collectable)} / ${tr('collected')} ${money(cash.collected||0)}`,collectable>=num(cash.cashDrawerLimit||500)),
         card(tr('products'),String(currentProducts().length||localItems||'--'),tr('bossFastHint'),false),
         card(tr('pendingRefunds'),money(overview.refundPendingAmount||0),`${overview.refundPending||0} ${tr('requests')}`,num(overview.refundPending)>0)
       ].join('');
-      if(box)box.innerHTML=html;
+    };
+    if(bossOverviewCache && Date.now()-bossOverviewCacheAt < 60000){
+      renderOverview(bossOverviewCache);
+      const br=$('bossResult'); if(br)br.textContent=tr('bossReady');
+      return;
+    }
+    if(bossOverviewCache)renderOverview(bossOverviewCache);
+    else renderFallback(tr('loading'));
+    try{
+      if(!bossOverviewPromise){
+        bossOverviewPromise=timeout(apiCall('getBossDashboardFast',[]), 24000, 'Boss dashboard')
+          .finally(()=>{ bossOverviewPromise=null; });
+      }
+      const overview=await bossOverviewPromise;
+      bossOverviewCache=overview;
+      bossOverviewCacheAt=Date.now();
+      renderOverview(overview);
+      const br=$('bossResult'); if(br)br.textContent=tr('bossReady');
     }catch(e){
-      if(box)box.innerHTML=`<div class="boss-result">${esc(tr('loadFailed')+cleanMessage(e.message||e))}</div>`;
-      const br=$('bossResult'); if(br)br.textContent=cleanMessage(e.message||e);
+      renderFallback(tr('dashboardSlow'));
+      const br=$('bossResult'); if(br)br.textContent=tr('dashboardSlow');
     }
   };
 
@@ -3668,11 +3719,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setStaticText();
     setTimeout(setStaticText, 300);
     setTimeout(setStaticText, 1200);
-    setTimeout(()=>{ try{ window.loadTodayStats(); }catch(e){} }, 600);
+    try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
+    scheduleTopStatsRefresh(250);
+    setTimeout(()=>scheduleTopStatsRefresh(0), 2500);
     ensureCleanUiCss();
     if(localStorage.getItem('yllTheme') === 'light') document.body.classList.add('light');
     setThemeButton();
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
+  });
+  window.addEventListener('online', () => scheduleTopStatsRefresh(300));
+  window.addEventListener('focus', () => scheduleTopStatsRefresh(300));
+  window.addEventListener('pageshow', () => scheduleTopStatsRefresh(300));
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden)scheduleTopStatsRefresh(300);
   });
 })();
 
