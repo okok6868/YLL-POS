@@ -2596,8 +2596,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       actualPaidRequired:'Please enter actual paid amount.', saveFailed:'Save failed: ', receiptFailed:'Order saved. Receipt failed; tap Print Receipt.',
       receiptCopied:'Receipt copied',
       saveSentSlow:'Order sent. Network is slow, POS will confirm in background.', saveStillChecking:'Order sent. Please do not press checkout again.'
-      ,offlinePending:'Sync pending', offlineCash:'Sync pending', uploadingOffline:'Syncing data, please wait...', offlineUploaded:'Data synced', offlineStillPending:'Data sync pending'
-      ,bossReady:'Boss mode opened. Choose a function.', bossFastHint:'Tap a function to load details.', bossLoginSlow:'Boss login is slow. Check Apps Script deployment URL or connection.'
+      ,offlinePending:'Sync pending', offlineCash:'Sync pending', uploadingOffline:'Syncing data, please wait...', offlineUploaded:'Data synced', offlineStillPending:'Data sync pending', networkUnstable:'Network unstable. Contact boss if it continues.'
+      ,bossReady:'Boss mode opened. Choose a function.', bossFastHint:'Tap a function to load details.', bossLoginSlow:'Boss login is slow. Check Apps Script deployment URL or connection.', networkLog:'Network Log', outages:'Outages', totalOffline:'Offline Minutes', over30:'Over 30 Min', apiFailures:'API Fails', recentNetwork:'Recent Network Records', minutes:'min', noNetworkRecords:'No network records'
       ,reportToday:'Today', yesterday:'Yesterday', thisWeek:'This Week', lastWeek:'Last Week', thisMonth:'This Month', lastMonth:'Last Month', thisYear:'This Year', custom:'Custom', searchBtn:'Search'
       ,customReport:'Custom Report', yearPlaceholder:'Year, e.g. 2026', monthOptional:'Month optional', generateExcel:'Generate Excel', posSales:'POS Sales', refunds:'Refunds', shopeePage:'Shopee page', otherIncomePage:'Other income page', cigarettePage:'Cigarette page'
       ,selectMonthExcel:'Choose year/month, then generate Excel.', otherIncomeHint:'Add pending income first, confirm after cash is received.', waterMachine:'Water Machine', addPending:'Add Pending', waitingConfirmation:'Waiting confirmation.', collectAmount:'Collect amount', confirmCollection:'Confirm Collection', openToLoad:'Open to load.', dashboardSlow:'Dashboard is still updating in background. You can continue using Boss mode.'
@@ -2637,8 +2637,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       actualPaidRequired:'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002', saveFailed:'\u8bb0\u5f55\u5931\u8d25\uff1a', receiptFailed:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u4f46\u6536\u636e\u5217\u5370\u5931\u8d25\uff0c\u8bf7\u70b9\u51fb\u6253\u5370\u6536\u636e\u3002',
       receiptCopied:'\u6536\u636e\u5df2\u590d\u5236',
       saveSentSlow:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u7f51\u7edc\u6162\uff0cPOS \u4f1a\u5728\u540e\u53f0\u7ee7\u7eed\u786e\u8ba4\u3002', saveStillChecking:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u8bf7\u4e0d\u8981\u518d\u91cd\u590d\u70b9\u4e70\u5355\u3002'
-      ,offlinePending:'\u5f85\u540c\u6b65', offlineCash:'\u5f85\u540c\u6b65', uploadingOffline:'\u6b63\u5728\u540c\u6b65\u8d44\u6599\uff0c\u8bf7\u7a0d\u7b49...', offlineUploaded:'\u8d44\u6599\u5df2\u540c\u6b65', offlineStillPending:'\u8d44\u6599\u5f85\u540c\u6b65'
-      ,bossReady:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\uff0c\u8bf7\u9009\u62e9\u529f\u80fd\u3002', bossFastHint:'\u70b9\u51fb\u529f\u80fd\u540e\u624d\u8f7d\u5165\u8be6\u7ec6\u8d44\u6599\u3002', bossLoginSlow:'\u8001\u677f\u767b\u5165\u56de\u5e94\u592a\u6162\uff0c\u8bf7\u68c0\u67e5 Apps Script \u90e8\u7f72 URL \u6216\u7f51\u7edc\u3002'
+      ,offlinePending:'\u5f85\u540c\u6b65', offlineCash:'\u5f85\u540c\u6b65', uploadingOffline:'\u6b63\u5728\u540c\u6b65\u8d44\u6599\uff0c\u8bf7\u7a0d\u7b49...', offlineUploaded:'\u8d44\u6599\u5df2\u540c\u6b65', offlineStillPending:'\u8d44\u6599\u5f85\u540c\u6b65', networkUnstable:'\u7f51\u7edc\u4e0d\u7a33\u5b9a\uff0c\u5982\u6301\u7eed\u53d1\u751f\u8bf7\u8054\u7cfb\u8001\u677f\u3002'
+      ,bossReady:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\uff0c\u8bf7\u9009\u62e9\u529f\u80fd\u3002', bossFastHint:'\u70b9\u51fb\u529f\u80fd\u540e\u624d\u8f7d\u5165\u8be6\u7ec6\u8d44\u6599\u3002', bossLoginSlow:'\u8001\u677f\u767b\u5165\u56de\u5e94\u592a\u6162\uff0c\u8bf7\u68c0\u67e5 Apps Script \u90e8\u7f72 URL \u6216\u7f51\u7edc\u3002', networkLog:'\u7f51\u7edc\u8bb0\u5f55', outages:'\u65ad\u7ebf\u6b21\u6570', totalOffline:'\u65ad\u7ebf\u5206\u949f', over30:'\u8d85\u8fc7 30 \u5206\u949f', apiFailures:'API \u5931\u8d25', recentNetwork:'\u6700\u8fd1\u7f51\u7edc\u8bb0\u5f55', minutes:'\u5206\u949f', noNetworkRecords:'\u6ca1\u6709\u7f51\u7edc\u8bb0\u5f55'
       ,reportToday:'\u4eca\u5929', yesterday:'\u6628\u5929', thisWeek:'\u672c\u5468', lastWeek:'\u4e0a\u5468', thisMonth:'\u672c\u6708', lastMonth:'\u4e0a\u6708', thisYear:'\u4eca\u5e74', custom:'\u81ea\u8ba2', searchBtn:'\u67e5\u8be2'
       ,customReport:'\u81ea\u8ba2\u62a5\u8868', yearPlaceholder:'\u5e74\u4efd\uff0c\u4f8b\u5982 2026', monthOptional:'\u6708\u4efd\uff08\u53ef\u4e0d\u586b\uff09', generateExcel:'\u751f\u6210 Excel', posSales:'POS \u9500\u552e', refunds:'\u9000\u8d27', shopeePage:'Shopee \u9875', otherIncomePage:'\u5176\u5b83\u6536\u5165\u9875', cigarettePage:'\u9999\u70df\u9875'
       ,selectMonthExcel:'\u9009\u62e9\u5e74\u4efd/\u6708\u4efd\uff0c\u7136\u540e\u751f\u6210 Excel\u3002', otherIncomeHint:'\u5148\u52a0\u5165\u5f85\u786e\u8ba4\u6536\u5165\uff0c\u6536\u5230\u73b0\u91d1\u540e\u518d\u786e\u8ba4\u3002', waterMachine:'\u6c34\u673a', addPending:'\u52a0\u5165\u5f85\u786e\u8ba4', waitingConfirmation:'\u7b49\u5f85\u786e\u8ba4\u3002', collectAmount:'\u6536\u8d70\u91d1\u989d', confirmCollection:'\u786e\u8ba4\u6536\u8d70', openToLoad:'\u6253\u5f00\u540e\u8f7d\u5165', dashboardSlow:'\u4eca\u65e5\u8d44\u6599\u8fd8\u5728\u540e\u53f0\u66f4\u65b0\uff0c\u4f60\u53ef\u4ee5\u7ee7\u7eed\u4f7f\u7528\u7ba1\u7406\u6a21\u5f0f\u3002'
@@ -2748,12 +2748,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const hero = document.querySelector('.boss-hero div'); if(hero)hero.innerHTML=`<b>${esc(tr('bossMode'))}</b><br><small>${esc(tr('bossHint'))}</small>`;
     const logoutBtn = document.querySelector('.boss-hero button'); if(logoutBtn)logoutBtn.textContent=tr('logout');
     const bossBtns = document.querySelectorAll('#bossDashboard .boss-tab-grid button');
-    const bossKeys = ['today','finance','reports','shopee','otherIncome','lowStock','exportExcel','settings'];
+    ensureBossNetworkPanel();
+    const bossKeys = ['today','finance','reports','shopee','otherIncome','lowStock','exportExcel','settings','networkLog'];
     bossBtns.forEach((b,i)=>{ if(bossKeys[i]){ b.dataset.navKey=bossKeys[i]; b.textContent=tr(bossKeys[i]); } });
     setText('#bossOverviewPanel h4', tr('today'));
     setText('#bossReportsPanel h4', tr('reports'));
     setText('#bossRangeBox h4', tr('customReport'));
     setText('#bossExportBox h4', tr('exportExcel'));
+    setText('#bossNetworkBox h4', tr('networkLog'));
     setText('#bossCashBox h4', tr('finance'));
     setText('#bossOtherIncomeBox h4', tr('otherIncome'));
     setText('#bossLowStockBox h4', tr('lowStock'));
@@ -2929,12 +2931,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ]);
       const drawer = top && top.cashDrawer ? top.cashDrawer : await timeout(apiCall('getCashDrawer',[]), 9000, 'Cash drawer').catch(()=>null);
       const usableToday = today || (top ? {total:top.todaySales, orders:top.orders, count:top.orders} : null);
-      if(!usableToday && !drawer)return;
-      const snapshot = {today:usableToday||{}, drawer:drawer||{}, productCount:(currentProducts()||[]).length || (window.products||[]).length || 0, at:Date.now()};
+      if(!usableToday && !drawer){
+        recordApiGlitch('Top stats refresh failed');
+        if(cached)applyTopStats(cached);
+        return;
+      }
+      const fallback = cached || {};
+      const snapshot = {
+        today:usableToday || fallback.today || {},
+        drawer:drawer || fallback.drawer || {},
+        productCount:(currentProducts()||[]).length || (window.products||[]).length || fallback.productCount || 0,
+        at:Date.now()
+      };
       saveTopStatsCache(snapshot);
       applyTopStats(snapshot);
     }catch(e){
       console.error('loadTodayStats failed', e);
+      recordApiGlitch('Top stats refresh error: '+(e && e.message ? e.message : e));
     }
   };
 
@@ -2961,6 +2974,113 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       else if(p==='mixed')s.cash=moneyNum(s.cash+num(o.paid||0)-num(o.change||0));
       return s;
     },{count:0,total:0,cash:0});
+  }
+  const NETWORK_LOG_KEY='yllNetworkLogsV1';
+  const NETWORK_STATE_KEY='yllNetworkStateV1';
+  let networkWarnTimer=null;
+  let networkFlushTimer=null;
+  function isoNow(ms){ return new Date(ms||Date.now()).toISOString(); }
+  function pruneNetworkLogs(rows){
+    const cutoff=Date.now()-90*24*60*60*1000;
+    return (rows||[]).filter(r=>{
+      const t=Date.parse(r.endAt||r.startAt||r.at||'');
+      return !t || t>=cutoff;
+    }).slice(-500);
+  }
+  function readNetworkLogs(){
+    try{ return pruneNetworkLogs(JSON.parse(localStorage.getItem(NETWORK_LOG_KEY)||'[]')); }catch(e){ return []; }
+  }
+  function writeNetworkLogs(rows){
+    try{ localStorage.setItem(NETWORK_LOG_KEY, JSON.stringify(pruneNetworkLogs(rows))); }catch(e){}
+  }
+  function queueNetworkLog(row){
+    try{
+      const rows=readNetworkLogs();
+      rows.push(Object.assign({
+        id:'NET-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+        at:isoNow()
+      }, row||{}));
+      writeNetworkLogs(rows);
+    }catch(e){}
+  }
+  function getNetworkState(){
+    try{ return JSON.parse(localStorage.getItem(NETWORK_STATE_KEY)||'{}')||{}; }catch(e){ return {}; }
+  }
+  function setNetworkState(state){
+    try{ localStorage.setItem(NETWORK_STATE_KEY, JSON.stringify(state||{})); }catch(e){}
+  }
+  function scheduleOfflineWarning(){
+    clearTimeout(networkWarnTimer);
+    const state=getNetworkState();
+    if(!state.offline)return;
+    const start=Number(state.startAt||Date.now());
+    const wait=Math.max(0,30*60*1000-(Date.now()-start));
+    networkWarnTimer=setTimeout(()=>{
+      const cur=getNetworkState();
+      if(!cur.offline || cur.warned)return;
+      cur.warned=true;
+      setNetworkState(cur);
+      queueNetworkLog({
+        event:'NetworkOfflineOver30Min',
+        startAt:isoNow(Number(cur.startAt||Date.now())),
+        durationMs:Math.max(0,Date.now()-Number(cur.startAt||Date.now())),
+        reason:cur.reason||''
+      });
+      if(typeof showToast==='function')showToast(tr('networkUnstable'));
+    }, wait);
+  }
+  function flushNetworkLogsSoon(delay){
+    clearTimeout(networkFlushTimer);
+    networkFlushTimer=setTimeout(()=>flushNetworkLogs(), delay==null?1500:delay);
+  }
+  async function flushNetworkLogs(){
+    if(!navigator.onLine)return;
+    const rows=readNetworkLogs();
+    if(!rows.length)return;
+    const batch=rows.slice(0,50);
+    try{
+      await timeout(apiCall('logClientNetwork',[{rows:batch}]),12000,'Network log');
+      const sent=new Set(batch.map(r=>r.id));
+      writeNetworkLogs(rows.filter(r=>!sent.has(r.id)));
+    }catch(e){}
+  }
+  function markNetworkOffline(reason){
+    const state=getNetworkState();
+    if(state.offline){ scheduleOfflineWarning(); return; }
+    setNetworkState({offline:true,startAt:Date.now(),warned:false,reason:reason||''});
+    queueNetworkLog({event:'NetworkOfflineStart', startAt:isoNow(), reason:reason||''});
+    scheduleOfflineWarning();
+  }
+  function markNetworkOnline(reason){
+    const state=getNetworkState();
+    clearTimeout(networkWarnTimer);
+    if(!state.offline){ flushNetworkLogsSoon(); return; }
+    const end=Date.now();
+    const start=Number(state.startAt||end);
+    setNetworkState({offline:false});
+    queueNetworkLog({
+      event:'NetworkOutage',
+      startAt:isoNow(start),
+      endAt:isoNow(end),
+      durationMs:Math.max(0,end-start),
+      reason:reason||state.reason||''
+    });
+    flushNetworkLogsSoon(500);
+  }
+  function recordApiGlitch(note){
+    try{
+      if(!navigator.onLine)return;
+      queueNetworkLog({event:'NetworkApiFail', note:String(note||'API failed while browser online')});
+      flushNetworkLogsSoon(3000);
+    }catch(e){}
+  }
+  function initNetworkMonitor(){
+    window.addEventListener('offline',()=>markNetworkOffline('browser offline'));
+    window.addEventListener('online',()=>markNetworkOnline('browser online'));
+    if(!navigator.onLine)markNetworkOffline('startup offline');
+    else if(getNetworkState().offline)markNetworkOnline('startup online');
+    else flushNetworkLogsSoon(2500);
+    scheduleOfflineWarning();
   }
   function applyTopStats(snapshot){
     snapshot=snapshot||{};
@@ -3189,6 +3309,86 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(p){p.style.display='block';p.classList.add('active');}
     setBossNav(activeKey);
   }
+
+  function ensureBossNetworkPanel(){
+    const grid=document.querySelector('#bossDashboard .boss-tab-grid');
+    if(grid && !$('bossNetworkButton')){
+      const btn=document.createElement('button');
+      btn.id='bossNetworkButton';
+      btn.type='button';
+      btn.dataset.navKey='networkLog';
+      btn.textContent=tr('networkLog');
+      btn.onclick=()=>window.bossOpenNetworkLog();
+      grid.appendChild(btn);
+    }
+    const content=document.querySelector('#bossDashboard .boss-content');
+    if(content && !$('bossNetworkBox')){
+      const panel=document.createElement('div');
+      panel.id='bossNetworkBox';
+      panel.className='boss-panel';
+      panel.style.display='none';
+      panel.innerHTML=`<h4>${esc(tr('networkLog'))}</h4><div id="bossNetworkResult" class="boss-result">${esc(tr('openToLoad'))}</div>`;
+      const result=$('bossResult');
+      if(result)content.insertBefore(panel,result);
+      else content.appendChild(panel);
+    }
+  }
+
+  function summarizeLocalNetworkLogs(){
+    const rows=readNetworkLogs();
+    return rows.reduce((s,r)=>{
+      if(String(r.event||'')==='NetworkOutage'){
+        s.outages++;
+        s.totalMinutes+=Math.round((Number(r.durationMs)||0)/60000);
+        if((Number(r.durationMs)||0)>=30*60*1000)s.over30++;
+      }
+      if(String(r.event||'')==='NetworkOfflineOver30Min')s.over30++;
+      if(String(r.event||'')==='NetworkApiFail')s.apiFailures++;
+      return s;
+    },{outages:0,totalMinutes:0,over30:0,apiFailures:0,pending:rows.length,rows:rows.slice(-10).reverse()});
+  }
+
+  function renderNetworkSummary(data){
+    data=data||{};
+    const local=summarizeLocalNetworkLogs();
+    const rows=(data.rows&&data.rows.length?data.rows:local.rows)||[];
+    const totalMinutes=num(data.totalMinutes)+num(local.totalMinutes);
+    const outages=num(data.outages)+num(local.outages);
+    const over30=num(data.over30)+num(local.over30);
+    const apiFailures=num(data.apiFailures)+num(local.apiFailures);
+    const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
+    let html='<div class="boss-overview-grid">'+[
+      card(tr('outages'),String(outages),tr('recentNetwork'),outages>0),
+      card(tr('totalOffline'),String(totalMinutes),tr('minutes'),totalMinutes>=30),
+      card(tr('over30'),String(over30),tr('networkLog'),over30>0),
+      card(tr('apiFailures'),String(apiFailures),tr('networkUnstable'),apiFailures>0)
+    ].join('')+'</div>';
+    if(rows.length){
+      html+=`<table><tr><th>${esc(tr('date'))}</th><th>${esc(tr('item'))}</th><th class="right">${esc(tr('minutes'))}</th></tr>`+
+        rows.slice(0,20).map(r=>`<tr><td>${esc(r.time||r.endAt||r.startAt||r.at||'')}</td><td>${esc(r.event||'')}</td><td class="right">${esc(r.minutes!=null?r.minutes:Math.round((Number(r.durationMs)||0)/60000))}</td></tr>`).join('')+
+        '</table>';
+    }else{
+      html+=`<div class="empty">${esc(tr('noNetworkRecords'))}</div>`;
+    }
+    return html;
+  }
+
+  window.bossOpenNetworkLog = async function(){
+    if(typeof bossRequire === 'function' && !bossRequire())return;
+    ensureBossNetworkPanel();
+    showBossPanel('bossNetworkBox','networkLog');
+    const box=$('bossNetworkResult');
+    if(box)box.innerHTML=renderNetworkSummary(null);
+    try{ await flushNetworkLogs(); }catch(e){}
+    try{
+      const data=await timeout(apiCall('getNetworkLogSummary',[90]),12000,'Network log');
+      if(box)box.innerHTML=renderNetworkSummary(data||{});
+      const br=$('bossResult'); if(br)br.textContent='';
+    }catch(e){
+      if(box)box.innerHTML=renderNetworkSummary(null);
+      const br=$('bossResult'); if(br)br.textContent=tr('networkUnstable');
+    }
+  };
 
   function calcDue(){
     const sub = currentCart().reduce((s,i)=>s + num(i.price) * num(i.qty), 0);
@@ -3841,6 +4041,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setStaticText();
     setTimeout(setStaticText, 300);
     setTimeout(setStaticText, 1200);
+    initNetworkMonitor();
     try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
     scheduleTopStatsRefresh(250);
     setTimeout(()=>scheduleTopStatsRefresh(0), 2500);
@@ -3850,7 +4051,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
     setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
   });
-  window.addEventListener('online', () => { try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); });
+  window.addEventListener('online', () => { try{ window.syncOfflineOrders(); }catch(e){} try{ markNetworkOnline('browser online'); }catch(e){} scheduleTopStatsRefresh(300); });
   window.addEventListener('focus', () => { try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); });
   window.addEventListener('pageshow', () => { try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); });
   document.addEventListener('visibilitychange', () => {
