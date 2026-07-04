@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     const action = String((req.body && req.body.action) || "");
     const timeoutMs =
       action === "bossLogin" ? 26000 :
-      action === "getBossDashboardFast" ? 18000 :
+      action === "getBossDashboardFast" ? 26000 :
       action === "getBossOverview" ? 10000 :
       action === "getTodayReport" ? 8000 :
       action === "saveOrder" ? 16000 :
