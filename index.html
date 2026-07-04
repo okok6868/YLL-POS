@@ -2710,6 +2710,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(stats[1])stats[1].textContent=tr('cashDrawer');
     if(stats[2])stats[2].textContent=tr('orders');
     if(stats[3])stats[3].textContent=tr('products');
+    const allBtn = document.querySelector('.sidebar > .cat-btn');
+    if(allBtn)allBtn.setAttribute('onclick',"quickCat('ALL',this)");
     const all = document.querySelector('.sidebar > .cat-btn span:first-child'); if(all)all.textContent=tr('all');
     const homeBtn = document.querySelector('.topline button[onclick="goHome()"]'); if(homeBtn)homeBtn.textContent=tr('home');
     const h = document.querySelector('.right h3'); if(h)h.textContent=tr('cart');
@@ -3670,6 +3672,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.toggleLanguage = function(){
     localStorage.setItem('yllLang', lang()==='zh' ? 'en' : 'zh');
     setStaticText();
+    try{ renderCategories(); }catch(e){}
     try{ render(currentList || currentProducts()); }catch(e){}
   };
 
@@ -3716,6 +3719,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+    try{ if(allCategorySelected(currentCat))currentCat='ALL'; }catch(e){}
     setStaticText();
     setTimeout(setStaticText, 300);
     setTimeout(setStaticText, 1200);
