@@ -2601,6 +2601,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ,reportToday:'Today', yesterday:'Yesterday', thisWeek:'This Week', lastWeek:'Last Week', thisMonth:'This Month', lastMonth:'Last Month', thisYear:'This Year', custom:'Custom', searchBtn:'Search'
       ,customReport:'Custom Report', yearPlaceholder:'Year, e.g. 2026', monthOptional:'Month optional', generateExcel:'Generate Excel', posSales:'POS Sales', refunds:'Refunds', shopeePage:'Shopee page', otherIncomePage:'Other income page', cigarettePage:'Cigarette page'
       ,selectMonthExcel:'Choose year/month, then generate Excel.', otherIncomeHint:'Add pending income first, confirm after cash is received.', waterMachine:'Water Machine', addPending:'Add Pending', waitingConfirmation:'Waiting confirmation.', collectAmount:'Collect amount', confirmCollection:'Confirm Collection', openToLoad:'Open to load.', dashboardSlow:'Dashboard is still updating in background. You can continue using Boss mode.'
+      ,confirmClear:'Confirm Clear', confirmClearCart:'Clear cart?', todayParcelStatus:'Today Shopee status', todayNoParcelUpload:'No Shopee parcel record today.', todayUploaded:'Uploaded times', systemParcelsShort:'System parcels', actualReceivedShort:'Actual received'
     },
     zh: {
       all:'\u5168\u90e8\u5546\u54c1', home:'\u9996\u9875', search:'\u641c\u7d22\u5546\u54c1 / \u5206\u7c7b / \u4ef7\u94b1', low:'\u4f4e\u5e93\u5b58', prev:'\u4e0a\u4e00\u9875', next:'\u4e0b\u4e00\u9875',
@@ -2642,6 +2643,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ,reportToday:'\u4eca\u5929', yesterday:'\u6628\u5929', thisWeek:'\u672c\u5468', lastWeek:'\u4e0a\u5468', thisMonth:'\u672c\u6708', lastMonth:'\u4e0a\u6708', thisYear:'\u4eca\u5e74', custom:'\u81ea\u8ba2', searchBtn:'\u67e5\u8be2'
       ,customReport:'\u81ea\u8ba2\u62a5\u8868', yearPlaceholder:'\u5e74\u4efd\uff0c\u4f8b\u5982 2026', monthOptional:'\u6708\u4efd\uff08\u53ef\u4e0d\u586b\uff09', generateExcel:'\u751f\u6210 Excel', posSales:'POS \u9500\u552e', refunds:'\u9000\u8d27', shopeePage:'Shopee \u9875', otherIncomePage:'\u5176\u5b83\u6536\u5165\u9875', cigarettePage:'\u9999\u70df\u9875'
       ,selectMonthExcel:'\u9009\u62e9\u5e74\u4efd/\u6708\u4efd\uff0c\u7136\u540e\u751f\u6210 Excel\u3002', otherIncomeHint:'\u5148\u52a0\u5165\u5f85\u786e\u8ba4\u6536\u5165\uff0c\u6536\u5230\u73b0\u91d1\u540e\u518d\u786e\u8ba4\u3002', waterMachine:'\u6c34\u673a', addPending:'\u52a0\u5165\u5f85\u786e\u8ba4', waitingConfirmation:'\u7b49\u5f85\u786e\u8ba4\u3002', collectAmount:'\u6536\u8d70\u91d1\u989d', confirmCollection:'\u786e\u8ba4\u6536\u8d70', openToLoad:'\u6253\u5f00\u540e\u8f7d\u5165', dashboardSlow:'\u4eca\u65e5\u8d44\u6599\u8fd8\u5728\u540e\u53f0\u66f4\u65b0\uff0c\u4f60\u53ef\u4ee5\u7ee7\u7eed\u4f7f\u7528\u7ba1\u7406\u6a21\u5f0f\u3002'
+      ,confirmClear:'\u786e\u8ba4\u6e05\u9664', confirmClearCart:'\u786e\u8ba4\u6e05\u7a7a\u8d2d\u7269\u8f66\uff1f', todayParcelStatus:'\u4eca\u65e5 Shopee \u72b6\u6001', todayNoParcelUpload:'\u4eca\u65e5\u8fd8\u6ca1\u6709 Shopee \u5305\u88f9\u8bb0\u5f55\u3002', todayUploaded:'\u5df2\u4e0a\u4f20\u6b21\u6570', systemParcelsShort:'\u7cfb\u7edf\u5305\u88f9', actualReceivedShort:'\u5b9e\u9645\u6536\u5230'
     }
   };
   const lang = () => localStorage.getItem('yllLang') || 'en';
@@ -2665,6 +2667,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .sidebar .cat-btn:hover{transform:none!important}
       .sidebar .cat-btn span:first-child{min-width:0!important;max-width:100%!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;line-height:1.18!important;word-break:break-word!important}
       .sidebar .cat-count{flex:0 0 auto!important;min-width:28px!important;text-align:center!important;padding-left:7px!important;padding-right:7px!important}
+      button,.card,.cat-btn,.smallbtn,.big,.qtybar button{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
       #clock{display:none!important}
       .exact-pay-btn{display:none!important}
       body.light,body.light #app,body.light .app,body.light .layout,body.light .main,body.light .products{background:#f3f4f6!important;background-color:#f3f4f6!important;color:#0f172a!important}
@@ -2809,6 +2812,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const exactBtn=document.querySelector('.exact-pay-btn'); if(exactBtn)exactBtn.remove();
     const confirmCashBtn=document.querySelector('.confirm-cash-btn'); if(confirmCashBtn)confirmCashBtn.textContent=tr('confirmPayment');
     const cashCancel=document.querySelector('#cashBox .cancel-pay-btn'); if(cashCancel)cashCancel.textContent=tr('cancel');
+    bindActionButtons();
+  }
+
+  function bindActionButtons(){
+    const discountBtn = document.querySelector('.discount-btn');
+    if(discountBtn)discountBtn.onclick = e => { if(e)e.preventDefault(); window.open折扣(); };
+    const clearBtn = document.querySelector('.smallbtn.danger');
+    if(clearBtn)clearBtn.onclick = e => { if(e)e.preventDefault(); window.clearCart(); };
   }
 
   function setStatDetail(id, html){
@@ -3221,9 +3232,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.clearCart = function(){
     const c=currentCart();
     if(!c.length)return;
-    c.length=0;
-    try{ discount=0; }catch(e){ window.discount=0; }
-    showCart();
+    appConfirm(tr('confirmClearCart'), tr('confirmClear')).then(ok=>{
+      if(!ok)return;
+      c.length=0;
+      try{ window.cart=c; }catch(e){}
+      try{ discount=0; }catch(e){ window.discount=0; }
+      showCart();
+    });
   };
 
   window.showCart = function(){
@@ -3765,6 +3780,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(box)box.innerHTML=`<h3>${esc(tr('parcel'))}</h3>
       <p style="color:#94a3b8;font-size:13px">${esc(tr('normalParcel'))}</p>
       <div class="parcel-auto-note" id="parcelTripNote">${esc(tr('todayTrip'))}</div>
+      <div id="parcelTodayStatus" class="discount-preview">${esc(tr('loading'))}</div>
       <input id="parcelExpected" type="number" inputmode="numeric" placeholder="${esc(tr('systemParcels'))}">
       <input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}">
       <details class="refund-auth" id="parcelShortDetails">
@@ -3785,14 +3801,32 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     openModal('parcelBox');
     try{
       const r=await timeout(apiCall('getParcelSummary',[]),12000,'Shopee summary');
+      renderParcelTodayStatus(r.today || {});
       const rows=(r.outstandingShortages||[]).filter(x=>num(x.outstanding)>0);
       const wrap=$('parcelRecoveryWrap'), list=$('parcelRecoveryList');
       if(wrap && list && rows.length){
         wrap.style.display='block';
         list.innerHTML=`<table><tr><th>${esc(tr('date'))}</th><th class="right">${esc(tr('missing'))}</th><th class="right">${esc(tr('recovered'))}</th><th class="right">${esc(tr('stillMissing'))}</th></tr>`+rows.map(x=>`<tr><td>${esc(x.date)}</td><td class="right">${x.missing||0}</td><td class="right">${x.recovered||0}</td><td class="right">${x.outstanding||0}</td></tr>`).join('')+'</table>';
       }
-    }catch(e){}
+    }catch(e){
+      const el=$('parcelTodayStatus');
+      if(el)el.innerHTML=`<b>${esc(tr('todayParcelStatus'))}</b><br>${esc(tr('loadFailed')+(e.message||e))}`;
+    }
   };
+  function renderParcelTodayStatus(today){
+    const el=$('parcelTodayStatus');
+    if(!el)return;
+    if(!today || !num(today.count)){
+      el.innerHTML=`<b>${esc(tr('todayParcelStatus'))}</b><br>${esc(tr('todayNoParcelUpload'))}`;
+      return;
+    }
+    el.innerHTML=`<b>${esc(tr('todayParcelStatus'))}</b><br>`+
+      `${esc(tr('todayUploaded'))}: ${num(today.count)}<br>`+
+      `${esc(tr('systemParcelsShort'))}: ${num(today.expected)}<br>`+
+      `${esc(tr('actualReceivedShort'))}: ${num(today.delivered)}<br>`+
+      `${esc(tr('missing'))}: ${num(today.missing)}<br>`+
+      `${esc(tr('recovered'))}: ${num(today.recovered)}`;
+  }
   window.updateParcelPreview = function(){
     const expected=num(($('parcelExpected')||{}).value);
     const open=!!($('parcelShortDetails') && $('parcelShortDetails').open);
@@ -4041,6 +4075,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setStaticText();
     setTimeout(setStaticText, 300);
     setTimeout(setStaticText, 1200);
+    bindActionButtons();
+    setTimeout(bindActionButtons, 300);
+    setTimeout(bindActionButtons, 1200);
     initNetworkMonitor();
     try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
     scheduleTopStatsRefresh(250);
