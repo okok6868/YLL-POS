@@ -2820,6 +2820,21 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(discountBtn)discountBtn.onclick = e => { if(e)e.preventDefault(); window.open折扣(); };
     const clearBtn = document.querySelector('.smallbtn.danger');
     if(clearBtn)clearBtn.onclick = e => { if(e)e.preventDefault(); window.clearCart(); };
+    const moreBtn = document.querySelector('.smallbtn.more');
+    if(moreBtn)moreBtn.onclick = e => { if(e)e.preventDefault(); window.toggleMore(); };
+  }
+
+  function releaseStaleInteractionLock(){
+    let checking=!!window.isCheckingOut, syncing=!!window.offlineSyncing;
+    try{ checking = checking || !!isCheckingOut; }catch(e){}
+    try{ syncing = syncing || !!offlineSyncing; }catch(e){}
+    if(checking || parcelSubmitting || syncing)return;
+    document.body.classList.remove('pos-busy');
+    const busy=$('checkoutBusy');
+    if(busy){
+      busy.classList.remove('active');
+      busy.textContent=tr('processingCheckout');
+    }
   }
 
   function setStatDetail(id, html){
@@ -3738,7 +3753,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
   window.addEventListener('online', window.syncOfflineOrders);
 
+  window.toggleMore = function(){
+    releaseStaleInteractionLock();
+    const m=$('moreMenu');
+    if(m)m.classList.toggle('active');
+  };
+
   window.open折扣 = function(){
+    releaseStaleInteractionLock();
     if(!currentCart().length){ showAppAlert(cartEmptyMessage(),tr('discount')); return; }
     const input=$('discountInput');
     if(input){ input.value = (typeof discount !== 'undefined' ? discount : 0) || ''; input.oninput = () => update折扣Preview(num(input.value)); }
@@ -3746,6 +3768,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     ['discountBossId','discountBossPassword'].forEach(id=>{ const e=$(id); if(e)e.value=''; });
     const msg=$('discountStatusMsg'); if(msg){msg.style.display='none'; msg.textContent='';}
     update折扣Preview(num(input && input.value));
+    bindDiscountModalButtons();
     openModal('discountBox');
   };
   window.close折扣 = function(){ closeModal('discountBox'); };
@@ -3766,6 +3789,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     showCart();
   };
   window.reset折扣 = function(){ try{ discount = 0; }catch(e){ window.discount = 0; } const input=$('discountInput'); if(input)input.value=''; update折扣Preview(0); showCart(); };
+  function bindDiscountModalButtons(){
+    const quick=[...document.querySelectorAll('#discountBox .discount-grid button')];
+    [0.1,1,5].forEach((v,i)=>{ if(quick[i])quick[i].onclick=e=>{ if(e)e.preventDefault(); window.add折扣(v); }; });
+    const applyBtn=document.querySelector('#discountBox button.green');
+    if(applyBtn)applyBtn.onclick=e=>{ if(e)e.preventDefault(); window.apply折扣(); };
+    const buttons=[...document.querySelectorAll('#discountBox .modal-content > button:not(.green)')];
+    if(buttons[0])buttons[0].onclick=e=>{ if(e)e.preventDefault(); window.reset折扣(); };
+    if(buttons[1])buttons[1].onclick=e=>{ if(e)e.preventDefault(); window.close折扣(); };
+  }
+  window.openDiscount = window.open折扣;
+  window.closeDiscount = window.close折扣;
+  window.addDiscount = window.add折扣;
+  window.applyDiscount = window.apply折扣;
+  window.resetDiscount = window.reset折扣;
   function update折扣Preview(v){
     const subtotal = currentCart().reduce((s,i)=>s+num(i.price)*num(i.qty),0);
     const d = Math.min(Math.max(0,num(v)), subtotal);
@@ -3776,6 +3813,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   window.openParcelBox = async function(){
+    releaseStaleInteractionLock();
+    parcelSubmitting=false;
     const box=document.querySelector('#parcelBox .modal-content');
     if(box)box.innerHTML=`<h3>${esc(tr('parcel'))}</h3>
       <p style="color:#94a3b8;font-size:13px">${esc(tr('normalParcel'))}</p>
@@ -3849,19 +3888,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     parcelSubmitting=true;
     const btn=$('parcelSubmitBtn');
     const fields=[...document.querySelectorAll('#parcelBox input,#parcelBox button')];
-    const busy=$('checkoutBusy');
     fields.forEach(el=>{ el.disabled=true; });
-    if(btn){btn.disabled=true; btn.textContent=tr('saving');}
-    if(busy){ busy.textContent=tr('submittingParcel'); busy.classList.add('active'); }
-    document.body.classList.add('pos-busy');
+    if(btn){btn.disabled=true; btn.textContent=tr('submittingParcel');}
     try{ const r=await timeout(apiCall('saveParcelLog',[{expected,delivered,returned,recovered,note}]),30000,'Shopee save'); closeModal('parcelBox'); if(typeof showToast==='function')showToast(r.duplicate?tr('alreadySaved'):tr('shopeeSaved')); }
     catch(e){ showAppAlert(tr('shopeeSaveFailed')+(e.message||e),tr('shopee')); }
     finally{
       parcelSubmitting=false;
       fields.forEach(el=>{ el.disabled=false; });
       if(btn){btn.disabled=false; btn.textContent=tr('saveParcelRecord');}
-      if(busy){ busy.classList.remove('active'); busy.textContent=tr('processingCheckout'); }
-      document.body.classList.remove('pos-busy');
+      releaseStaleInteractionLock();
     }
   };
 
