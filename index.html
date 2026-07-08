@@ -2659,6 +2659,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   let bossOverviewPromise = null;
   let parcelSubmitting = false;
   const originalApiCallFn = (typeof apiCall === 'function') ? apiCall : null;
+  const originalSyncOfflineOrdersFn = (typeof syncOfflineOrders === 'function') ? syncOfflineOrders : null;
 
   function hasGoogleScriptRun(){
     return !!(window.google && google.script && google.script.run);
@@ -3089,6 +3090,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function offlineSummary(){
     const rows=[...readQueue('offlineOrders'), ...readQueue('pendingOnlineOrders')];
     return rows.reduce((s,o)=>{
+      if(syncingOrderIds.has(String(o.id||'')))return s;
       const total=moneyNum((o.cart||[]).reduce((n,i)=>n+num(i.price)*num(i.qty),0)-num(o.discount||0));
       s.count++;
       s.total=moneyNum(s.total+total);
@@ -3683,6 +3685,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>{ if(typeof showToast==='function')showToast(tr('receiptCopied')); }).catch(()=>{});
     }catch(e){}
     showAppAlert(text, tr('print'));
+    if(auto && typeof runAutoPrint === 'function'){
+      setTimeout(()=>{ try{ runAutoPrint(); }catch(e){} }, 80);
+    }
   };
   window.smartPrintLast = function(){ window.printReceipt(false); };
   function reduceLocalStock(savedCart){
@@ -3710,7 +3715,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{ discount = 0; }catch(e){ window.discount = 0; }
     showCart();
     setCheckoutBusy(false);
-    try{ printReceipt(false); }catch(e){ console.error(e); if(typeof showToast === 'function')showToast(tr('receiptFailed')); }
+    try{ printReceipt(true); }catch(e){ console.error(e); if(typeof showToast === 'function')showToast(tr('receiptFailed')); }
     if(typeof loadTodayStats === 'function')setTimeout(()=>loadTodayStats(), 100);
   }
 
@@ -3828,12 +3833,25 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   let offlineSyncing=false;
+  let offlineSyncTimer=null;
+  const syncingOrderIds=new Set();
+  const OFFLINE_SYNC_BATCH_LIMIT=2;
+  const OFFLINE_SYNC_TIMEOUT_MS=8000;
   function writeQueue(name, rows){
     try{
       const clean=(rows||[]).filter(Boolean).slice(-100);
       if(clean.length)localStorage.setItem(name, JSON.stringify(clean));
       else localStorage.removeItem(name);
     }catch(e){}
+  }
+  function removeQueuedOrder(queueName, id){
+    if(!id)return;
+    const rows=readQueue(queueName).filter(o=>String(o.id||'')!==String(id));
+    writeQueue(queueName, rows);
+  }
+  function scheduleOfflineSync(delay){
+    clearTimeout(offlineSyncTimer);
+    offlineSyncTimer=setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, delay==null?5000:delay);
   }
   window.syncOfflineOrders = async function(){
     if(offlineSyncing || !navigator.onLine)return;
@@ -3843,33 +3861,44 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ...pendingOnline.map(o=>({...o, queue:'pendingOnlineOrders'})),
       ...offline.map(o=>({...o, queue:'offlineOrders'}))
     ];
-    if(!jobs.length)return;
+    if(!jobs.length){
+      syncingOrderIds.clear();
+      return;
+    }
     offlineSyncing=true;
-    const busy=$('checkoutBusy');
-    if(busy){ busy.textContent=tr('uploadingOffline'); busy.classList.add('active'); }
+    const batch=jobs.slice(0,OFFLINE_SYNC_BATCH_LIMIT);
     if(typeof showToast === 'function')showToast(tr('uploadingOffline'));
-    const failedPending=[], failedOffline=[];
-    for(const o of jobs){
+    let failed=0, saved=0;
+    batch.forEach(o=>syncingOrderIds.add(String(o.id||'')));
+    try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
+    for(const o of batch){
       try{
-        const r=await timeout(apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id]),15000,'Sync offline order');
+        const r=await timeout(apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id]),OFFLINE_SYNC_TIMEOUT_MS,'Sync offline order');
         if(!(r && r.orderId)){
-          (o.queue==='pendingOnlineOrders'?failedPending:failedOffline).push(o);
+          failed++;
+          syncingOrderIds.delete(String(o.id||''));
+        }else{
+          saved++;
+          removeQueuedOrder(o.queue, o.id);
         }
       }catch(e){
-        (o.queue==='pendingOnlineOrders'?failedPending:failedOffline).push(o);
+        failed++;
+        syncingOrderIds.delete(String(o.id||''));
       }
+      try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
     }
-    writeQueue('pendingOnlineOrders', failedPending);
-    writeQueue('offlineOrders', failedOffline);
     offlineSyncing=false;
-    if(busy){ busy.classList.remove('active'); busy.textContent=tr('processingCheckout'); }
-    if(failedPending.length || failedOffline.length){
+    if(saved){
+      try{ if(typeof loadTodayStats === 'function')loadTodayStats(); }catch(e){}
+    }
+    const remaining=readQueue('pendingOnlineOrders').length+readQueue('offlineOrders').length;
+    if(failed){
       if(typeof showToast === 'function')showToast(tr('offlineStillPending'));
-    }else{
+    }else if(!remaining){
       if(typeof showToast === 'function')showToast(tr('offlineUploaded'));
     }
     try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
-    if(typeof loadTodayStats === 'function')loadTodayStats();
+    if(remaining)scheduleOfflineSync(failed?15000:3000);
   };
   window.addEventListener('online', window.syncOfflineOrders);
 
@@ -4475,6 +4504,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+    try{ if(originalSyncOfflineOrdersFn)window.removeEventListener('online', originalSyncOfflineOrdersFn); }catch(e){}
     try{ if(allCategorySelected(currentCat))currentCat='ALL'; }catch(e){}
     setStaticText();
     setTimeout(setStaticText, 300);
