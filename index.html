@@ -2894,10 +2894,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         ? 'Google Apps Script \u56de\u5e94\u8d85\u65f6\u3002\u5546\u54c1\u4f1a\u5148\u7528\u672c\u673a\u7f13\u5b58\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u6216\u90e8\u7f72 URL\u3002'
         : 'Google Apps Script timed out. POS will keep using local product cache. Please check connection or deployment URL.';
     }
-    if(/deployment URL is wrong|Web App URL is wrong|Page Not Found|RAW:\s*<!DOCTYPE/i.test(s)){
+    if(/temporary HTML response|returned non-JSON|deployment URL is wrong|Web App URL is wrong|Page Not Found|RAW:\s*<!DOCTYPE/i.test(s)){
       return lang()==='zh'
-        ? 'Apps Script Web App URL \u9519\u4e86\u6216\u5df2\u5931\u6548\u3002\u8bf7\u91cd\u65b0\u90e8\u7f72 Apps Script Web app\uff0c\u628a\u6700\u65b0\u7684 /exec URL \u653e\u5230 api/pos.js \u6216 GAS_URL\uff0c\u7136\u540e\u91cd\u65b0\u90e8\u7f72\u3002'
-        : 'Apps Script Web App URL is wrong or expired. Put the latest /exec URL in api/pos.js or GAS_URL, then redeploy.';
+        ? 'Google Apps Script \u521a\u521a\u6ca1\u6709\u56de\u4f20 POS \u8d44\u6599\uff0c\u8bf7\u7b49\u4e00\u4e0b\u518d\u8bd5\u3002\u5982\u679c\u4e00\u76f4\u53d1\u751f\uff0c\u518d\u68c0\u67e5\u90e8\u7f72 URL\u3002'
+        : 'Google Apps Script did not return POS data. Please try again. If it keeps happening, check the deployment URL.';
     }
     return s;
   }
@@ -3007,6 +3007,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
   function saveTopStatsCache(snapshot){
     try{ localStorage.setItem('yllTopStatsCacheV1', JSON.stringify(snapshot)); }catch(e){}
+  }
+  function isTransientApiError(e){
+    const s=String((e&&e.message)||e||'');
+    return /timeout|temporary HTML response|returned non-JSON|Web App URL is wrong|deployment URL is wrong|Page Not Found|RAW:\s*<!DOCTYPE/i.test(s);
+  }
+  function wait(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+  async function apiCallTransient(action,args,timeoutMs,label){
+    try{
+      return await timeout(apiCall(action,args||[]), timeoutMs||16000, label||action);
+    }catch(e){
+      if(!isTransientApiError(e))throw e;
+      await wait(700);
+      return await timeout(apiCall(action,args||[]), Math.max(timeoutMs||16000,18000), label||action);
+    }
   }
   function optimisticTopStatsAfterOrder(savedCart,payment,discountAmount,paidAmount,changeAmount){
     try{
@@ -4245,32 +4259,40 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
   };
 
+  function renderBossParcelSummary(r){
+    r=r||{};
+    const logs=(r.logs||[]).slice(0,12);
+    const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
+    let html='<div class="boss-overview-grid">'+[
+      card(tr('pendingShopee'), money(r.pendingEstimated||0), tr('shopee'), num(r.pendingEstimated)>0),
+      card(tr('actualPaid'), money(r.actualPaid||0), tr('paid'), false),
+      card(tr('difference'), money(r.difference||0), '', num(r.difference)>0),
+      card(tr('trips'), String(r.count||0), tr('last30'), false)
+    ].join('')+'</div>';
+    if(logs.length){
+      html += `<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('trips'))}</th><th class="right">${esc(tr('parcel'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('note'))}</th></tr>` +
+        logs.map(x=>`<tr><td>${esc(x.date||'')}</td><td>${esc(x.trip||'')}</td><td class="right">${esc((x.delivered||0)+' / '+(x.returned||0))}</td><td class="right">${money(x.estimated||0)}</td><td>${esc(x.note||'')}</td></tr>`).join('') +
+        '</table>';
+    }else{
+      html += `<div class="boss-result">${esc(tr('noRecords'))}</div>`;
+    }
+    return html;
+  }
+
   window.bossOpenParcelBoss = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
     showBossPanel('bossParcelBox','shopee');
     setStaticText();
     const box=$('bossParcelResult');
-    if(box)box.textContent=tr('loading');
+    if(bossOverviewCache && bossOverviewCache.parcel && box)box.innerHTML=renderBossParcelSummary(bossOverviewCache.parcel);
+    else if(box)box.textContent=tr('loading');
     try{
-      const r=await apiCall('getParcelSummary',[]);
-      const logs=(r.logs||[]).slice(0,12);
-      const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
-      let html='<div class="boss-overview-grid">'+[
-        card(tr('pendingShopee'), money(r.pendingEstimated||0), tr('shopee'), num(r.pendingEstimated)>0),
-        card(tr('actualPaid'), money(r.actualPaid||0), tr('paid'), false),
-        card(tr('difference'), money(r.difference||0), '', num(r.difference)>0),
-        card(tr('trips'), String(r.count||0), tr('last30'), false)
-      ].join('')+'</div>';
-      if(logs.length){
-        html += `<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('trips'))}</th><th class="right">${esc(tr('parcel'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('note'))}</th></tr>` +
-          logs.map(x=>`<tr><td>${esc(x.date||'')}</td><td>${esc(x.trip||'')}</td><td class="right">${esc((x.delivered||0)+' / '+(x.returned||0))}</td><td class="right">${money(x.estimated||0)}</td><td>${esc(x.note||'')}</td></tr>`).join('') +
-          '</table>';
-      }else{
-        html += `<div class="boss-result">${esc(tr('noRecords'))}</div>`;
-      }
-      if(box)box.innerHTML=html;
+      const r=await apiCallTransient('getParcelSummary',[],16000,'Shopee summary');
+      if(bossOverviewCache)bossOverviewCache.parcel=r;
+      if(box)box.innerHTML=renderBossParcelSummary(r);
     }catch(e){
-      if(box)box.textContent=tr('loadFailed')+(e.message||e);
+      if(box && !(bossOverviewCache && bossOverviewCache.parcel))box.textContent=tr('loadFailed')+cleanMessage(e.message||e);
+      const br=$('bossResult'); if(br)br.textContent=tr('dashboardSlow');
     }
   };
 
@@ -4377,7 +4399,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
     if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
     try{
-      const r=await timeout(apiCall('bossLogin',[id,pw]), 25000, 'Boss login');
+      const r=await apiCallTransient('bossLogin',[id,pw],30000,'Boss login');
       if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
       if(r&&r.ok){
         try{
