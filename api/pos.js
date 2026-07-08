@@ -30,13 +30,13 @@ export default async function handler(req, res) {
     try {
       data = JSON.parse(text);
     } catch (err) {
-      const looksLikeGoogle404 = text.includes("Page Not Found") || text.includes("docs.google.com") || text.includes("<!DOCTYPE html");
+      const looksLikeGoogleHtml = text.includes("Page Not Found") || text.includes("docs.google.com") || text.includes("<!DOCTYPE html");
       return res.status(500).json({
         success:false,
-        error: looksLikeGoogle404
-          ? "Apps Script Web App URL is wrong or expired. Update GAS_URL or api/pos.js with the latest /exec URL, then redeploy."
+        error: looksLikeGoogleHtml
+          ? "Apps Script returned a temporary HTML response instead of POS data. Try again; if it keeps happening, check the latest /exec deployment URL."
           : "Apps Script returned non-JSON. Check Apps Script deployment and duplicate GS files.",
-        raw: looksLikeGoogle404 ? "" : text.slice(0,220)
+        raw: looksLikeGoogleHtml ? "" : text.slice(0,220)
       });
     }
 
