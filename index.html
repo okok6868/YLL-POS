@@ -2588,7 +2588,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       recovered:'Recovered', recoveredToday:'Recovered today', noteOptional:'Note optional', saveParcelRecord:'Save Parcel Record',
       actualParcelsRequired:'Please fill actual received parcels.', parcelRequired:'Please fill Shopee system parcels.',
       saving:'Saving...', submittingParcel:'Submitting Shopee parcel, please wait...', alreadySaved:'Already saved', shopeeSaved:'Shopee saved', shopeeSaveFailed:'Shopee save failed: ',
-      loadFailed:'Load failed: ', item:'Item', amount:'Amount', date:'Date', note:'Note', collectable:'Collectable',
+      loadFailed:'Load failed: ', item:'Item', amount:'Amount', amountRequired:'Please enter amount.', date:'Date', note:'Note', action:'Action', collectable:'Collectable',
       cashCurrentlyDrawer:'Cash currently in drawer', cashAlreadyCollected:'Cash already collected',
       approvedRefundsDeducted:'Approved cash refunds deducted', floatCash:'Float cash', todayCash:'Today Cash', todayTotal:'Today Total',
       cashReminderReached:'Collectable cash {amount} reached reminder {limit}.', paid:'Paid', otherPending:'Other Pending',
@@ -2600,7 +2600,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ,bossReady:'Boss mode opened. Choose a function.', bossFastHint:'Tap a function to load details.', bossLoginSlow:'Boss login is slow. Check Apps Script deployment URL or connection.', networkLog:'Network Log', outages:'Outages', totalOffline:'Offline Minutes', over30:'Over 30 Min', apiFailures:'API Fails', recentNetwork:'Recent Network Records', minutes:'min', noNetworkRecords:'No network records'
       ,reportToday:'Today', yesterday:'Yesterday', thisWeek:'This Week', lastWeek:'Last Week', thisMonth:'This Month', lastMonth:'Last Month', thisYear:'This Year', custom:'Custom', searchBtn:'Search'
       ,customReport:'Custom Report', yearPlaceholder:'Year, e.g. 2026', monthOptional:'Month optional', generateExcel:'Generate Excel', posSales:'POS Sales', refunds:'Refunds', shopeePage:'Shopee page', otherIncomePage:'Other income page', cigarettePage:'Cigarette page'
-      ,selectMonthExcel:'Choose year/month, then generate Excel.', otherIncomeHint:'Add pending income first, confirm after cash is received.', waterMachine:'Water Machine', addPending:'Add Pending', waitingConfirmation:'Waiting confirmation.', collectAmount:'Collect amount', confirmCollection:'Confirm Collection', openToLoad:'Open to load.', dashboardSlow:'Dashboard is still updating in background. You can continue using Boss mode.'
+      ,selectMonthExcel:'Choose year/month, then generate Excel.', otherIncomeHint:'Add pending income first, confirm after cash is received.', waterMachine:'Water Machine', addPending:'Add Pending', waitingConfirmation:'Waiting confirmation.', collectAmount:'Collect amount', confirmCollection:'Confirm Collection', confirmReceived:'Confirm Received', openToLoad:'Open to load.', dashboardSlow:'Dashboard is still updating in background. You can continue using Boss mode.'
       ,confirmClear:'Confirm Clear', confirmClearCart:'Clear cart?', todayParcelStatus:'Today Shopee status', todayNoParcelUpload:'No Shopee parcel record today.', todayUploaded:'Uploaded times', systemParcelsShort:'System parcels', actualReceivedShort:'Actual received'
       ,discountAmount:'Discount amount', applyDiscount:'Apply Discount', clearDiscount:'Clear Discount', discountBossNote:'RM10 and below can apply directly. Above RM10 needs boss ID/password.'
       ,loadRecentOrders:'Load Recent Orders', loadingRecentOrders:'Loading recent orders...', selectOrderFirst:'Select an order first.', noRefundOrders:'No refundable orders in last 3 days.', orderNo:'Order No', refundTotal:'Refund Total', refundReason:'Reason, e.g. customer return', submitRefund:'Submit Refund', submittingRefund:'Submitting refund, please wait...', approvingRefund:'Approving refund, please wait...', refundDirectNote:'Leave blank = submit pending request. Fill ID/password = approve immediately.', refundNeedOrder:'Please select an order.', refundNeedItems:'Please choose returned item and quantity.', refundConfirm:'Submit refund request?', refundDirectConfirm:'Approve refund now?', refundSubmitted:'Refund request submitted', refundApproved:'Refund approved', refundFailed:'Refund failed: ', anotherOrder:'Select another order if needed.', soldQty:'Sold Qty', max:'Max'
@@ -2632,7 +2632,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       recovered:'\u5df2\u8865\u56de', recoveredToday:'\u4eca\u5929\u8865\u56de', noteOptional:'\u5907\u6ce8\uff08\u53ef\u4e0d\u586b\uff09', saveParcelRecord:'\u4fdd\u5b58\u5305\u88f9\u8bb0\u5f55',
       actualParcelsRequired:'\u8bf7\u586b\u5199\u5b9e\u9645\u6536\u5230\u7684\u5305\u88f9\u6570\u3002', parcelRequired:'\u8bf7\u586b\u5199 Shopee \u7cfb\u7edf\u5305\u88f9\u6570\u3002',
       saving:'\u4fdd\u5b58\u4e2d...', submittingParcel:'\u6b63\u5728\u63d0\u4ea4 Shopee \u5305\u88f9\uff0c\u8bf7\u7a0d\u7b49...', alreadySaved:'\u5df2\u7ecf\u4fdd\u5b58', shopeeSaved:'Shopee \u5df2\u4fdd\u5b58', shopeeSaveFailed:'Shopee \u4fdd\u5b58\u5931\u8d25\uff1a',
-      loadFailed:'\u8f7d\u5165\u5931\u8d25\uff1a', item:'\u9879\u76ee', amount:'\u91d1\u989d', date:'\u65e5\u671f', note:'\u5907\u6ce8', collectable:'\u53ef\u6536\u8d70',
+      loadFailed:'\u8f7d\u5165\u5931\u8d25\uff1a', item:'\u9879\u76ee', amount:'\u91d1\u989d', amountRequired:'\u8bf7\u8f93\u5165\u91d1\u989d\u3002', date:'\u65e5\u671f', note:'\u5907\u6ce8', action:'\u64cd\u4f5c', collectable:'\u53ef\u6536\u8d70',
       cashCurrentlyDrawer:'\u76ee\u524d\u6536\u94f6\u673a\u73b0\u91d1', cashAlreadyCollected:'\u5df2\u6536\u8d70\u73b0\u91d1',
       approvedRefundsDeducted:'\u5df2\u6279\u51c6\u9000\u6b3e\u5df2\u6263\u9664', floatCash:'\u5907\u7528\u73b0\u91d1', todayCash:'\u4eca\u65e5\u73b0\u91d1', todayTotal:'\u4eca\u65e5\u603b\u6570',
       cashReminderReached:'\u53ef\u6536\u8d70\u73b0\u91d1 {amount} \u5df2\u8fbe\u5230\u63d0\u9192\u91d1\u989d {limit}\u3002', paid:'\u5df2\u6536', otherPending:'\u5176\u5b83\u672a\u6536',
@@ -2644,7 +2644,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ,bossReady:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\uff0c\u8bf7\u9009\u62e9\u529f\u80fd\u3002', bossFastHint:'\u70b9\u51fb\u529f\u80fd\u540e\u624d\u8f7d\u5165\u8be6\u7ec6\u8d44\u6599\u3002', bossLoginSlow:'\u8001\u677f\u767b\u5165\u56de\u5e94\u592a\u6162\uff0c\u8bf7\u68c0\u67e5 Apps Script \u90e8\u7f72 URL \u6216\u7f51\u7edc\u3002', networkLog:'\u7f51\u7edc\u8bb0\u5f55', outages:'\u65ad\u7ebf\u6b21\u6570', totalOffline:'\u65ad\u7ebf\u5206\u949f', over30:'\u8d85\u8fc7 30 \u5206\u949f', apiFailures:'API \u5931\u8d25', recentNetwork:'\u6700\u8fd1\u7f51\u7edc\u8bb0\u5f55', minutes:'\u5206\u949f', noNetworkRecords:'\u6ca1\u6709\u7f51\u7edc\u8bb0\u5f55'
       ,reportToday:'\u4eca\u5929', yesterday:'\u6628\u5929', thisWeek:'\u672c\u5468', lastWeek:'\u4e0a\u5468', thisMonth:'\u672c\u6708', lastMonth:'\u4e0a\u6708', thisYear:'\u4eca\u5e74', custom:'\u81ea\u8ba2', searchBtn:'\u67e5\u8be2'
       ,customReport:'\u81ea\u8ba2\u62a5\u8868', yearPlaceholder:'\u5e74\u4efd\uff0c\u4f8b\u5982 2026', monthOptional:'\u6708\u4efd\uff08\u53ef\u4e0d\u586b\uff09', generateExcel:'\u751f\u6210 Excel', posSales:'POS \u9500\u552e', refunds:'\u9000\u8d27', shopeePage:'Shopee \u9875', otherIncomePage:'\u5176\u5b83\u6536\u5165\u9875', cigarettePage:'\u9999\u70df\u9875'
-      ,selectMonthExcel:'\u9009\u62e9\u5e74\u4efd/\u6708\u4efd\uff0c\u7136\u540e\u751f\u6210 Excel\u3002', otherIncomeHint:'\u5148\u52a0\u5165\u5f85\u786e\u8ba4\u6536\u5165\uff0c\u6536\u5230\u73b0\u91d1\u540e\u518d\u786e\u8ba4\u3002', waterMachine:'\u6c34\u673a', addPending:'\u52a0\u5165\u5f85\u786e\u8ba4', waitingConfirmation:'\u7b49\u5f85\u786e\u8ba4\u3002', collectAmount:'\u6536\u8d70\u91d1\u989d', confirmCollection:'\u786e\u8ba4\u6536\u8d70', openToLoad:'\u6253\u5f00\u540e\u8f7d\u5165', dashboardSlow:'\u4eca\u65e5\u8d44\u6599\u8fd8\u5728\u540e\u53f0\u66f4\u65b0\uff0c\u4f60\u53ef\u4ee5\u7ee7\u7eed\u4f7f\u7528\u7ba1\u7406\u6a21\u5f0f\u3002'
+      ,selectMonthExcel:'\u9009\u62e9\u5e74\u4efd/\u6708\u4efd\uff0c\u7136\u540e\u751f\u6210 Excel\u3002', otherIncomeHint:'\u5148\u52a0\u5165\u5f85\u786e\u8ba4\u6536\u5165\uff0c\u6536\u5230\u73b0\u91d1\u540e\u518d\u786e\u8ba4\u3002', waterMachine:'\u6c34\u673a', addPending:'\u52a0\u5165\u5f85\u786e\u8ba4', waitingConfirmation:'\u7b49\u5f85\u786e\u8ba4\u3002', collectAmount:'\u6536\u8d70\u91d1\u989d', confirmCollection:'\u786e\u8ba4\u6536\u8d70', confirmReceived:'\u786e\u8ba4\u5df2\u6536\u5230', openToLoad:'\u6253\u5f00\u540e\u8f7d\u5165', dashboardSlow:'\u4eca\u65e5\u8d44\u6599\u8fd8\u5728\u540e\u53f0\u66f4\u65b0\uff0c\u4f60\u53ef\u4ee5\u7ee7\u7eed\u4f7f\u7528\u7ba1\u7406\u6a21\u5f0f\u3002'
       ,confirmClear:'\u786e\u8ba4\u6e05\u9664', confirmClearCart:'\u786e\u8ba4\u6e05\u7a7a\u8d2d\u7269\u8f66\uff1f', todayParcelStatus:'\u4eca\u65e5 Shopee \u72b6\u6001', todayNoParcelUpload:'\u4eca\u65e5\u8fd8\u6ca1\u6709 Shopee \u5305\u88f9\u8bb0\u5f55\u3002', todayUploaded:'\u5df2\u4e0a\u4f20\u6b21\u6570', systemParcelsShort:'\u7cfb\u7edf\u5305\u88f9', actualReceivedShort:'\u5b9e\u9645\u6536\u5230'
       ,discountAmount:'\u6298\u6263\u91d1\u989d', applyDiscount:'\u5957\u7528\u6298\u6263', clearDiscount:'\u6e05\u9664\u6298\u6263', discountBossNote:'RM10 \u6216\u4ee5\u4e0b\u53ef\u76f4\u63a5\u5957\u7528\uff0c\u8d85\u8fc7 RM10 \u9700\u8981\u8001\u677f ID/\u5bc6\u7801\u3002'
       ,loadRecentOrders:'\u8f7d\u5165\u6700\u8fd1\u8ba2\u5355', loadingRecentOrders:'\u6b63\u5728\u8f7d\u5165\u6700\u8fd1\u8ba2\u5355...', selectOrderFirst:'\u8bf7\u5148\u9009\u62e9\u8ba2\u5355\u3002', noRefundOrders:'\u6700\u8fd1 3 \u5929\u6ca1\u6709\u53ef\u9000\u8d27\u8ba2\u5355\u3002', orderNo:'\u8ba2\u5355\u53f7', refundTotal:'\u9000\u8d27\u603b\u6570', refundReason:'\u539f\u56e0\uff0c\u4f8b\u5982\u987e\u5ba2\u9000\u8d27', submitRefund:'\u63d0\u4ea4\u9000\u8d27', submittingRefund:'\u6b63\u5728\u63d0\u4ea4\u9000\u8d27\uff0c\u8bf7\u7a0d\u7b49...', approvingRefund:'\u6b63\u5728\u76f4\u63a5\u6279\u51c6\u9000\u8d27\uff0c\u8bf7\u7a0d\u7b49...', refundDirectNote:'\u7559\u7a7a = \u63d0\u4ea4\u7ed9\u8001\u677f\u5ba1\u6279\u3002\u586b ID/\u5bc6\u7801 = \u7acb\u523b\u6279\u51c6\u3002', refundNeedOrder:'\u8bf7\u9009\u62e9\u8ba2\u5355\u3002', refundNeedItems:'\u8bf7\u9009\u62e9\u9000\u8d27\u5546\u54c1\u548c\u6570\u91cf\u3002', refundConfirm:'\u786e\u8ba4\u63d0\u4ea4\u9000\u8d27\u7533\u8bf7\uff1f', refundDirectConfirm:'\u786e\u8ba4\u76f4\u63a5\u6279\u51c6\u9000\u8d27\uff1f', refundSubmitted:'\u9000\u8d27\u7533\u8bf7\u5df2\u63d0\u4ea4', refundApproved:'\u9000\u8d27\u5df2\u6279\u51c6', refundFailed:'\u9000\u8d27\u5931\u8d25\uff1a', anotherOrder:'\u53ef\u7ee7\u7eed\u9009\u62e9\u5176\u5b83\u8ba2\u5355\u3002', soldQty:'\u5df2\u5356\u6570\u91cf', max:'\u6700\u591a'
@@ -3007,6 +3007,38 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
   function saveTopStatsCache(snapshot){
     try{ localStorage.setItem('yllTopStatsCacheV1', JSON.stringify(snapshot)); }catch(e){}
+  }
+  function optimisticTopStatsAfterOrder(savedCart,payment,discountAmount,paidAmount,changeAmount){
+    try{
+      const cartRows=Array.isArray(savedCart)?savedCart:[];
+      const subtotal=cartRows.reduce((sum,i)=>sum+num(i.price)*num(i.qty),0);
+      const total=moneyNum(Math.max(0,subtotal-num(discountAmount||0)));
+      const qty=cartRows.reduce((sum,i)=>sum+num(i.qty),0);
+      const method=String(payment||'').toLowerCase();
+      const snap=loadTopStatsCache() || {today:{},drawer:{},productCount:(currentProducts()||[]).length || (window.products||[]).length || 0};
+      snap.today=snap.today||{};
+      snap.drawer=snap.drawer||{};
+      snap.today.total=moneyNum(num(snap.today.total||0)+total);
+      snap.today.orders=num(snap.today.orders||snap.today.count||0)+1;
+      snap.today.count=snap.today.orders;
+      if(method==='cash'){
+        snap.today.Cash=moneyNum(num(snap.today.Cash||0)+total);
+        snap.drawer.cashDrawer=moneyNum(num(snap.drawer.cashDrawer||0)+total);
+      }else if(method==='mixed'){
+        const cashPart=moneyNum(Math.max(0,num(paidAmount||0)-num(changeAmount||0)));
+        snap.today.Cash=moneyNum(num(snap.today.Cash||0)+cashPart);
+        snap.drawer.cashDrawer=moneyNum(num(snap.drawer.cashDrawer||0)+cashPart);
+      }else if(method==='mbb_qr' || method==='qr'){
+        snap.today.MBB_QR=moneyNum(num(snap.today.MBB_QR||0)+total);
+      }else if(method==='transfer'){
+        snap.today.Transfer=moneyNum(num(snap.today.Transfer||0)+total);
+      }
+      snap.today.totalQty=num(snap.today.totalQty||0)+qty;
+      snap.productCount=snap.productCount || (currentProducts()||[]).length || (window.products||[]).length || 0;
+      snap.at=Date.now();
+      saveTopStatsCache(snap);
+      applyTopStats(snap);
+    }catch(e){ console.warn('optimistic stats failed', e); }
   }
   function readQueue(name){
     try{ return JSON.parse(localStorage.getItem(name) || '[]').filter(Boolean); }catch(e){ return []; }
@@ -3617,6 +3649,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{ last折扣 = sendDiscount; }catch(e){}
     window.lastDiscount = sendDiscount;
     try{ lastDiscount = sendDiscount; }catch(e){}
+    optimisticTopStatsAfterOrder(window.lastCart, window.lastPayment, sendDiscount, window.lastPaid, window.lastChange);
     reduceLocalStock(window.lastCart);
     c.length = 0;
     try{ discount = 0; }catch(e){ window.discount = 0; }
@@ -3655,7 +3688,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       offline.push({id:clientId, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, date:new Date().toISOString()});
       localStorage.setItem('offlineOrders', JSON.stringify(offline));
       finishSavedOrder('OFFLINE-' + clientId, sendDiscount);
-      try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
+      try{ scheduleTopStatsRefresh(800); }catch(e){}
       if(typeof showToast === 'function')showToast(tr('offlineSaved'));
       return;
     }
@@ -4263,9 +4296,53 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(box)box.textContent=tr('loading');
     try{
       const r=await apiCall('getOtherIncomeSummary',[]);
-      if(box)box.innerHTML=`<table><tr><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th></tr><tr><td>${esc(tr('pending'))}</td><td class="right">${money(r.pending||0)}</td></tr><tr><td>${esc(tr('received'))}</td><td class="right">${money(r.received||0)}</td></tr><tr><td>${esc(tr('records'))}</td><td class="right">${esc(r.count||0)}</td></tr></table>`;
+      const rows=(r.rows||[]).filter(x=>String(x.status||'Pending')!=='Received').slice(0,30);
+      let html=`<table><tr><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th></tr><tr><td>${esc(tr('pending'))}</td><td class="right">${money(r.pending||0)}</td></tr><tr><td>${esc(tr('received'))}</td><td class="right">${money(r.received||0)}</td></tr><tr><td>${esc(tr('records'))}</td><td class="right">${esc(r.count||0)}</td></tr></table>`;
+      if(rows.length){
+        html+=`<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('action'))}</th></tr>`+
+          rows.map(x=>`<tr><td>${esc(x.date||'')}</td><td>${esc(x.type||'')}</td><td class="right">${money(x.amount||0)}</td><td><button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${esc(x.id||'')}')">${esc(tr('confirmReceived'))}</button></td></tr>`).join('')+
+          `</table>`;
+      }else{
+        html+=`<div class="boss-result">${esc(tr('noRecords'))}</div>`;
+      }
+      if(box)box.innerHTML=html;
     }catch(e){
       if(box)box.textContent=tr('loadFailed')+(e.message||e);
+    }
+  };
+
+  window.bossAddOtherIncome = async function(){
+    if(typeof bossRequire === 'function' && !bossRequire())return;
+    const type=(($('otherIncomeType')||{}).value||tr('waterMachine')).trim();
+    const amount=num(($('otherIncomeAmount')||{}).value);
+    if(amount<=0){ showAppAlert(tr('amountRequired'), tr('otherIncome')); return; }
+    try{
+      setSubmitBusy(true,tr('saving'));
+      await apiCall('addOtherIncome',[{type,amount,status:'Pending'}]);
+      const amt=$('otherIncomeAmount'); if(amt)amt.value='';
+      if(typeof showToast==='function')showToast(tr('saved'));
+      await bossOpenOtherIncome();
+    }catch(e){
+      showAppAlert(tr('saveFailed')+(e.message||e),tr('otherIncome'));
+    }finally{
+      setSubmitBusy(false);
+    }
+  };
+
+  window.bossConfirmOtherIncome = async function(id){
+    if(typeof bossRequire === 'function' && !bossRequire())return;
+    const ok=await appConfirm(tr('confirmReceived')+'?', tr('otherIncome'));
+    if(!ok)return;
+    try{
+      setSubmitBusy(true,tr('saving'));
+      await apiCall('confirmOtherIncome',[id,null]);
+      if(typeof showToast==='function')showToast(tr('saved'));
+      await bossOpenOtherIncome();
+      scheduleTopStatsRefresh(500);
+    }catch(e){
+      showAppAlert(tr('saveFailed')+(e.message||e),tr('otherIncome'));
+    }finally{
+      setSubmitBusy(false);
     }
   };
 
