@@ -2588,7 +2588,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       recovered:'Recovered', recoveredToday:'Recovered today', noteOptional:'Note optional', saveParcelRecord:'Save Parcel Record',
       actualParcelsRequired:'Please fill actual received parcels.', parcelRequired:'Please fill Shopee system parcels.',
       saving:'Saving...', submittingParcel:'Submitting Shopee parcel, please wait...', alreadySaved:'Already saved', shopeeSaved:'Shopee saved', shopeeSaveFailed:'Shopee save failed: ',
-      loadFailed:'Load failed: ', item:'Item', amount:'Amount', amountRequired:'Please enter amount.', date:'Date', note:'Note', action:'Action', collectable:'Collectable',
+      loadFailed:'Load failed: ', item:'Item', amount:'Amount', amountRequired:'Please enter amount.', date:'Date', note:'Note', status:'Status', action:'Action', collectable:'Collectable',
       cashCurrentlyDrawer:'Cash currently in drawer', cashAlreadyCollected:'Cash already collected',
       approvedRefundsDeducted:'Approved cash refunds deducted', floatCash:'Float cash', todayCash:'Today Cash', todayTotal:'Today Total',
       cashReminderReached:'Collectable cash {amount} reached reminder {limit}.', paid:'Paid', otherPending:'Other Pending',
@@ -2632,7 +2632,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       recovered:'\u5df2\u8865\u56de', recoveredToday:'\u4eca\u5929\u8865\u56de', noteOptional:'\u5907\u6ce8\uff08\u53ef\u4e0d\u586b\uff09', saveParcelRecord:'\u4fdd\u5b58\u5305\u88f9\u8bb0\u5f55',
       actualParcelsRequired:'\u8bf7\u586b\u5199\u5b9e\u9645\u6536\u5230\u7684\u5305\u88f9\u6570\u3002', parcelRequired:'\u8bf7\u586b\u5199 Shopee \u7cfb\u7edf\u5305\u88f9\u6570\u3002',
       saving:'\u4fdd\u5b58\u4e2d...', submittingParcel:'\u6b63\u5728\u63d0\u4ea4 Shopee \u5305\u88f9\uff0c\u8bf7\u7a0d\u7b49...', alreadySaved:'\u5df2\u7ecf\u4fdd\u5b58', shopeeSaved:'Shopee \u5df2\u4fdd\u5b58', shopeeSaveFailed:'Shopee \u4fdd\u5b58\u5931\u8d25\uff1a',
-      loadFailed:'\u8f7d\u5165\u5931\u8d25\uff1a', item:'\u9879\u76ee', amount:'\u91d1\u989d', amountRequired:'\u8bf7\u8f93\u5165\u91d1\u989d\u3002', date:'\u65e5\u671f', note:'\u5907\u6ce8', action:'\u64cd\u4f5c', collectable:'\u53ef\u6536\u8d70',
+      loadFailed:'\u8f7d\u5165\u5931\u8d25\uff1a', item:'\u9879\u76ee', amount:'\u91d1\u989d', amountRequired:'\u8bf7\u8f93\u5165\u91d1\u989d\u3002', date:'\u65e5\u671f', note:'\u5907\u6ce8', status:'\u72b6\u6001', action:'\u64cd\u4f5c', collectable:'\u53ef\u6536\u8d70',
       cashCurrentlyDrawer:'\u76ee\u524d\u6536\u94f6\u673a\u73b0\u91d1', cashAlreadyCollected:'\u5df2\u6536\u8d70\u73b0\u91d1',
       approvedRefundsDeducted:'\u5df2\u6279\u51c6\u9000\u6b3e\u5df2\u6263\u9664', floatCash:'\u5907\u7528\u73b0\u91d1', todayCash:'\u4eca\u65e5\u73b0\u91d1', todayTotal:'\u4eca\u65e5\u603b\u6570',
       cashReminderReached:'\u53ef\u6536\u8d70\u73b0\u91d1 {amount} \u5df2\u8fbe\u5230\u63d0\u9192\u91d1\u989d {limit}\u3002', paid:'\u5df2\u6536', otherPending:'\u5176\u5b83\u672a\u6536',
@@ -3445,6 +3445,18 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const p=$(id);
     if(p){p.style.display='block';p.classList.add('active');}
     setBossNav(activeKey);
+  }
+
+  function keepBossDashboardOpen(activeKey){
+    try{
+      const ms=(typeof BOSS_IDLE_MS !== 'undefined' && Number(BOSS_IDLE_MS)) ? Number(BOSS_IDLE_MS) : 10*60*1000;
+      sessionStorage.setItem('bossSessionUntil', String(Date.now()+Math.max(60000,ms)));
+      window.__bossSessionActive=true;
+      const dash=$('bossDashboard');
+      if(dash)dash.classList.add('active');
+      document.body.classList.add('modal-open');
+      if(activeKey)setBossNav(activeKey);
+    }catch(e){}
   }
 
   function ensureBossNetworkPanel(){
@@ -4342,16 +4354,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.bossOpenOtherIncome = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
+    keepBossDashboardOpen('otherIncome');
     showBossPanel('bossOtherIncomeBox','otherIncome');
     const box=$('bossOtherIncomeResult');
     if(box)box.textContent=tr('loading');
     try{
-      const r=await apiCall('getOtherIncomeSummary',[]);
-      const rows=(r.rows||[]).filter(x=>String(x.status||'Pending')!=='Received').slice(0,30);
+      const r=await apiCallTransient('getOtherIncomeSummary',[],16000,'Other income');
+      const rows=(r.rows||[]).slice(0,30);
       let html=`<table><tr><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th></tr><tr><td>${esc(tr('pending'))}</td><td class="right">${money(r.pending||0)}</td></tr><tr><td>${esc(tr('received'))}</td><td class="right">${money(r.received||0)}</td></tr><tr><td>${esc(tr('records'))}</td><td class="right">${esc(r.count||0)}</td></tr></table>`;
       if(rows.length){
-        html+=`<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('action'))}</th></tr>`+
-          rows.map(x=>`<tr><td>${esc(x.date||'')}</td><td>${esc(x.type||'')}</td><td class="right">${money(x.amount||0)}</td><td><button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${esc(x.id||'')}')">${esc(tr('confirmReceived'))}</button></td></tr>`).join('')+
+        html+=`<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('status'))}</th><th>${esc(tr('action'))}</th></tr>`+
+          rows.map(x=>{
+            const received=String(x.status||'Pending')==='Received';
+            return `<tr><td>${esc(x.date||'')}</td><td>${esc(x.type||'')}</td><td class="right">${money(x.amount||0)}</td><td>${esc(received?tr('received'):tr('pending'))}</td><td>${received?'':`<button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${esc(x.id||'')}')">${esc(tr('confirmReceived'))}</button>`}</td></tr>`;
+          }).join('')+
           `</table>`;
       }else{
         html+=`<div class="boss-result">${esc(tr('noRecords'))}</div>`;
@@ -4364,6 +4380,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.bossAddOtherIncome = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
+    keepBossDashboardOpen('otherIncome');
     const type=(($('otherIncomeType')||{}).value||tr('waterMachine')).trim();
     const amount=num(($('otherIncomeAmount')||{}).value);
     if(amount<=0){ showAppAlert(tr('amountRequired'), tr('otherIncome')); return; }
@@ -4382,9 +4399,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.bossConfirmOtherIncome = async function(id){
     if(typeof bossRequire === 'function' && !bossRequire())return;
+    keepBossDashboardOpen('otherIncome');
     const ok=await appConfirm(tr('confirmReceived')+'?', tr('otherIncome'));
     if(!ok)return;
     try{
+      keepBossDashboardOpen('otherIncome');
       setSubmitBusy(true,tr('saving'));
       await apiCall('confirmOtherIncome',[id,null]);
       if(typeof showToast==='function')showToast(tr('saved'));
@@ -4394,6 +4413,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       showAppAlert(tr('saveFailed')+(e.message||e),tr('otherIncome'));
     }finally{
       setSubmitBusy(false);
+      keepBossDashboardOpen('otherIncome');
+      try{ showBossPanel('bossOtherIncomeBox','otherIncome'); }catch(e){}
     }
   };
 
