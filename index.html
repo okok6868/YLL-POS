@@ -2577,7 +2577,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       payment:'Payment', confirm:'Confirm', mixed:'Mixed', validAmount:'Please enter valid amount', paymentNotEnough:'Payment is not enough.',
       selectPayment:'Select Payment', cashPayment:'Cash Payment', customerPaid:'Customer paid amount', exactPayment:'Exact Payment', confirmPayment:'Confirm Payment', cancel:'Cancel',
       cashNotEnough:'Cash received is not enough.', confirmPaymentReceived:'Confirm {label} payment received?',
-      confirmCashReceived:'Confirm cash received?',
+      confirmCashReceived:'Confirm cash received?', confirmCashPayment:'Confirm cash payment?', confirmCashDetails:'Paid {paid}\nChange {change}', paidAmount:'Paid amount',
       offlineSaved:'Offline order saved. It will sync when online.', orderSlow:'Order saved. Connection was slow.',
       saveUnconfirmed:'Save not confirmed. Please check Orders_Main before pressing checkout again.',
       noOrderNumber:'No order number returned', noLowStock:'No low stock products', change:'Change', remaining:'Remaining',
@@ -2622,7 +2622,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       payment:'\u4ed8\u6b3e', confirm:'\u786e\u8ba4', mixed:'\u6df7\u5408\u4ed8\u6b3e', validAmount:'\u8bf7\u8f93\u5165\u6b63\u786e\u91d1\u989d', paymentNotEnough:'\u4ed8\u6b3e\u91d1\u989d\u4e0d\u8db3\u3002',
       selectPayment:'\u9009\u62e9\u4ed8\u6b3e', cashPayment:'\u73b0\u91d1\u4ed8\u6b3e', customerPaid:'\u987e\u5ba2\u7ed9\u7684\u91d1\u989d', exactPayment:'\u521a\u597d\u4ed8\u6b3e', confirmPayment:'\u786e\u8ba4\u4ed8\u6b3e', cancel:'\u53d6\u6d88',
       cashNotEnough:'\u6536\u5230\u7684\u73b0\u91d1\u4e0d\u8db3\u3002', confirmPaymentReceived:'\u786e\u8ba4\u5df2\u6536\u5230 {label} \u4ed8\u6b3e\uff1f',
-      confirmCashReceived:'\u786e\u8ba4\u5df2\u6536\u5230\u73b0\u91d1\uff1f',
+      confirmCashReceived:'\u786e\u8ba4\u5df2\u6536\u5230\u73b0\u91d1\uff1f', confirmCashPayment:'\u786e\u8ba4\u73b0\u91d1\u4ed8\u6b3e\uff1f', confirmCashDetails:'\u5df2\u6536 {paid}\n\u627e\u96f6 {change}', paidAmount:'\u5df2\u6536\u91d1\u989d',
       offlineSaved:'\u79bb\u7ebf\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u6709\u7f51\u540e\u4f1a\u81ea\u52a8\u540c\u6b65\u3002', orderSlow:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u53ea\u662f\u7f51\u7edc\u8f83\u6162\u3002',
       saveUnconfirmed:'\u8fd8\u4e0d\u80fd\u786e\u8ba4\u5df2\u4fdd\u5b58\u3002\u8bf7\u5148\u68c0\u67e5 Orders_Main\uff0c\u518d\u51b3\u5b9a\u662f\u5426\u91cd\u65b0\u4e70\u5355\u3002',
       noOrderNumber:'\u6ca1\u6709\u56de\u4f20\u8ba2\u5355\u53f7', noLowStock:'\u6ca1\u6709\u4f4e\u5e93\u5b58\u5546\u54c1', change:'\u627e\u96f6', remaining:'\u8fd8\u5dee',
@@ -2656,6 +2656,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   const tr = key => (I18N[lang()] && I18N[lang()][key]) || I18N.en[key] || key;
   const trf = (key, vars={}) => Object.keys(vars).reduce((s,k)=>s.replaceAll('{'+k+'}', vars[k]), tr(key));
   const looksGarbledText = s => /[\u00c0-\u00ff]/.test(String(s||''));
+  function normalizeText(s){ return String(s == null ? '' : s).replace(/\s+/g,' ').trim(); }
+  function normalizeCategoryName(s){ return normalizeText(s) || 'Uncategorized'; }
+  function categoryHtml(cat){
+    const text=normalizeCategoryName(cat);
+    const m=text.match(/^([\u3400-\u9fff]+)\s+(.+)$/);
+    if(!m)return `<span class="cat-name"><span class="cat-name-main">${esc(text)}</span></span>`;
+    return `<span class="cat-name"><span class="cat-name-main">${esc(m[1])}</span><span class="cat-name-sub">${esc(m[2])}</span></span>`;
+  }
   let bossOverviewCache = null;
   let bossOverviewCacheAt = 0;
   let bossOverviewPromise = null;
@@ -2702,7 +2710,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .sidebar .cat-btn{box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;transform:none!important;align-items:center!important}
       .sidebar .cat-btn:hover{transform:none!important}
       .sidebar .cat-btn span:first-child{min-width:0!important;max-width:100%!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;line-height:1.18!important;word-break:break-word!important}
+      .sidebar .cat-name{display:flex!important;flex-direction:column!important;gap:1px!important;min-width:0!important;line-height:1.08!important}
+      .sidebar .cat-name-main,.sidebar .cat-name-sub{display:block!important;min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+      .sidebar .cat-name-sub{font-size:.86em!important;color:inherit!important;opacity:.96!important}
       .sidebar .cat-count{flex:0 0 auto!important;min-width:28px!important;text-align:center!important;padding-left:7px!important;padding-right:7px!important}
+      .product-card .pname{display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;overflow:hidden!important;line-height:1.16!important;min-height:3.45em!important;word-break:break-word!important}
+      .cart-name{word-break:break-word!important;line-height:1.18!important}
+      .cash-coin-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin-top:10px!important}
+      .cash-paid-preview{font-weight:800!important;margin:10px 0!important;padding:10px 12px!important;border:1px solid rgba(148,163,184,.22)!important;border-radius:12px!important;background:rgba(15,23,42,.3)!important}
       button,.card,.cat-btn,.smallbtn,.big,.qtybar button{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
       #clock{display:none!important}
       .exact-pay-btn{display:none!important}
@@ -2980,7 +2995,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   function applyProducts(list, fromCache=false){
-    list=(list||[]).filter(p=>p && p.name && Number(p.price)>0);
+    list=(list||[]).filter(p=>p && p.name && Number(p.price)>0).map(p=>Object.assign({}, p, {
+      code: normalizeText(p.code),
+      name: normalizeText(p.name),
+      category: normalizeCategoryName(p.category),
+      image: normalizeText(p.image)
+    }));
     try{ products=list; window.products=list; currentList=list; currentPage=1; }catch(e){
       window.products=list; window.currentList=list; window.currentPage=1;
     }
@@ -3285,8 +3305,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const bar=$('menuList'); if(!bar)return;
     const allProducts=currentProducts();
     const first=document.querySelector('.sidebar > .cat-btn .cat-count'); if(first)first.textContent=allProducts.length;
-    const cats=[...new Set(allProducts.map(p=>p.category||'Uncategorized'))];
-    bar.innerHTML=cats.map(c=>`<div class="cat-btn" onclick='quickCat(${JSON.stringify(c)},this)'><span>${esc(c)}</span><span class="cat-count">${allProducts.filter(p=>(p.category||'Uncategorized')===c).length}</span></div>`).join('');
+    const cats=[...new Set(allProducts.map(p=>normalizeCategoryName(p.category)))];
+    bar.innerHTML=cats.map(c=>`<div class="cat-btn" onclick='quickCat(${JSON.stringify(c)},this)'>${categoryHtml(c)}<span class="cat-count">${allProducts.filter(p=>normalizeCategoryName(p.category)===c).length}</span></div>`).join('');
   };
   function setActiveCategory(el){
     document.querySelectorAll('.cat-btn').forEach(x=>x.classList.remove('active'));
@@ -3307,7 +3327,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       return;
     }
     try{ currentCat=cat; }catch(e){}
-    currentList=allProducts.filter(p=>String(p.category||'Uncategorized')===String(cat));
+    const wanted=normalizeCategoryName(cat);
+    currentList=allProducts.filter(p=>normalizeCategoryName(p.category)===wanted);
     render(currentList);
   };
   window.quickCat = function(cat,el){
@@ -3330,7 +3351,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const allProducts=currentProducts();
     currentList=!text ? allProducts : allProducts.filter(p =>
       String(p.name||'').toLowerCase().includes(text) ||
-      String(p.category||'').toLowerCase().includes(text) ||
+      normalizeCategoryName(p.category).toLowerCase().includes(text) ||
       String(p.price||'').includes(text)
     );
     render(currentList);
@@ -3415,11 +3436,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.openCash = function(){
     if(!currentCart().length){ showAppAlert(cartEmptyMessage(),tr('cash')); return; }
+    ensureCashCoinButtons();
     const d=calcDue();
     try{ cashTotal=d.final; }catch(e){}
     const t=$('cashTotal'); if(t)t.textContent=`${tr('subtotal')} ${money(d.subtotal)} | ${tr('discount')} -${money(d.discount)} | ${tr('total')} ${money(d.final)}`;
     const input=$('cashInput'); if(input)input.value='';
     const ch=$('change'); if(ch)ch.textContent=`${tr('change')} RM 0.00`;
+    updateCashPaidPreview(0, d.final);
     openModal('cashBox');
     setTimeout(()=>input&&input.focus(),50);
   };
@@ -3536,11 +3559,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
           </div>
           <div>
             <input id="bossProductRow" type="hidden">
+            <input id="bossProductOriginalCode" type="hidden">
+            <input id="bossProductOriginalName" type="hidden">
             <div class="boss-product-grid">
               <input id="bossProductCode" placeholder="${esc(tr('code'))}">
               <input id="bossProductName" placeholder="${esc(tr('productName'))}">
               <input id="bossProductPrice" type="number" step="0.01" placeholder="${esc(tr('price'))}">
-              <input id="bossProductCategory" placeholder="${esc(tr('category'))}">
+              <input id="bossProductCategory" list="bossProductCategoryList" placeholder="${esc(tr('category'))}">
+              <datalist id="bossProductCategoryList"></datalist>
               <input id="bossProductImage" class="wide" placeholder="${esc(tr('imageLink'))}">
               <input id="bossProductStock" type="number" step="1" placeholder="${esc(tr('stock'))}">
               <input id="bossProductCost" type="number" step="0.0001" placeholder="${esc(tr('cost'))}">
@@ -3641,13 +3667,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   let bossProductsCache = [];
 
+  function fillBossCategoryList(){
+    const list=$('bossProductCategoryList');
+    if(!list)return;
+    const cats=[...new Set((currentProducts()||[]).map(p=>normalizeCategoryName(p.category)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    list.innerHTML=cats.map(c=>`<option value="${esc(c)}"></option>`).join('');
+  }
+
   function bossLocalProductRows(){
     return (currentProducts()||[]).map(p=>({
-      code:p.code||'',
-      name:p.name||'',
+      code:normalizeText(p.code),
+      name:normalizeText(p.name),
       price:p.price||0,
-      category:p.category||'',
-      image:p.image||'',
+      category:normalizeCategoryName(p.category),
+      image:normalizeText(p.image),
       stock:p.stock||0,
       cost:p.cost||0,
       active:p.active!==false,
@@ -3658,11 +3691,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function bossProductPayload(){
     return {
       row: ($('bossProductRow')||{}).value || '',
-      code: ($('bossProductCode')||{}).value || '',
-      name: ($('bossProductName')||{}).value || '',
+      originalCode: ($('bossProductOriginalCode')||{}).value || '',
+      originalName: ($('bossProductOriginalName')||{}).value || '',
+      code: normalizeText(($('bossProductCode')||{}).value),
+      name: normalizeText(($('bossProductName')||{}).value),
       price: ($('bossProductPrice')||{}).value || '',
-      category: ($('bossProductCategory')||{}).value || '',
-      image: ($('bossProductImage')||{}).value || '',
+      category: normalizeCategoryName(($('bossProductCategory')||{}).value),
+      image: normalizeText(($('bossProductImage')||{}).value),
       stock: ($('bossProductStock')||{}).value || '',
       cost: ($('bossProductCost')||{}).value || '',
       active: ($('bossProductActive')||{}).value || 'TRUE'
@@ -3673,12 +3708,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const box=$('bossProductList');
     if(!box)return;
     const q=String(query||'').trim().toLowerCase();
-    const rows=(bossProductsCache||[]).filter(p=>{
+    const rows=(bossProductsCache||[]).map((p,i)=>({p,i})).filter(({p})=>{
       if(!q)return true;
       return [p.code,p.name,p.category].some(v=>String(v||'').toLowerCase().includes(q));
     }).slice(0,80);
     if(!rows.length){ box.innerHTML=`<div class="empty">${esc(tr('noProducts'))}</div>`; return; }
-    box.innerHTML=rows.map((p,i)=>`
+    box.innerHTML=rows.map(({p,i})=>`
       <button type="button" onclick="bossPickProduct(${i})">
         <b>${esc(p.name||'')}</b>
         <small>${esc(p.code||'-')} | ${money(p.price)} | ${esc(tr('stock'))} ${esc(p.stock||0)} | ${esc(tr('currentCost'))}: ${money(p.cost||0)}</small>
@@ -3688,7 +3723,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.bossSearchProducts = function(query){ renderBossProductList(query); };
 
   window.bossClearProductForm = function(){
-    ['bossProductRow','bossProductCode','bossProductName','bossProductPrice','bossProductCategory','bossProductImage','bossProductStock','bossProductCost'].forEach(id=>{ const el=$(id); if(el)el.value=''; });
+    ['bossProductRow','bossProductOriginalCode','bossProductOriginalName','bossProductCode','bossProductName','bossProductPrice','bossProductCategory','bossProductImage','bossProductStock','bossProductCost'].forEach(id=>{ const el=$(id); if(el)el.value=''; });
     const active=$('bossProductActive'); if(active)active.value='TRUE';
     const hint=$('bossProductHint'); if(hint)hint.textContent=tr('keepBlank');
   };
@@ -3698,6 +3733,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(!p)return;
     const values={
       bossProductRow:p.row||'',
+      bossProductOriginalCode:p.code||'',
+      bossProductOriginalName:p.name||'',
       bossProductCode:p.code||'',
       bossProductName:p.name||'',
       bossProductPrice:p.price||'',
@@ -3714,6 +3751,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.bossOpenProducts = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
     ensureBossProductPanel();
+    fillBossCategoryList();
     showBossPanel('bossProductBox','productManage');
     keepBossDashboardOpen('productManage');
     const res=$('bossProductResult');
@@ -3728,6 +3766,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{
       const rows=await timeout(apiCall('getProductsForBoss',[]),9000,'Products');
       if(Array.isArray(rows) && rows.length)bossProductsCache=rows;
+      fillBossCategoryList();
       renderBossProductList(($('bossProductSearch')||{}).value||'');
       if(res)res.textContent=`${bossProductsCache.length} ${tr('products')}`;
     }catch(e){
@@ -3758,6 +3797,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
           list.splice(idx,1);
         }
         applyProducts(list,false);
+        fillBossCategoryList();
       }
       if(res)res.textContent=tr('productSaved') + (out && out.variantUpdated ? `; ${tr('variantsUpdated')}: ${out.variantUpdated}` : '');
       if(typeof showToast === 'function')showToast(res?res.textContent:tr('productSaved'));
@@ -4021,9 +4061,33 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const input=$('cashInput');
     if(input)input.value=money(due).replace('RM ','');
     const ch=$('change'); if(ch)ch.textContent=`${tr('change')} RM 0.00`;
-    closeCash();
-    checkout('cash', due, 0);
+    updateCashPaidPreview(due, due);
   };
+
+  function ensureCashCoinButtons(){
+    if($('cashCoinGrid'))return;
+    const input=$('cashInput');
+    if(!input)return;
+    const grid=document.createElement('div');
+    grid.id='cashCoinGrid';
+    grid.className='cash-coin-grid';
+    grid.innerHTML=['0.10','0.20','0.50'].map(v=>`<button type="button" class="cash-quick-btn" onclick="quick(${Number(v)})">RM${v}</button>`).join('');
+    const change=$('change');
+    if(change && change.parentNode)change.parentNode.insertBefore(grid, change);
+    const preview=document.createElement('div');
+    preview.id='cashPaidPreview';
+    preview.className='cash-paid-preview';
+    preview.textContent=`${tr('paidAmount')}: RM 0.00`;
+    if(change && change.parentNode)change.parentNode.insertBefore(preview, change.nextSibling);
+  }
+
+  function updateCashPaidPreview(pay, due){
+    const prev=$('cashPaidPreview');
+    if(!prev)return;
+    const paid=moneyNum(pay||0);
+    const total=moneyNum(due==null ? calcDue().final : due);
+    prev.textContent=`${tr('paidAmount')}: ${money(paid)} | ${tr('change')}: ${money(Math.max(0, paid-total))}`;
+  }
 
   window.quick = function(v){
     const input=$('cashInput');
@@ -4040,6 +4104,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const due=calcDue().final;
     const pay=String(input.value||'').trim()==='' ? 0 : num(input.value);
     ch.textContent=`${tr('change')} ${money(Math.max(0, pay-due))}`;
+    updateCashPaidPreview(pay, due);
   };
 
   window.confirmCash = function(){
@@ -4052,14 +4117,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       return;
     }
     const change=moneyNum(pay - due);
-    if(raw === ''){
-      appConfirm(tr('confirmCashReceived'), tr('cash'), money(due)).then(ok=>{
-        if(ok){ closeCash(); checkout('cash', pay, change); }
-      });
-      return;
-    }
-    closeCash();
-    checkout('cash', pay, change);
+    const msg = raw === '' ? tr('confirmCashReceived') : trf('confirmCashDetails', {paid:money(pay), change:money(change)});
+    appConfirm(msg, tr('confirmCashPayment'), money(due)).then(ok=>{
+      if(ok){ closeCash(); checkout('cash', pay, change); }
+    });
   };
   window.confirmDirectCheckout = function(payment,label){
     if(!currentCart().length){ showAppAlert(cartEmptyMessage(),tr('payment')); return; }
