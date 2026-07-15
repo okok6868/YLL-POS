@@ -2578,6 +2578,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       selectPayment:'Select Payment', cashPayment:'Cash Payment', customerPaid:'Customer paid amount', exactPayment:'Exact Payment', confirmPayment:'Confirm Payment', cancel:'Cancel',
       cashNotEnough:'Cash received is not enough.', confirmPaymentReceived:'Confirm {label} payment received?',
       confirmCashReceived:'Confirm cash received?', confirmCashPayment:'Confirm cash payment?', confirmCashDetails:'Paid {paid}\nChange {change}', paidAmount:'Paid amount',
+      stockNeedBoss:'Stock is below 0. Please tell boss to update stock.',
       offlineSaved:'Offline order saved. It will sync when online.', orderSlow:'Order saved. Connection was slow.',
       saveUnconfirmed:'Save not confirmed. Please check Orders_Main before pressing checkout again.',
       noOrderNumber:'No order number returned', noLowStock:'No low stock products', change:'Change', remaining:'Remaining',
@@ -2623,6 +2624,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       selectPayment:'\u9009\u62e9\u4ed8\u6b3e', cashPayment:'\u73b0\u91d1\u4ed8\u6b3e', customerPaid:'\u987e\u5ba2\u7ed9\u7684\u91d1\u989d', exactPayment:'\u521a\u597d\u4ed8\u6b3e', confirmPayment:'\u786e\u8ba4\u4ed8\u6b3e', cancel:'\u53d6\u6d88',
       cashNotEnough:'\u6536\u5230\u7684\u73b0\u91d1\u4e0d\u8db3\u3002', confirmPaymentReceived:'\u786e\u8ba4\u5df2\u6536\u5230 {label} \u4ed8\u6b3e\uff1f',
       confirmCashReceived:'\u786e\u8ba4\u5df2\u6536\u5230\u73b0\u91d1\uff1f', confirmCashPayment:'\u786e\u8ba4\u73b0\u91d1\u4ed8\u6b3e\uff1f', confirmCashDetails:'\u5df2\u6536 {paid}\n\u627e\u96f6 {change}', paidAmount:'\u5df2\u6536\u91d1\u989d',
+      stockNeedBoss:'\u5e93\u5b58\u5df2\u4f4e\u8fc7 0\uff0c\u8bf7\u901a\u77e5\u8001\u677f\u8865\u5e93\u5b58\u3002',
       offlineSaved:'\u79bb\u7ebf\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u6709\u7f51\u540e\u4f1a\u81ea\u52a8\u540c\u6b65\u3002', orderSlow:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u53ea\u662f\u7f51\u7edc\u8f83\u6162\u3002',
       saveUnconfirmed:'\u8fd8\u4e0d\u80fd\u786e\u8ba4\u5df2\u4fdd\u5b58\u3002\u8bf7\u5148\u68c0\u67e5 Orders_Main\uff0c\u518d\u51b3\u5b9a\u662f\u5426\u91cd\u65b0\u4e70\u5355\u3002',
       noOrderNumber:'\u6ca1\u6709\u56de\u4f20\u8ba2\u5355\u53f7', noLowStock:'\u6ca1\u6709\u4f4e\u5e93\u5b58\u5546\u54c1', change:'\u627e\u96f6', remaining:'\u8fd8\u5dee',
@@ -2717,6 +2719,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .product-card .pname{display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;overflow:hidden!important;line-height:1.16!important;min-height:3.45em!important;word-break:break-word!important}
       .cart-name{word-break:break-word!important;line-height:1.18!important}
       .cash-coin-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin-top:10px!important}
+      .cash-coin-grid .cash-coin-btn{background:linear-gradient(135deg,#e5e7eb,#94a3b8)!important;color:#0f172a!important;border-color:rgba(226,232,240,.7)!important}
       .cash-paid-preview{font-weight:800!important;margin:10px 0!important;padding:10px 12px!important;border:1px solid rgba(148,163,184,.22)!important;border-radius:12px!important;background:rgba(15,23,42,.3)!important}
       button,.card,.cat-btn,.smallbtn,.big,.qtybar button{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
       #clock{display:none!important}
@@ -3372,6 +3375,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.add = function(name,price){
     if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut))return;
     const c=currentCart();
+    const product=(currentProducts()||[]).find(p=>String(p.name)===String(name));
+    if(product){
+      const inCart=c.filter(i=>String(i.name)===String(name)).reduce((s,i)=>s+Number(i.qty||0),0);
+      const projected=Number(product.stock||0) - inCart - 1;
+      if(projected < 0 && typeof showToast === 'function')showToast(`${tr('stockNeedBoss')} ${name}`);
+    }
     const found=c.find(i=>String(i.name)===String(name));
     if(found)found.qty=Number(found.qty||0)+1;
     else c.push({name,price:Number(price)||0,qty:1});
@@ -3964,7 +3973,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const list=currentProducts();
       (savedCart||[]).forEach(it=>{
         const p=list.find(x=>String(x.name)===String(it.name));
-        if(p)p.stock=Math.max(0, Number(p.stock||0)-Number(it.qty||0));
+        if(p)p.stock=Number(p.stock||0)-Number(it.qty||0);
       });
       applyProducts(list,false);
     }catch(e){ console.warn('local stock update failed', e); }
