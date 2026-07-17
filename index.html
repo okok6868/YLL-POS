@@ -2556,6 +2556,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   const money = v => 'RM ' + moneyNum(v).toFixed(2);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  if(!document.getElementById('yll-parcel-short-style')){
+    const style=document.createElement('style');
+    style.id='yll-parcel-short-style';
+    style.textContent=`
+      .parcel-short-list{display:grid;gap:8px;margin:8px 0 10px}
+      .parcel-short-card{border:1px solid rgba(148,163,184,.28);border-radius:12px;background:rgba(15,23,42,.78);padding:10px}
+      .parcel-short-date{font-weight:900;margin-bottom:8px;color:#e5e7eb}
+      .parcel-short-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+      .parcel-short-grid span{display:flex;flex-direction:column;gap:2px;background:rgba(2,6,23,.52);border-radius:10px;padding:7px;color:#94a3b8;font-size:12px;line-height:1.2}
+      .parcel-short-grid b{color:#f8fafc;font-size:16px;line-height:1.1}
+      body.light .parcel-short-card{background:#fff;border-color:#d1d5db}
+      body.light .parcel-short-date{color:#0f172a}
+      body.light .parcel-short-grid span{background:#f1f5f9;color:#475569}
+      body.light .parcel-short-grid b{color:#0f172a}
+    `;
+    document.head.appendChild(style);
+  }
   const timeout = (promise, ms, label) => Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error((label || 'Request') + ' timeout, please check connection.')), ms))
@@ -4636,7 +4653,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const wrap=$('parcelRecoveryWrap'), list=$('parcelRecoveryList');
       if(wrap && list && rows.length){
         wrap.style.display='block';
-        list.innerHTML=`<table><tr><th>${esc(tr('date'))}</th><th class="right">${esc(tr('missing'))}</th><th class="right">${esc(tr('recovered'))}</th><th class="right">${esc(tr('stillMissing'))}</th></tr>`+rows.map(x=>`<tr><td>${esc(x.date)}</td><td class="right">${x.missing||0}</td><td class="right">${x.recovered||0}</td><td class="right">${x.outstanding||0}</td></tr>`).join('')+'</table>';
+        list.className='parcel-short-list';
+        list.innerHTML=rows.map(x=>`<div class="parcel-short-card">
+          <div class="parcel-short-date">${esc(x.date)}</div>
+          <div class="parcel-short-grid">
+            <span>${esc(tr('missing'))}<b>${num(x.missing)}</b></span>
+            <span>${esc(tr('recovered'))}<b>${num(x.recovered)}</b></span>
+            <span>${esc(tr('stillMissing'))}<b>${num(x.outstanding)}</b></span>
+          </div>
+        </div>`).join('');
       }
     }catch(e){
       const el=$('parcelTodayStatus');
