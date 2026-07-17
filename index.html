@@ -2735,6 +2735,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .boss-product-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
       .boss-product-grid input,.boss-product-grid select{min-width:0!important}
       .boss-product-grid .wide{grid-column:1/-1!important}
+      .boss-field{display:flex!important;flex-direction:column!important;gap:5px!important;min-width:0!important}
+      .boss-field-label{font-size:12px!important;font-weight:800!important;line-height:1.15!important;color:#e5e7eb!important;opacity:.95!important}
+      .boss-field.wide{grid-column:1/-1!important}
       .boss-product-grid select,#bossLostType{background:#020617!important;color:#e5e7eb!important;border:1px solid rgba(148,163,184,.35)!important;border-radius:10px!important}
       .boss-notice{background:rgba(245,158,11,.14)!important;border:1px solid rgba(245,158,11,.65)!important;color:#fbbf24!important;border-radius:12px!important;padding:10px 12px!important;font-weight:900!important}
       .boss-notice small{display:block!important;color:#fde68a!important;font-weight:700!important;margin-top:3px!important}
@@ -2747,6 +2750,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       body.light .boss-dashboard-shell{background:#ffffff!important;color:#0f172a!important}
       body.light .boss-hero{background:linear-gradient(135deg,#dbeafe,#f5f3ff)!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-panel,body.light .boss-tab-grid,body.light .overview-card,body.light .boss-money-card,body.light .boss-result{background:#f8fafc!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
+      body.light .boss-field-label{color:#0f172a!important}
       body.light .boss-product-list,body.light .boss-product-list button{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-tab-grid button{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-tab-grid button.active{background:linear-gradient(135deg,#2563eb,#14b8a6)!important;color:#fff!important}
@@ -2881,6 +2885,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       setPh('bossProductImage', tr('imageLink'));
       setPh('bossProductStock', tr('stock'));
       setPh('bossProductCost', tr('cost'));
+      productPanel.querySelectorAll('[data-product-label]').forEach(el=>{
+        const key=el.getAttribute('data-product-label');
+        if(key)el.textContent=tr(key);
+      });
       const active=$('bossProductActive'); if(active){ active.options[0].textContent=tr('active'); active.options[1].textContent=tr('inactive'); }
       const saveBtn=$('bossProductSaveBtn'); if(saveBtn)saveBtn.textContent=tr('saveProduct');
       const newBtn=$('bossProductNewBtn'); if(newBtn)newBtn.textContent=tr('newProduct');
@@ -2888,6 +2896,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const lostPanel = $('bossLostBox');
     if(lostPanel){
       const h4=lostPanel.querySelector('h4'); if(h4)h4.textContent=tr('lostItemEditor');
+      lostPanel.querySelectorAll('[data-lost-label]').forEach(el=>{
+        const key=el.getAttribute('data-lost-label');
+        if(key)el.textContent=tr(key);
+      });
       setPh('bossLostSearch', tr('selectProduct'));
       setPh('bossLostQty', tr('qty'));
       setPh('bossLostReason', tr('reason'));
@@ -3584,7 +3596,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <p>${esc(tr('autoCostHint'))}</p>
         <div class="boss-product-tools">
           <div>
-            <input id="bossProductSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchProducts(this.value)">
+            <label class="boss-field"><span class="boss-field-label" data-product-label="selectProduct">${esc(tr('selectProduct'))}</span><input id="bossProductSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchProducts(this.value)"></label>
             <div id="bossProductList" class="boss-product-list"></div>
           </div>
           <div>
@@ -3592,15 +3604,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
             <input id="bossProductOriginalCode" type="hidden">
             <input id="bossProductOriginalName" type="hidden">
             <div class="boss-product-grid">
-              <input id="bossProductCode" placeholder="${esc(tr('code'))}">
-              <input id="bossProductName" placeholder="${esc(tr('productName'))}">
-              <input id="bossProductPrice" type="number" step="0.01" placeholder="${esc(tr('price'))}">
-              <input id="bossProductCategory" list="bossProductCategoryList" placeholder="${esc(tr('category'))}">
+              <label class="boss-field"><span class="boss-field-label" data-product-label="code">${esc(tr('code'))}</span><input id="bossProductCode" placeholder="${esc(tr('code'))}"></label>
+              <label class="boss-field"><span class="boss-field-label" data-product-label="productName">${esc(tr('productName'))}</span><input id="bossProductName" placeholder="${esc(tr('productName'))}"></label>
+              <label class="boss-field"><span class="boss-field-label" data-product-label="price">${esc(tr('price'))}</span><input id="bossProductPrice" type="number" step="0.01" placeholder="${esc(tr('price'))}"></label>
+              <label class="boss-field"><span class="boss-field-label" data-product-label="category">${esc(tr('category'))}</span><input id="bossProductCategory" list="bossProductCategoryList" placeholder="${esc(tr('category'))}"></label>
               <datalist id="bossProductCategoryList"></datalist>
-              <input id="bossProductImage" class="wide" placeholder="${esc(tr('imageLink'))}">
-              <input id="bossProductStock" type="number" step="1" placeholder="${esc(tr('stock'))}">
-              <input id="bossProductCost" type="number" step="0.0001" placeholder="${esc(tr('cost'))}">
-              <select id="bossProductActive"><option value="TRUE">${esc(tr('active'))}</option><option value="FALSE">${esc(tr('inactive'))}</option></select>
+              <label class="boss-field wide"><span class="boss-field-label" data-product-label="imageLink">${esc(tr('imageLink'))}</span><input id="bossProductImage" placeholder="${esc(tr('imageLink'))}"></label>
+              <label class="boss-field"><span class="boss-field-label" data-product-label="stock">${esc(tr('stock'))}</span><input id="bossProductStock" type="number" step="1" placeholder="${esc(tr('stock'))}"></label>
+              <label class="boss-field"><span class="boss-field-label" data-product-label="cost">${esc(tr('cost'))}</span><input id="bossProductCost" type="number" step="0.0001" placeholder="${esc(tr('cost'))}"></label>
+              <label class="boss-field wide"><span class="boss-field-label" data-product-label="active">${esc(tr('active'))}</span><select id="bossProductActive"><option value="TRUE">${esc(tr('active'))}</option><option value="FALSE">${esc(tr('inactive'))}</option></select></label>
               <button id="bossProductSaveBtn" class="green wide" onclick="bossSaveProduct()">${esc(tr('saveProduct'))}</button>
               <button id="bossProductNewBtn" class="wide" onclick="bossClearProductForm()">${esc(tr('newProduct'))}</button>
             </div>
@@ -3639,7 +3651,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <p>${esc(tr('autoCostHint'))}</p>
         <div class="boss-product-tools">
           <div>
-            <input id="bossLostSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchLostProducts(this.value)">
+            <label class="boss-field"><span class="boss-field-label" data-lost-label="selectProduct">${esc(tr('selectProduct'))}</span><input id="bossLostSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchLostProducts(this.value)"></label>
             <div id="bossLostProductList" class="boss-product-list"></div>
           </div>
           <div>
@@ -3647,16 +3659,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
             <input id="bossLostName" type="hidden">
             <input id="bossLostCost" type="hidden">
             <div class="boss-product-grid">
-              <select id="bossLostType">
+              <label class="boss-field"><span class="boss-field-label" data-lost-label="lossType">${esc(tr('lossType'))}</span><select id="bossLostType">
                 <option value="Expired">${esc(tr('expired'))}</option>
                 <option value="Damaged">${esc(tr('damaged'))}</option>
                 <option value="Stolen">${esc(tr('stolen'))}</option>
                 <option value="Missing">${esc(tr('missingStock'))}</option>
                 <option value="Other">${esc(tr('other'))}</option>
-              </select>
-              <input id="bossLostQty" type="number" step="0.01" min="0" placeholder="${esc(tr('qty'))}">
-              <input id="bossLostReason" class="wide" placeholder="${esc(tr('reason'))}">
-              <input id="bossLostNote" class="wide" placeholder="${esc(tr('noteOptional'))}">
+              </select></label>
+              <label class="boss-field"><span class="boss-field-label" data-lost-label="qty">${esc(tr('qty'))}</span><input id="bossLostQty" type="number" step="0.01" min="0" placeholder="${esc(tr('qty'))}"></label>
+              <label class="boss-field wide"><span class="boss-field-label" data-lost-label="reason">${esc(tr('reason'))}</span><input id="bossLostReason" placeholder="${esc(tr('reason'))}"></label>
+              <label class="boss-field wide"><span class="boss-field-label" data-lost-label="noteOptional">${esc(tr('noteOptional'))}</span><input id="bossLostNote" placeholder="${esc(tr('noteOptional'))}"></label>
               <button id="bossLostSaveBtn" class="green wide" onclick="bossSaveLostItem()">${esc(tr('recordLost'))}</button>
             </div>
             <div id="bossLostSelected" class="boss-result">${esc(tr('selectProduct'))}</div>
@@ -4490,19 +4502,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       <p style="color:#94a3b8;font-size:13px">${esc(tr('normalParcel'))}</p>
       <div class="parcel-auto-note" id="parcelTripNote">${esc(tr('todayTrip'))}</div>
       <div id="parcelTodayStatus" class="discount-preview">${esc(tr('loading'))}</div>
-      <input id="parcelExpected" type="number" inputmode="numeric" placeholder="${esc(tr('systemParcels'))}">
-      <input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}">
+      <label class="boss-field"><span class="boss-field-label">${esc(tr('systemParcels'))}</span><input id="parcelExpected" type="number" inputmode="numeric" placeholder="${esc(tr('systemParcels'))}"></label>
+      <label class="boss-field"><span class="boss-field-label">${esc(tr('returnedParcels'))}</span><input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}"></label>
       <details class="refund-auth" id="parcelShortDetails">
         <summary>${esc(tr('shortParcels'))}</summary>
-        <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="${esc(tr('actualReceived'))}">
+        <label class="boss-field"><span class="boss-field-label">${esc(tr('actualReceived'))}</span><input id="parcelDelivered" type="number" inputmode="numeric" placeholder="${esc(tr('actualReceived'))}"></label>
         <div id="parcelShortPreview" class="discount-preview">${esc(tr('missing'))}: 0</div>
       </details>
       <div id="parcelRecoveryWrap" style="display:none">
         <div class="discount-preview">${esc(tr('previousMissing'))}</div>
         <div id="parcelRecoveryList"></div>
-        <input id="parcelRecovered" type="number" inputmode="numeric" placeholder="${esc(tr('recoveredToday'))}">
+        <label class="boss-field"><span class="boss-field-label">${esc(tr('recoveredToday'))}</span><input id="parcelRecovered" type="number" inputmode="numeric" placeholder="${esc(tr('recoveredToday'))}"></label>
       </div>
-      <input id="parcelNote" type="text" placeholder="${esc(tr('noteOptional'))}">
+      <label class="boss-field"><span class="boss-field-label">${esc(tr('noteOptional'))}</span><input id="parcelNote" type="text" placeholder="${esc(tr('noteOptional'))}"></label>
       <button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">${esc(tr('saveParcelRecord'))}</button>
       <button onclick="closeModal('parcelBox')">${esc(tr('close'))}</button>`;
     ['parcelExpected','parcelReturned','parcelDelivered','parcelRecovered'].forEach(id=>{ const e=$(id); if(e)e.oninput=updateParcelPreview; });
@@ -4593,14 +4605,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       <p style="color:#94a3b8;font-size:13px">${lang()==='zh'?'选择最近 3 天订单，再选择退货商品和数量。':'Select an order from the last 3 days, choose items and quantity.'}</p>
       <button class="green load-refund-orders-btn" onclick="loadRecentRefundOrders(true)">${esc(tr('loadRecentOrders'))}</button>
       <div id="refundRecentBox">${esc(tr('loadingRecentOrders'))}</div>
-      <input id="refundOrderId" type="text" placeholder="${esc(tr('orderNo'))}" readonly>
+      <label class="boss-field"><span class="boss-field-label">${esc(tr('orderNo'))}</span><input id="refundOrderId" type="text" placeholder="${esc(tr('orderNo'))}" readonly></label>
       <div id="refundItemList" class="refund-item-list">${esc(tr('selectOrderFirst'))}</div>
       <div id="refundTotalBox" class="refund-summary">${esc(tr('refundTotal'))}: RM 0.00</div>
-      <input id="refundReason" type="text" placeholder="${esc(tr('refundReason'))}">
+      <label class="boss-field"><span class="boss-field-label">${esc(tr('refundReason'))}</span><input id="refundReason" type="text" placeholder="${esc(tr('refundReason'))}"></label>
       <details class="refund-auth" id="refundAuthDetails">
         <summary>${esc(tr('bossAuth'))}</summary>
-        <input id="refundBossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false">
-        <input id="refundBossPassword" type="password" placeholder="Password" autocomplete="new-password">
+        <label class="boss-field"><span class="boss-field-label">ID</span><input id="refundBossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" placeholder="Password" autocomplete="new-password"></label>
         <div class="receipt-note">${esc(tr('refundDirectNote'))}</div>
       </details>
       <div id="refundStatusMsg" class="refund-status-msg" style="display:none"></div>
