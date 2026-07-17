@@ -2747,9 +2747,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .boss-product-tools{display:grid!important;grid-template-columns:1.1fr .9fr!important;gap:10px!important;margin:10px 0!important}
       .boss-product-filter-row{display:grid!important;grid-template-columns:1fr .78fr!important;gap:8px!important;margin-bottom:8px!important}
       .boss-product-list{max-height:190px!important;overflow:auto!important;border:1px solid rgba(148,163,184,.2)!important;border-radius:14px!important;padding:8px!important;background:rgba(15,23,42,.18)!important}
-      .boss-product-list button{width:100%!important;text-align:left!important;margin:0 0 6px!important;padding:10px 12px!important;border-radius:10px!important;border:1px solid rgba(148,163,184,.22)!important;background:rgba(15,23,42,.45)!important;color:inherit!important}
+      .boss-product-list button{width:100%!important;text-align:left!important;margin:0 0 6px!important;padding:9px 10px!important;border-radius:10px!important;border:1px solid rgba(148,163,184,.22)!important;background:rgba(15,23,42,.45)!important;color:inherit!important;display:grid!important;grid-template-columns:52px 1fr!important;gap:10px!important;align-items:center!important}
       .boss-product-list button b{display:block!important;line-height:1.2!important}
       .boss-product-list button small{display:block!important;color:var(--muted)!important;margin-top:4px!important}
+      .boss-product-thumb{width:52px!important;height:52px!important;border-radius:10px!important;object-fit:cover!important;background:#020617!important;border:1px solid rgba(148,163,184,.24)!important;display:flex!important;align-items:center!important;justify-content:center!important;color:var(--muted)!important;font-size:11px!important;font-weight:800!important;overflow:hidden!important}
+      .boss-product-thumb img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
+      .boss-product-preview{margin-top:8px!important;border:1px solid rgba(148,163,184,.18)!important;border-radius:14px!important;padding:10px!important;background:rgba(15,23,42,.24)!important;display:none!important;grid-template-columns:72px 1fr!important;gap:10px!important;align-items:center!important}
+      .boss-product-preview.active{display:grid!important}
+      .boss-product-preview img,.boss-product-preview .no-img{width:72px!important;height:72px!important;border-radius:12px!important;object-fit:cover!important;background:#020617!important;border:1px solid rgba(148,163,184,.25)!important;color:var(--muted)!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:12px!important;font-weight:800!important}
+      .boss-image-viewer{position:fixed!important;inset:0!important;background:rgba(2,6,23,.78)!important;z-index:320!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:20px!important}
+      .boss-image-viewer-card{width:min(92vw,620px)!important;max-height:90vh!important;overflow:auto!important;background:#0f172a!important;color:#e5e7eb!important;border:1px solid rgba(148,163,184,.28)!important;border-radius:18px!important;padding:14px!important;box-shadow:0 24px 80px rgba(0,0,0,.45)!important}
+      .boss-image-viewer-card h3{margin:0 0 10px!important;font-size:18px!important;line-height:1.25!important}
+      .boss-image-viewer-card img{width:100%!important;max-height:68vh!important;object-fit:contain!important;border-radius:14px!important;background:#020617!important;display:block!important}
+      .boss-image-viewer-card button{width:100%!important;margin-top:12px!important}
       .boss-product-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
       .boss-product-grid input,.boss-product-grid select{min-width:0!important}
       .boss-product-grid .wide{grid-column:1/-1!important}
@@ -2769,7 +2779,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       body.light .boss-hero{background:linear-gradient(135deg,#dbeafe,#f5f3ff)!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-panel,body.light .boss-tab-grid,body.light .overview-card,body.light .boss-money-card,body.light .boss-result{background:#f8fafc!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-field-label{color:#0f172a!important}
-      body.light .boss-product-list,body.light .boss-product-list button{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
+      body.light .boss-product-list,body.light .boss-product-list button,body.light .boss-product-preview{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
+      body.light .boss-product-thumb,body.light .boss-product-preview img,body.light .boss-product-preview .no-img{background:#f1f5f9!important;color:#475569!important;border-color:rgba(15,23,42,.14)!important}
+      body.light .boss-image-viewer-card{background:#ffffff!important;color:#0f172a!important}
       body.light .boss-tab-grid button{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-tab-grid button.active{background:linear-gradient(135deg,#2563eb,#14b8a6)!important;color:#fff!important}
       body.light #appAlertText,body.light #bossLoginMsg{color:#0f172a!important}
@@ -3618,9 +3630,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
             <div class="boss-product-filter-row">
               <label class="boss-field"><span class="boss-field-label" data-product-label="selectProduct">${esc(tr('selectProduct'))}</span><input id="bossProductSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchProducts(this.value)"></label>
               <label class="boss-field"><span class="boss-field-label" data-product-label="category">${esc(tr('category'))}</span><select id="bossProductFilterCategory" onchange="bossFilterProducts()"><option value="">${esc(tr('all'))}</option></select></label>
-            </div>
-            <div id="bossProductList" class="boss-product-list"></div>
-          </div>
+             </div>
+             <div id="bossProductList" class="boss-product-list"></div>
+             <div id="bossProductPreview" class="boss-product-preview"></div>
+           </div>
           <div>
             <input id="bossProductRow" type="hidden">
             <input id="bossProductOriginalCode" type="hidden">
@@ -3797,11 +3810,18 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function fillBossProductFilterCategories(){
     const sel=$('bossProductFilterCategory');
     if(!sel)return;
-    const previous=normalizeCategoryName(sel.value);
+    const previous=selectedBossProductFilterCategory();
     const source=(bossProductsCache&&bossProductsCache.length ? bossProductsCache : bossLocalProductRows());
     const cats=[...new Set((source||[]).map(p=>normalizeCategoryName(p.category)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
     sel.innerHTML=`<option value="">${esc(tr('all'))}</option>` + cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     if(previous && cats.includes(previous))sel.value=previous;
+  }
+
+  function selectedBossProductFilterCategory(){
+    const value=normalizeText(($('bossProductFilterCategory')||{}).value);
+    const allWords=[tr('all'),'All Products','全部商品','All'].map(normalizeText);
+    if(!value || allWords.includes(value) || value.toLowerCase()==='all')return '';
+    return normalizeCategoryName(value);
   }
 
   function bossLocalProductRows(){
@@ -3877,19 +3897,75 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const box=$('bossProductList');
     if(!box)return;
     const q=String(query||'').trim().toLowerCase();
-    const filterCat=normalizeCategoryName(($('bossProductFilterCategory')||{}).value);
+    const filterCat=selectedBossProductFilterCategory();
     const rows=(bossProductsCache||[]).map((p,i)=>({p,i})).filter(({p})=>{
       if(filterCat && normalizeCategoryName(p.category)!==filterCat)return false;
       if(!q)return true;
       return [p.code,p.name,p.category].some(v=>String(v||'').toLowerCase().includes(q));
     }).slice(0,80);
-    if(!rows.length){ box.innerHTML=`<div class="empty">${esc(tr('noProducts'))}</div>`; return; }
+    if(!rows.length){
+      box.innerHTML=`<div class="empty">${esc(tr('noProducts'))}</div>`;
+      renderBossProductPreview(null);
+      return;
+    }
     box.innerHTML=rows.map(({p,i})=>`
       <button type="button" onclick="bossPickProduct(${i})">
-        <b>${esc(p.name||'')}</b>
-        <small>${esc(p.code||'-')} | ${money(p.price)} | ${esc(tr('stock'))} ${esc(p.stock||0)} | ${esc(tr('currentCost'))}: ${money(p.cost||0)}</small>
+        ${bossProductThumbHtml(p,i)}
+        <span><b>${esc(p.name||'')}</b>
+        <small>${esc(p.code||'-')} | ${money(p.price)} | ${esc(tr('stock'))} ${esc(p.stock||0)} | ${esc(tr('currentCost'))}: ${money(p.cost||0)}</small></span>
       </button>`).join('');
   }
+
+  function bossProductThumbHtml(p,index){
+    const img=normalizeText(p&&p.image);
+    const label=lang()==='zh'?'图片':'Image';
+    if(img)return `<span class="boss-product-thumb" onclick="event.stopPropagation(); bossPreviewProductImage(${Number(index)||0})"><img src="${esc(img)}" alt="${esc((p&&p.name)||'')}"></span>`;
+    return `<span class="boss-product-thumb" onclick="event.stopPropagation(); bossPreviewProductImage(${Number(index)||0})">${esc(label)}</span>`;
+  }
+
+  function renderBossProductPreview(p){
+    const box=$('bossProductPreview');
+    if(!box)return;
+    if(!p){
+      box.classList.remove('active');
+      box.innerHTML='';
+      return;
+    }
+    const img=normalizeText(p.image);
+    const noImg=lang()==='zh'?'没有图片':'No image';
+    box.classList.add('active');
+    box.innerHTML=`
+      ${img ? `<img src="${esc(img)}" alt="${esc(p.name||'')}" data-img="${esc(img)}" data-name="${esc(p.name||'')}" onclick="bossPreviewProductImageUrl(this.dataset.img,this.dataset.name)">` : `<div class="no-img">${esc(noImg)}</div>`}
+      <div>
+        <b>${esc(p.name||'')}</b>
+        <small>${esc(tr('code'))}: ${esc(p.code||'-')}</small>
+        <small>${esc(tr('price'))}: ${money(p.price||0)} | ${esc(tr('stock'))}: ${esc(p.stock||0)}</small>
+        <small>${esc(tr('category'))}: ${esc(p.category||'-')}</small>
+        <small>${esc(tr('currentCost'))}: ${money(p.cost||0)}</small>
+      </div>`;
+  }
+
+  window.bossPreviewProductImage = function(index){
+    const p=(bossProductsCache||[])[Number(index)];
+    if(!p)return;
+    renderBossProductPreview(p);
+    if(p.image)window.bossPreviewProductImageUrl(p.image,p.name);
+  };
+
+  window.bossPreviewProductImageUrl = function(url,name){
+    url=normalizeText(url);
+    if(!url)return;
+    const old=$('bossImageViewer');
+    if(old)old.remove();
+    const wrap=document.createElement('div');
+    wrap.id='bossImageViewer';
+    wrap.className='boss-image-viewer';
+    wrap.onclick=(e)=>{ if(e.target===wrap)wrap.remove(); };
+    wrap.innerHTML=`<div class="boss-image-viewer-card"><h3>${esc(name||tr('imageLink'))}</h3><img src="${esc(url)}" alt="${esc(name||'')}"><button type="button" class="green">${esc(tr('close'))}</button></div>`;
+    document.body.appendChild(wrap);
+    const btn=wrap.querySelector('button');
+    if(btn)btn.onclick=()=>wrap.remove();
+  };
 
   window.bossSearchProducts = function(query){ renderBossProductList(query); };
   window.bossFilterProducts = function(){ renderBossProductList(($('bossProductSearch')||{}).value||''); };
@@ -3904,6 +3980,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
     const active=$('bossProductActive'); if(active)active.value='TRUE';
     const hint=$('bossProductHint'); if(hint)hint.textContent=tr('keepBlank');
+    renderBossProductPreview(null);
     renderBossProductList(($('bossProductSearch')||{}).value||'');
   };
 
@@ -3956,6 +4033,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     Object.keys(values).forEach(id=>{ const el=$(id); if(el)el.value=values[id]; });
     const active=$('bossProductActive'); if(active)active.value=p.active===false?'FALSE':'TRUE';
     const hint=$('bossProductHint'); if(hint)hint.textContent=`${tr('currentCost')}: ${money(p.cost||0)}. ${tr('keepBlank')}`;
+    renderBossProductPreview(p);
   };
 
   window.bossOpenProducts = async function(){
