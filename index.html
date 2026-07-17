@@ -2766,7 +2766,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .boss-field{display:flex!important;flex-direction:column!important;gap:5px!important;min-width:0!important}
       .boss-field-label{font-size:12px!important;font-weight:800!important;line-height:1.15!important;color:#e5e7eb!important;opacity:.95!important}
       .boss-field.wide{grid-column:1/-1!important}
-      .boss-product-grid select,#bossLostType,#bossProductFilterCategory{background:#020617!important;color:#e5e7eb!important;border:1px solid rgba(148,163,184,.35)!important;border-radius:10px!important}
+      .boss-product-grid select,#bossLostType,#bossProductFilterCategory,#bossLostFilterCategory{background:#020617!important;color:#e5e7eb!important;border:1px solid rgba(148,163,184,.35)!important;border-radius:10px!important;min-height:48px!important;padding:0 12px!important;font:inherit!important}
       .boss-notice{background:rgba(245,158,11,.14)!important;border:1px solid rgba(245,158,11,.65)!important;color:#fbbf24!important;border-radius:12px!important;padding:10px 12px!important;font-weight:900!important}
       .boss-notice small{display:block!important;color:#fde68a!important;font-weight:700!important;margin-top:3px!important}
       @media(max-width:900px){.boss-product-tools,.boss-product-grid,.boss-product-filter-row{grid-template-columns:1fr!important}}
@@ -2932,6 +2932,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         if(key)el.textContent=tr(key);
       });
       setPh('bossLostSearch', tr('selectProduct'));
+      const lostFilter=$('bossLostFilterCategory'); if(lostFilter && lostFilter.options[0])lostFilter.options[0].textContent=tr('all');
       setPh('bossLostQty', tr('qty'));
       setPh('bossLostReason', tr('reason'));
       setPh('bossLostNote', tr('noteOptional'));
@@ -3687,8 +3688,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <p>${esc(tr('autoCostHint'))}</p>
         <div class="boss-product-tools">
           <div>
-            <label class="boss-field"><span class="boss-field-label" data-lost-label="selectProduct">${esc(tr('selectProduct'))}</span><input id="bossLostSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchLostProducts(this.value)"></label>
+            <div class="boss-product-filter-row">
+              <label class="boss-field"><span class="boss-field-label" data-lost-label="selectProduct">${esc(tr('selectProduct'))}</span><input id="bossLostSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchLostProducts(this.value)"></label>
+              <label class="boss-field"><span class="boss-field-label" data-lost-label="category">${esc(tr('category'))}</span><select id="bossLostFilterCategory" onchange="bossFilterLostProducts()"><option value="">${esc(tr('all'))}</option></select></label>
+            </div>
             <div id="bossLostProductList" class="boss-product-list"></div>
+            <div id="bossLostProductPreview" class="boss-product-preview"></div>
           </div>
           <div>
             <input id="bossLostCode" type="hidden">
@@ -4123,22 +4128,80 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   let bossLostProductsCache = [];
+  function fillBossLostFilterCategories(){
+    const sel=$('bossLostFilterCategory');
+    if(!sel)return;
+    const previous=selectedBossLostFilterCategory();
+    const source=(bossLostProductsCache&&bossLostProductsCache.length ? bossLostProductsCache : bossLocalProductRows());
+    const cats=[...new Set((source||[]).map(p=>normalizeCategoryName(p.category)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    sel.innerHTML=`<option value="">${esc(tr('all'))}</option>` + cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    if(previous && cats.includes(previous))sel.value=previous;
+  }
+
+  function selectedBossLostFilterCategory(){
+    const value=normalizeText(($('bossLostFilterCategory')||{}).value);
+    const allWords=[tr('all'),'All Products','å…¨éƒ¨å•†å“','All'].map(normalizeText);
+    if(!value || allWords.includes(value) || value.toLowerCase()==='all')return '';
+    return normalizeCategoryName(value);
+  }
+
+  function bossLostProductThumbHtml(p,index){
+    const img=normalizeText(p&&p.image);
+    const label=lang()==='zh'?'å›¾ç‰‡':'Image';
+    if(img)return `<span class="boss-product-thumb" onclick="event.stopPropagation(); bossPreviewLostProductImage(${Number(index)||0})"><img src="${esc(img)}" alt="${esc((p&&p.name)||'')}"></span>`;
+    return `<span class="boss-product-thumb" onclick="event.stopPropagation(); bossPreviewLostProductImage(${Number(index)||0})">${esc(label)}</span>`;
+  }
+
+  function renderBossLostProductPreview(p){
+    const box=$('bossLostProductPreview');
+    if(!box)return;
+    if(!p){
+      box.classList.remove('active');
+      box.innerHTML='';
+      return;
+    }
+    const img=normalizeText(p.image);
+    const noImg=lang()==='zh'?'æ²¡æœ‰å›¾ç‰‡':'No image';
+    box.classList.add('active');
+    box.innerHTML=`
+      ${img ? `<img src="${esc(img)}" alt="${esc(p.name||'')}" data-img="${esc(img)}" data-name="${esc(p.name||'')}" onclick="bossPreviewProductImageUrl(this.dataset.img,this.dataset.name)">` : `<div class="no-img">${esc(noImg)}</div>`}
+      <div>
+        <b>${esc(p.name||'')}</b>
+        <small>${esc(tr('code'))}: ${esc(p.code||'-')}</small>
+        <small>${esc(tr('price'))}: ${money(p.price||0)} | ${esc(tr('stock'))}: ${esc(p.stock||0)}</small>
+        <small>${esc(tr('category'))}: ${esc(p.category||'-')}</small>
+        <small>${esc(tr('currentCost'))}: ${money(p.cost||0)}</small>
+      </div>`;
+  }
+
   function renderBossLostProductList(query){
     const box=$('bossLostProductList');
     if(!box)return;
     const q=String(query||'').trim().toLowerCase();
+    const cat=selectedBossLostFilterCategory();
     const rows=(bossLostProductsCache||[]).map((p,i)=>({p,i})).filter(({p})=>{
+      if(cat && normalizeCategoryName(p.category)!==cat)return false;
       if(!q)return true;
       return [p.code,p.name,p.category].some(v=>String(v||'').toLowerCase().includes(q));
-    }).slice(0,80);
+    });
     if(!rows.length){ box.innerHTML=`<div class="empty">${esc(tr('noProducts'))}</div>`; return; }
     box.innerHTML=rows.map(({p,i})=>`
       <button type="button" onclick="bossPickLostProduct(${i})">
+        ${bossLostProductThumbHtml(p,i)}
+        <span>
         <b>${esc(p.name||'')}</b>
         <small>${esc(p.code||'-')} | ${money(p.price||0)} | ${esc(tr('stock'))} ${esc(p.stock||0)} | ${esc(tr('currentCost'))}: ${money(p.cost||0)}</small>
+        </span>
       </button>`).join('');
   }
   window.bossSearchLostProducts = function(query){ renderBossLostProductList(query); };
+  window.bossFilterLostProducts = function(){ renderBossLostProductList(($('bossLostSearch')||{}).value||''); };
+  window.bossPreviewLostProductImage = function(index){
+    const p=(bossLostProductsCache||[])[Number(index)];
+    if(!p)return;
+    renderBossLostProductPreview(p);
+    if(p.image)window.bossPreviewProductImageUrl(p.image,p.name);
+  };
   window.bossPickLostProduct = function(index){
     const p=(bossLostProductsCache||[])[Number(index)];
     if(!p)return;
@@ -4147,6 +4210,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const search=$('bossLostSearch'); if(search)search.value=p.name||'';
     const selected=$('bossLostSelected');
     if(selected)selected.textContent=`${p.name||''} | ${tr('stock')} ${p.stock||0} | ${tr('currentCost')}: ${money(p.cost||0)}`;
+    renderBossLostProductPreview(p);
   };
   function renderLostSummary(data){
     data=data||{rows:[]};
@@ -4170,6 +4234,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     showBossPanel('bossLostBox','lostItem');
     keepBossDashboardOpen('lostItem');
     bossLostProductsCache=bossLocalProductRows();
+    fillBossLostFilterCategories();
     renderBossLostProductList(($('bossLostSearch')||{}).value||'');
     const res=$('bossLostResult');
     if(res)res.textContent=tr('loading');
@@ -4204,6 +4269,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ['bossLostSearch','bossLostCode','bossLostName','bossLostCost','bossLostQty','bossLostReason','bossLostNote'].forEach(id=>{ const el=$(id); if(el)el.value=''; });
       const selected=$('bossLostSelected'); if(selected)selected.textContent=tr('selectProduct');
       bossLostProductsCache=bossLocalProductRows();
+      fillBossLostFilterCategories();
+      renderBossLostProductPreview(null);
       renderBossLostProductList('');
       const msg=tr('lostSavedToday') + (savedName ? `: ${savedName}` : '');
       if(res)res.innerHTML=`<div class="boss-notice">${esc(msg)}<small>${esc(tr('qty'))}: ${esc(out&&out.qty||payload.qty)} | ${esc(tr('lossAmount'))}: ${money(out&&out.amount||0)}</small></div>`;
