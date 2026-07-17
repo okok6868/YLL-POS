@@ -2721,7 +2721,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .product-card .pname{display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;overflow:hidden!important;line-height:1.16!important;min-height:3.45em!important;word-break:break-word!important}
       .cart-name{word-break:break-word!important;line-height:1.18!important}
       .cash-coin-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin-top:10px!important}
-      #cashCoinGrid .cash-quick-btn,.cash-coin-grid .cash-coin-btn{background:linear-gradient(135deg,#f8fafc,#94a3b8)!important;color:#0f172a!important;border-color:rgba(226,232,240,.9)!important;box-shadow:inset 0 1px rgba(255,255,255,.75)!important}
+      #cashCoinGrid .cash-quick-btn,.cash-coin-grid .cash-coin-btn,button.cash-coin-btn{background:linear-gradient(135deg,#f8fafc,#94a3b8)!important;color:#020617!important;border-color:rgba(226,232,240,.9)!important;box-shadow:inset 0 1px rgba(255,255,255,.75)!important;text-shadow:none!important}
+      #cashCoinGrid .cash-quick-btn *,button.cash-coin-btn *{color:#020617!important;text-shadow:none!important}
       .cash-paid-preview{font-weight:800!important;margin:10px 0!important;padding:10px 12px!important;border:1px solid rgba(148,163,184,.22)!important;border-radius:12px!important;background:rgba(15,23,42,.3)!important}
       button,.card,.cat-btn,.smallbtn,.big,.qtybar button{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
       #clock{display:none!important}
@@ -3876,12 +3877,17 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       try{ localStorage.removeItem('yllProductsCacheV1'); }catch(e){}
       if(out && out.product){
         const list=currentProducts().slice();
-        const idx=list.findIndex(p=>String(p.name)===String(out.product.name) || (out.product.code && String(p.code)===String(out.product.code)));
-        if(out.product.active!==false && Number(out.product.price)>0){
-          if(idx>=0)list[idx]=out.product; else list.push(out.product);
-        }else if(idx>=0){
-          list.splice(idx,1);
-        }
+        const mergeProduct=(prod)=>{
+          if(!prod || !prod.name)return;
+          const idx=list.findIndex(p=>String(p.name)===String(prod.name) || (prod.code && String(p.code)===String(prod.code)));
+          if(prod.active!==false && Number(prod.price)>0){
+            if(idx>=0)list[idx]=prod; else list.push(prod);
+          }else if(idx>=0){
+            list.splice(idx,1);
+          }
+        };
+        mergeProduct(out.product);
+        (out.variants||[]).forEach(mergeProduct);
         applyProducts(list,false);
         fillBossCategoryList();
       }
