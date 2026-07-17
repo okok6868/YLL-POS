@@ -2744,15 +2744,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       button,.card,.cat-btn,.smallbtn,.big,.qtybar button{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
       #clock{display:none!important}
       .exact-pay-btn{display:none!important}
-      .boss-product-tools{display:grid!important;grid-template-columns:1.1fr .9fr!important;gap:10px!important;margin:10px 0!important}
-      .boss-product-filter-row{display:grid!important;grid-template-columns:1fr .78fr!important;gap:8px!important;margin-bottom:8px!important}
-      .boss-product-list{max-height:190px!important;overflow:auto!important;border:1px solid rgba(148,163,184,.2)!important;border-radius:14px!important;padding:8px!important;background:rgba(15,23,42,.18)!important}
-      .boss-product-list button{width:100%!important;text-align:left!important;margin:0 0 6px!important;padding:9px 10px!important;border-radius:10px!important;border:1px solid rgba(148,163,184,.22)!important;background:rgba(15,23,42,.45)!important;color:inherit!important;display:grid!important;grid-template-columns:52px 1fr!important;gap:10px!important;align-items:center!important}
+      .boss-product-tools{display:grid!important;grid-template-columns:1.1fr .9fr!important;gap:10px!important;margin:10px 0!important;align-items:start!important}
+      .boss-product-tools>div{min-width:0!important}
+      .boss-product-filter-row{display:grid!important;grid-template-columns:1fr .78fr!important;gap:8px!important;margin-bottom:8px!important;align-items:end!important}
+      .boss-product-list{height:176px!important;max-height:176px!important;overflow:auto!important;border:1px solid rgba(148,163,184,.2)!important;border-radius:14px!important;padding:8px!important;background:rgba(15,23,42,.18)!important}
+      .boss-product-list button{width:100%!important;min-height:64px!important;text-align:left!important;margin:0 0 6px!important;padding:8px 10px!important;border-radius:10px!important;border:1px solid rgba(148,163,184,.22)!important;background:rgba(15,23,42,.45)!important;color:inherit!important;display:grid!important;grid-template-columns:52px 1fr!important;gap:10px!important;align-items:center!important}
       .boss-product-list button b{display:block!important;line-height:1.2!important}
       .boss-product-list button small{display:block!important;color:var(--muted)!important;margin-top:4px!important}
       .boss-product-thumb{width:52px!important;height:52px!important;border-radius:10px!important;object-fit:cover!important;background:#020617!important;border:1px solid rgba(148,163,184,.24)!important;display:flex!important;align-items:center!important;justify-content:center!important;color:var(--muted)!important;font-size:11px!important;font-weight:800!important;overflow:hidden!important}
       .boss-product-thumb img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
-      .boss-product-preview{margin-top:8px!important;border:1px solid rgba(148,163,184,.18)!important;border-radius:14px!important;padding:10px!important;background:rgba(15,23,42,.24)!important;display:none!important;grid-template-columns:72px 1fr!important;gap:10px!important;align-items:center!important}
+      .boss-product-preview{margin-top:8px!important;min-height:94px!important;max-height:112px!important;overflow:hidden!important;border:1px solid rgba(148,163,184,.18)!important;border-radius:14px!important;padding:10px!important;background:rgba(15,23,42,.24)!important;display:none!important;grid-template-columns:72px 1fr!important;gap:10px!important;align-items:center!important}
       .boss-product-preview.active{display:grid!important}
       .boss-product-preview img,.boss-product-preview .no-img{width:72px!important;height:72px!important;border-radius:12px!important;object-fit:cover!important;background:#020617!important;border:1px solid rgba(148,163,184,.25)!important;color:var(--muted)!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:12px!important;font-weight:800!important}
       .boss-image-viewer{position:fixed!important;inset:0!important;background:rgba(2,6,23,.78)!important;z-index:320!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:20px!important}
@@ -2760,13 +2761,27 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .boss-image-viewer-card h3{margin:0 0 10px!important;font-size:18px!important;line-height:1.25!important}
       .boss-image-viewer-card img{width:100%!important;max-height:68vh!important;object-fit:contain!important;border-radius:14px!important;background:#020617!important;display:block!important}
       .boss-image-viewer-card button{width:100%!important;margin-top:12px!important}
-      .boss-product-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
-      .boss-product-grid input,.boss-product-grid select{min-width:0!important}
+      .boss-product-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;align-items:end!important}
+      .boss-product-grid input,.boss-product-grid select{min-width:0!important;height:48px!important;min-height:48px!important;box-sizing:border-box!important}
+      .boss-product-grid input[type=file]{height:auto!important;min-height:48px!important;padding:8px 10px!important;line-height:1.25!important}
       .boss-product-grid .wide{grid-column:1/-1!important}
       .boss-field{display:flex!important;flex-direction:column!important;gap:5px!important;min-width:0!important}
       .boss-field-label{font-size:12px!important;font-weight:800!important;line-height:1.15!important;color:#e5e7eb!important;opacity:.95!important}
       .boss-field.wide{grid-column:1/-1!important}
-      .boss-product-grid select,#bossLostType,#bossProductFilterCategory,#bossLostFilterCategory{background:#020617!important;color:#e5e7eb!important;border:1px solid rgba(148,163,184,.35)!important;border-radius:10px!important;min-height:48px!important;padding:0 12px!important;font:inherit!important}
+      .boss-product-grid select,#bossLostType,#bossProductFilterCategory,#bossLostFilterCategory{background:#020617!important;color:#e5e7eb!important;border:1px solid rgba(148,163,184,.35)!important;border-radius:10px!important;height:48px!important;min-height:48px!important;box-sizing:border-box!important;padding:0 12px!important;font:inherit!important}
+      #bossProductBox .boss-product-tools,#bossLostBox .boss-product-tools{grid-template-columns:minmax(0,1.05fr) minmax(280px,.95fr)!important;align-items:start!important}
+      #bossProductBox .boss-product-filter-row,#bossLostBox .boss-product-filter-row{grid-template-columns:minmax(0,1fr) minmax(140px,.72fr)!important;gap:8px!important;align-items:end!important}
+      #bossProductList.boss-product-list,#bossLostProductList.boss-product-list{height:168px!important;max-height:168px!important}
+      #bossProductList.boss-product-list button,#bossLostProductList.boss-product-list button{min-height:56px!important;grid-template-columns:46px minmax(0,1fr)!important;padding:7px 9px!important}
+      #bossProductList .boss-product-thumb,#bossLostProductList .boss-product-thumb{width:46px!important;height:46px!important}
+      #bossProductPreview.boss-product-preview,#bossLostProductPreview.boss-product-preview{min-height:72px!important;max-height:88px!important;padding:8px!important;grid-template-columns:56px minmax(0,1fr)!important}
+      #bossProductPreview.boss-product-preview img,#bossProductPreview.boss-product-preview .no-img,#bossLostProductPreview.boss-product-preview img,#bossLostProductPreview.boss-product-preview .no-img{width:56px!important;height:56px!important}
+      #bossProductBox .boss-product-grid,#bossLostBox .boss-product-grid{gap:8px!important}
+      #bossProductBox .boss-field,#bossLostBox .boss-field{gap:4px!important}
+      #bossProductBox .boss-product-grid input,#bossProductBox .boss-product-grid select,#bossLostBox .boss-product-grid input,#bossLostBox .boss-product-grid select{height:46px!important;min-height:46px!important;width:100%!important}
+      #bossProductBox .boss-product-grid input[type=file]{height:auto!important;min-height:46px!important}
+      #bossProductFilterCategory,#bossLostFilterCategory{height:40px!important;min-height:40px!important;width:100%!important}
+      #bossProductBox select,#bossLostBox select{appearance:auto!important}
       .boss-notice{background:rgba(245,158,11,.14)!important;border:1px solid rgba(245,158,11,.65)!important;color:#fbbf24!important;border-radius:12px!important;padding:10px 12px!important;font-weight:900!important}
       .boss-notice small{display:block!important;color:#fde68a!important;font-weight:700!important;margin-top:3px!important}
       @media(max-width:900px){.boss-product-tools,.boss-product-grid,.boss-product-filter-row{grid-template-columns:1fr!important}}
@@ -2779,6 +2794,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       body.light .boss-hero{background:linear-gradient(135deg,#dbeafe,#f5f3ff)!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-panel,body.light .boss-tab-grid,body.light .overview-card,body.light .boss-money-card,body.light .boss-result{background:#f8fafc!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-field-label{color:#0f172a!important}
+      body.light .boss-product-grid input,body.light .boss-product-grid select,body.light #bossLostType,body.light #bossProductFilterCategory,body.light #bossLostFilterCategory{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.18)!important}
       body.light .boss-product-list,body.light .boss-product-list button,body.light .boss-product-preview{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-product-thumb,body.light .boss-product-preview img,body.light .boss-product-preview .no-img{background:#f1f5f9!important;color:#475569!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-image-viewer-card{background:#ffffff!important;color:#0f172a!important}
