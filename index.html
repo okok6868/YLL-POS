@@ -2678,6 +2678,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   const trf = (key, vars={}) => Object.keys(vars).reduce((s,k)=>s.replaceAll('{'+k+'}', vars[k]), tr(key));
   const looksGarbledText = s => /[\u00c0-\u00ff]/.test(String(s||''));
   function normalizeText(s){ return String(s == null ? '' : s).replace(/\s+/g,' ').trim(); }
+  function normalizeProductImageUrl(url){
+    const s=normalizeText(url);
+    if(!s)return '';
+    let m=s.match(/[?&]id=([A-Za-z0-9_-]+)/);
+    if(!m)m=s.match(/\/d\/([A-Za-z0-9_-]+)/);
+    if(!m)m=s.match(/googleusercontent\.com\/d\/([A-Za-z0-9_-]+)/);
+    if(!m)m=s.match(/thumbnail\?id=([A-Za-z0-9_-]+)/);
+    return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200` : s;
+  }
   function normalizeCategoryName(s){ return normalizeText(s) || 'Uncategorized'; }
   function categoryHtml(cat){
     const text=normalizeCategoryName(cat);
@@ -3083,7 +3092,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       code: normalizeText(p.code),
       name: normalizeText(p.name),
       category: normalizeCategoryName(p.category),
-      image: normalizeText(p.image)
+      image: normalizeProductImageUrl(p.image)
     }));
     try{ products=list; window.products=list; currentList=list; currentPage=1; }catch(e){
       window.products=list; window.currentList=list; window.currentPage=1;
@@ -3456,6 +3465,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.add = function(name,price,code=''){
     if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut))return;
     const c=currentCart();
+    if(!c.length){
+      try{ localStorage.removeItem('lastCompletedCheckout'); }catch(e){}
+    }
     const product=(currentProducts()||[]).find(p=>(code && String(p.code)===String(code)) || String(p.name)===String(name));
     if(product){
       const inCart=c.filter(i=>String(i.name)===String(name)).reduce((s,i)=>s+Number(i.qty||0),0);
@@ -3605,16 +3617,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
   try{ bossHideBossPanels = window.bossHideBossPanels; }catch(e){}
 
+  function hasValidBossSession(){
+    try{
+      return window.__bossSessionActive === true &&
+        Number(sessionStorage.getItem('bossSessionUntil')||0) > Date.now();
+    }catch(e){ return false; }
+  }
   function keepBossDashboardOpen(activeKey){
+    if(!hasValidBossSession())return false;
     try{
       const ms=(typeof BOSS_IDLE_MS !== 'undefined' && Number(BOSS_IDLE_MS)) ? Number(BOSS_IDLE_MS) : 10*60*1000;
       sessionStorage.setItem('bossSessionUntil', String(Date.now()+Math.max(60000,ms)));
-      window.__bossSessionActive=true;
       const dash=$('bossDashboard');
       if(dash)dash.classList.add('active');
       document.body.classList.add('modal-open');
       if(activeKey)setBossNav(activeKey);
-    }catch(e){}
+      return true;
+    }catch(e){ return false; }
   }
 
   function ensureBossProductPanel(){
@@ -3848,7 +3867,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       name:normalizeText(p.name),
       price:p.price||0,
       category:normalizeCategoryName(p.category),
-      image:normalizeText(p.image),
+      image:normalizeProductImageUrl(p.image),
       stock:p.stock||0,
       cost:p.cost||0,
       active:p.active!==false,
@@ -3865,7 +3884,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       name: normalizeText(($('bossProductName')||{}).value),
       price: ($('bossProductPrice')||{}).value || '',
       category: normalizeCategoryName(($('bossProductCategory')||{}).value),
-      image: normalizeText(($('bossProductImage')||{}).value),
+      image: normalizeProductImageUrl(($('bossProductImage')||{}).value),
       stock: ($('bossProductStock')||{}).value || '',
       cost: ($('bossProductCost')||{}).value || '',
       active: ($('bossProductActive')||{}).value || 'TRUE'
@@ -4015,11 +4034,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(!img || !img.data)throw new Error('No image data');
       const productName=normalizeText(($('bossProductName')||{}).value) || normalizeText(file.name) || 'product';
       const out=await timeout(apiCall('uploadProductImageToDrive',[{name:productName,mimeType:img.mimeType,data:img.data}]),45000,'Image upload');
-      const url=(out&&out.url) || (out&&out.viewUrl) || '';
+      const url=normalizeProductImageUrl((out&&out.url) || (out&&out.viewUrl) || '');
       if(!url)throw new Error('No image URL returned');
       const imageInput=$('bossProductImage');
       if(imageInput)imageInput.value=url;
-      if(res)res.innerHTML=`<div class="boss-notice">${esc(tr('imageUploaded'))}</div>`;
+      renderBossProductPreview({
+        code:normalizeText(($('bossProductCode')||{}).value),
+        name:productName,
+        price:num(($('bossProductPrice')||{}).value),
+        category:normalizeCategoryName(($('bossProductCategory')||{}).value),
+        image:url,
+        stock:num(($('bossProductStock')||{}).value),
+        cost:num(($('bossProductCost')||{}).value)
+      });
+      if(res)res.innerHTML=`<div class="boss-notice">${esc(tr('imageUploaded'))}<small>${esc(tr('saveProduct'))}</small></div>`;
       if(typeof showToast === 'function')showToast(tr('imageUploaded'));
     }catch(e){
       const msg=tr('imageUploadFailed') + ((e&&e.message)||e||'');
@@ -4393,30 +4421,48 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setCheckoutBusy(false);
     showAppAlert(tr('saveUnconfirmed') + '\n\n' + tr('saveStillChecking'), tr('payment'));
   }
+  function getPendingOnlineOrder(clientId){
+    try{
+      return JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]')
+        .find(x=>x && String(x.id)===String(clientId)) || null;
+    }catch(e){ return null; }
+  }
+  function finalizeConfirmedPendingOrder(saved,pending){
+    if(!saved || !saved.orderId || !pending)return false;
+    removePendingOnlineOrder(pending.id);
+    if(pending.key)rememberCompletedCheckout(pending.key,saved.orderId);
+    const active=pending.key ? getActiveCheckoutRecord(pending.key) : null;
+    let currentKey='';
+    try{
+      if(currentCart().length){
+        currentKey=makeCheckoutKey(
+          currentCart(),
+          pending.payment,
+          pending.discount||0,
+          pending.paid||0,
+          pending.change||0
+        );
+      }
+    }catch(e){}
+    if(active && String(active.id)===String(pending.id) && currentKey===pending.key){
+      window.lastPayment=pending.payment;
+      window.lastPaid=moneyNum(pending.paid||0);
+      window.lastChange=moneyNum(pending.change||0);
+      try{ lastPayment=window.lastPayment; lastPaid=window.lastPaid; lastChange=window.lastChange; }catch(e){}
+      finishSavedOrder(saved.orderId,moneyNum(pending.discount||0),pending.key);
+    }else{
+      if(pending.key)clearActiveCheckout(pending.key);
+      if(typeof loadTodayStats === 'function')loadTodayStats();
+    }
+    return true;
+  }
   function confirmPendingInBackground(clientId){
     if(!clientId || !navigator.onLine)return;
     setTimeout(()=>{
+      const pending=getPendingOnlineOrder(clientId);
+      if(!pending)return;
       apiCall('getOrderByClientId',[clientId])
-        .then(saved=>{
-          if(saved && saved.orderId){
-            let pendingKey='';
-            try{
-              const rows=JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]');
-              const pending=rows.find(x=>x && String(x.id)===String(clientId));
-              if(pending)pendingKey=pending.key || '';
-            }catch(e){}
-            removePendingOnlineOrder(clientId);
-            if(pendingKey){
-              rememberCompletedCheckout(pendingKey, saved.orderId);
-              clearActiveCheckout(pendingKey);
-            }
-            try{
-              if(Array.isArray(window.lastCart))window.lastCart.forEach(i=>i.orderId=saved.orderId);
-              if(Array.isArray(lastCart))lastCart.forEach(i=>i.orderId=saved.orderId);
-            }catch(e){}
-            if(typeof loadTodayStats === 'function')loadTodayStats();
-          }
-        })
+        .then(saved=>{ if(saved && saved.orderId)finalizeConfirmedPendingOrder(saved,pending); })
         .catch(()=>{});
     }, 2500);
   }
@@ -4576,7 +4622,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const sendDiscount = moneyNum(due.discount);
     const checkoutKey = makeCheckoutKey(send, payment, sendDiscount, window.lastPaid, window.lastChange);
     const completed = recentCompletedCheckout(checkoutKey);
-    if(completed && completed.orderId && c.some(i=>i && i.orderId)){
+    if(completed && completed.orderId){
       clearCartState();
       clearActiveCheckout(checkoutKey);
       setCheckoutBusy(false);
@@ -4604,14 +4650,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
           }catch(e){}
         }
       }).catch(()=>{});
-      const res = await timeout(savePromise, 12000, 'Save order');
+      const res = await timeout(savePromise, 30000, 'Save order');
       if(!res || !res.orderId) throw new Error(tr('noOrderNumber'));
       removePendingOnlineOrder(clientId);
       finishSavedOrder(res.orderId, sendDiscount, checkoutKey);
     }catch(err){
       if(isTimeoutError(err)){
         try{
-          const saved = await timeout(apiCall('getOrderByClientId',[clientId]), 2500, 'Check saved order');
+          const saved = await timeout(apiCall('getOrderByClientId',[clientId]), 12000, 'Check saved order');
           if(saved && saved.orderId){
             removePendingOnlineOrder(clientId);
             finishSavedOrder(saved.orderId, sendDiscount, checkoutKey);
@@ -4717,7 +4763,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   let offlineSyncTimer=null;
   const syncingOrderIds=new Set();
   const OFFLINE_SYNC_BATCH_LIMIT=2;
-  const OFFLINE_SYNC_TIMEOUT_MS=8000;
+  const OFFLINE_SYNC_TIMEOUT_MS=30000;
   function writeQueue(name, rows){
     try{
       const clean=(rows||[]).filter(Boolean).slice(-100);
@@ -4737,7 +4783,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.syncOfflineOrders = async function(){
     if(offlineSyncing || !navigator.onLine)return;
     const offline = readQueue('offlineOrders');
+    const pendingOnline = readQueue('pendingOnlineOrders');
     const jobs=[
+      ...pendingOnline.map(o=>({...o, queue:'pendingOnlineOrders'})),
       ...offline.map(o=>({...o, queue:'offlineOrders'}))
     ];
     if(!jobs.length){
@@ -4752,13 +4800,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
     for(const o of batch){
       try{
-        const r=await timeout(apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id]),OFFLINE_SYNC_TIMEOUT_MS,'Sync offline order');
+        let r=null;
+        if(o.queue==='pendingOnlineOrders'){
+          r=await timeout(apiCall('getOrderByClientId',[o.id]),15000,'Check pending order').catch(()=>null);
+        }
+        if(!(r && r.orderId)){
+          r=await timeout(apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id]),OFFLINE_SYNC_TIMEOUT_MS,'Sync offline order');
+        }
         if(!(r && r.orderId)){
           failed++;
           syncingOrderIds.delete(String(o.id||''));
         }else{
           saved++;
-          removeQueuedOrder(o.queue, o.id);
+          if(o.queue==='pendingOnlineOrders')finalizeConfirmedPendingOrder(r,o);
+          else removeQueuedOrder(o.queue, o.id);
         }
       }catch(e){
         failed++;
@@ -4770,7 +4825,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(saved){
       try{ if(typeof loadTodayStats === 'function')loadTodayStats(); }catch(e){}
     }
-    const remaining=readQueue('offlineOrders').length;
+    const remaining=readQueue('offlineOrders').length + readQueue('pendingOnlineOrders').length;
     if(failed){
       if(typeof showToast === 'function')showToast(tr('offlineStillPending'));
     }else if(!remaining){
@@ -5356,13 +5411,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   window.bossLogout = function(auto=false){
+    window.__bossSessionActive=false;
     try{ sessionStorage.removeItem('bossSessionUntil'); }catch(e){}
     try{ closeModal('bossDashboard'); }catch(e){}
+    try{ const viewer=$('bossImageViewer'); if(viewer)viewer.remove(); }catch(e){}
     if(typeof showToast === 'function')showToast(auto ? tr('autoExited') : tr('exitedBoss'));
     setStaticText();
   };
 
   window.bossLogin = async function(){
+    window.__bossSessionActive=false;
     const idEl=$('bossId'), pwEl=$('bossPassword'), msg=$('bossLoginMsg'), btn=$('bossLoginBtn');
     const id=(idEl||{}).value||'', pw=(pwEl||{}).value||'';
     if(!id || !pw){
@@ -5375,6 +5433,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const r=await apiCallTransient('bossLogin',[id,pw],30000,'Boss login');
       if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
       if(r&&r.ok){
+        window.__bossSessionActive=true;
         try{
           BOSS_IDLE_MS=Math.max(1,Number(r.autoLogoutMinutes||10))*60*1000;
           sessionStorage.setItem('bossSessionUntil',String(Date.now()+BOSS_IDLE_MS));
@@ -5399,7 +5458,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   document.addEventListener('DOMContentLoaded', () => {
     try{ if(originalSyncOfflineOrdersFn)window.removeEventListener('online', originalSyncOfflineOrdersFn); }catch(e){}
-    try{ localStorage.removeItem('pendingOnlineOrders'); }catch(e){}
+    try{
+      const pending=readQueue('pendingOnlineOrders').filter(o=>{
+        const t=Date.parse(o&&o.date||'');
+        return !t || Date.now()-t < 7*24*60*60*1000;
+      });
+      writeQueue('pendingOnlineOrders',pending);
+    }catch(e){}
     try{ if(allCategorySelected(currentCat))currentCat='ALL'; }catch(e){}
     setStaticText();
     setTimeout(setStaticText, 300);
