@@ -1,4 +1,4 @@
-const CACHE_NAME = "yll-pos-clean-rebuild-20260704-01";
+const CACHE_NAME = "yll-pos-clean-rebuild-20260719-01";
 self.addEventListener("install", e => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", e => {});
