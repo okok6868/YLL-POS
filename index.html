@@ -2910,6 +2910,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       #bossLostBox .boss-product-filter-row input,#bossLostBox .boss-product-filter-row select,#bossLostBox .boss-product-grid input,#bossLostBox .boss-product-grid select{height:46px!important;min-height:46px!important;margin:0!important}
       #bossProductBox .boss-product-grid input[type=file]{margin:0!important;width:100%!important;min-height:46px!important}
       #bossCashInfo{max-height:none!important;overflow:visible!important;white-space:normal!important}
+      @media (pointer:coarse){
+        #bossDashboard.active{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(2,6,23,.94)!important}
+      }
       @media (min-width:700px) and (min-aspect-ratio:1/1){
         #bossDashboard .boss-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
         #bossDashboard .boss-tab-grid{position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
@@ -4059,7 +4062,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(filterCat && normalizeCategoryName(p.category)!==filterCat)return false;
       if(!q)return true;
       return [p.code,p.name,p.category].some(v=>String(v||'').toLowerCase().includes(q));
-    }).slice(0,80);
+    }).slice(0,40);
     if(!rows.length){
       box.innerHTML=`<div class="empty">${esc(tr('noProducts'))}</div>`;
       renderBossProductPreview(null);
@@ -4076,7 +4079,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function bossProductThumbHtml(p,index){
     const img=normalizeText(p&&p.image);
     const label=lang()==='zh'?'图片':'Image';
-    if(img)return `<span class="boss-product-thumb" onclick="event.stopPropagation(); bossPreviewProductImage(${Number(index)||0})"><img src="${esc(img)}" alt="${esc((p&&p.name)||'')}"></span>`;
+    if(img)return `<span class="boss-product-thumb" onclick="event.stopPropagation(); bossPreviewProductImage(${Number(index)||0})"><img loading="lazy" decoding="async" src="${esc(img)}" alt="${esc((p&&p.name)||'')}"></span>`;
     return `<span class="boss-product-thumb" onclick="event.stopPropagation(); bossPreviewProductImage(${Number(index)||0})">${esc(label)}</span>`;
   }
 
@@ -5502,8 +5505,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     document.documentElement.classList.remove('modal-open');
     const busy=$('checkoutBusy'); if(busy){busy.classList.remove('active');busy.style.zIndex='';}
     document.querySelectorAll('.boss-image-viewer').forEach(el=>el.remove());
+    ['bossProductList','bossLostProductList','bossProductPreview','bossLostProductPreview'].forEach(id=>{
+      const el=$(id);
+      if(!el)return;
+      el.querySelectorAll('img').forEach(img=>{try{img.src='';}catch(e){}});
+      el.innerHTML='';
+      el.classList.remove('active');
+    });
+    document.querySelectorAll('#bossDashboard img').forEach(img=>{try{img.loading='lazy';}catch(e){}});
+    bossOverviewPromise=null;
     if(typeof showToast === 'function')showToast(auto ? tr('autoExited') : tr('exitedBoss'));
-    setStaticText();
   };
 
   window.bossLogin = async function(){
@@ -5561,11 +5572,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
     setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
   });
-  window.addEventListener('online', () => { try{ window.syncOfflineOrders(); }catch(e){} try{ markNetworkOnline('browser online'); }catch(e){} scheduleTopStatsRefresh(300); });
-  window.addEventListener('focus', () => { try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); });
-  window.addEventListener('pageshow', () => { try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); });
+  let foregroundWorkTimer=null;
+  function scheduleForegroundWork(delay){
+    clearTimeout(foregroundWorkTimer);
+    foregroundWorkTimer=setTimeout(()=>{
+      try{ window.syncOfflineOrders(); }catch(e){}
+      scheduleTopStatsRefresh(300);
+      try{ recoverViewportAndInteraction(); }catch(e){}
+    },delay||120);
+  }
+  window.addEventListener('online', () => { try{ markNetworkOnline('browser online'); }catch(e){} scheduleForegroundWork(120); });
+  window.addEventListener('focus', () => scheduleForegroundWork(160));
+  window.addEventListener('pageshow', () => scheduleForegroundWork(100));
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden){ try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); }
+    if(!document.hidden)scheduleForegroundWork(140);
   });
 
   // V5.5 iPad recovery, single-step paging, and Boss cash collection busy state.
@@ -5701,8 +5721,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,120),{passive:true});
   window.addEventListener('orientationchange',()=>setTimeout(recoverViewportAndInteraction,350),{passive:true});
-  window.addEventListener('pageshow',()=>setTimeout(recoverViewportAndInteraction,80),{passive:true});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(recoverViewportAndInteraction,120);});
   recoverViewportAndInteraction();
 })();
 
