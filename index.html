@@ -2904,8 +2904,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       #bossProductBox .boss-field,#bossLostBox .boss-field{width:100%!important;min-width:0!important}
       #bossProductBox input,#bossProductBox select,#bossLostBox input,#bossLostBox select{width:100%!important;min-width:0!important}
       #bossLostBox .boss-product-filter-row,#bossLostBox .boss-product-grid{align-items:start!important}
-      #bossLostBox .boss-field-label{display:flex!important;align-items:flex-end!important;height:18px!important;min-height:18px!important;margin:0!important;line-height:18px!important}
+      #bossProductBox .boss-product-filter-row,#bossProductBox .boss-product-grid,#bossLostBox .boss-product-filter-row,#bossLostBox .boss-product-grid{align-items:start!important}
+      #bossProductBox .boss-field-label,#bossLostBox .boss-field-label{display:flex!important;align-items:flex-end!important;height:18px!important;min-height:18px!important;margin:0!important;line-height:18px!important}
+      #bossProductBox .boss-product-filter-row input,#bossProductBox .boss-product-filter-row select,#bossProductBox .boss-product-grid input:not([type=file]),#bossProductBox .boss-product-grid select,
       #bossLostBox .boss-product-filter-row input,#bossLostBox .boss-product-filter-row select,#bossLostBox .boss-product-grid input,#bossLostBox .boss-product-grid select{height:46px!important;min-height:46px!important;margin:0!important}
+      #bossProductBox .boss-product-grid input[type=file]{margin:0!important;width:100%!important;min-height:46px!important}
       #bossCashInfo{max-height:none!important;overflow:visible!important;white-space:normal!important}
       @media (min-width:700px) and (min-aspect-ratio:1/1){
         #bossDashboard .boss-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
