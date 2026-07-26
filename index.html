@@ -2887,11 +2887,40 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       #bossProductBox .boss-field,#bossLostBox .boss-field{gap:4px!important}
       #bossProductBox .boss-product-grid input,#bossProductBox .boss-product-grid select,#bossLostBox .boss-product-grid input,#bossLostBox .boss-product-grid select{height:46px!important;min-height:46px!important;width:100%!important}
       #bossProductBox .boss-product-grid input[type=file]{height:auto!important;min-height:46px!important}
-      #bossProductFilterCategory,#bossLostFilterCategory{height:40px!important;min-height:40px!important;width:100%!important}
+      #bossProductFilterCategory,#bossLostFilterCategory{height:46px!important;min-height:46px!important;width:100%!important}
       #bossProductBox select,#bossLostBox select{appearance:auto!important}
       .boss-notice{background:rgba(245,158,11,.14)!important;border:1px solid rgba(245,158,11,.65)!important;color:#fbbf24!important;border-radius:12px!important;padding:10px 12px!important;font-weight:900!important}
       .boss-notice small{display:block!important;color:#fde68a!important;font-weight:700!important;margin-top:3px!important}
       @media(max-width:900px){.boss-product-tools,.boss-product-grid,.boss-product-filter-row{grid-template-columns:1fr!important}}
+      /* V5.6 iPad: one predictable scroll surface and aligned management fields. */
+      #bossDashboard{padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom))!important;overflow:hidden!important;align-items:stretch!important}
+      #bossDashboard>.modal-content{width:min(1480px,calc(100vw - 16px))!important;height:calc(var(--app-height,100dvh) - 16px)!important;max-height:none!important;margin:auto!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important;touch-action:pan-y!important}
+      #bossDashboard .boss-dashboard-shell{min-height:100%!important;box-sizing:border-box!important}
+      #bossDashboard .boss-content{min-width:0!important;overflow:visible!important}
+      #bossDashboard .boss-panel{width:100%!important;box-sizing:border-box!important}
+      #bossDashboard input,#bossDashboard select,#bossDashboard button{box-sizing:border-box!important}
+      #bossProductBox .boss-product-tools,#bossLostBox .boss-product-tools{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+      #bossProductBox .boss-product-filter-row,#bossLostBox .boss-product-filter-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      #bossProductBox .boss-field,#bossLostBox .boss-field{width:100%!important;min-width:0!important}
+      #bossProductBox input,#bossProductBox select,#bossLostBox input,#bossLostBox select{width:100%!important;min-width:0!important}
+      #bossLostBox .boss-product-filter-row,#bossLostBox .boss-product-grid{align-items:start!important}
+      #bossLostBox .boss-field-label{display:flex!important;align-items:flex-end!important;height:18px!important;min-height:18px!important;margin:0!important;line-height:18px!important}
+      #bossLostBox .boss-product-filter-row input,#bossLostBox .boss-product-filter-row select,#bossLostBox .boss-product-grid input,#bossLostBox .boss-product-grid select{height:46px!important;min-height:46px!important;margin:0!important}
+      #bossCashInfo{max-height:none!important;overflow:visible!important;white-space:normal!important}
+      @media (min-width:700px) and (min-aspect-ratio:1/1){
+        #bossDashboard .boss-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
+        #bossDashboard .boss-tab-grid{position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
+        #bossDashboard .boss-tab-grid button{text-align:left!important;justify-content:flex-start!important}
+        #bossDashboard .boss-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+        #bossDashboard .boss-money-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+      }
+      @media (max-width:699px),(max-aspect-ratio:1/1){
+        #bossDashboard .boss-layout{grid-template-columns:1fr!important}
+        #bossDashboard .boss-tab-grid{position:static!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+        #bossDashboard .boss-tab-grid button{text-align:center!important;justify-content:center!important}
+        #bossDashboard .boss-overview-grid,#bossDashboard .boss-money-cards{grid-template-columns:1fr!important}
+        #bossProductBox .boss-product-tools,#bossLostBox .boss-product-tools{grid-template-columns:1fr!important}
+      }
       body.light,body.light #app,body.light .app,body.light .layout,body.light .main,body.light .products{background:#f3f4f6!important;background-color:#f3f4f6!important;color:#0f172a!important}
       body.light::after,body.light .modal::after{background:#f3f4f6!important}
       body.light .topline{background:#f3f4f6!important;border-bottom-color:rgba(15,23,42,.12)!important}
@@ -5630,7 +5659,22 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
           </div><button id="fundExpenseSubmit" class="green" onclick="bossRecordFundExpense()">${lang()==='zh'?'记录资金出口':'Record expense'}</button>
         </div>${fundExpenseRows(d.rows)}`;
       setupEnterNext('#bossCashBox');
-    }catch(e){if(box)box.textContent=tr('loadFailed')+cleanMessage(e.message||e);}
+    }catch(e){
+      const msg=cleanMessage(e.message||e);
+      if(/Unknown action:\\s*getFundLedger/i.test(msg)){
+        try{
+          const cash=await apiCallTransient('getCashDrawer',[],12000,'Cash drawer');
+          const drawer=num(cash.cashDrawer),floatCash=num(cash.floatCash),collectable=Math.max(0,drawer-floatCash);
+          if(box)box.innerHTML=`<div class="boss-overview-grid">
+            <div class="overview-card"><small>${lang()==='zh'?'收银机现金':'Cash drawer'}</small><b>${money(drawer)}</b></div>
+            <div class="overview-card"><small>${lang()==='zh'?'备用现金':'Float cash'}</small><b>${money(floatCash)}</b></div>
+            <div class="overview-card"><small>${lang()==='zh'?'可收走':'Collectable'}</small><b>${money(collectable)}</b></div>
+          </div><div class="boss-notice" style="margin-top:12px">${lang()==='zh'?'Apps Script 仍是旧部署。请用 ZIP 内新版 Code.gs 建立新部署，QR、Transfer 和资金出口才会出现。':'Apps Script is still on the old deployment. Deploy the new Code.gs to enable QR, Transfer and fund expenses.'}</div>`;
+          return;
+        }catch(fallbackError){}
+      }
+      if(box)box.textContent=tr('loadFailed')+msg;
+    }
   };
   window.bossRecordFundExpense=async function(){
     if(window.__fundExpenseSubmitting)return;
