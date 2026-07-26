@@ -816,143 +816,154 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div class="header">
   <div class="header-top">
     <div class="title">YLL FEEDS ENTERPRISE</div>
-    <div class="tools"><span id="clock"></span><button class="plain-gear" title="Settings" aria-label="Settings" onclick="openBossLogin()">&#9881;</button><button id="themeBtn" title="Light mode" aria-label="Light mode" onclick="toggleMode()">&#9728;</button><button id="langBtn" title="Switch Chinese" aria-label="Switch Chinese" onclick="toggleLanguage()">&#20013;</button></div>
+    <div class="tools"><span id="clock"></span><button class="plain-gear" title="" aria-label="系统" onclick="openBossLogin()">⚙️</button><button onclick="toggleMode()">🌙</button></div>
   </div>
   <div class="stats">
-    <div class="stat blue"><div class="icon">Sales</div><div><small>Today Payments</small><b id="todaySales">RM 0.00</b></div></div>
-    <div class="stat green"><div class="icon">Cash</div><div><small>Cash Drawer</small><b id="todayCash">RM 0.00</b></div></div>
-    <div class="stat yellow"><div class="icon">Orders</div><div><small>Orders</small><b id="todayOrders">0</b></div></div>
-    <div class="stat purple"><div class="icon">Items</div><div><small>Products</small><b id="todayItems">0</b></div></div>
+    <div class="stat blue"><div class="icon">📊</div><div><small>今日 销售</small><b id="todaySales">RM 0.00</b></div></div>
+    <div class="stat green"><div class="icon">💵</div><div><small>收银机 Cash</small><b id="todayCash">RM 0.00</b></div></div>
+    <div class="stat yellow"><div class="icon">🧾</div><div><small>订单数</small><b id="todayOrders">0</b></div></div>
+    <div class="stat purple"><div class="icon">📦</div><div><small>商品数</small><b id="todayItems">0</b></div></div>
   </div>
   <div id="cashDrawerAlert" class="money-alert"></div>
 </div>
 
 <div class="layout">
   <div class="sidebar">
-    <div class="cat-btn active" onclick="quickCat('ALL',this)"><span>All Products</span><span class="cat-count">0</span></div>
+    <div class="cat-btn active" onclick="quickCat('全部分类',this)"><span>全部商品</span><span class="cat-count">0</span></div>
     <div id="menuList"></div>
   </div>
 
   <div class="main">
     <div class="topline">
-      <button onclick="goHome()">Home</button>
+      <button onclick="goHome()">🏠 首页</button>
       <div class="search-wrap">
-        <input id="searchInput" class="search-input" placeholder="Search product / category / price" oninput="searchProducts(this.value)">
-        <button class="quick-chip" onclick="showLowStock()">Low Stock</button>
+        <input id="searchInput" class="search-input" placeholder="🔍 搜索商品 / 分类 / 价格" oninput="searchProducts(this.value)">
+        <button class="quick-chip" onclick="showLowStock()">⚠️ 低库存</button>
       </div>
       <div>
-        <button onclick="prevPage()">Prev</button>
-        <span id="pageInfo">Page 1</span>
-        <button onclick="nextPage()">Next</button>
+        <button onclick="prevPage()">⬅</button>
+        <span id="pageInfo">第 1 页</span>
+        <button onclick="nextPage()">➡</button>
       </div>
     </div>
     <div id="list" class="products"></div>
   </div>
 
   <div class="right">
-    <h3>Cart</h3>
-    <div id="cart" class="cart"><div class="empty">Cart is empty</div></div>
+    <h3>🛒 购物车</h3>
+    <div id="cart" class="cart"><div class="empty">购物车为空</div></div>
 
     <div class="summary">
       <div class="row"><span>Subtotal</span><b id="subTotal">RM 0.00</b></div>
-      <div class="row discount-row" id="discountRow"><span>Discount</span><b id="discountVal">- RM 0.00</b></div>
+      <div class="row discount-row" id="discountRow"><span>折扣</span><b id="discountVal">- RM 0.00</b></div>
       <div class="row total"><span>Total</span><b id="finalTotal">RM 0.00</b></div>
     </div>
 
     <div class="paybar">
-      <button class="big" onclick="openPay()">CHECKOUT</button>
+      <button class="big" onclick="openPay()">💰 CHECKOUT</button>
       <div class="btnrow">
-        <button class="smallbtn discount-btn" onclick="openDiscount()">Discount <b id="dVal">0.00</b></button>
-        <button class="smallbtn danger" onclick="clearCart()">Clear</button>
-        <button class="smallbtn more" onclick="toggleMore()">...</button>
+        <button class="smallbtn discount-btn" onclick="open折扣()">💸 Discount <b id="dVal">0.00</b></button>
+        <button class="smallbtn danger" onclick="clearCart()">🗑 Clear</button>
+        <button class="smallbtn more" onclick="toggleMore()">⋯</button>
       </div>
 
       <div id="moreMenu" class="moreMenu">
-        <button class="smallbtn print-btn" onclick="smartPrintLast()">Print Receipt</button>
-        <button class="smallbtn parcel-btn" onclick="openParcelBox()">Shopee Parcel</button>
-        <button class="smallbtn close-btn" onclick="openRefundBox()">Refund</button>
-      </div>
+
+  <button class="smallbtn print-btn" onclick="smartPrintLast()">🖨️ Print Receipt</button>
+  <button class="smallbtn parcel-btn" onclick="openParcelBox()">📦 Shopee Parcel</button>
+  <button class="smallbtn close-btn" onclick="openRefundBox()">↩️ Refund</button>
+
+</div>
     </div>
   </div>
 </div>
+
 <div id="discountBox" class="modal">
   <div class="modal-content">
-    <h3>Discount</h3>
-    <input id="discountInput" type="number" placeholder="Discount amount">
+    <h3>💸 Discount</h3>
+    <input id="discountInput" type="number" placeholder="输入折扣">
     <div class="discount-grid">
-      <button onclick="addDiscount(0.1)">+0.10</button>
-      <button onclick="addDiscount(1)">+1</button>
-      <button onclick="addDiscount(5)">+5</button>
+      <button onclick="add折扣(0.1)">+0.10</button>
+      <button onclick="add折扣(1)">+1</button>
+      <button onclick="add折扣(5)">+5</button>
     </div>
     <div class="discount-preview">
-      Subtotal RM <span id="dSubtotal">0.00</span><br>
-      Discount -RM <span id="dCurrent">0.00</span><br>
-      <b>Total RM <span id="dFinal">0.00</span></b>
+      原价 RM <span id="dSubtotal">0.00</span><br>
+      折扣 -RM <span id="dCurrent">0.00</span><br>
+      <b>应付 RM <span id="dFinal">0.00</span></b>
     </div>
     <details class="refund-auth" id="discountAuthDetails">
       <summary>Boss Authorization / Direct Approve</summary>
-      <input id="discountBossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <input id="discountBossPassword" type="password" placeholder="Password" autocomplete="new-password">
-      <small style="color:#94a3b8">Staff discount max RM10 per order. Above RM10 needs boss approval.</small>
+      <input id="discountBossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="discountBossPassword" type="password" placeholder="密码" autocomplete="new-password">
+      <small style="color:#94a3b8">员工折扣每单最多 RM10；超过 RM10 必须老板批准。</small>
     </details>
     <div id="discountStatusMsg" class="boss-result" style="display:none"></div>
-    <button class="green" onclick="applyDiscount()">Apply Discount</button>
-    <button onclick="resetDiscount()">Clear Discount</button>
-    <button onclick="closeDiscount()">Close</button>
+    <button class="green" onclick="apply折扣()">✅ 应用折扣</button>
+    <button onclick="reset折扣()">清除折扣</button>
+    <button onclick="close折扣()">关闭</button>
   </div>
 </div>
 
 <div id="payModal" class="modal">
   <div class="modal-content pay-choice-box">
     <h3>Select Payment</h3>
-    <button class="pay-cash-btn" onclick="openCash()">Cash</button>
-    <button class="pay-transfer-btn" onclick="confirmDirectCheckout('transfer','Transfer')">Transfer</button>
-    <button class="pay-qr-btn" onclick="confirmDirectCheckout('mbb_qr','QR')">QR</button>
-    <button class="pay-mixed-btn" onclick="openMixedPayment()">Mixed</button>
-    <button class="cancel-pay-btn" onclick="closePay()">Cancel</button>
+    <button class="pay-cash-btn" onclick="openCash()">💵 Cash</button>
+    <button class="pay-transfer-btn" onclick="confirmDirectCheckout('transfer','Transfer')">🏦 Transfer</button>
+    <button class="pay-qr-btn" onclick="confirmDirectCheckout('mbb_qr','QR')">📱 QR</button>
+    <button class="pay-mixed-btn" onclick="openMixedPayment()">➗ Mixed</button>
+    <button class="cancel-pay-btn" onclick="closePay()">✕ Cancel</button>
   </div>
 </div>
 
 <div id="cashBox" class="modal">
   <div class="modal-content">
-    <h3>Cash Payment</h3>
+    <h3>💵 Cash Payment</h3>
     <div id="cashTotal">RM 0.00</div>
     <input id="cashInput" type="number" inputmode="decimal" placeholder="Customer paid amount" oninput="calcChange()">
     <div class="discount-grid">
-      <button class="cash-quick-btn cash-rm1" onclick="quick(1)">RM1</button>
-      <button class="cash-quick-btn cash-rm5" onclick="quick(5)">RM5</button>
-      <button class="cash-quick-btn cash-rm10" onclick="quick(10)">RM10</button>
-      <button class="cash-quick-btn cash-rm20" onclick="quick(20)">RM20</button>
-      <button class="cash-quick-btn cash-rm50" onclick="quick(50)">RM50</button>
-      <button class="cash-quick-btn cash-rm100" onclick="quick(100)">RM100</button>
-      <button class="exact-pay-btn" onclick="quickExact()">Exact Payment</button>
-    </div>
+  <button class="cash-quick-btn cash-rm1" onclick="quick(1)">RM1</button>
+  <button class="cash-quick-btn cash-rm5" onclick="quick(5)">RM5</button>
+  <button class="cash-quick-btn cash-rm10" onclick="quick(10)">RM10</button>
+
+  <button class="cash-quick-btn cash-rm20" onclick="quick(20)">RM20</button>
+  <button class="cash-quick-btn cash-rm50" onclick="quick(50)">RM50</button>
+  <button class="cash-quick-btn cash-rm100" onclick="quick(100)">RM100</button>
+
+  <button class="exact-pay-btn" onclick="quickExact()">
+    💵 刚好付款
+  </button>
+</div>
     <div id="change">Change RM 0.00</div>
-    <button class="confirm-cash-btn" onclick="confirmCash()">Confirm Payment</button>
-    <button class="cancel-pay-btn" onclick="closeCash()">Cancel</button>
+    <button class="confirm-cash-btn" onclick="confirmCash()">✅ Confirm Payment</button>
+    <button class="cancel-pay-btn" onclick="closeCash()">✕ Cancel</button>
   </div>
 </div>
 
 <div id="mixedBox" class="modal">
   <div class="modal-content">
-    <h3>Mixed Payment</h3>
-    <div id="mixedTotal" style="font-size:20px;font-weight:900;margin-bottom:8px">Total RM 0.00</div>
-    <input id="mixedCash" type="number" placeholder="Cash amount" oninput="calcMixed()">
-    <input id="mixedQr" type="number" placeholder="QR amount" oninput="calcMixed()">
-    <input id="mixedTransfer" type="number" placeholder="Transfer amount" oninput="calcMixed()">
-    <div id="mixedRemain" style="margin:10px 0;color:#cbd5e1">Remaining RM 0.00</div>
-    <button class="green" onclick="confirmMixed()">Confirm Mixed Payment</button>
-    <button class="cancel-pay-btn" onclick="closeModal('mixedBox')">Cancel</button>
+    <h3>➗ Mixed Payment</h3>
+    <div id="mixedTotal" style="font-size:20px;font-weight:900;margin-bottom:8px">应付 RM 0.00</div>
+    <input id="mixedCash" type="number" placeholder="现金 Cash" oninput="calcMixed()">
+    <input id="mixedQr" type="number" placeholder="QR 金额" oninput="calcMixed()">
+    <input id="mixed转账" type="number" placeholder="转账金额" oninput="calcMixed()">
+    <div id="mixedRemain" style="margin:10px 0;color:#cbd5e1">剩余 RM 0.00</div>
+    <button class="green" onclick="confirmMixed()">✅ 确认混合付款</button>
+    <button class="cancel-pay-btn" onclick="closeModal('mixedBox')">✕ 取消</button>
   </div>
 </div>
 
+
 <div id="parcelBox" class="modal">
   <div class="modal-content">
-    <h3>Shopee Parcel</h3>
-    <p style="color:#94a3b8;font-size:13px">Normal day: fill Shopee system parcels only.</p>
-    <input id="parcelExpected" type="number" placeholder="Shopee system parcels">
-    <input id="parcelReturned" type="number" placeholder="Returned parcels">
-    <button class="green" onclick="saveParcelLog()">Save Parcel Record</button>
+    <h3>📦 Shopee Parcel</h3>
+    <p style="color:#94a3b8;font-size:13px">Record parcel count only. This is not POS sales.</p>
+    <input id="parcelTrip" type="number" placeholder="Trip number, e.g. 1 / 2" value="1">
+    <input id="parcelDelivered" type="number" placeholder="Delivered / Pick-up count">
+    <input id="parcelReturned" type="number" placeholder="Return count">
+    <input id="parcelNote" type="text" placeholder="Note optional">
+    <div id="parcelPreview" class="discount-preview">Estimated: RM 0.00</div>
+    <button class="green" onclick="saveParcelLog()">✅ Save Parcel Record</button>
     <button onclick="closeModal('parcelBox')">Close</button>
   </div>
 </div>
@@ -987,42 +998,43 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
 <div id="paymentConfirmBox" class="modal">
   <div class="modal-content payment-confirm-card">
-    <h3 id="paymentConfirmTitle">Confirm Payment</h3>
+    <h3 id="paymentConfirmTitle">确认付款</h3>
     <div id="paymentConfirmText"></div>
     <div class="confirm-total" id="paymentConfirmTotal">RM 0.00</div>
     <div class="confirm-actions">
-      <button class="cancel-pay-btn" onclick="closeModal('paymentConfirmBox')">Cancel</button>
-      <button class="confirm-cash-btn" id="paymentConfirmBtn">Confirm</button>
+      <button class="cancel-pay-btn" onclick="closeModal('paymentConfirmBox')">取消</button>
+      <button class="confirm-cash-btn" id="paymentConfirmBtn">确认</button>
     </div>
   </div>
 </div>
 
 <div id="reportBox" class="modal">
   <div class="modal-content">
-    <h3>Report</h3>
+    <h3>📊 报表</h3>
     <input type="date" id="startDate">
     <input type="date" id="endDate">
-    <button class="green search-btn" onclick="loadReport()">Search</button>
+    <button class="green search-btn" onclick="loadReport()">查询</button>
     <div id="reportResult"></div>
-    <button onclick="closeReport()">Close</button>
+    <button onclick="closeReport()">关闭</button>
   </div>
 </div>
 
 <div id="confirmModal" class="modal">
   <div class="modal-content">
-    <h3 id="confirmText">Confirm action?</h3>
-    <button class="green" onclick="confirmYes()">Confirm</button>
-    <button onclick="confirmNo()">Cancel</button>
+    <h3 id="confirmText">确认操作？</h3>
+    <button class="green" onclick="confirmYes()">✅ 确认</button>
+    <button onclick="confirmNo()">取消</button>
   </div>
 </div>
 
+
 <div id="bossLoginBox" class="modal">
   <div class="modal-content access-card">
-    <h3>Boss Authorization</h3>
-    <input id="bossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('bossPassword').focus()">
-    <input id="bossPassword" type="password" placeholder="Password" autocomplete="new-password" onkeydown="if(event.key==='Enter')bossLogin()">
-    <button id="bossLoginBtn" class="green" onclick="bossLogin()">Login</button>
-    <button onclick="closeModal('bossLoginBox')">Close</button>
+    <h3>🔐 权限验证</h3>
+    <input id="bossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('bossPassword').focus()">
+    <input id="bossPassword" type="password" placeholder="密码" autocomplete="new-password" onkeydown="if(event.key==='Enter')bossLogin()">
+    <button id="bossLoginBtn" class="green" onclick="bossLogin()">登入</button>
+    <button onclick="closeModal('bossLoginBox')">关闭</button>
     <div id="bossLoginMsg" class="boss-result" style="display:none"></div>
   </div>
 </div>
@@ -1031,31 +1043,116 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <div class="modal-content">
     <div class="boss-dashboard-shell">
       <div class="boss-hero">
-        <div><b>Boss Mode</b><br><small>Authorized use only. Idle mode returns to POS screen.</small></div>
-        <button class="danger-outline" onclick="bossLogout()" style="width:auto;margin:0;padding:10px 14px">Logout</button>
+        <div><b>🔒 管理模式</b><br><small>只限授权使用；闲置后自动回到收银画面。</small></div>
+        <button class="danger-outline" onclick="bossLogout()" style="width:auto;margin:0;padding:10px 14px">退出</button>
       </div>
+
       <div class="boss-layout">
         <div class="boss-tab-grid">
-          <button onclick="bossOpenOverview()">Today</button>
-          <button onclick="bossOpenCashCollect()">Finance</button>
-          <button onclick="bossShowPanel('bossReportsPanel')">Reports</button>
-          <button onclick="bossOpenParcelBoss()">Shopee</button>
-          <button onclick="bossOpenOtherIncome()">Other Income</button>
-          <button onclick="bossLoadLowStock()">Low Stock</button>
-          <button onclick="bossOpenExport()">Export Excel</button>
-          <button onclick="bossOpenCredentialBox()">Settings</button>
+          <button onclick="bossOpenOverview()">🔔 今日提醒</button>
+          <button onclick="bossOpenCashCollect()">💰 财务中心</button>
+          <button onclick="bossShowPanel('bossReportsPanel')">📊 报表中心</button>
+          <button onclick="bossOpenParcelBoss()">📦 Shopee 对账</button>
+          <button onclick="bossOpenOtherIncome()">🚰 其它收入</button>
+          <button onclick="bossLoadLowStock()">📦 库存提醒</button>
+          <button onclick="bossOpenExport()">📤 汇出 Excel</button>
+          <button onclick="bossOpenCredentialBox()">⚙️ 系统设定</button>
         </div>
+
         <div class="boss-content">
-          <div id="bossOverviewPanel" class="boss-panel active"><h4>Today</h4><div id="bossOverviewResult" class="boss-overview-grid">Loading...</div></div>
-          <div id="bossReportsPanel" class="boss-panel"><h4>Reports</h4><div class="boss-report-grid"><button onclick="bossLoadReport('today')">Today</button><button onclick="bossLoadReport('yesterday')">Yesterday</button><button onclick="bossLoadReport('week')">This Week</button><button onclick="bossLoadReport('lastWeek')">Last Week</button><button onclick="bossLoadReport('month')">This Month</button><button onclick="bossLoadReport('lastMonth')">Last Month</button><button onclick="bossLoadReport('year')">This Year</button><button onclick="bossOpenRangeReport()">Custom</button></div></div>
-          <div id="bossRangeBox" class="boss-panel"><h4>Custom Report</h4><div class="boss-inline"><input id="bossStartDate" type="date"><input id="bossEndDate" type="date"><button class="green" onclick="bossLoadCustomReport()">Search</button></div></div>
-          <div id="bossExportBox" class="boss-panel"><h4>Export Excel</h4><div class="boss-inline"><input id="exportYear" type="number" placeholder="Year, e.g. 2026"><input id="exportMonth" type="number" placeholder="Month optional" min="1" max="12"><button class="green" onclick="bossExportXlsx()">Generate Excel</button></div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px;color:#cbd5e1"><label><input type="checkbox" id="exPos" checked> POS Sales</label><label><input type="checkbox" id="exRefund" checked> Refunds</label><label><input type="checkbox" id="exShopee"> Shopee page</label><label><input type="checkbox" id="exOther"> Other income page</label><label><input type="checkbox" id="exCigarette"> Cigarette page</label></div></div>
-          <div id="bossCashBox" class="boss-panel"><h4>Finance</h4><div class="boss-money-cards"><div class="boss-money-card"><small>Cash Drawer</small><b id="cashDrawerAmount">RM 0.00</b></div><div class="boss-money-card"><small>Float Cash</small><b id="floatCashAmount">RM 0.00</b></div><div class="boss-money-card"><small>Collectable</small><b id="collectableAmount">RM 0.00</b></div></div><div id="bossCashWarning" class="boss-warning">Cash reminder reached.</div><div id="bossCashInfo" class="boss-result">Loading...</div><div class="boss-inline" style="margin-top:10px"><input id="collectCashAmount" type="number" placeholder="Collect amount"><input id="collectCashNote" type="text" placeholder="Note optional"><button class="green" onclick="bossCollectCash()">Confirm Collection</button></div></div>
-          <div id="bossParcelBox" class="boss-panel"><h4>Shopee</h4><p style="color:#94a3b8;font-size:13px;margin-top:-4px">Record actual payout received from Shopee.</p><div class="boss-inline"><input id="shopeePaidAmount" type="number" placeholder="Shopee paid amount"><input id="shopeePaidNote" type="text" placeholder="Note / payout date"><button class="green" onclick="bossConfirmShopeePaid()">Record Paid</button></div><div id="bossParcelResult" class="boss-result">Open to load.</div></div>
-          <div id="bossOtherIncomeBox" class="boss-panel"><h4>Other Income</h4><p style="color:#94a3b8;font-size:13px;margin-top:-4px">Add pending income first, confirm after cash is received.</p><div class="boss-inline"><input id="otherIncomeType" type="text" placeholder="Water Machine"><input id="otherIncomeAmount" type="number" placeholder="Amount"><button class="green" onclick="bossAddOtherIncome()">Add Pending</button></div><div id="bossOtherIncomeResult" class="boss-result">Waiting confirmation.</div></div>
-          <div id="bossLowStockBox" class="boss-panel"><h4>Low Stock</h4><div id="bossLowStockResult" class="boss-result">Loading...</div></div>
-          <div id="bossCredentialBox" class="boss-panel"><h4>Settings</h4><p style="color:#94a3b8;font-size:13px">Fill only fields you want to change. Blank fields keep current setting.</p><div class="settings-grid"><input id="newBossId" type="text" placeholder="New ID"><input id="newBossPassword" type="password" placeholder="New password"><input id="newRecoveryCode" type="text" placeholder="New recovery code"><input id="newCashLimit" type="number" placeholder="Cash reminder, e.g. 500"><input id="newFloatCash" type="number" placeholder="Float cash, e.g. 200"><input id="newAutoLogout" type="number" placeholder="Auto logout minutes"><input id="newParcelRate" type="number" step="0.01" placeholder="Shopee delivery rate"><input id="newParcelReturnRate" type="number" step="0.01" placeholder="Shopee return rate"></div><button class="green" onclick="bossSaveSettings()">Save Settings</button></div>
-          <div id="bossResult" class="boss-result">Choose a function.</div>
+          <div id="bossOverviewPanel" class="boss-panel active">
+            <h4>🔔 今日提醒</h4>
+            <div id="bossOverviewResult" class="boss-overview-grid">载入中...</div>
+          </div>
+
+          <div id="bossReportsPanel" class="boss-panel">
+            <h4>📊 报表中心</h4>
+            <div class="boss-report-grid">
+              <button onclick="bossLoadReport('today')">今日</button>
+              <button onclick="bossLoadReport('yesterday')">昨天</button>
+              <button onclick="bossLoadReport('week')">本周</button>
+              <button onclick="bossLoadReport('lastWeek')">上周</button>
+              <button onclick="bossLoadReport('month')">本月</button>
+              <button onclick="bossLoadReport('lastMonth')">上月</button>
+              <button onclick="bossLoadReport('year')">今年</button>
+              <button onclick="bossOpenRangeReport()">自订日期</button>
+            </div>
+          </div>
+
+          <div id="bossRangeBox" class="boss-panel">
+            <h4>自订报表</h4>
+            <div class="boss-inline">
+              <input id="bossStartDate" type="date">
+              <input id="bossEndDate" type="date">
+              <button class="green" onclick="bossLoadCustomReport()">查询</button>
+            </div>
+          </div>
+
+          <div id="bossExportBox" class="boss-panel">
+            <h4>📤 汇出 Excel 给会计</h4>
+            <div class="boss-inline">
+              <input id="exportYear" type="number" placeholder="年份，例如 2026">
+              <input id="exportMonth" type="number" placeholder="月份，可空" min="1" max="12">
+              <button class="green" onclick="bossExportXlsx()">生成 Excel</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px;color:#cbd5e1">
+              <label><input type="checkbox" id="exPos" checked> POS 销售</label>
+              <label><input type="checkbox" id="exRefund" checked> 退货</label>
+              <label><input type="checkbox" id="exShopee"> Shopee 独立页</label>
+              <label><input type="checkbox" id="exOther"> 其它收入独立页</label>
+              <label><input type="checkbox" id="exCigarette"> 香烟独立页</label>
+            </div>
+            <p style="color:#94a3b8;font-size:13px">Shopee / 其它收入 / 香烟不会混进 POS 销售；需要给会计时再勾选。</p>
+          </div>
+
+          <div id="bossCashBox" class="boss-panel">
+            <h4>💰 财务中心</h4>
+            <div class="boss-money-cards">
+              <div class="boss-money-card"><small>收银机现金</small><b id="cashDrawerAmount">RM 0.00</b></div>
+              <div class="boss-money-card"><small>找零本金</small><b id="floatCashAmount">RM 0.00</b></div>
+              <div class="boss-money-card"><small>可收现金</small><b id="collectableAmount">RM 0.00</b></div>
+            </div>
+            <div id="bossCashWarning" class="boss-warning">🟠 已超过设定提醒，请考虑收现金。</div>
+            <div id="bossCashInfo" class="boss-result">载入中...</div>
+            <div class="boss-inline" style="margin-top:10px"><input id="collectCashAmount" type="number" placeholder="收走金额，例如 300"><input id="collectCashNote" type="text" placeholder="备注，可空"><button class="green" onclick="bossCollectCash()">确认收走</button></div>
+          </div>
+
+          <div id="bossParcelBox" class="boss-panel">
+            <h4>📦 Shopee 对账</h4>
+            <p style="color:#94a3b8;font-size:13px;margin-top:-4px">这里只记录实际收到的钱；你填写的金额就是对账依据，不上传证据。</p>
+            <div class="boss-inline"><input id="shopeePaidAmount" type="number" placeholder="Shopee 实际给多少钱"><input id="shopeePaidNote" type="text" placeholder="备注 / payout 日期"><button class="green" onclick="bossConfirmShopeePaid()">记录实际收到</button></div>
+            <div id="bossParcelResult" class="boss-result">点查看后显示。</div>
+          </div>
+
+          <div id="bossOtherIncomeBox" class="boss-panel">
+            <h4>🚰 其它收入 / 水机</h4>
+            <p style="color:#94a3b8;font-size:13px;margin-top:-4px">水机先加入待确认；现金收到后再按确认已收款。</p>
+            <div class="boss-inline"><input id="otherIncomeType" type="text" placeholder="水机"><input id="otherIncomeAmount" type="number" placeholder="金额"><button class="green" onclick="bossAddOtherIncome()">加入待确认</button></div>
+            <div id="bossOtherIncomeResult" class="boss-result">待确认后，你确认收了才算收入。</div>
+          </div>
+
+          <div id="bossLowStockBox" class="boss-panel">
+            <h4>📦 库存提醒</h4>
+            <div id="bossLowStockResult" class="boss-result">载入中...</div>
+          </div>
+
+          <div id="bossCredentialBox" class="boss-panel">
+            <h4>⚙️ 系统设定</h4>
+            <p style="color:#94a3b8;font-size:13px">只填要修改的项目，留空就保持原本设定。储存后会退出管理模式，重新登入才会生效。</p>
+            <div class="settings-grid">
+              <input id="newBossId" type="text" placeholder="新帐号（留空=不修改）" autocomplete="off" autocapitalize="off" spellcheck="false">
+              <input id="newBossPassword" type="password" placeholder="新密码（留空=不修改，至少 6 位）" autocomplete="new-password">
+              <input id="newRecoveryCode" type="text" placeholder="新恢复码（留空=不修改）" autocomplete="off">
+              <input id="newCashLimit" type="number" placeholder="收现金提醒，例如 500">
+              <input id="newFloatCash" type="number" placeholder="找零本金，例如 200">
+              <input id="newAutoLogout" type="number" placeholder="自动退出分钟，例如 10">
+              <input id="newParcelRate" type="number" step="0.01" placeholder="Shopee 派件单价，例如 0.30">
+              <input id="newParcelReturnRate" type="number" step="0.01" placeholder="Shopee 退回单价，例如 0.15">
+            </div>
+            <button class="green" onclick="bossSaveSettings()">储存设定</button>
+          </div>
+
+          <div id="bossResult" class="boss-result">请选择功能。</div>
         </div>
       </div>
     </div>
@@ -1063,9 +1160,19 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 </div>
 
 <div id="systemLock" class="security-lock">
-  <div class="security-card"><h1>System Locked</h1><p>POS is locked. Please contact boss.</p><p style="font-size:14px;color:#94a3b8">Unlock in Google Sheet Settings: set SystemLocked to FALSE and BossFailedCount to 0.</p><p style="font-size:14px;color:#94a3b8">Or enter recovery code.</p><div class="boss-inline" style="margin:10px 0"><input id="recoveryCodeInput" type="password" placeholder="Recovery code" autocomplete="new-password"><button class="green" onclick="recoveryUnlock()">Unlock</button></div><button onclick="checkSystemStatus(true)" style="padding:12px 18px;border-radius:12px;background:#334155;color:white;font-weight:900">Recheck</button></div>
+  <div class="security-card">
+    <h1>🔒 系统锁定</h1>
+    <p>系统已锁定，POS 收银暂停使用。<br>请联络老板解锁。</p>
+    <p style="font-size:14px;color:#94a3b8">解锁方式 1：到 Google Sheet → Settings，把 <b>SystemLocked</b> 改成 <b>FALSE</b>，并把 <b>BossFailedCount</b> 改成 <b>0</b>。</p>
+    <p style="font-size:14px;color:#94a3b8">解锁方式 2：老板输入 恢复码。</p>
+    <div class="boss-inline" style="margin:10px 0">
+      <input id="recoveryCodeInput" type="password" placeholder="恢复码" autocomplete="new-password">
+      <button class="green" onclick="recoveryUnlock()">解锁</button>
+    </div>
+    <button onclick="checkSystemStatus(true)" style="padding:12px 18px;border-radius:12px;background:#334155;color:white;font-weight:900">我已解锁，重新检查</button>
+  </div>
 </div>
-<div id="checkoutBusy" class="checkout-busy">...</div>
+<div id="checkoutBusy" class="checkout-busy">⏳ 买单处理中，请不要操作...</div>
 
 <script>
 let products=[], currentList=[], cart=[];
@@ -2678,15 +2785,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   const trf = (key, vars={}) => Object.keys(vars).reduce((s,k)=>s.replaceAll('{'+k+'}', vars[k]), tr(key));
   const looksGarbledText = s => /[\u00c0-\u00ff]/.test(String(s||''));
   function normalizeText(s){ return String(s == null ? '' : s).replace(/\s+/g,' ').trim(); }
-  function normalizeProductImageUrl(url){
-    const s=normalizeText(url);
-    if(!s)return '';
-    let m=s.match(/[?&]id=([A-Za-z0-9_-]+)/);
-    if(!m)m=s.match(/\/d\/([A-Za-z0-9_-]+)/);
-    if(!m)m=s.match(/googleusercontent\.com\/d\/([A-Za-z0-9_-]+)/);
-    if(!m)m=s.match(/thumbnail\?id=([A-Za-z0-9_-]+)/);
-    return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200` : s;
-  }
   function normalizeCategoryName(s){ return normalizeText(s) || 'Uncategorized'; }
   function categoryHtml(cat){
     const text=normalizeCategoryName(cat);
@@ -3092,7 +3190,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       code: normalizeText(p.code),
       name: normalizeText(p.name),
       category: normalizeCategoryName(p.category),
-      image: normalizeProductImageUrl(p.image)
+      image: normalizeText(p.image)
     }));
     try{ products=list; window.products=list; currentList=list; currentPage=1; }catch(e){
       window.products=list; window.currentList=list; window.currentPage=1;
@@ -3359,7 +3457,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const syncNote=off.count?` | ${tr('offlinePending')}`:'';
       setStatDetail('todaySales', `${tr('cash')} ${money(num(today.Cash||0)+off.cash)} | QR ${money(today.MBB_QR||0)} | ${tr('transfer')} ${money(today.Transfer||0)}${syncNote}`);
       if(cash)cash.textContent=money(num(drawer.cashDrawer||0)+off.cash);
-      setStatDetail('todayCash', `${tr('collected')} ${money(drawer.collected||0)}${off.count?` | ${tr('offlineCash')}`:''}`);
+      setStatDetail('todayCash', `${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`);
       if(orders)orders.textContent=num(today.orders||today.count||0)+off.count;
     if(items)items.textContent=snapshot.productCount || (currentProducts()||[]).length || (window.products||[]).length || 0;
       if(typeof updateCashDrawerAlert === 'function')updateCashDrawerAlert(drawer);
@@ -3465,9 +3563,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.add = function(name,price,code=''){
     if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut))return;
     const c=currentCart();
-    if(!c.length){
-      try{ localStorage.removeItem('lastCompletedCheckout'); }catch(e){}
-    }
     const product=(currentProducts()||[]).find(p=>(code && String(p.code)===String(code)) || String(p.name)===String(name));
     if(product){
       const inCart=c.filter(i=>String(i.name)===String(name)).reduce((s,i)=>s+Number(i.qty||0),0);
@@ -3617,23 +3712,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
   try{ bossHideBossPanels = window.bossHideBossPanels; }catch(e){}
 
-  function hasValidBossSession(){
-    try{
-      return window.__bossSessionActive === true &&
-        Number(sessionStorage.getItem('bossSessionUntil')||0) > Date.now();
-    }catch(e){ return false; }
-  }
   function keepBossDashboardOpen(activeKey){
-    if(!hasValidBossSession())return false;
     try{
       const ms=(typeof BOSS_IDLE_MS !== 'undefined' && Number(BOSS_IDLE_MS)) ? Number(BOSS_IDLE_MS) : 10*60*1000;
       sessionStorage.setItem('bossSessionUntil', String(Date.now()+Math.max(60000,ms)));
+      window.__bossSessionActive=true;
       const dash=$('bossDashboard');
       if(dash)dash.classList.add('active');
       document.body.classList.add('modal-open');
       if(activeKey)setBossNav(activeKey);
-      return true;
-    }catch(e){ return false; }
+    }catch(e){}
   }
 
   function ensureBossProductPanel(){
@@ -3867,7 +3955,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       name:normalizeText(p.name),
       price:p.price||0,
       category:normalizeCategoryName(p.category),
-      image:normalizeProductImageUrl(p.image),
+      image:normalizeText(p.image),
       stock:p.stock||0,
       cost:p.cost||0,
       active:p.active!==false,
@@ -3884,7 +3972,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       name: normalizeText(($('bossProductName')||{}).value),
       price: ($('bossProductPrice')||{}).value || '',
       category: normalizeCategoryName(($('bossProductCategory')||{}).value),
-      image: normalizeProductImageUrl(($('bossProductImage')||{}).value),
+      image: normalizeText(($('bossProductImage')||{}).value),
       stock: ($('bossProductStock')||{}).value || '',
       cost: ($('bossProductCost')||{}).value || '',
       active: ($('bossProductActive')||{}).value || 'TRUE'
@@ -4034,20 +4122,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(!img || !img.data)throw new Error('No image data');
       const productName=normalizeText(($('bossProductName')||{}).value) || normalizeText(file.name) || 'product';
       const out=await timeout(apiCall('uploadProductImageToDrive',[{name:productName,mimeType:img.mimeType,data:img.data}]),45000,'Image upload');
-      const url=normalizeProductImageUrl((out&&out.url) || (out&&out.viewUrl) || '');
+      const url=(out&&out.url) || (out&&out.viewUrl) || '';
       if(!url)throw new Error('No image URL returned');
       const imageInput=$('bossProductImage');
       if(imageInput)imageInput.value=url;
-      renderBossProductPreview({
-        code:normalizeText(($('bossProductCode')||{}).value),
-        name:productName,
-        price:num(($('bossProductPrice')||{}).value),
-        category:normalizeCategoryName(($('bossProductCategory')||{}).value),
-        image:url,
-        stock:num(($('bossProductStock')||{}).value),
-        cost:num(($('bossProductCost')||{}).value)
-      });
-      if(res)res.innerHTML=`<div class="boss-notice">${esc(tr('imageUploaded'))}<small>${esc(tr('saveProduct'))}</small></div>`;
+      if(res)res.innerHTML=`<div class="boss-notice">${esc(tr('imageUploaded'))}</div>`;
       if(typeof showToast === 'function')showToast(tr('imageUploaded'));
     }catch(e){
       const msg=tr('imageUploadFailed') + ((e&&e.message)||e||'');
@@ -4421,48 +4500,30 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setCheckoutBusy(false);
     showAppAlert(tr('saveUnconfirmed') + '\n\n' + tr('saveStillChecking'), tr('payment'));
   }
-  function getPendingOnlineOrder(clientId){
-    try{
-      return JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]')
-        .find(x=>x && String(x.id)===String(clientId)) || null;
-    }catch(e){ return null; }
-  }
-  function finalizeConfirmedPendingOrder(saved,pending){
-    if(!saved || !saved.orderId || !pending)return false;
-    removePendingOnlineOrder(pending.id);
-    if(pending.key)rememberCompletedCheckout(pending.key,saved.orderId);
-    const active=pending.key ? getActiveCheckoutRecord(pending.key) : null;
-    let currentKey='';
-    try{
-      if(currentCart().length){
-        currentKey=makeCheckoutKey(
-          currentCart(),
-          pending.payment,
-          pending.discount||0,
-          pending.paid||0,
-          pending.change||0
-        );
-      }
-    }catch(e){}
-    if(active && String(active.id)===String(pending.id) && currentKey===pending.key){
-      window.lastPayment=pending.payment;
-      window.lastPaid=moneyNum(pending.paid||0);
-      window.lastChange=moneyNum(pending.change||0);
-      try{ lastPayment=window.lastPayment; lastPaid=window.lastPaid; lastChange=window.lastChange; }catch(e){}
-      finishSavedOrder(saved.orderId,moneyNum(pending.discount||0),pending.key);
-    }else{
-      if(pending.key)clearActiveCheckout(pending.key);
-      if(typeof loadTodayStats === 'function')loadTodayStats();
-    }
-    return true;
-  }
   function confirmPendingInBackground(clientId){
     if(!clientId || !navigator.onLine)return;
     setTimeout(()=>{
-      const pending=getPendingOnlineOrder(clientId);
-      if(!pending)return;
       apiCall('getOrderByClientId',[clientId])
-        .then(saved=>{ if(saved && saved.orderId)finalizeConfirmedPendingOrder(saved,pending); })
+        .then(saved=>{
+          if(saved && saved.orderId){
+            let pendingKey='';
+            try{
+              const rows=JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]');
+              const pending=rows.find(x=>x && String(x.id)===String(clientId));
+              if(pending)pendingKey=pending.key || '';
+            }catch(e){}
+            removePendingOnlineOrder(clientId);
+            if(pendingKey){
+              rememberCompletedCheckout(pendingKey, saved.orderId);
+              clearActiveCheckout(pendingKey);
+            }
+            try{
+              if(Array.isArray(window.lastCart))window.lastCart.forEach(i=>i.orderId=saved.orderId);
+              if(Array.isArray(lastCart))lastCart.forEach(i=>i.orderId=saved.orderId);
+            }catch(e){}
+            if(typeof loadTodayStats === 'function')loadTodayStats();
+          }
+        })
         .catch(()=>{});
     }, 2500);
   }
@@ -4622,7 +4683,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const sendDiscount = moneyNum(due.discount);
     const checkoutKey = makeCheckoutKey(send, payment, sendDiscount, window.lastPaid, window.lastChange);
     const completed = recentCompletedCheckout(checkoutKey);
-    if(completed && completed.orderId){
+    if(completed && completed.orderId && c.some(i=>i && i.orderId)){
       clearCartState();
       clearActiveCheckout(checkoutKey);
       setCheckoutBusy(false);
@@ -4650,14 +4711,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
           }catch(e){}
         }
       }).catch(()=>{});
-      const res = await timeout(savePromise, 30000, 'Save order');
+      const res = await timeout(savePromise, 12000, 'Save order');
       if(!res || !res.orderId) throw new Error(tr('noOrderNumber'));
       removePendingOnlineOrder(clientId);
       finishSavedOrder(res.orderId, sendDiscount, checkoutKey);
     }catch(err){
       if(isTimeoutError(err)){
         try{
-          const saved = await timeout(apiCall('getOrderByClientId',[clientId]), 12000, 'Check saved order');
+          const saved = await timeout(apiCall('getOrderByClientId',[clientId]), 2500, 'Check saved order');
           if(saved && saved.orderId){
             removePendingOnlineOrder(clientId);
             finishSavedOrder(saved.orderId, sendDiscount, checkoutKey);
@@ -4763,7 +4824,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   let offlineSyncTimer=null;
   const syncingOrderIds=new Set();
   const OFFLINE_SYNC_BATCH_LIMIT=2;
-  const OFFLINE_SYNC_TIMEOUT_MS=30000;
+  const OFFLINE_SYNC_TIMEOUT_MS=8000;
   function writeQueue(name, rows){
     try{
       const clean=(rows||[]).filter(Boolean).slice(-100);
@@ -4783,9 +4844,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.syncOfflineOrders = async function(){
     if(offlineSyncing || !navigator.onLine)return;
     const offline = readQueue('offlineOrders');
-    const pendingOnline = readQueue('pendingOnlineOrders');
     const jobs=[
-      ...pendingOnline.map(o=>({...o, queue:'pendingOnlineOrders'})),
       ...offline.map(o=>({...o, queue:'offlineOrders'}))
     ];
     if(!jobs.length){
@@ -4800,20 +4859,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
     for(const o of batch){
       try{
-        let r=null;
-        if(o.queue==='pendingOnlineOrders'){
-          r=await timeout(apiCall('getOrderByClientId',[o.id]),15000,'Check pending order').catch(()=>null);
-        }
-        if(!(r && r.orderId)){
-          r=await timeout(apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id]),OFFLINE_SYNC_TIMEOUT_MS,'Sync offline order');
-        }
+        const r=await timeout(apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id]),OFFLINE_SYNC_TIMEOUT_MS,'Sync offline order');
         if(!(r && r.orderId)){
           failed++;
           syncingOrderIds.delete(String(o.id||''));
         }else{
           saved++;
-          if(o.queue==='pendingOnlineOrders')finalizeConfirmedPendingOrder(r,o);
-          else removeQueuedOrder(o.queue, o.id);
+          removeQueuedOrder(o.queue, o.id);
         }
       }catch(e){
         failed++;
@@ -4825,7 +4877,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(saved){
       try{ if(typeof loadTodayStats === 'function')loadTodayStats(); }catch(e){}
     }
-    const remaining=readQueue('offlineOrders').length + readQueue('pendingOnlineOrders').length;
+    const remaining=readQueue('offlineOrders').length;
     if(failed){
       if(typeof showToast === 'function')showToast(tr('offlineStillPending'));
     }else if(!remaining){
@@ -5411,16 +5463,18 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   window.bossLogout = function(auto=false){
-    window.__bossSessionActive=false;
     try{ sessionStorage.removeItem('bossSessionUntil'); }catch(e){}
     try{ closeModal('bossDashboard'); }catch(e){}
-    try{ const viewer=$('bossImageViewer'); if(viewer)viewer.remove(); }catch(e){}
+    window.__bossSessionActive=false;
+    document.body.classList.remove('modal-open','pos-busy');
+    document.documentElement.classList.remove('modal-open');
+    const busy=$('checkoutBusy'); if(busy){busy.classList.remove('active');busy.style.zIndex='';}
+    document.querySelectorAll('.boss-image-viewer').forEach(el=>el.remove());
     if(typeof showToast === 'function')showToast(auto ? tr('autoExited') : tr('exitedBoss'));
     setStaticText();
   };
 
   window.bossLogin = async function(){
-    window.__bossSessionActive=false;
     const idEl=$('bossId'), pwEl=$('bossPassword'), msg=$('bossLoginMsg'), btn=$('bossLoginBtn');
     const id=(idEl||{}).value||'', pw=(pwEl||{}).value||'';
     if(!id || !pw){
@@ -5433,7 +5487,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const r=await apiCallTransient('bossLogin',[id,pw],30000,'Boss login');
       if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
       if(r&&r.ok){
-        window.__bossSessionActive=true;
         try{
           BOSS_IDLE_MS=Math.max(1,Number(r.autoLogoutMinutes||10))*60*1000;
           sessionStorage.setItem('bossSessionUntil',String(Date.now()+BOSS_IDLE_MS));
@@ -5458,13 +5511,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   document.addEventListener('DOMContentLoaded', () => {
     try{ if(originalSyncOfflineOrdersFn)window.removeEventListener('online', originalSyncOfflineOrdersFn); }catch(e){}
-    try{
-      const pending=readQueue('pendingOnlineOrders').filter(o=>{
-        const t=Date.parse(o&&o.date||'');
-        return !t || Date.now()-t < 7*24*60*60*1000;
-      });
-      writeQueue('pendingOnlineOrders',pending);
-    }catch(e){}
+    try{ localStorage.removeItem('pendingOnlineOrders'); }catch(e){}
     try{ if(allCategorySelected(currentCat))currentCat='ALL'; }catch(e){}
     setStaticText();
     setTimeout(setStaticText, 300);
@@ -5488,6 +5535,128 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   document.addEventListener('visibilitychange', () => {
     if(!document.hidden){ try{ window.syncOfflineOrders(); }catch(e){} scheduleTopStatsRefresh(300); }
   });
+
+  // V5.5 iPad recovery, single-step paging, and Boss cash collection busy state.
+  function recoverViewportAndInteraction(){
+    const boss=$('bossDashboard');
+    const bossOpen=!!(boss&&boss.classList.contains('active'));
+    if(!bossOpen){
+      document.body.classList.remove('modal-open','pos-busy');
+      document.documentElement.classList.remove('modal-open');
+      const busy=$('checkoutBusy');
+      if(busy){busy.classList.remove('active');busy.style.zIndex='';}
+      document.querySelectorAll('.boss-image-viewer').forEach(el=>el.remove());
+    }
+    document.documentElement.style.setProperty('--app-height',`${window.innerHeight}px`);
+    document.body.style.minHeight=`${window.innerHeight}px`;
+    requestAnimationFrame(()=>{ try{render(currentList||currentProducts());}catch(e){} });
+  }
+  let pageTapLocked=false;
+  function changePage(step){
+    if(pageTapLocked)return;
+    pageTapLocked=true;
+    try{
+      const list=currentList||[];
+      const total=Math.max(1,Math.ceil(list.length/perPage));
+      const next=Math.max(1,Math.min(total,Number(currentPage||1)+step));
+      if(next!==currentPage){currentPage=next;render(list);}
+    }finally{
+      setTimeout(()=>{pageTapLocked=false;},350);
+    }
+  }
+  window.nextPage=function(){changePage(1);};
+  window.prevPage=function(){changePage(-1);};
+
+  window.bossCollectCash=async function(){
+    if(window.__cashCollectSubmitting)return;
+    const amount=num(($('collectCashAmount')||{}).value);
+    const note=(($('collectCashNote')||{}).value||'').trim();
+    if(amount<=0){showAppAlert(tr('amountRequired'),tr('cash'));return;}
+    window.__cashCollectSubmitting=true;
+    keepBossDashboardOpen('cash');
+    setSubmitBusy(true,lang()==='zh'?'正在提交收现金，请稍等...':'Submitting cash collection, please wait...');
+    const btn=document.querySelector('#bossCashBox button.green');
+    if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent=lang()==='zh'?'处理中...':'Processing...';}
+    try{
+      await apiCall('collectCash',[amount,note]);
+      const amountEl=$('collectCashAmount'),noteEl=$('collectCashNote');
+      if(amountEl)amountEl.value=''; if(noteEl)noteEl.value='';
+      if(typeof invalidateBossCache==='function')invalidateBossCache();
+      if(typeof showToast==='function')showToast(lang()==='zh'?'已记录收现金':'Cash collection recorded');
+      await bossOpenCashCollect(true);
+      scheduleTopStatsRefresh(300);
+    }catch(e){
+      showAppAlert((lang()==='zh'?'记录失败：':'Failed: ')+cleanMessage(e.message||e),tr('cash'));
+    }finally{
+      window.__cashCollectSubmitting=false;
+      setSubmitBusy(false);
+      if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||tr('confirmCollection');}
+      keepBossDashboardOpen('cash');
+    }
+  };
+
+  function fundCards(d){
+    const b=d.balances||{}, expense=d.expenses||{};
+    const card=(title,value,sub)=>`<div class="overview-card"><small>${esc(title)}</small><b>${money(value||0)}</b><span>${esc(sub||'')}</span></div>`;
+    return `<div class="boss-overview-grid">
+      ${card(lang()==='zh'?'今日已收现金':'Cash collected today',d.receivedCashToday,lang()==='zh'?'今天从收银机收走':'Removed from drawer today')}
+      ${card(lang()==='zh'?'可用已收现金':'Available collected cash',b.Cash,(lang()==='zh'?'已支出 ':'Spent ')+money(expense.Cash||0))}
+      ${card('QR '+(lang()==='zh'?'余额':'balance'),b.QR,(lang()==='zh'?'已支出 ':'Spent ')+money(expense.QR||0))}
+      ${card('Transfer '+(lang()==='zh'?'余额':'balance'),b.Transfer,(lang()==='zh'?'已支出 ':'Spent ')+money(expense.Transfer||0))}
+    </div>`;
+  }
+  function fundExpenseRows(rows){
+    if(!rows||!rows.length)return `<div class="boss-result">${lang()==='zh'?'还没有资金出口记录。':'No fund expense records.'}</div>`;
+    return `<div class="boss-result" style="overflow:auto"><table><tr><th>${lang()==='zh'?'日期':'Date'}</th><th>${lang()==='zh'?'来源':'Source'}</th><th>${lang()==='zh'?'用途':'Purpose'}</th><th class="right">${lang()==='zh'?'金额':'Amount'}</th><th>${lang()==='zh'?'备注':'Note'}</th></tr>${rows.map(r=>`<tr><td>${esc(r.date||'')}</td><td>${esc(r.source||'')}</td><td>${esc(r.purpose||'')}</td><td class="right">${money(r.amount||0)}</td><td>${esc(r.note||'')}</td></tr>`).join('')}</table></div>`;
+  }
+  window.bossOpenCashCollect=async function(){
+    if(typeof bossRequire==='function'&&!bossRequire())return;
+    keepBossDashboardOpen('cash');
+    showBossPanel('bossCashBox','cash');
+    const box=$('bossCashInfo');
+    if(box)box.textContent=tr('loading');
+    try{
+      const d=await apiCallTransient('getFundLedger',[],20000,'Fund ledger');
+      const cash=d.cashDrawer||{}, drawer=num(cash.cashDrawer), floatCash=num(cash.floatCash), collectable=Math.max(0,drawer-floatCash);
+      const warning=$('bossCashWarning');
+      if(warning){warning.style.display=collectable>=num(cash.cashDrawerLimit||500)?'block':'none';warning.textContent=(lang()==='zh'?'可收现金 ':'Collectable cash ')+money(collectable);}
+      if(box)box.innerHTML=fundCards(d)+`
+        <div class="boss-result" style="margin-top:12px"><b>${lang()==='zh'?'资金出口记录':'Record fund expense'}</b>
+          <div class="boss-product-grid" style="margin-top:10px">
+            <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'从哪里支出':'Source'}</span><select id="fundExpenseSource"><option value="Cash">Cash</option><option value="QR">QR</option><option value="Transfer">Transfer</option></select></label>
+            <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'金额':'Amount'}</span><input id="fundExpenseAmount" type="number" min="0.01" step="0.01" placeholder="RM"></label>
+            <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'用途':'Purpose'}</span><input id="fundExpensePurpose" placeholder="${lang()==='zh'?'例如：买货':'e.g. Stock purchase'}"></label>
+            <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'备注（可空）':'Note (optional)'}</span><input id="fundExpenseNote" placeholder="${lang()==='zh'?'备注':'Note'}"></label>
+          </div><button id="fundExpenseSubmit" class="green" onclick="bossRecordFundExpense()">${lang()==='zh'?'记录资金出口':'Record expense'}</button>
+        </div>${fundExpenseRows(d.rows)}`;
+      setupEnterNext('#bossCashBox');
+    }catch(e){if(box)box.textContent=tr('loadFailed')+cleanMessage(e.message||e);}
+  };
+  window.bossRecordFundExpense=async function(){
+    if(window.__fundExpenseSubmitting)return;
+    const payload={
+      source:(($('fundExpenseSource')||{}).value||'Cash'),
+      amount:num(($('fundExpenseAmount')||{}).value),
+      purpose:(($('fundExpensePurpose')||{}).value||'').trim(),
+      note:(($('fundExpenseNote')||{}).value||'').trim()
+    };
+    if(payload.amount<=0||!payload.purpose){showAppAlert(lang()==='zh'?'请填写金额和用途。':'Enter amount and purpose.',lang()==='zh'?'资金出口':'Fund expense');return;}
+    window.__fundExpenseSubmitting=true;
+    setSubmitBusy(true,lang()==='zh'?'正在记录资金出口，请稍等...':'Recording expense, please wait...');
+    const btn=$('fundExpenseSubmit');if(btn){btn.disabled=true;btn.textContent=lang()==='zh'?'处理中...':'Processing...';}
+    try{
+      await apiCall('recordFundExpense',[payload]);
+      if(typeof showToast==='function')showToast(lang()==='zh'?'资金出口已记录':'Fund expense recorded');
+      await bossOpenCashCollect(true);
+    }catch(e){showAppAlert((lang()==='zh'?'记录失败：':'Failed: ')+cleanMessage(e.message||e),lang()==='zh'?'资金出口':'Fund expense');}
+    finally{window.__fundExpenseSubmitting=false;setSubmitBusy(false);}
+  };
+
+  window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,120),{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(recoverViewportAndInteraction,350),{passive:true});
+  window.addEventListener('pageshow',()=>setTimeout(recoverViewportAndInteraction,80),{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(recoverViewportAndInteraction,120);});
+  recoverViewportAndInteraction();
 })();
 
 </script>
