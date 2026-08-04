@@ -819,29 +819,29 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div class="header">
   <div class="header-top">
     <div class="title">YLL FEEDS ENTERPRISE</div>
-    <div class="tools"><span id="clock"></span><button class="plain-gear" title="系统 / System" aria-label="系统 / System" onclick="openBossLogin()">⚙️</button><button onclick="toggleMode()" title="模式 / Theme">🌙</button></div>
+    <div class="tools"><span id="clock"></span><button class="plain-gear" title="" aria-label="系统" onclick="openBossLogin()">⚙️</button><button onclick="toggleMode()">🌙</button></div>
   </div>
   <div class="stats">
-    <div class="stat blue"><div class="icon">📊</div><div><small>今日销售 / Today Sales</small><b id="todaySales">RM 0.00</b></div></div>
-    <div class="stat green"><div class="icon">💵</div><div><small>收银现金 / Cash</small><b id="todayCash">RM 0.00</b></div></div>
-    <div class="stat yellow"><div class="icon">🧾</div><div><small>订单数 / Orders</small><b id="todayOrders">0</b></div></div>
-    <div class="stat purple"><div class="icon">📦</div><div><small>商品数 / Products</small><b id="todayItems">0</b></div></div>
+    <div class="stat blue"><div class="icon">📊</div><div><small>今日 销售</small><b id="todaySales">RM 0.00</b></div></div>
+    <div class="stat green"><div class="icon">💵</div><div><small>收银机 Cash</small><b id="todayCash">RM 0.00</b></div></div>
+    <div class="stat yellow"><div class="icon">🧾</div><div><small>订单数</small><b id="todayOrders">0</b></div></div>
+    <div class="stat purple"><div class="icon">📦</div><div><small>商品数</small><b id="todayItems">0</b></div></div>
   </div>
   <div id="cashDrawerAlert" class="money-alert"></div>
 </div>
 
 <div class="layout">
   <div class="sidebar">
-    <div class="cat-btn active" onclick="quickCat('全部分类',this)"><span>全部商品 / All Products</span><span class="cat-count">0</span></div>
+    <div class="cat-btn active" onclick="quickCat('全部分类',this)"><span>全部商品</span><span class="cat-count">0</span></div>
     <div id="menuList"></div>
   </div>
 
   <div class="main">
     <div class="topline">
-      <button onclick="goHome()">🏠 首页 / Home</button>
+      <button onclick="goHome()">🏠 首页</button>
       <div class="search-wrap">
-        <input id="searchInput" class="search-input" placeholder="🔍 搜索商品 / Search products" oninput="searchProducts(this.value)">
-        <button class="quick-chip" onclick="showLowStock()">⚠️ 低库存 / Low Stock</button>
+        <input id="searchInput" class="search-input" placeholder="🔍 搜索商品 / 分类 / 价格" oninput="searchProducts(this.value)">
+        <button class="quick-chip" onclick="showLowStock()">⚠️ 低库存</button>
       </div>
       <div>
         <button onclick="prevPage()">⬅</button>
@@ -853,28 +853,28 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   </div>
 
   <div class="right">
-    <h3>🛒 购物车 / Cart</h3>
-    <div id="cart" class="cart"><div class="empty">购物车为空 / Cart is empty</div></div>
+    <h3>🛒 购物车</h3>
+    <div id="cart" class="cart"><div class="empty">购物车为空</div></div>
 
     <div class="summary">
       <div class="row"><span>Subtotal</span><b id="subTotal">RM 0.00</b></div>
-      <div class="row discount-row" id="discountRow"><span>折扣 / Discount</span><b id="discountVal">- RM 0.00</b></div>
+      <div class="row discount-row" id="discountRow"><span>折扣</span><b id="discountVal">- RM 0.00</b></div>
       <div class="row total"><span>Total</span><b id="finalTotal">RM 0.00</b></div>
     </div>
 
     <div class="paybar">
-      <button class="big" onclick="openPay()">💰 收款 / CHECKOUT</button>
+      <button class="big" onclick="openPay()">💰 CHECKOUT</button>
       <div class="btnrow">
-        <button class="smallbtn discount-btn" onclick="open折扣()">💸 折扣 / Discount <b id="dVal">0.00</b></button>
-        <button class="smallbtn danger" onclick="clearCart()">🗑 清空 / Clear</button>
+        <button class="smallbtn discount-btn" onclick="open折扣()">💸 Discount <b id="dVal">0.00</b></button>
+        <button class="smallbtn danger" onclick="clearCart()">🗑 Clear</button>
         <button class="smallbtn more" onclick="toggleMore()">⋯</button>
       </div>
 
       <div id="moreMenu" class="moreMenu">
 
-  <button class="smallbtn print-btn" onclick="smartPrintLast()">🖨️ 打印收据 / Print Receipt</button>
-  <button class="smallbtn parcel-btn" onclick="openParcelBox()">📦 Shopee 包裹 / Parcel</button>
-  <button class="smallbtn close-btn" onclick="openRefundBox()">↩️ 退款 / Refund</button>
+  <button class="smallbtn print-btn" onclick="smartPrintLast()">🖨️ Print Receipt</button>
+  <button class="smallbtn parcel-btn" onclick="openParcelBox()">📦 Shopee Parcel</button>
+  <button class="smallbtn close-btn" onclick="openRefundBox()">↩️ Refund</button>
 
 </div>
     </div>
@@ -1236,7 +1236,7 @@ async function load(){
 
 function render(list){
   let box=document.getElementById("list"); if(!box)return;
-  if(!list || !list.length){box.innerHTML='<div class="empty">没有商品 / No products</div>'; updatePageInfo(list||[]); return;}
+  if(!list || !list.length){box.innerHTML='<div class="empty">没有商品</div>'; updatePageInfo(list||[]); return;}
   let start=(currentPage-1)*perPage;
   let pageList=list.slice(start,start+perPage);
   let html="";
@@ -1255,7 +1255,7 @@ function render(list){
   box.innerHTML=html;
   updatePageInfo(list);
 }
-function updatePageInfo(list){let totalPages=Math.max(1,Math.ceil((list||[]).length/perPage));let e=document.getElementById("pageInfo");if(e)e.innerText=`第 ${currentPage} / ${totalPages} 页 · Page ${currentPage}/${totalPages}`}
+function updatePageInfo(list){let totalPages=Math.max(1,Math.ceil((list||[]).length/perPage));let e=document.getElementById("pageInfo");if(e)e.innerText=`第 ${currentPage} / ${totalPages} 页`}
 function renderCategories(){
   let bar=document.getElementById("menuList"); if(!bar)return;
   let first=document.querySelector(".sidebar > .cat-btn .cat-count"); if(first)first.innerText=products.length;
@@ -1283,7 +1283,7 @@ function showLowStock(){
   currentList=products.filter(p=>Number(p.stock||0)<=5).sort((a,b)=>Number(a.stock||0)-Number(b.stock||0));
   document.querySelectorAll(".cat-btn").forEach(x=>x.classList.remove("active"));
   render(currentList);
-  if(!currentList.length) showToast("✅ 暂时没有低库存商品 / No low-stock products");
+  if(!currentList.length) showToast("✅ 暂时没有低库存商品");
 }
 function nextPage(){let total=Math.max(1,Math.ceil(currentList.length/perPage)); if(currentPage<total){currentPage++;render(currentList)}}
 function prevPage(){if(currentPage>1){currentPage--;render(currentList)}}
@@ -1295,7 +1295,7 @@ function clearCart(){if(!cart.length)return; showConfirm("确定清空购物车�
 function calcCartData(){let subtotal=fromCents(cart.reduce((s,i)=>s+cents(i.price)*Number(i.qty||0),0)); discount=moneyNum(discount); if(discount>subtotal)discount=subtotal; if(discount<0)discount=0; let final=fromCents(Math.max(0,cents(subtotal)-cents(discount))); return {subtotal,discount,final}}
 function showCart(){
   let cartBox=document.getElementById("cart");
-  if(!cart.length){discount=0; if(cartBox)cartBox.innerHTML='<div class="empty">购物车为空 / Cart is empty</div>'; updateTotals({subtotal:0,discount:0,final:0}); update折扣UI(); return;}
+  if(!cart.length){discount=0; if(cartBox)cartBox.innerHTML='<div class="empty">购物车为空</div>'; updateTotals({subtotal:0,discount:0,final:0}); update折扣UI(); return;}
   let html="";
   cart.forEach((i,x)=>{
     let sub=i.qty*i.price;
