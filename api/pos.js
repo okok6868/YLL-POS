@@ -7,13 +7,40 @@ export default async function handler(req, res) {
     "https://script.google.com/macros/s/AKfycby1joExZ4U8BUdGJo8MYMvPGTg7YGYT0DDwu1Wt1aBRsJbsP19W1WUeW-q_WPWwVFxOvA/exec";
 
   try {
-    const r = await fetch(gasUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(req.body || {})
-    });
+    const body = JSON.stringify(req.body || {});
+    let upstream = null;
+    let text = "";
 
-    const text = await r.text();
+    // Apps Script ContentService responds to POST with a temporary 302 URL.
+    // Follow it explicitly; automatic redirect handling can intermittently
+    // turn the temporary googleusercontent URL into a Google 404 HTML page.
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const first = await fetch(gasUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+          "Cache-Control": "no-cache"
+        },
+        body,
+        redirect: "manual"
+      });
+
+      const location = first.headers.get("location");
+      upstream = location
+        ? await fetch(location, {
+            method: "GET",
+            headers: { "Cache-Control": "no-cache" },
+            redirect: "follow"
+          })
+        : first;
+
+      text = await upstream.text();
+      const looksLikeGoogle404 = upstream.status === 404 &&
+        /<title>Page not found<\/title>/i.test(text);
+
+      if (!looksLikeGoogle404) break;
+      if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 150 * attempt));
+    }
 
     let data;
     try {
@@ -21,7 +48,8 @@ export default async function handler(req, res) {
     } catch (err) {
       return res.status(500).json({
         success:false,
-        error:"Apps Script returned non-JSON. Check Apps Script deployment and duplicate GS files.",
+        error:"Apps Script returned non-JSON after redirect retry.",
+        upstreamStatus:upstream ? upstream.status : null,
         raw:text.slice(0,500)
       });
     }
