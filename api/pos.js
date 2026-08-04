@@ -3,13 +3,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ success:false, error:"Method not allowed" });
   }
 
-  const gasUrl = process.env.GAS_URL;
-  if (!gasUrl) {
-    return res.status(500).json({
-      success:false,
-      error:"GAS_URL is not configured. Set it to the TEST Apps Script /exec URL."
-    });
-  }
+  const gasUrl = process.env.GAS_URL ||
+    "https://script.google.com/macros/s/AKfycbwU1ydbLBW0QrMde-_ecy4liE4oVBopuG5HAtZb6W23OjdV1LgRRl8ervlZNWuf3qPzcQ/exec";
 
   try {
     const r = await fetch(gasUrl, {
