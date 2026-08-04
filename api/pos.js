@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   }
 
   const gasUrl = process.env.GAS_URL ||
-    "https://script.google.com/macros/s/AKfycbwU1ydbLBW0QrMde-_ecy4liE4oVBopuG5HAtZb6W23OjdV1LgRRl8ervlZNWuf3qPzcQ/exec";
+    "https://script.google.com/macros/s/AKfycby1joExZ4U8BUdGJo8MYMvPGTg7YGYT0DDwu1Wt1aBRsJbsP19W1WUeW-q_WPWwVFxOvA/exec";
 
   try {
     const r = await fetch(gasUrl, {
