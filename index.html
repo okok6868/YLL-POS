@@ -3279,6 +3279,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     return productLoadInFlight;
   };
 
+  let topStatsFailureStreak=0;
   window.loadTodayStats = async function(){
     try{
       const cached = loadTopStatsCache();
@@ -3290,10 +3291,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const drawer = top && top.cashDrawer ? top.cashDrawer : await timeout(apiCall('getCashDrawer',[]), 9000, 'Cash drawer').catch(()=>null);
       const usableToday = today || (top ? {total:top.todaySales, orders:top.orders, count:top.orders} : null);
       if(!usableToday && !drawer){
-        recordApiGlitch('Top stats refresh failed');
+        topStatsFailureStreak++;
+        if(topStatsFailureStreak>=2)recordApiGlitch('Top stats refresh failed twice');
         if(cached)applyTopStats(cached);
         return;
       }
+      topStatsFailureStreak=0;
       const fallback = cached || {};
       const snapshot = {
         today:usableToday || fallback.today || {},
@@ -3305,7 +3308,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       applyTopStats(snapshot);
     }catch(e){
       console.error('loadTodayStats failed', e);
-      recordApiGlitch('Top stats refresh error: '+(e && e.message ? e.message : e));
+      topStatsFailureStreak++;
+      if(topStatsFailureStreak>=2)recordApiGlitch('Top stats refresh error twice: '+(e && e.message ? e.message : e));
     }
   };
 
@@ -3475,6 +3479,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function recordApiGlitch(note){
     try{
       if(!navigator.onLine)return;
+      const now=Date.now();
+      const previous=Number(sessionStorage.getItem('yllLastApiGlitchAt')||0);
+      if(previous && now-previous<5*60*1000)return;
+      sessionStorage.setItem('yllLastApiGlitchAt',String(now));
       queueNetworkLog({event:'NetworkApiFail', note:String(note||'API failed while browser online')});
       flushNetworkLogsSoon(3000);
     }catch(e){}
@@ -3947,8 +3955,28 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
   }
 
+  function cleanNetworkRows(source){
+    const rows=(source||[]).filter(r=>String((r||{}).event||'')!=='NetworkOfflineStart');
+    const kept=[];
+    rows.forEach(r=>{
+      const event=String((r||{}).event||'');
+      if(event==='NetworkApiFail'){
+        const raw=r.time||r.endAt||r.startAt||r.at||'';
+        const at=Date.parse(raw)||0;
+        const duplicate=kept.some(previous=>{
+          if(String((previous||{}).event||'')!==event)return false;
+          const previousAt=Date.parse(previous.time||previous.endAt||previous.startAt||previous.at||'')||0;
+          return at && previousAt && Math.abs(at-previousAt)<5*60*1000;
+        });
+        if(duplicate)return;
+      }
+      kept.push(r);
+    });
+    return kept;
+  }
+
   function summarizeLocalNetworkLogs(){
-    const rows=readNetworkLogs();
+    const rows=cleanNetworkRows(readNetworkLogs());
     return rows.reduce((s,r)=>{
       if(String(r.event||'')==='NetworkOutage'){
         s.outages++;
@@ -3964,11 +3992,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function renderNetworkSummary(data){
     data=data||{};
     const local=summarizeLocalNetworkLogs();
-    const rows=(data.rows&&data.rows.length?data.rows:local.rows)||[];
+    const serverRows=cleanNetworkRows(data.rows||[]);
+    const rows=(serverRows.length?serverRows:local.rows)||[];
     const totalMinutes=num(data.totalMinutes)+num(local.totalMinutes);
     const outages=num(data.outages)+num(local.outages);
     const over30=num(data.over30)+num(local.over30);
-    const apiFailures=num(data.apiFailures)+num(local.apiFailures);
+    const apiFailures=(serverRows.length?serverRows.filter(r=>String(r.event||'')==='NetworkApiFail').length:0)+num(local.apiFailures);
     const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
     let html='<div class="boss-overview-grid">'+[
       card(tr('outages'),String(outages),tr('recentNetwork'),outages>0),
@@ -3976,9 +4005,22 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       card(tr('over30'),String(over30),tr('networkLog'),over30>0),
       card(tr('apiFailures'),String(apiFailures),tr('networkUnstable'),apiFailures>0)
     ].join('')+'</div>';
+    const rowTime=r=>{
+      const raw=r.time||r.endAt||r.startAt||r.at||'';
+      const d=new Date(raw);
+      return Number.isNaN(d.getTime())?String(raw):d.toLocaleString(lang()==='zh'?'zh-CN':'en-MY',{hour12:false});
+    };
+    const eventLabel=r=>{
+      const event=String(r.event||'');
+      if(lang()!=='zh')return event;
+      if(event==='NetworkApiFail')return '\u8fde\u7eed API \u8bf7\u6c42\u5931\u8d25';
+      if(event==='NetworkOutage')return '\u7f51\u7edc\u65ad\u7ebf';
+      if(event==='NetworkOfflineOver30Min')return '\u65ad\u7ebf\u8d85\u8fc7 30 \u5206\u949f';
+      return event;
+    };
     if(rows.length){
       html+=`<table><tr><th>${esc(tr('date'))}</th><th>${esc(tr('item'))}</th><th class="right">${esc(tr('minutes'))}</th></tr>`+
-        rows.slice(0,20).map(r=>`<tr><td>${esc(r.time||r.endAt||r.startAt||r.at||'')}</td><td>${esc(r.event||'')}</td><td class="right">${esc(r.minutes!=null?r.minutes:Math.round((Number(r.durationMs)||0)/60000))}</td></tr>`).join('')+
+        rows.slice(0,20).map(r=>`<tr><td>${esc(rowTime(r))}</td><td>${esc(eventLabel(r))}</td><td class="right">${esc(r.minutes!=null?r.minutes:Math.round((Number(r.durationMs)||0)/60000))}</td></tr>`).join('')+
         '</table>';
     }else{
       html+=`<div class="empty">${esc(tr('noNetworkRecords'))}</div>`;
