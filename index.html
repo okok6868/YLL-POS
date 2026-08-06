@@ -1124,6 +1124,8 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
             <h4>📦 Shopee 对账</h4>
             <p style="color:#94a3b8;font-size:13px;margin-top:-4px">这里只记录实际收到的钱；你填写的金额就是对账依据，不上传证据。</p>
             <div class="boss-inline"><input id="shopeePaidAmount" type="number" placeholder="Shopee 实际给多少钱"><input id="shopeePaidNote" type="text" placeholder="备注 / payout 日期"><button class="green" onclick="bossConfirmShopeePaid()">记录实际收到</button></div>
+            <div class="boss-inline" style="margin-top:10px"><input id="shopeeMonth" type="month"><button id="shopeeMonthBtn" type="button" onclick="bossLoadShopeeMonth()">查看月度汇总</button></div>
+            <div id="bossParcelMonthResult" class="boss-result" style="display:none"></div>
             <div id="bossParcelResult" class="boss-result">点查看后显示。</div>
           </div>
 
@@ -1186,12 +1188,14 @@ let lastPayment="", lastCart=[], last折扣=0, lastReceiptText="", confirmCallba
 let lastPaid=0, lastChange=0, isCheckingOut=false, appBootDate="", unlockBusyOnConfirmCancel=false;
 
 window.onload=function(){
+  appBootDate=todayKey();
   load();
   loadTodayStats();
   syncOfflineOrders();
   updateClock();
   updateAutoPrintButton();
   setInterval(updateClock,1000);
+  setInterval(checkDayRollover,60000);
 };
 
 function cents(v){return Math.round((Number(v)||0)*100)}
@@ -1199,7 +1203,16 @@ function fromCents(v){return (Number(v)||0)/100}
 function moneyNum(v){return fromCents(cents(v))}
 function fmt(v){return "RM "+moneyNum(v).toFixed(2)}
 function todayKey(){return new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Kuala_Lumpur"})}
-function checkDayRollover(){let t=todayKey(); if(appBootDate && t!==appBootDate){alert("已进入新的一天，系统会重新刷新同步资料。"); location.reload();}}
+function checkDayRollover(){
+  const t=todayKey();
+  if(!appBootDate){appBootDate=t;return;}
+  if(t===appBootDate)return;
+  if(isCheckingOut || window.__submitBusy){setTimeout(checkDayRollover,30000);return;}
+  appBootDate=t;
+  try{localStorage.removeItem('yllTopStatsCacheV1');}catch(e){}
+  try{applyTopStats({today:{},drawer:{},productCount:(window.products||products||[]).length,at:Date.now(),day:t});}catch(e){}
+  try{loadTodayStats();}catch(e){}
+}
 function setCheckoutBusy(on){isCheckingOut=!!on; document.body.classList.toggle("pos-busy",!!on); let b=document.getElementById("checkoutBusy"); if(b)b.classList.toggle("active",!!on)}
 function updateClock(){let e=document.getElementById("clock");if(e)e.textContent=new Date().toLocaleTimeString()}
 
@@ -3054,6 +3067,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const amt=$('shopeePaidAmount'); if(amt)amt.placeholder=tr('shopeePaid');
       const note=$('shopeePaidNote'); if(note)note.placeholder=tr('payoutNote');
       const btn=shopeePanel.querySelector('button.green'); if(btn)btn.textContent=tr('recordPaid');
+      const monthBtn=$('shopeeMonthBtn'); if(monthBtn)monthBtn.textContent=lang()==='zh'?'查看月度汇总':'View Monthly Summary';
       const res=$('bossParcelResult'); if(res && /^Open to load/.test(res.textContent||''))res.textContent=tr('openToLoad');
     }
     const otherPanel = $('bossOtherIncomeBox');
@@ -3137,7 +3151,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const box=document.querySelector(containerSelector);
     if(!box)return;
     const fields=[...box.querySelectorAll('input,select,textarea')]
-      .filter(el=>!el.disabled && el.offsetParent!==null && el.type!=='hidden');
+      .filter(el=>!el.disabled && !el.readOnly && el.offsetParent!==null && !['hidden','checkbox','radio','file'].includes(el.type));
     fields.forEach((el,i)=>{
       el.onkeydown=e=>{
         if(e.key!=='Enter')return;
@@ -3231,6 +3245,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       category: normalizeCategoryName(p.category),
       image: normalizeText(p.image)
     }));
+    const brandKey=p=>{
+      const m=String((p&&p.name)||'').toUpperCase().match(/[A-Z][A-Z0-9-]*/);
+      return m?m[0]:String((p&&p.name)||'').toUpperCase();
+    };
+    list.sort((a,b)=>normalizeCategoryName(a.category).localeCompare(normalizeCategoryName(b.category)) || brandKey(a).localeCompare(brandKey(b)) || String(a.name).localeCompare(String(b.name)));
     try{ products=list; window.products=list; currentList=list; currentPage=1; }catch(e){
       window.products=list; window.currentList=list; window.currentPage=1;
     }
@@ -3316,11 +3335,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function loadTopStatsCache(){
     try{
       const cached=JSON.parse(localStorage.getItem('yllTopStatsCacheV1')||'null');
+      if(cached && cached.day && cached.day!==todayKey()){localStorage.removeItem('yllTopStatsCacheV1');return null;}
+      if(cached && !cached.day && cached.at && new Date(Number(cached.at)).toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'})!==todayKey()){localStorage.removeItem('yllTopStatsCacheV1');return null;}
       return cached && cached.today ? cached : null;
     }catch(e){ return null; }
   }
   function saveTopStatsCache(snapshot){
-    try{ localStorage.setItem('yllTopStatsCacheV1', JSON.stringify(snapshot)); }catch(e){}
+    try{ snapshot.day=todayKey(); localStorage.setItem('yllTopStatsCacheV1', JSON.stringify(snapshot)); }catch(e){}
   }
   function isTransientApiError(e){
     const s=String((e&&e.message)||e||'');
@@ -4889,7 +4910,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
           applyConfirmedPendingOrder(clientId,r,pendingPayload);
         }
       }).catch(()=>{});
-      const res = await timeout(savePromise, 18000, 'Save order');
+      const checkoutWaitMs=18000+Math.min(7000,send.length*350);
+      const res = await timeout(savePromise, checkoutWaitMs, 'Save order');
       if(!res || !res.orderId) throw new Error(tr('noOrderNumber'));
       removePendingOnlineOrder(clientId);
       finishSavedOrder(res.orderId, sendDiscount, checkoutKey);
@@ -5275,11 +5297,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       <label class="boss-field"><span class="boss-field-label">${esc(tr('orderNo'))}</span><input id="refundOrderId" type="text" placeholder="${esc(tr('orderNo'))}" readonly></label>
       <div id="refundItemList" class="refund-item-list">${esc(tr('selectOrderFirst'))}</div>
       <div id="refundTotalBox" class="refund-summary">${esc(tr('refundTotal'))}: RM 0.00</div>
-      <label class="boss-field"><span class="boss-field-label">${esc(tr('refundReason'))}</span><input id="refundReason" type="text" placeholder="${esc(tr('refundReason'))}"></label>
+      <label class="boss-field"><span class="boss-field-label">${esc(tr('refundReason'))}</span><input id="refundReason" type="text" enterkeyhint="next" placeholder="${esc(tr('refundReason'))}"></label>
       <details class="refund-auth" id="refundAuthDetails">
         <summary>${esc(tr('bossAuth'))}</summary>
-        <label class="boss-field"><span class="boss-field-label">ID</span><input id="refundBossId" type="text" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-        <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" placeholder="Password" autocomplete="new-password"></label>
+        <label class="boss-field"><span class="boss-field-label">ID</span><input id="refundBossId" type="text" enterkeyhint="next" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" enterkeyhint="done" placeholder="Password" autocomplete="new-password"></label>
         <div class="receipt-note">${esc(tr('refundDirectNote'))}</div>
       </details>
       <div id="refundStatusMsg" class="refund-status-msg" style="display:none"></div>
@@ -5566,6 +5588,28 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
   };
 
+  window.bossLoadShopeeMonth = async function(){
+    if(typeof bossRequire==='function'&&!bossRequire())return;
+    const input=$('shopeeMonth');
+    if(input&&!input.value)input.value=new Date().toLocaleDateString('en-CA').slice(0,7);
+    const month=(input&&input.value)||new Date().toLocaleDateString('en-CA').slice(0,7);
+    const box=$('bossParcelMonthResult');
+    if(box){box.style.display='block';box.textContent=tr('loading');}
+    try{
+      const r=await apiCallTransient('getParcelMonthlySummary',[month],18000,'Shopee monthly summary');
+      if(box)box.innerHTML=`<h4>${esc(month)} ${lang()==='zh'?'月度汇总':'Monthly Summary'}</h4><table>
+        <tr><td>${lang()==='zh'?'趟数':'Trips'}</td><td class="right">${esc(r.trips||0)}</td></tr>
+        <tr><td>${lang()==='zh'?'今日收到合计':'Received'}</td><td class="right">${esc(r.delivered||0)}</td></tr>
+        <tr><td>${lang()==='zh'?'少包裹':'Missing'}</td><td class="right">${esc(r.missing||0)}</td></tr>
+        <tr><td>${lang()==='zh'?'已补回':'Recovered'}</td><td class="right">${esc(r.recovered||0)}</td></tr>
+        <tr><td>${lang()==='zh'?'仍欠':'Outstanding'}</td><td class="right">${esc(r.outstanding||0)}</td></tr>
+        <tr><td>${lang()==='zh'?'退回':'Returned'}</td><td class="right">${esc(r.returned||0)}</td></tr>
+        <tr><td>${lang()==='zh'?'预计收入':'Estimated'}</td><td class="right">${money(r.estimated||0)}</td></tr>
+        <tr><td>${lang()==='zh'?'实际收款':'Actual Paid'}</td><td class="right">${money(r.actualPaid||0)}</td></tr>
+        <tr><td>${lang()==='zh'?'差额':'Difference'}</td><td class="right">${money(r.difference||0)}</td></tr></table>`;
+    }catch(e){if(box)box.textContent=tr('loadFailed')+cleanMessage(e.message||e);}
+  };
+
   window.bossOpenOtherIncome = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
     keepBossDashboardOpen('otherIncome');
@@ -5702,6 +5746,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+    appBootDate=todayKey();
     try{ if(originalSyncOfflineOrdersFn)window.removeEventListener('online', originalSyncOfflineOrdersFn); }catch(e){}
     prunePendingOnlineOrders(45*60*1000);
     try{ if(allCategorySelected(currentCat))currentCat='ALL'; }catch(e){}
