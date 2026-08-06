@@ -1047,7 +1047,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <div class="boss-dashboard-shell">
       <div class="boss-hero">
         <div><b>🔒 管理模式</b><br><small>只限授权使用；闲置后自动回到收银画面。</small></div>
-        <button class="danger-outline" onclick="bossLogout()" style="width:auto;margin:0;padding:10px 14px">退出</button>
+        <div style="display:flex;gap:8px;align-items:center"><button id="bossRefreshBtn" type="button" onclick="bossRefreshCurrentPage()" style="width:auto;margin:0;padding:10px 14px">刷新当前页面</button><button class="danger-outline" onclick="bossLogout()" style="width:auto;margin:0;padding:10px 14px">退出</button></div>
       </div>
 
       <div class="boss-layout">
@@ -3028,13 +3028,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const bossLoginBtn = $('bossLoginBtn'); if(bossLoginBtn && !bossLoginBtn.disabled)bossLoginBtn.textContent=tr('login');
     const bossLoginClose = document.querySelector('#bossLoginBox button[onclick*="closeModal"]'); if(bossLoginClose)bossLoginClose.textContent=tr('close');
     const hero = document.querySelector('.boss-hero div'); if(hero)hero.innerHTML=`<b>${esc(tr('bossMode'))}</b><br><small>${esc(tr('bossHint'))}</small>`;
-    const logoutBtn = document.querySelector('.boss-hero button'); if(logoutBtn)logoutBtn.textContent=tr('logout');
+    const logoutBtn = document.querySelector('.boss-hero .danger-outline'); if(logoutBtn)logoutBtn.textContent=tr('logout');
     ensureBossProductPanel();
     ensureBossLostPanel();
     ensureBossNetworkPanel();
     const bossBtns = document.querySelectorAll('#bossDashboard .boss-tab-grid button');
     const bossKeys = ['today','finance','reports','shopee','otherIncome','lowStock','exportExcel','settings','productManage','lostItem','networkLog'];
-    bossBtns.forEach((b,i)=>{ if(bossKeys[i]){ b.dataset.navKey=bossKeys[i]; b.textContent=tr(bossKeys[i]); } if(!b.dataset.navGuardBound){b.dataset.navGuardBound='1';b.addEventListener('click',()=>{window.__bossUserNavAway=b.dataset.navKey!=='today';},{capture:true});} });
+    bossBtns.forEach((b,i)=>{ if(bossKeys[i]){ b.dataset.navKey=bossKeys[i]; b.textContent=tr(bossKeys[i]); } if(!b.dataset.navGuardBound){b.dataset.navGuardBound='1';b.addEventListener('click',()=>{window.__bossUserNavAway=b.dataset.navKey!=='today';window.__bossActiveKey=b.dataset.navKey||window.__bossActiveKey;},{capture:true});} });
+    const refreshBtn=$('bossRefreshBtn');if(refreshBtn)refreshBtn.textContent=lang()==='zh'?'刷新当前页面':'Refresh current page';
     setText('#bossOverviewPanel h4', tr('today'));
     setText('#bossReportsPanel h4', tr('reports'));
     setText('#bossRangeBox h4', tr('customReport'));
@@ -3600,7 +3601,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     renderVariantPickerSummary();
   };
 
-  function renderVariantPickerSummary(){const box=$('variantPickerSummary'),group=window.__variantPickerGroup;if(!box||!group)return;const keys=new Set(group.items.map(p=>String(p.code||p.name))),items=currentCart().filter(i=>keys.has(String(i.code||i.name))),total=items.reduce((s,i)=>s+Number(i.qty||0)*Number(i.price||0),0);box.innerHTML=items.length?`<div style="display:flex;justify-content:space-between;gap:12px"><b>${lang()==='zh'?'本次已选':'Selected'}</b><b style="color:#22c55e">${money(total)}</b></div>${items.map(i=>`<div style="display:flex;justify-content:space-between;gap:10px;margin-top:5px"><span>${esc(i.name)}</span><span>× ${Number(i.qty||0)} · ${money(Number(i.qty||0)*Number(i.price||0))}</span></div>`).join('')}`:(lang()==='zh'?'尚未选择规格':'No variants selected yet');}
+  function renderVariantPickerSummary(){const box=$('variantPickerSummary'),group=window.__variantPickerGroup;if(!box||!group)return;const keys=new Set(group.items.map(p=>String(p.code||p.name))),items=currentCart().filter(i=>keys.has(String(i.code||i.name))),total=items.reduce((s,i)=>s+Number(i.qty||0)*Number(i.price||0),0);box.innerHTML=items.length?`<div style="display:flex;justify-content:space-between;gap:12px"><b>${lang()==='zh'?'本次已选':'Selected'}</b><b style="color:#22c55e">${money(total)}</b></div>${items.map(i=>{const key=String(i.code||i.name);return `<div style="display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;margin-top:9px;padding-top:9px;border-top:1px solid #26344d"><span style="overflow:hidden;text-overflow:ellipsis">${esc(i.name)}<br><small>× ${Number(i.qty||0)} · ${money(Number(i.qty||0)*Number(i.price||0))}</small></span><button type="button" style="background:#334155;color:#fff;border:1px solid #64748b;border-radius:8px;padding:7px 12px" onclick='changeVariantPickerItem(${JSON.stringify(key)},-1)'>−</button><button type="button" style="background:#166534;color:#fff;border:1px solid #22c55e;border-radius:8px;padding:7px 12px" onclick='changeVariantPickerItem(${JSON.stringify(key)},1)'>＋</button><button type="button" style="background:#991b1b;color:#fff;border:1px solid #ef4444;border-radius:8px;padding:7px 10px" onclick='changeVariantPickerItem(${JSON.stringify(key)},"remove")'>${lang()==='zh'?'删除':'Remove'}</button></div>`;}).join('')}`:(lang()==='zh'?'尚未选择规格':'No variants selected yet');}
+  window.changeVariantPickerItem=function(key,action){if(window.isCheckingOut||(typeof isCheckingOut!=='undefined'&&isCheckingOut))return;const c=currentCart(),i=c.findIndex(x=>String(x.code||x.name)===String(key));if(i<0)return;if(action==='remove')c.splice(i,1);else if(Number(action)>0)c[i].qty=Number(c[i].qty||0)+1;else if(Number(c[i].qty||0)>1)c[i].qty=Number(c[i].qty||0)-1;else c.splice(i,1);showCart();renderVariantPickerSummary();};
 
   window.updatePageInfo = function(list){
     list = list || currentList || [];
@@ -3860,6 +3862,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.alert = function(msg){ window.showAppAlert(String(msg||''), tr('notice')); };
 
   function setBossNav(activeKey){
+    if(activeKey)window.__bossActiveKey=activeKey;
     const buttons=document.querySelectorAll('#bossDashboard .boss-tab-grid button');
     buttons.forEach(b=>b.classList.toggle('active', b.dataset.navKey===activeKey));
   }
@@ -3899,6 +3902,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(activeKey)setBossNav(activeKey);
     }catch(e){}
   }
+
+  window.bossRefreshCurrentPage=async function(){
+    const active=document.querySelector('#bossDashboard .boss-tab-grid button.active');
+    const key=window.__bossActiveKey||(active&&active.dataset.navKey)||'today';
+    const actions={
+      today:()=>window.bossOpenOverview(true),cash:()=>window.bossOpenCashCollect(),reports:()=>bossShowPanel('bossReportsPanel'),
+      shopee:()=>window.bossOpenParcelBoss(),otherIncome:()=>window.bossOpenOtherIncome(),lowStock:()=>bossLoadLowStock(),
+      exportExcel:()=>bossOpenExport(),settings:()=>bossOpenCredentialBox(),productManage:()=>window.bossOpenProducts(),
+      lostItem:()=>window.bossOpenLostItems(),networkLog:()=>window.bossOpenNetworkLog()
+    };
+    const action=actions[key]||actions.today;
+    setSubmitBusy(true,lang()==='zh'?'正在刷新当前页面...':'Refreshing current page...');
+    try{await Promise.resolve(action());}catch(e){showAppAlert((e&&e.message)||e,lang()==='zh'?'刷新失败':'Refresh failed');}finally{setSubmitBusy(false);keepBossDashboardOpen(key);}
+  };
 
   function ensureBossProductPanel(){
     const grid=document.querySelector('#bossDashboard .boss-tab-grid');
@@ -3962,6 +3979,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <div id="bossProductResult" class="boss-result">${esc(tr('openToLoad'))}</div>`;
       const productSections=panel.querySelectorAll('details');
       if(productSections.length>=3){const sectionParent=productSections[0].parentNode;sectionParent.appendChild(productSections[2]);sectionParent.appendChild(productSections[1]);}
+      const firstSection=panel.querySelector('details');
+      if(firstSection){const stocktake=document.createElement('details');stocktake.id='bossStocktakeSection';stocktake.style.marginTop='12px';stocktake.innerHTML=`<summary style="cursor:pointer;font-weight:700">${lang()==='zh'?'📋 库存盘点／自动耗损':'📋 Inventory stocktake / automatic loss'}</summary><div class="boss-product-grid" style="margin-top:12px"><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'选择要盘点的分类':'Choose category to count'}</span><select id="bossStocktakeCategory" onchange="bossRenderStocktakeRows()"><option value="">${lang()==='zh'?'请选择分类':'Select category'}</option></select></label><div id="bossStocktakeRows" class="wide boss-result">${lang()==='zh'?'选择分类后，会列出该分类的普通商品。':'Choose a category to list its ordinary products.'}</div><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'差异类型':'Difference type'}</span><select id="bossStocktakeType"><option value="Stocktake Difference">${lang()==='zh'?'盘点差异':'Stocktake difference'}</option><option value="Expired / Return Pending">${lang()==='zh'?'过期／等待退换':'Expired / return pending'}</option><option value="Damaged">${lang()==='zh'?'损坏':'Damaged'}</option><option value="Other">${lang()==='zh'?'其它':'Other'}</option></select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'备注':'Note'}</span><input id="bossStocktakeNote" placeholder="${lang()==='zh'?'例如：12月盘点／过期等待换货':'e.g. December count / awaiting replacement'}"></label><button type="button" class="wide" style="background:#b45309;color:#fff" onclick="bossSubmitStocktake()">${lang()==='zh'?'提交盘点并自动记录耗损':'Submit count and record loss'}</button><div class="wide boss-notice">${lang()==='zh'?'只填写你实际数过的商品；空白商品不会改变。散卖 KG 商品继续使用下方“散卖盘点”。':'Only entered quantities change. Blank rows are untouched. Use Loose stocktake for KG products.'}</div></div>`;firstSection.parentNode.insertBefore(stocktake,firstSection);}
       const receiveNameInput=panel.querySelector('#bossReceiveName');
       if(receiveNameInput){const productLabel=receiveNameInput.closest('label'),productSelect=document.createElement('select');productSelect.id='bossReceiveName';productSelect.onchange=()=>window.bossReceiveProductChanged();productSelect.innerHTML=`<option value="">${lang()==='zh'?'请先选择分类':'Choose category first'}</option>`;receiveNameInput.replaceWith(productSelect);const categoryLabel=document.createElement('label');categoryLabel.className='boss-field wide';categoryLabel.innerHTML=`<span class="boss-field-label">${lang()==='zh'?'先选择分类':'Choose category first'}</span><select id="bossReceiveFilterCategory" onchange="bossReceiveCategoryChanged()"><option value="">${lang()==='zh'?'请选择分类':'Select category'}</option></select>`;productLabel.parentNode.insertBefore(categoryLabel,productLabel);const newNameLabel=document.createElement('label');newNameLabel.id='bossReceiveNewNameLabel';newNameLabel.className='boss-field wide';newNameLabel.style.display='none';newNameLabel.innerHTML=`<span class="boss-field-label">${lang()==='zh'?'新品名称':'New product name'}</span><input id="bossReceiveNewName">`;productLabel.parentNode.insertBefore(newNameLabel,productLabel.nextSibling);}
       const legacyReceiveCategory=panel.querySelector('#bossReceiveCategory');if(legacyReceiveCategory&&legacyReceiveCategory.closest('label'))legacyReceiveCategory.closest('label').style.display='none';const receivePrice=panel.querySelector('#bossReceivePrice');if(receivePrice&&receivePrice.closest('label')){receivePrice.closest('label').id='bossReceivePriceLabel';receivePrice.closest('label').style.display='none';}
@@ -4375,6 +4394,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   window.bossSearchProducts = function(query){ renderBossProductList(query); };
   window.bossFilterProducts = function(){ renderBossProductList(($('bossProductSearch')||{}).value||''); };
+  function fillBossStocktakeCategories(){const sel=$('bossStocktakeCategory');if(!sel)return;const old=sel.value,cats=[...new Set((bossProductsCache||[]).filter(p=>!normalizeText(p.inventoryGroup)).map(p=>normalizeCategoryName(p.category)).filter(Boolean))].sort((a,b)=>bossCategoryLabel(a).localeCompare(bossCategoryLabel(b)));sel.innerHTML=`<option value="">${lang()==='zh'?'请选择分类':'Select category'}</option>`+cats.map(c=>`<option value="${esc(c)}">${esc(bossCategoryLabel(c))}</option>`).join('');if(old&&cats.includes(old))sel.value=old;window.bossRenderStocktakeRows();}
+  window.bossRenderStocktakeRows=function(){const box=$('bossStocktakeRows'),cat=normalizeText(($('bossStocktakeCategory')||{}).value);if(!box)return;if(!cat){box.textContent=lang()==='zh'?'选择分类后，会列出该分类的普通商品。':'Choose a category to list its ordinary products.';return;}const rows=(bossProductsCache||[]).filter(p=>!normalizeText(p.inventoryGroup)&&normalizeCategoryName(p.category)===cat);box.style.maxHeight='420px';box.style.overflow='auto';box.innerHTML=rows.length?rows.map(p=>`<label style="display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid rgba(148,163,184,.18)"><span><b>${esc(p.name||'')}</b><br><small>${lang()==='zh'?'系统库存':'System stock'}: ${Number(p.stock||0)}${p.active===false?' · '+(lang()==='zh'?'已停用':'Inactive'):''}</small></span><input class="boss-stocktake-actual" data-code="${esc(p.code||'')}" data-name="${esc(p.name||'')}" type="number" min="0" step="1" placeholder="${lang()==='zh'?'实际数量':'Actual'}"></label>`).join(''):(lang()==='zh'?'这个分类没有普通商品。':'No ordinary products in this category.');};
+  window.bossSubmitStocktake=function(){const items=[...document.querySelectorAll('#bossStocktakeRows .boss-stocktake-actual')].filter(el=>String(el.value).trim()!=='').map(el=>({code:el.dataset.code||'',name:el.dataset.name||'',actual:Number(el.value)}));if(!items.length){showAppAlert(lang()==='zh'?'请至少填写一个实际数量；空白商品不会修改。':'Enter at least one actual quantity.',tr('productEditor'));return;}if(items.some(x=>!Number.isFinite(x.actual)||x.actual<0)){showAppAlert(lang()==='zh'?'实际数量不能小于 0。':'Actual quantity cannot be below zero.',tr('productEditor'));return;}const msg=lang()==='zh'?`确认提交 ${items.length} 个商品的盘点？少于系统库存的差额会自动记录为耗损。`:`Submit counts for ${items.length} products? Shortfalls will be recorded as loss.`;showConfirm(msg,()=>bossSubmitStocktakeNow(items));};
+  async function bossSubmitStocktakeNow(items){const payload={items:items,type:normalizeText(($('bossStocktakeType')||{}).value)||'Stocktake Difference',reason:'Physical stocktake',note:normalizeText(($('bossStocktakeNote')||{}).value)};setSubmitBusy(true,lang()==='zh'?'正在提交盘点并计算耗损...':'Submitting stocktake and calculating loss...');try{const out=await timeout(apiCall('reconcileProductStocktake',[payload]),60000,'Inventory stocktake');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?`盘点完成：已检查 ${out.checked} 个商品，${out.lossRows} 个有差异；耗损数量 ${out.lossQty}，金额 ${money(out.lossAmount||0)}。`:`Stocktake complete: ${out.checked} checked, ${out.lossRows} shortages; loss ${out.lossQty}, ${money(out.lossAmount||0)}.`,tr('lostItem'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
   function fillBossReceiveProductList(){const sel=$('bossReceiveName'),cat=normalizeText(($('bossReceiveFilterCategory')||{}).value);if(!sel)return;const rows=(bossProductsCache||[]).filter(p=>!cat||normalizeCategoryName(p.category)===cat);sel.innerHTML=`<option value="">${cat?(lang()==='zh'?'请选择商品':'Select product'):(lang()==='zh'?'请先选择分类':'Choose category first')}</option>`+(cat?`<option value="__NEW__">＋ ${lang()==='zh'?'这个分类建立新品':'Create new in this category'}</option>`:'')+rows.map(p=>`<option value="${esc(p.name||'')}">${esc(p.name||'')} · ${money(p.price||0)}</option>`).join('');window.bossReceiveProductChanged();}
   function fillBossReceiveCategories(){const sel=$('bossReceiveFilterCategory');if(!sel)return;const old=sel.value,cats=[...new Set((bossProductsCache||[]).map(p=>normalizeCategoryName(p.category)).filter(Boolean))].sort((a,b)=>bossCategoryLabel(a).localeCompare(bossCategoryLabel(b)));sel.innerHTML=`<option value="">${lang()==='zh'?'请选择分类':'Select category'}</option>`+cats.map(c=>`<option value="${esc(c)}">${esc(bossCategoryLabel(c))}</option>`).join('');if(old&&cats.includes(old))sel.value=old;fillBossReceiveProductList();}
   window.bossReceiveCategoryChanged=fillBossReceiveProductList;
@@ -4410,10 +4433,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   let bossLooseGroupsCache=[];
+  function localBossLooseGroups(){const map=new Map();(bossProductsCache||[]).forEach(p=>{const group=normalizeText(p.inventoryGroup);if(!group)return;if(!map.has(group))map.set(group,{group,theoreticalKg:p.sharedStock===''?null:Number(p.sharedStock),perKgCost:Number(p.cost||0)/(Number(p.stockFactor)||1),localOnly:true});});return [...map.values()].sort((a,b)=>a.group.localeCompare(b.group));}
+  function renderBossLooseGroupOptions(current){const sel=$('bossLooseGroup');if(!sel)return;sel.innerHTML=`<option value="">${lang()==='zh'?'请选择':'Select'}</option>`+bossLooseGroupsCache.map(g=>`<option value="${esc(g.group)}">${esc(g.group)}</option>`).join('');if(current&&bossLooseGroupsCache.some(g=>g.group===current))sel.value=current;window.bossLooseGroupChanged();}
   async function loadBossLooseGroups(){
     const sel=$('bossLooseGroup');if(!sel)return;
-    try{bossLooseGroupsCache=await timeout(apiCall('getLooseStockGroups',[]),15000,'Loose stock groups')||[];const current=sel.value;sel.innerHTML=`<option value="">${lang()==='zh'?'请选择':'Select'}</option>`+bossLooseGroupsCache.map(g=>`<option value="${esc(g.group)}">${esc(g.group)}</option>`).join('');if(current&&bossLooseGroupsCache.some(g=>g.group===current))sel.value=current;window.bossLooseGroupChanged();}catch(e){const status=$('bossLooseStatus');if(status)status.textContent=(e&&e.message)||e;}
+    const current=sel.value;
+    try{bossLooseGroupsCache=await timeout(apiCall('getLooseStockGroups',[]),30000,'Loose stock groups')||[];renderBossLooseGroupOptions(current);}catch(e){bossLooseGroupsCache=localBossLooseGroups();renderBossLooseGroupOptions(current);const status=$('bossLooseStatus');if(status)status.innerHTML=`${lang()==='zh'?'库存详情暂时读取不到；商品系列可先选择，或点这里重试。':'Stock details unavailable; groups can still be selected, or retry.'} <button type="button" onclick="retryBossLooseGroups()">${lang()==='zh'?'重试':'Retry'}</button>`;}
   }
+  window.retryBossLooseGroups=loadBossLooseGroups;
   window.bossLooseGroupChanged=function(){const group=normalizeText(($('bossLooseGroup')||{}).value),g=bossLooseGroupsCache.find(x=>x.group===group),status=$('bossLooseStatus');if(!status)return;status.textContent=!g?(lang()==='zh'?'理论库存：尚未选择':'Theoretical stock: select a group'):(lang()==='zh'?`理论剩余：${g.theoreticalKg===null?'尚未记录':g.theoreticalKg+' KG'} | 每KG成本 ${money(g.perKgCost||0)}`:`Theoretical: ${g.theoreticalKg===null?'not recorded':g.theoreticalKg+' KG'} | Cost/KG ${money(g.perKgCost||0)}`);};
   window.bossReceiveLooseStock=async function(){const payload={group:normalizeText(($('bossLooseGroup')||{}).value),bags:($('bossLooseBags')||{}).value,kgPerBag:($('bossLooseKgPerBag')||{}).value,bagCost:($('bossLooseBagCost')||{}).value};if(!payload.group||!(Number(payload.bags)>0)||!(Number(payload.kgPerBag)>0)){showAppAlert(lang()==='zh'?'请选择系列并填写包数和每包 KG。':'Select group, bags and KG.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在记录进货...':'Recording stock...');try{const out=await timeout(apiCall('receiveLooseStock',[payload]),45000,'Receive loose stock');if($('bossLooseBags'))$('bossLooseBags').value='';if($('bossLooseBagCost'))$('bossLooseBagCost').value='';await loadBossLooseGroups();showAppAlert(lang()==='zh'?`已增加 ${out.addedKg}KG，理论库存 ${out.theoreticalKg}KG，每KG平均成本 ${money(out.perKgCost||0)}。`:`Added ${out.addedKg}KG; theoretical ${out.theoreticalKg}KG; average cost/KG ${money(out.perKgCost||0)}.`,tr('productEditor'));await load(true);}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}};
   window.bossReconcileLooseStock=function(){const payload={group:normalizeText(($('bossLooseGroup')||{}).value),actualKg:($('bossLooseActualKg')||{}).value,note:normalizeText(($('bossLooseNote')||{}).value)};if(!payload.group||payload.actualKg===''){showAppAlert(lang()==='zh'?'请选择系列并填写实际剩余 KG；已经卖完请填 0。':'Select group and enter actual KG; use 0 if sold out.',tr('productEditor'));return;}const soldOut=Number(payload.actualKg)===0,msg=lang()==='zh'?(soldOut?`确认 ${payload.group} 已经卖完？系统会把理论剩余全部记录为耗损并归零。`:`确认 ${payload.group} 实际剩余 ${payload.actualKg}KG？差额会自动记录为耗损。`):(soldOut?`Confirm ${payload.group} is sold out? The theoretical remainder will be closed as loss.`:`Confirm actual ${payload.actualKg}KG for ${payload.group}?`);showConfirm(msg,()=>bossReconcileLooseStockNow(payload));};
@@ -4549,6 +4576,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(localRows.length){
       bossProductsCache=localRows;
       fillBossReceiveCategories();
+      fillBossStocktakeCategories();
       fillBossProductFilterCategories();
       renderBossProductList(($('bossProductSearch')||{}).value||'');
       if(res)res.textContent=`${localRows.length} ${tr('products')}`;
@@ -4559,6 +4587,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const rows=await timeout(apiCall('getProductsForBoss',[]),9000,'Products');
       if(Array.isArray(rows) && rows.length)bossProductsCache=rows;
       fillBossReceiveCategories();
+      fillBossStocktakeCategories();
       fillBossCategoryList();
       fillBossProductFilterCategories();
       renderBossProductList(($('bossProductSearch')||{}).value||'');
