@@ -1305,7 +1305,7 @@ function showLowStock(){
   render(currentList);
   if(!currentList.length) showToast("✅ 暂时没有低库存商品");
 }
-function nextPage(){let total=Math.max(1,Math.ceil(currentList.length/perPage)); if(currentPage<total){currentPage++;render(currentList)}}
+function nextPage(){let total=Math.max(1,Math.ceil(productDisplayGroups(currentList).length/perPage)); if(currentPage<total){currentPage++;render(currentList)}}
 function prevPage(){if(currentPage>1){currentPage--;render(currentList)}}
 
 function add(name,price){if(isCheckingOut)return; let found=cart.find(i=>i.name===name); if(found)found.qty++; else cart.push({name,price:Number(price)||0,qty:1}); showCart()}
@@ -3243,7 +3243,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       code: normalizeText(p.code),
       name: normalizeText(p.name),
       category: normalizeCategoryName(p.category),
-      image: normalizeText(p.image)
+      image: normalizeText(p.image),
+      type: normalizeText(p.type),
+      brand: normalizeText(p.brand),
+      productGroup: normalizeText(p.productGroup),
+      variant: normalizeText(p.variant),
+      appliesTo: normalizeText(p.appliesTo),
+      inventoryGroup: normalizeText(p.inventoryGroup),
+      stockFactor: Number(p.stockFactor)||1,
+      sharedStock: p.sharedStock===null||p.sharedStock===''?null:Number(p.sharedStock)
     }));
     const brandKey=p=>{
       const m=String((p&&p.name)||'').toUpperCase().match(/[A-Z][A-Z0-9-]*/);
@@ -3541,22 +3549,53 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const box=$('list'); if(!box)return;
     list = list || currentList || [];
     if(!list.length){ box.innerHTML='<div class="empty">'+tr('noProducts')+'</div>'; updatePageInfo(list); return; }
+    const display=productDisplayGroups(list);
     const start=(currentPage-1)*perPage;
-    const pageList=list.slice(start,start+perPage);
-    box.innerHTML=pageList.map(p=>{
+    const pageList=display.slice(start,start+perPage);
+    box.innerHTML=pageList.map(group=>{
+      const p=group.items[0];
       const stock=Number(p.stock||0);
       const low=stock<=5?'color:#ef4444;font-weight:bold':'';
       const boxLabel=lang()==='zh'?'\u56fe\u7247':'Box';
       const stockLabel=lang()==='zh'?'\u5e93\u5b58':'Stock';
       const img=p.image?`<img src="${esc(p.image)}" onerror="this.parentNode.innerHTML='<div class=\\'noimg\\'>${boxLabel}</div>'">`:`<div class="noimg">${boxLabel}</div>`;
+      if(group.items.length>1){
+        const prices=group.items.map(x=>Number(x.price)||0).filter(Boolean);
+        const priceText=Math.min(...prices)===Math.max(...prices)?money(prices[0]):`${money(Math.min(...prices))} - ${money(Math.max(...prices))}`;
+        const variantText=lang()==='zh'?`${group.items.length} 个规格`:`${group.items.length} variants`;
+        return `<div class="product-card" onclick='openProductVariants(${JSON.stringify(group.key)})'><div class="imgbox">${img}</div><div class="pname">${esc(group.label)}</div><div class="pprice">${priceText}</div><div class="pstock">${variantText}</div></div>`;
+      }
       return `<div class="product-card" data-product-code="${esc(p.code||'')}" onpointerdown='startProductTap(event,${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})' onclick='productClickFallback(event,${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})'><div class="imgbox">${img}</div><div class="pname">${esc(p.name)}</div><div class="pprice">${money(p.price)}</div><div class="pstock" style="${low}">${stockLabel} ${stock}</div></div>`;
     }).join('');
     updatePageInfo(list);
   };
 
+  function productDisplayGroups(list){
+    const groups=new Map();
+    (list||[]).forEach(p=>{
+      const label=normalizeText(p.productGroup)||normalizeText(p.name);
+      const key=label.toUpperCase();
+      if(!groups.has(key))groups.set(key,{key:key,label:label,items:[]});
+      groups.get(key).items.push(p);
+    });
+    return [...groups.values()];
+  }
+
+  window.openProductVariants = function(key){
+    const group=productDisplayGroups(currentList).find(g=>g.key===String(key||''));
+    if(!group)return;
+    const old=$('productVariantPicker'); if(old)old.remove();
+    const wrap=document.createElement('div');
+    wrap.id='productVariantPicker';
+    wrap.style.cssText='position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
+    wrap.innerHTML=`<div style="width:min(720px,96vw);max-height:86vh;overflow:auto;background:#0f172a;border:1px solid #334155;border-radius:20px;padding:20px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 style="margin:0">${esc(group.label)}</h2><button type="button" onclick="document.getElementById('productVariantPicker').remove()">${lang()==='zh'?'完成 / 关闭':'Done / Close'}</button></div><p style="opacity:.75">${lang()==='zh'?'可以连续点规格，全部共用同一商品库存。':'Tap repeatedly; variants share one inventory.'}</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px">${group.items.map(p=>`<button type="button" style="text-align:left;padding:16px;border-radius:14px" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})'><b>${esc(p.variant||p.name)}</b><br>${money(p.price)}<br><small>${lang()==='zh'?'库存':'Stock'} ${Number(p.stock||0)}</small></button>`).join('')}</div></div>`;
+    wrap.onclick=e=>{if(e.target===wrap)wrap.remove();};
+    document.body.appendChild(wrap);
+  };
+
   window.updatePageInfo = function(list){
     list = list || currentList || [];
-    const totalPages=Math.max(1,Math.ceil(list.length/perPage));
+    const totalPages=Math.max(1,Math.ceil(productDisplayGroups(list).length/perPage));
     const e=$('pageInfo'); if(e)e.textContent=lang()==='zh' ? `${tr('page')} ${currentPage} / ${totalPages} \u9875` : `${tr('page')} ${currentPage} / ${totalPages}`;
   };
 
@@ -3570,7 +3609,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(!groups.has(key))groups.set(key,{label,count:0});
       groups.get(key).count++;
     });
-    bar.innerHTML=[...groups.values()].map(g=>`<div class="cat-btn" onclick='quickCat(${JSON.stringify(g.label)},this)'>${categoryHtml(g.label)}<span class="cat-count">${g.count}</span></div>`).join('');
+    const categoryPriority=label=>/CHIKEN|CHICKEN|鸡/.test(String(label).toUpperCase())?0:/DOG|狗/.test(String(label).toUpperCase())?1:/CAT|猫/.test(String(label).toUpperCase())?2:/FISH|鱼/.test(String(label).toUpperCase())?3:/BIRD|鸟/.test(String(label).toUpperCase())?4:20;
+    bar.innerHTML=[...groups.values()].sort((a,b)=>categoryPriority(a.label)-categoryPriority(b.label)||String(a.label).localeCompare(String(b.label))).map(g=>`<div class="cat-btn" onclick='quickCat(${JSON.stringify(g.label)},this)'>${categoryHtml(g.label)}<span class="cat-count">${g.count}</span></div>`).join('');
   };
   function setActiveCategory(el){
     document.querySelectorAll('.cat-btn').forEach(x=>x.classList.remove('active'));
@@ -3592,7 +3632,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
     try{ currentCat=cat; }catch(e){}
     const wanted=categoryKey(cat);
-    currentList=allProducts.filter(p=>categoryKey(p.category)===wanted);
+    const pet=/CAT|猫/.test(String(cat).toUpperCase())?'CAT':/DOG|狗/.test(String(cat).toUpperCase())?'DOG':'';
+    currentList=allProducts.filter(p=>categoryKey(p.category)===wanted || (pet && String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).includes(pet)));
     render(currentList);
   };
   window.quickCat = function(cat,el){
@@ -3863,6 +3904,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
              </div>
              <div id="bossProductList" class="boss-product-list"></div>
              <div id="bossProductPreview" class="boss-product-preview"></div>
+             <button type="button" onclick="bossClassifyExistingProducts()">${lang()==='zh'?'整理现有商品并列出待确认':'Classify existing products'}</button>
+             <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:700">${lang()==='zh'?'＋ 新增整套散卖商品':'＋ New loose-sale series'}</summary><div class="boss-product-grid" style="margin-top:12px"><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'系列名':'Series name'}</span><input id="bossSeriesName" placeholder="JAGUNG A"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('category'))}</span><input id="bossSeriesCategory" list="bossProductCategoryList"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'整包 KG':'Bulk KG'}</span><input id="bossSeriesBulkKg" type="number" value="40" min="2"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'整包售价':'Bulk price'}</span><input id="bossSeriesBulkPrice" type="number" step="0.01"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'整包成本':'Bulk cost'}</span><input id="bossSeriesBulkCost" type="number" step="0.01"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'1KG 售价':'1KG price'}</span><input id="bossSeriesKgPrice" type="number" step="0.01"></label><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'现在实际剩余总 KG':'Current total KG'}</span><input id="bossSeriesSharedStock" type="number" step="0.01" min="0"></label><button type="button" class="green wide" onclick="bossCreateLooseSeries()">${lang()==='zh'?'一次建立 4 个规格':'Create 4 variants'}</button></div></details>
            </div>
           <div>
             <input id="bossProductRow" type="hidden">
@@ -3874,6 +3917,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
               <label class="boss-field"><span class="boss-field-label" data-product-label="price">${esc(tr('price'))}</span><input id="bossProductPrice" type="number" step="0.01" placeholder="${esc(tr('price'))}"></label>
               <label class="boss-field"><span class="boss-field-label" data-product-label="category">${esc(tr('category'))}</span><input id="bossProductCategory" list="bossProductCategoryList" placeholder="${esc(tr('category'))}"></label>
               <datalist id="bossProductCategoryList"></datalist>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'类型':'Type'}</span><input id="bossProductType" list="bossProductTypeList" placeholder="FOOD / TREAT / HYGIENE"></label>
+              <datalist id="bossProductTypeList"><option value="FOOD"><option value="WET FOOD"><option value="TREAT"><option value="LITTER"><option value="LITTER BOX"><option value="HYGIENE / SUPPLEMENT"><option value="MILK"><option value="ACCESSORY"><option value="TOY"><option value="OTHER"></datalist>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'品牌':'Brand'}</span><input id="bossProductBrand" placeholder="PROBALANCE"></label>
+              <label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'商品系列':'Product Group'}</span><input id="bossProductGroup" placeholder="PROBALANCE DOG DRY FOOD"></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'规格':'Variant'}</span><input id="bossProductVariant" placeholder="15KG / 3.2KG"></label>
+              <div class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'适用入口（同一商品、同一库存）':'Show under (shared stock)'}</span><div style="display:flex;gap:18px;align-items:center;padding:10px 0"><label><input id="bossProductForCat" type="checkbox"> ${lang()==='zh'?'猫':'Cat'}</label><label><input id="bossProductForDog" type="checkbox"> ${lang()==='zh'?'狗':'Dog'}</label><label><input id="bossProductForGeneral" type="checkbox"> ${lang()==='zh'?'通用':'General'}</label></div></div>
+              <label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'散卖库存组（只有散装商品才填）':'Loose-stock group'}</span><input id="bossProductInventoryGroup" placeholder="JAGUNG B"></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'每点一次扣多少 KG':'KG used per tap'}</span><input id="bossProductStockFactor" type="number" min="0.0001" step="0.0001"></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'这组实际剩余总 KG':'Shared KG remaining'}</span><input id="bossProductSharedStock" type="number" min="0" step="0.01" placeholder="首次启用时填写"></label>
+              <button id="bossSuggestProductMetaBtn" type="button" onclick="bossSuggestProductMeta()">${lang()==='zh'?'自动建议分类':'Suggest Grouping'}</button>
               <label class="boss-field wide"><span class="boss-field-label" data-product-label="imageLink">${esc(tr('imageLink'))}</span><input id="bossProductImage" placeholder="${esc(tr('imageLink'))}"></label>
               <label class="boss-field wide"><span class="boss-field-label" data-product-label="uploadImage">${esc(tr('uploadImage'))}</span><input id="bossProductImageFile" type="file" accept="image/*" onchange="bossUploadProductImage(this.files&&this.files[0])"></label>
               <label class="boss-field"><span class="boss-field-label" data-product-label="stock">${esc(tr('stock'))}</span><input id="bossProductStock" type="number" step="1" placeholder="${esc(tr('stock'))}"></label>
@@ -4102,6 +4155,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       stock:p.stock||0,
       cost:p.cost||0,
       active:p.active!==false,
+      type:normalizeText(p.type),
+      brand:normalizeText(p.brand),
+      productGroup:normalizeText(p.productGroup),
+      variant:normalizeText(p.variant),
+      appliesTo:normalizeText(p.appliesTo),
+      inventoryGroup:normalizeText(p.inventoryGroup),
+      stockFactor:Number(p.stockFactor)||1,
+      sharedStock:p.sharedStock===null||p.sharedStock===''?'':Number(p.sharedStock),
       row:p.row||''
     }));
   }
@@ -4119,7 +4180,30 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       stock: ($('bossProductStock')||{}).value || '',
       cost: ($('bossProductCost')||{}).value || '',
       active: ($('bossProductActive')||{}).value || 'TRUE'
+      ,type: normalizeText(($('bossProductType')||{}).value)
+      ,brand: normalizeText(($('bossProductBrand')||{}).value)
+      ,productGroup: normalizeText(($('bossProductGroup')||{}).value)
+      ,variant: normalizeText(($('bossProductVariant')||{}).value)
+      ,appliesTo: bossProductAppliesToValue()
+      ,inventoryGroup: normalizeText(($('bossProductInventoryGroup')||{}).value)
+      ,stockFactor: ($('bossProductStockFactor')||{}).value || ''
+      ,sharedStock: ($('bossProductSharedStock')||{}).value || ''
     };
+  }
+
+  function bossProductAppliesToValue(){
+    const out=[];
+    if(($('bossProductForCat')||{}).checked)out.push('CAT');
+    if(($('bossProductForDog')||{}).checked)out.push('DOG');
+    if(($('bossProductForGeneral')||{}).checked)out.push('GENERAL');
+    return out.join(',');
+  }
+
+  function setBossProductAppliesTo(value){
+    const values=String(value||'').toUpperCase().split(/[,|/]+/).map(s=>s.trim()).filter(Boolean);
+    if($('bossProductForCat'))$('bossProductForCat').checked=values.includes('CAT');
+    if($('bossProductForDog'))$('bossProductForDog').checked=values.includes('DOG');
+    if($('bossProductForGeneral'))$('bossProductForGeneral').checked=values.includes('GENERAL');
   }
 
   function readProductImageForUpload(file){
@@ -4238,15 +4322,84 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.bossSearchProducts = function(query){ renderBossProductList(query); };
   window.bossFilterProducts = function(){ renderBossProductList(($('bossProductSearch')||{}).value||''); };
 
+  window.bossClassifyExistingProducts = async function(){
+    if(typeof bossRequire==='function'&&!bossRequire())return;
+    const res=$('bossProductResult');
+    setSubmitBusy(true,lang()==='zh'?'正在整理商品...':'Classifying products...');
+    try{
+      const out=await timeout(apiCall('classifyProductsForBoss',[]),60000,'Product classification');
+      const review=(out&&out.review)||[];
+      if(res)res.innerHTML=`<div class="boss-notice"><b>${lang()==='zh'?'已整理':'Updated'} ${Number(out&&out.updated)||0}</b><br>${review.length?(lang()==='zh'?'以下商品无法确定猫/狗，请手动勾选：':'Needs manual Cat/Dog review:')+'<br>'+review.map(x=>`${esc(x.name)} <small>(${esc(x.category||'-')})</small>`).join('<br>'):(lang()==='zh'?'全部已能判断。':'All products classified.')}</div>`;
+      await window.bossOpenProducts();
+    }catch(e){
+      if(res)res.textContent=(e&&e.message)||e;
+      showAppAlert((e&&e.message)||e,tr('productEditor'));
+    }finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}
+  };
+
+  window.bossCreateLooseSeries = async function(){
+    if(typeof bossRequire==='function'&&!bossRequire())return;
+    const payload={name:normalizeText(($('bossSeriesName')||{}).value),category:normalizeCategoryName(($('bossSeriesCategory')||{}).value),bulkKg:($('bossSeriesBulkKg')||{}).value,bulkPrice:($('bossSeriesBulkPrice')||{}).value,bulkCost:($('bossSeriesBulkCost')||{}).value,kgPrice:($('bossSeriesKgPrice')||{}).value,sharedStock:($('bossSeriesSharedStock')||{}).value};
+    const res=$('bossProductResult');setSubmitBusy(true,lang()==='zh'?'正在建立整套商品...':'Creating series...');
+    try{
+      const out=await timeout(apiCall('createLooseProductSeries',[payload]),60000,'Create product series');
+      if(res)res.textContent=(lang()==='zh'?'已建立：':'Created: ')+((out&&out.names)||[]).join('、');
+      ['bossSeriesName','bossSeriesBulkPrice','bossSeriesBulkCost','bossSeriesKgPrice','bossSeriesSharedStock'].forEach(id=>{if($(id))$(id).value='';});
+      await window.bossOpenProducts();
+    }catch(e){if(res)res.textContent=(e&&e.message)||e;showAppAlert((e&&e.message)||e,tr('productEditor'));}
+    finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}
+  };
+
+  function inferBossProductMeta(name,category){
+    const raw=normalizeText(name).toUpperCase().replace(/PROBLANCE|PRO BALANCE/g,'PROBALANCE');
+    const cat=normalizeText(category).toUpperCase();
+    let brand=(raw.match(/^[A-Z0-9&-]+(?:\s+[A-Z0-9&-]+)?/)||['OTHER'])[0];
+    if(raw.startsWith('PROBALANCE'))brand='PROBALANCE';
+    if(raw.startsWith('KING PAWZ')||raw.startsWith('KINGPAWZ'))brand='KING PAWZ';
+    let type='OTHER';
+    if(/LITTER BOX|TRAY/.test(raw)||/TRAY/.test(cat))type='LITTER BOX';
+    else if(/LITTER/.test(raw)||/LITTER/.test(cat))type='LITTER';
+    else if(/POUCH|TIN|CAN\b/.test(raw))type='WET FOOD';
+    else if(/TREAT|SNACK|STICK|JERKY|CHEW|MUNCHIEZZ|TEMPTATION/.test(raw)||/SNACK/.test(cat))type='TREAT';
+    else if(/SHAMPOO|SOAP|SPRAY|VITAMIN|OIL|FLEA|TICK|EAR|EYE/.test(raw)||/SOAP|LIQUID|SUPP/.test(cat))type='HYGIENE / SUPPLEMENT';
+    else if(/TOY|BALL|DUCK|TUG/.test(raw)||/TOY/.test(cat))type='TOY';
+    else if(/MILK/.test(raw)||/MILK/.test(cat))type='MILK';
+    else if(/FOOD|PALLET|JAGUNG|KAMBU|POLLARD|\b20KG\b|\b40KG\b|\b50KG\b/.test(raw)||/DOG|CAT|CHIKEN|FISH|BIRD|HAMSTER/.test(cat))type='FOOD';
+    else if(/ACC/.test(cat))type='ACCESSORY';
+    const variants=raw.match(/(?:RM\s*0\.10(?![0-9.])|RM\s*1(?![0-9.])|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|\d+\s*PCS|\d+\s*X\s*\d+)/g);
+    const variant=variants?variants.join(' / ').replace(/\s+/g,''):'STANDARD';
+    let productGroup=raw.replace(/\([^)]*(?:KG|RM|ML|\bS\b|\bM\b|\bL\b)[^)]*\)/g,' ').replace(/RM\s*0\.10(?![0-9.])|RM\s*1(?![0-9.])|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)/g,' ').replace(/\s+/g,' ').trim();
+    if(brand==='PROBALANCE'){
+      if(type==='WET FOOD')productGroup=/POUCH/.test(raw)?'PROBALANCE DOG POUCH':'PROBALANCE DOG TIN';
+      else if(/MUNCHIEZZ DENTAL/.test(raw))productGroup='PROBALANCE MUNCHIEZZ DENTAL BAR';
+      else if(/MUNCHIEZZ DICES/.test(raw))productGroup='PROBALANCE MUNCHIEZZ DICES';
+      else productGroup='PROBALANCE DOG DRY FOOD';
+    }
+    const catSignal=/\bCAT\b|KITTEN|FELINE|TEMPTATION/.test(raw)||/\bCAT\b/.test(cat);
+    const dogSignal=/\bDOG\b|PUPPY|CANINE/.test(raw)||/\bDOG\b/.test(cat);
+    const universal=/CAT\s*(?:&|AND|\/|\+)\s*DOG|DOG\s*(?:&|AND|\/|\+)\s*CAT|ALL PET|UNIVERSAL/.test(raw)||/GENERAL|UNIVERSAL/.test(cat);
+    return {type,brand,productGroup:productGroup||raw,variant,appliesTo:universal||(catSignal&&dogSignal)?'CAT,DOG':catSignal?'CAT':dogSignal?'DOG':''};
+  }
+
+  window.bossSuggestProductMeta = function(){
+    const suggested=inferBossProductMeta(($('bossProductName')||{}).value,($('bossProductCategory')||{}).value);
+    const values={bossProductType:suggested.type,bossProductBrand:suggested.brand,bossProductGroup:suggested.productGroup,bossProductVariant:suggested.variant};
+    Object.keys(values).forEach(id=>{if($(id))$(id).value=values[id]||'';});
+    setBossProductAppliesTo(suggested.appliesTo);
+    const hint=$('bossProductHint');
+    if(hint)hint.textContent=suggested.appliesTo ? (lang()==='zh'?'已填入建议，请确认后保存。':'Suggestion filled; confirm before saving.') : (lang()==='zh'?'无法确定适用猫或狗，请手动勾选。':'Please choose Cat/Dog manually.');
+  };
+
   window.bossClearProductForm = function(opts){
     opts=opts||{};
-    ['bossProductRow','bossProductOriginalCode','bossProductOriginalName','bossProductCode','bossProductName','bossProductPrice','bossProductCategory','bossProductImage','bossProductStock','bossProductCost'].forEach(id=>{ const el=$(id); if(el)el.value=''; });
+    ['bossProductRow','bossProductOriginalCode','bossProductOriginalName','bossProductCode','bossProductName','bossProductPrice','bossProductCategory','bossProductType','bossProductBrand','bossProductGroup','bossProductVariant','bossProductInventoryGroup','bossProductStockFactor','bossProductSharedStock','bossProductImage','bossProductStock','bossProductCost'].forEach(id=>{ const el=$(id); if(el)el.value=''; });
     const picker=$('bossProductImageFile'); if(picker)picker.value='';
     if(opts.keepList===false){
       const search=$('bossProductSearch'); if(search)search.value='';
       const filter=$('bossProductFilterCategory'); if(filter)filter.value='';
     }
     const active=$('bossProductActive'); if(active)active.value='TRUE';
+    setBossProductAppliesTo('');
     const hint=$('bossProductHint'); if(hint)hint.textContent=tr('keepBlank');
     renderBossProductPreview(null);
     renderBossProductList(($('bossProductSearch')||{}).value||'');
@@ -4297,12 +4450,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       bossProductName:p.name||'',
       bossProductPrice:p.price||'',
       bossProductCategory:p.category||'',
+      bossProductType:p.type||'',
+      bossProductBrand:p.brand||'',
+      bossProductGroup:p.productGroup||'',
+      bossProductVariant:p.variant||'',
+      bossProductInventoryGroup:p.inventoryGroup||'',
+      bossProductStockFactor:p.stockFactor||1,
+      bossProductSharedStock:p.sharedStock===null||p.sharedStock===''?'':p.sharedStock,
       bossProductImage:p.image||'',
       bossProductStock:p.stock||'',
       bossProductCost:p.cost||''
     };
     Object.keys(values).forEach(id=>{ const el=$(id); if(el)el.value=values[id]; });
     const active=$('bossProductActive'); if(active)active.value=p.active===false?'FALSE':'TRUE';
+    setBossProductAppliesTo(p.appliesTo||'');
     const hint=$('bossProductHint'); if(hint)hint.textContent=`${tr('currentCost')}: ${money(p.cost||0)}. ${tr('keepBlank')}`;
     renderBossProductPreview(p);
   };
