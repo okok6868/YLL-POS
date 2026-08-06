@@ -819,7 +819,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div class="header">
   <div class="header-top">
     <div class="title">YLL FEEDS ENTERPRISE</div>
-    <div class="tools"><span id="clock"></span><button class="plain-gear" title="" aria-label="系统" onclick="openBossLogin()">⚙️</button><button onclick="toggleMode()">🌙</button></div>
+    <div class="tools"><span id="clock"></span><button class="plain-gear" title="" aria-label="系统" onclick="openBossLogin()">⚙️</button><button id="themeBtn" type="button" onclick="toggleMode()">☀</button><button id="langBtn" type="button" onclick="toggleLanguage()">中</button></div>
   </div>
   <div class="stats">
     <div class="stat blue"><div class="icon">📊</div><div><small>今日 销售</small><b id="todaySales">RM 0.00</b></div></div>
@@ -1976,15 +1976,15 @@ function syncOfflineOrders(){
   }
 }
 function updateThemeButton(){
-  let btn = document.querySelector(".tools button:last-child");
-  if(btn) btn.innerText = document.body.classList.contains("light") ? "☀️" : "🌙";
+  let btn = document.getElementById("themeBtn");
+  if(btn) btn.innerText = document.body.classList.contains("light") ? "☾" : "☀";
 }
 
 function toggleMode(){
   document.body.classList.toggle("light");
 
   localStorage.setItem(
-    "theme",
+    "yllTheme",
     document.body.classList.contains("light") ? "light" : "dark"
   );
 
@@ -1992,7 +1992,7 @@ function toggleMode(){
 }
 
 (function(){
-  let theme = localStorage.getItem("theme");
+  let theme = localStorage.getItem("yllTheme");
   if(theme === "light") document.body.classList.add("light");
   window.addEventListener("load", updateThemeButton);
 })();
@@ -2959,21 +2959,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   function setThemeButton(){
-    const btn=$('themeBtn') || document.querySelector('.tools button[onclick="toggleMode()"]');
+    const btn=$('themeBtn');
     if(btn){
       btn.id='themeBtn';
       btn.textContent=document.body.classList.contains('light')?'\u263e':'\u2600';
       btn.title=document.body.classList.contains('light')?'Dark mode':'Light mode';
       btn.setAttribute('aria-label',btn.title);
     }
-    let langBtn=$('langBtn');
-    if(!langBtn && btn && btn.parentElement){
-      langBtn=document.createElement('button');
-      langBtn.id='langBtn';
-      langBtn.type='button';
-      langBtn.onclick=window.toggleLanguage;
-      btn.parentElement.appendChild(langBtn);
-    }
+    const langBtn=$('langBtn');
     if(langBtn){
       langBtn.textContent=lang()==='zh'?'EN':'\u4e2d';
       langBtn.title=lang()==='zh'?'Switch to English':'\u5207\u6362\u4e2d\u6587';
@@ -5670,6 +5663,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{ if(originalSyncOfflineOrdersFn)window.removeEventListener('online', originalSyncOfflineOrdersFn); }catch(e){}
     prunePendingOnlineOrders(45*60*1000);
     try{ if(allCategorySelected(currentCat))currentCat='ALL'; }catch(e){}
+    ensureCleanUiCss();
+    document.body.classList.toggle('light', localStorage.getItem('yllTheme') === 'light');
     setStaticText();
     setTimeout(setStaticText, 300);
     setTimeout(setStaticText, 1200);
@@ -5680,9 +5675,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
     scheduleTopStatsRefresh(250);
     setTimeout(()=>scheduleTopStatsRefresh(0), 2500);
-    ensureCleanUiCss();
-    if(localStorage.getItem('yllTheme') === 'light') document.body.classList.add('light');
-    setThemeButton();
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
     setTimeout(()=>{ try{ resumePendingOrderChecks(); }catch(e){} }, 1600);
     setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
