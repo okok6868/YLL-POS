@@ -5198,6 +5198,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>{if(typeof showToast==='function')showToast(tr('receiptCopied'));}).catch(()=>showAppAlert(text,tr('print')));else showAppAlert(text,tr('print'));}catch(e){showAppAlert(text,tr('print'));}
   };
   window.smartPrintLast = function(){ window.printReceipt(false); };
+  function prepareSavedReceipt(){
+    try{
+      const text=buildReceiptText();
+      if(text&&/YLL FEEDS/.test(text)){window.lastReceiptText=text;try{lastReceiptText=text;}catch(e){}return true;}
+    }catch(e){console.error(e);}
+    return false;
+  }
   function reduceLocalStock(savedCart){
     try{
       const list=currentProducts();
@@ -5228,7 +5235,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     clearCartState();
     if(checkoutKey && !currentCart().length)clearActiveCheckout(checkoutKey);
     setCheckoutBusy(false);
-    try{ printReceipt(true); }catch(e){ console.error(e); if(typeof showToast === 'function')showToast(tr('receiptFailed')); }
+    const receiptReady=prepareSavedReceipt();
+    if(typeof showToast === 'function')showToast(receiptReady?(lang()==='zh'?'订单已保存，收据已准备好；需要时按“打印收据”。':'Order saved. Receipt is ready; press Print Receipt when needed.'):tr('receiptFailed'));
     if(typeof loadTodayStats === 'function')setTimeout(()=>loadTodayStats(), 100);
   }
 
