@@ -135,7 +135,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
   border:1px solid var(--line);
   box-shadow:0 12px 30px rgba(0,0,0,.30);
 }
-.product-card{display:flex;flex-direction:column;height:178px}
+.product-card{display:flex;flex-direction:column;height:178px;position:relative}
+.popular-badge{position:absolute;z-index:2;top:6px;left:6px;padding:3px 7px;border-radius:999px;background:rgba(245,158,11,.94);color:#111827;font-size:10px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,.35)}
 .product-card .pstock{margin-top:auto;flex:0 0 auto;white-space:nowrap}
 .product-card:hover{transform:translateY(-3px);border-color:rgba(59,130,246,.85);box-shadow:0 16px 38px rgba(0,0,0,.38)}
 .imgbox{width:100%;height:72px;border-radius:12px;background:#020617;overflow:hidden;margin-bottom:8px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.05)}
@@ -832,7 +833,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
 <div class="layout">
   <div class="sidebar">
-    <div class="cat-btn active" onclick="quickCat('全部分类',this)"><span>全部商品</span><span class="cat-count">0</span></div>
+    <div class="cat-btn active" onclick="quickCat('全部分类',this)"><span>常卖优先</span><span class="cat-count">0</span></div>
     <div id="menuList"></div>
     <div id="subMenuList" style="display:none"></div>
   </div>
@@ -3009,7 +3010,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(stats[3])stats[3].textContent=tr('products');
     const allBtn = document.querySelector('.sidebar > .cat-btn');
     if(allBtn)allBtn.setAttribute('onclick',"quickCat('ALL',this)");
-    const all = document.querySelector('.sidebar > .cat-btn span:first-child'); if(all)all.textContent=tr('all');
+    const all = document.querySelector('.sidebar > .cat-btn span:first-child'); if(all)all.textContent=lang()==='zh'?'常卖优先':'Popular First';
     const homeBtn = document.querySelector('.topline button[onclick="goHome()"]'); if(homeBtn)homeBtn.textContent=tr('home');
     const h = document.querySelector('.right h3'); if(h)h.textContent=tr('cart');
     const empty = document.querySelector('#cart .empty'); if(empty)empty.textContent=tr('empty');
@@ -3286,10 +3287,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     return false;
   }
 
+  window.__popularRankByGroup=window.__popularRankByGroup||{};
+  let popularLoadInFlight=null;
+  function applyPopularGroups(rows){const map={};(rows||[]).forEach((r,i)=>{const key=normalizeText(r.group).toUpperCase();if(key)map[key]={rank:i+1,orders:Number(r.orderCount)||0};});window.__popularRankByGroup=map;if(!window.__posMainCategory&&!String(typeof searchText==='undefined'?'':searchText||'').trim()){currentPage=1;currentList=currentProducts();render(currentList);}}
+  function loadPopularHome(){if(popularLoadInFlight)return popularLoadInFlight;try{const cached=JSON.parse(localStorage.getItem('yllPopularGroupsV1')||'null');if(cached&&Array.isArray(cached.items))applyPopularGroups(cached.items);}catch(e){}popularLoadInFlight=timeout(apiCall('getPopularProductGroups',[60,100]),15000,'Popular products').then(rows=>{rows=Array.isArray(rows)?rows:[];applyPopularGroups(rows);try{localStorage.setItem('yllPopularGroupsV1',JSON.stringify({ts:Date.now(),items:rows}));}catch(e){}return rows;}).catch(()=>[]).finally(()=>{popularLoadInFlight=null;});return popularLoadInFlight;}
+
   let productLoadInFlight=null;
   window.load = function(force=false){
     if(productLoadInFlight && !force)return productLoadInFlight;
     const hadCache=loadProductsCache();
+    loadPopularHome();
     if(!hadCache){
       const box=$('list');
       if(box)box.innerHTML='<div class="empty">'+(lang()==='zh'?'\u6b63\u5728\u8f7d\u5165\u5546\u54c1...':'Loading products...')+'</div>';
@@ -3559,6 +3566,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const pageList=display.slice(start,start+perPage);
     box.innerHTML=pageList.map(group=>{
       const p=group.items[0];
+      const homePopular=!window.__posMainCategory&&!String(typeof searchText==='undefined'?'':searchText||'').trim(),popular=homePopular&&(window.__popularRankByGroup||{})[group.key],popularBadge=popular&&popular.rank<=12?`<span class="popular-badge">${lang()==='zh'?'常卖':'TOP'} ${popular.rank}</span>`:'';
       const stock=Number(p.stock||0);
       const low=stock<=5?'color:#ef4444;font-weight:bold':'';
       const boxLabel=lang()==='zh'?'\u56fe\u7247':'Box';
@@ -3568,9 +3576,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         const prices=group.items.map(x=>Number(x.price)||0).filter(Boolean);
         const priceText=Math.min(...prices)===Math.max(...prices)?money(prices[0]):`${money(Math.min(...prices))} - ${money(Math.max(...prices))}`;
         const variantText=lang()==='zh'?`${group.items.length} 个规格`:`${group.items.length} variants`;
-        return `<div class="product-card" onclick='openProductVariants(${JSON.stringify(group.key)})'><div class="imgbox">${img}</div><div class="pname">${esc(group.label)}</div><div class="pprice">${priceText}</div><div class="pstock">${variantText}</div></div>`;
+        return `<div class="product-card" onclick='openProductVariants(${JSON.stringify(group.key)})'>${popularBadge}<div class="imgbox">${img}</div><div class="pname">${esc(group.label)}</div><div class="pprice">${priceText}</div><div class="pstock">${variantText}</div></div>`;
       }
-      return `<div class="product-card" data-product-code="${esc(p.code||'')}" onpointerdown='startProductTap(event,${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})' onclick='productClickFallback(event,${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})'><div class="imgbox">${img}</div><div class="pname">${esc(p.name)}</div><div class="pprice">${money(p.price)}</div><div class="pstock" style="${low}">${stockLabel} ${stock}</div></div>`;
+      return `<div class="product-card" data-product-code="${esc(p.code||'')}" onpointerdown='startProductTap(event,${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})' onclick='productClickFallback(event,${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})'>${popularBadge}<div class="imgbox">${img}</div><div class="pname">${esc(p.name)}</div><div class="pprice">${money(p.price)}</div><div class="pstock" style="${low}">${stockLabel} ${stock}</div></div>`;
     }).join('');
     updatePageInfo(list);
   };
@@ -3586,7 +3594,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const familyRank=label=>{const s=String(label||'').toUpperCase();if(/^JAGUNG\b/.test(s))return 0;if(/^20[12]\b/.test(s))return 1;if(/^TP[- ]?\d/.test(s))return 2;if(/^KAMBU\b/.test(s))return 3;if(/POLLARD|WHEAT/.test(s))return 4;if(/GOBBY/.test(s))return 5;return 20;};
     const isLooseGroup=g=>g.items.some(p=>/RM\s*(?:0\.10|1)(?![0-9.])|\(\s*1\s*KG\s*\)/i.test(String(p.name||'')));
     const isFoodGroup=g=>g.items.some(p=>productPurpose(p)==='FOOD');
-    return [...groups.values()].sort((a,b)=>{const at=isLooseGroup(a)?0:(isFoodGroup(a)?1:2),bt=isLooseGroup(b)?0:(isFoodGroup(b)?1:2);if(at!==bt)return at-bt;const af=familyRank(a.label),bf=familyRank(b.label);if(af!==bf)return af-bf;return String(a.label).localeCompare(String(b.label),undefined,{numeric:true,sensitivity:'base'});});
+    const homePopular=!window.__posMainCategory&&!String(typeof searchText==='undefined'?'':searchText||'').trim(),rankMap=window.__popularRankByGroup||{};
+    return [...groups.values()].sort((a,b)=>{if(homePopular){const ar=(rankMap[a.key]||{}).rank||999999,br=(rankMap[b.key]||{}).rank||999999;if(ar!==br)return ar-br;}const at=isLooseGroup(a)?0:(isFoodGroup(a)?1:2),bt=isLooseGroup(b)?0:(isFoodGroup(b)?1:2);if(at!==bt)return at-bt;const af=familyRank(a.label),bf=familyRank(b.label);if(af!==bf)return af-bf;return String(a.label).localeCompare(String(b.label),undefined,{numeric:true,sensitivity:'base'});});
   }
 
   function visibleVariant(p){const stored=normalizeText(p&&p.variant);if(stored&&stored.toUpperCase()!=='STANDARD')return stored;const name=String((p&&p.name)||'').toUpperCase(),size=name.match(/\(\s*(XXL|XL|S|M|L)\s*\)/),unit=name.match(/\(\s*(RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|\d+\s*PCS)\s*\)/);return size?size[1]:(unit?unit[1].replace(/\s+/g,''):(stored||'STANDARD'));}
