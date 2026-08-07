@@ -3583,7 +3583,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(!groups.has(key))groups.set(key,{key:key,label:label,items:[]});
       groups.get(key).items.push(p);
     });
-    return [...groups.values()];
+    const familyRank=label=>{const s=String(label||'').toUpperCase();if(/^JAGUNG\b/.test(s))return 0;if(/^20[12]\b/.test(s))return 1;if(/^TP[- ]?\d/.test(s))return 2;if(/^KAMBU\b/.test(s))return 3;if(/POLLARD|WHEAT/.test(s))return 4;if(/GOBBY/.test(s))return 5;return 20;};
+    const isLooseGroup=g=>g.items.some(p=>/RM\s*(?:0\.10|1)(?![0-9.])|\(\s*1\s*KG\s*\)/i.test(String(p.name||'')));
+    const isFoodGroup=g=>g.items.some(p=>productPurpose(p)==='FOOD');
+    return [...groups.values()].sort((a,b)=>{const at=isLooseGroup(a)?0:(isFoodGroup(a)?1:2),bt=isLooseGroup(b)?0:(isFoodGroup(b)?1:2);if(at!==bt)return at-bt;const af=familyRank(a.label),bf=familyRank(b.label);if(af!==bf)return af-bf;return String(a.label).localeCompare(String(b.label),undefined,{numeric:true,sensitivity:'base'});});
   }
 
   function visibleVariant(p){const stored=normalizeText(p&&p.variant);if(stored&&stored.toUpperCase()!=='STANDARD')return stored;const name=String((p&&p.name)||'').toUpperCase(),size=name.match(/\(\s*(XXL|XL|S|M|L)\s*\)/),unit=name.match(/\(\s*(RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|\d+\s*PCS)\s*\)/);return size?size[1]:(unit?unit[1].replace(/\s+/g,''):(stored||'STANDARD'));}
