@@ -1188,6 +1188,7 @@ let currentCat="全部分类", searchText="";
 let discount=0, cashTotal=0;
 let lastPayment="", lastCart=[], last折扣=0, lastReceiptText="", confirmCallback=null;
 let lastPaid=0, lastChange=0, isCheckingOut=false, appBootDate="", unlockBusyOnConfirmCancel=false;
+let lastMixedBreakdown={cash:0,qr:0,transfer:0};
 
 window.onload=function(){
   appBootDate=todayKey();
@@ -3588,8 +3589,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   function productDisplayGroups(list){
     const groups=new Map();
+    const searching=String(typeof searchText==='undefined'?'':searchText||'').trim();
     (list||[]).forEach(p=>{
-      const label=normalizeText(p.productGroup)||normalizeText(p.name);
+      const label=searching?normalizeText(p.name):(normalizeText(p.productGroup)||normalizeText(p.name));
       const key=label.toUpperCase();
       if(!groups.has(key))groups.set(key,{key:key,label:label,items:[]});
       groups.get(key).items.push(p);
@@ -3597,7 +3599,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const familyRank=label=>{const s=String(label||'').toUpperCase();if(/^JAGUNG\b/.test(s))return 0;if(/^20[12]\b/.test(s))return 1;if(/^TP[- ]?\d/.test(s))return 2;if(/^KAMBU\b/.test(s))return 3;if(/POLLARD|WHEAT/.test(s))return 4;if(/GOBBY/.test(s))return 5;return 20;};
     const isLooseGroup=g=>g.items.some(p=>/RM\s*(?:0\.10|1)(?![0-9.])|\(\s*1\s*KG\s*\)/i.test(String(p.name||'')));
     const isFoodGroup=g=>g.items.some(p=>productPurpose(p)==='FOOD');
-    const homePopular=!window.__posMainCategory&&!String(typeof searchText==='undefined'?'':searchText||'').trim(),rankMap=window.__popularRankByGroup||{};
+    const homePopular=!window.__posMainCategory&&!searching,rankMap=window.__popularRankByGroup||{};
     return [...groups.values()].sort((a,b)=>{if(homePopular){const ar=(rankMap[a.key]||{}).rank||999999,br=(rankMap[b.key]||{}).rank||999999;if(ar!==br)return ar-br;}const at=isLooseGroup(a)?0:(isFoodGroup(a)?1:2),bt=isLooseGroup(b)?0:(isFoodGroup(b)?1:2);if(at!==bt)return at-bt;const af=familyRank(a.label),bf=familyRank(b.label);if(af!==bf)return af-bf;return String(a.label).localeCompare(String(b.label),undefined,{numeric:true,sensitivity:'base'});});
   }
 
@@ -3659,10 +3661,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const hasPet=tags.some(x=>!/BEVERAGE|GENERAL/.test(x.key));
     if(applies.includes('BEVERAGE')||(/BEVERAGE|DRINK|汽水|饮料/.test(raw)&&!hasPet))add('BEVERAGE');
     if(applies.includes('GENERAL')||/GENERAL|UNCLASSIFIED|UNCATEGORIZED|ALL FAV|通用|未分类/.test(raw))add('GENERAL');
+    const knownMainEntrances=['CHICKEN','DOG','CAT','BIRD','FISH','HAMSTER','BEVERAGE','GENERAL'];applies.filter(x=>x&&!knownMainEntrances.includes(x)).forEach(add);
     if(!tags.length)add('GENERAL');
     return tags;
   }
   function subCategoryLabel(main,type){
+    if(type==='MEDICINE'){const animal={CHICKEN:['鸡','Chicken'],DOG:['狗','Dog'],CAT:['猫','Cat'],BIRD:['鸟','Bird'],FISH:['鱼','Fish'],HAMSTER:['仓鼠','Hamster']}[main];return lang()==='zh'?((animal?animal[0]:'')+'药品／驱虫'):((animal?animal[1]+' ':'')+'Medicine / Deworming');}
     const animal={CHICKEN:['鸡','Chicken'],DOG:['狗','Dog'],CAT:['猫','Cat'],BIRD:['鸟','Bird'],FISH:['鱼','Fish'],HAMSTER:['仓鼠','Hamster']},a=animal[main],zh={FOOD:'食品','WET FOOD':'湿粮',TREAT:'零食',MILK:'奶粉',TOY:'玩具',ACCESSORY:'用品',LITTER:'猫砂','LITTER BOX':'猫砂盆','HYGIENE / SUPPLEMENT':'卫生／营养品',OTHER:'其它'},en={FOOD:'Food','WET FOOD':'Wet food',TREAT:'Treat','MILK':'Milk',TOY:'Toy',ACCESSORY:'Accessory',LITTER:'Litter','LITTER BOX':'Litter box','HYGIENE / SUPPLEMENT':'Hygiene / Supplement',OTHER:'Other'};
     if(lang()==='zh')return (a&&['FOOD','WET FOOD','TREAT','MILK','TOY','ACCESSORY'].includes(type)?a[0]:'')+(zh[type]||type);
     return (a&&['FOOD','WET FOOD','TREAT','MILK','TOY','ACCESSORY'].includes(type)?a[1]+' ':'')+(en[type]||type);
@@ -4019,6 +4023,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <div id="bossProductResult" class="boss-result">${esc(tr('openToLoad'))}</div>`;
       const oldApplies=panel.querySelector('#bossProductForCat');
       if(oldApplies){const appliesWrap=oldApplies.parentElement&&oldApplies.parentElement.parentElement;if(appliesWrap){appliesWrap.className='boss-applies-grid';appliesWrap.innerHTML=`<label><input id="bossProductForChicken" type="checkbox"> ${lang()==='zh'?'鸡':'Chicken'}</label><label><input id="bossProductForDog" type="checkbox"> ${lang()==='zh'?'狗':'Dog'}</label><label><input id="bossProductForCat" type="checkbox"> ${lang()==='zh'?'猫':'Cat'}</label><label><input id="bossProductForBird" type="checkbox"> ${lang()==='zh'?'鸟':'Bird'}</label><label><input id="bossProductForFish" type="checkbox"> ${lang()==='zh'?'鱼':'Fish'}</label><label><input id="bossProductForHamster" type="checkbox"> ${lang()==='zh'?'仓鼠':'Hamster'}</label><label><input id="bossProductForBeverage" type="checkbox"> ${lang()==='zh'?'饮料':'Beverage'}</label><label><input id="bossProductForGeneral" type="checkbox"> ${lang()==='zh'?'未分类':'Unclassified'}</label>`;const title=appliesWrap.previousElementSibling;if(title)title.textContent=lang()==='zh'?'要出现在哪些入口（同一商品、同一库存）':'Show under (same product and stock)';}}
+      const heading=panel.querySelector('h4');if(heading){const counts=document.createElement('div');counts.id='bossProductCounts';counts.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 18px';heading.insertAdjacentElement('afterend',counts);}
+      const legacyCategory=panel.querySelector('#bossProductCategory');if(legacyCategory&&legacyCategory.closest('label'))legacyCategory.closest('label').style.display='none';
+      const typeSelect=panel.querySelector('#bossProductType');if(typeSelect&&typeSelect.closest('label')){const typeLabel=typeSelect.closest('label');typeLabel.querySelector('.boss-field-label').textContent=lang()==='zh'?'入口内分类':'Category under entrance';const typeRow=document.createElement('div');typeRow.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px';typeSelect.parentNode.insertBefore(typeRow,typeSelect);typeRow.appendChild(typeSelect);const addType=document.createElement('button');addType.type='button';addType.textContent='＋ '+(lang()==='zh'?'新用途':'New purpose');addType.onclick=()=>{typeSelect.value='__CUSTOM__';bossProductTypeChanged();const el=$('bossProductCustomType');if(el)el.focus();};typeRow.appendChild(addType);const custom=document.createElement('input');custom.id='bossProductCustomType';custom.placeholder=lang()==='zh'?'输入新用途，例如：药品／驱虫':'New purpose, e.g. Medicine';custom.style.display='none';custom.oninput=renderBossClassificationPreview;typeLabel.appendChild(custom);}
+      const applies=panel.querySelector('.boss-applies-grid');if(applies){applies.querySelectorAll('input[type="checkbox"]').forEach(x=>x.onchange=renderBossClassificationPreview);const addButton=document.createElement('button');addButton.type='button';addButton.textContent='＋ '+(lang()==='zh'?'新入口':'New entrance');addButton.onclick=()=>{const wrap=$('bossNewEntranceRow');if(wrap)wrap.style.display=wrap.style.display==='none'?'grid':'none';const input=$('bossProductCustomEntrance');if(input&&wrap.style.display!=='none')input.focus();};applies.appendChild(addButton);const addWrap=document.createElement('div');addWrap.id='bossNewEntranceRow';addWrap.style.cssText='grid-column:1/-1;display:none;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:8px';addWrap.innerHTML=`<input id="bossProductCustomEntrance" placeholder="${lang()==='zh'?'输入新入口名称，例如：爬虫':'New entrance, e.g. Reptile'}"><button type="button" onclick="bossAddCustomEntrance()">${lang()==='zh'?'确认新增':'Add'}</button>`;applies.appendChild(addWrap);const preview=document.createElement('div');preview.id='bossClassificationPreview';preview.className='boss-result';preview.style.gridColumn='1/-1';applies.appendChild(preview);}
+      const suggest=panel.querySelector('#bossSuggestProductMetaBtn');if(suggest)suggest.style.display='none';
       const productSections=panel.querySelectorAll('details');
       if(productSections.length>=3){const sectionParent=productSections[0].parentNode;sectionParent.appendChild(productSections[2]);sectionParent.appendChild(productSections[1]);}
       const firstSection=panel.querySelector('details');
@@ -4211,6 +4220,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   let bossProductsCache = [];
+  let bossProductsFullLoaded = false;
+
+  function renderBossProductCounts(){
+    const box=$('bossProductCounts'); if(!box)return;
+    const rows=(bossProductsCache||[]).filter(p=>normalizeText(p.name)||normalizeText(p.code));
+    const inactive=rows.filter(p=>p.active===false).length,active=rows.length-inactive;
+    const unclassified=rows.filter(p=>{const entries=String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).filter(Boolean);return !entries.length||entries.includes('GENERAL')||/UNCLASSIFIED|UNCATEGORIZED|未分类/.test(String(p.category||'').toUpperCase());}).length;
+    const cards=[[lang()==='zh'?'商品总数':'Total',rows.length,'#3b82f6'],[lang()==='zh'?'已上架':'Active',active,'#22c55e'],[lang()==='zh'?'已停用':'Inactive',inactive,'#ef4444'],[lang()==='zh'?'未分类':'Unclassified',unclassified,'#f59e0b']];
+    box.innerHTML=cards.map(x=>`<div style="min-width:120px;flex:1;padding:12px 14px;border:1px solid #334155;border-left:4px solid ${x[2]};border-radius:12px;background:#111c31"><small style="color:#94a3b8">${x[0]}</small><div style="font-size:24px;font-weight:900;color:#fff">${x[1]}</div></div>`).join('')+(!bossProductsFullLoaded?`<div style="width:100%;color:#94a3b8;font-size:12px">${lang()==='zh'?'正在读取完整总数…':'Loading full count…'}</div>`:'');
+  }
 
   function bossCategoryLabel(value){
     const raw=normalizeCategoryName(value), upper=raw.toUpperCase();
@@ -4228,15 +4247,17 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   function bossTypeLabel(value){
+    if(value==='MEDICINE')return lang()==='zh'?'药品／驱虫':'Medicine / Deworming';
     const labels={FOOD:['食品','Food'],'WET FOOD':['湿粮','Wet food'],TREAT:['零食','Treat'],LITTER:['猫砂','Litter'],'LITTER BOX':['猫砂盆','Litter box'],'HYGIENE / SUPPLEMENT':['卫生／营养品','Hygiene / Supplement'],MILK:['奶粉','Milk'],ACCESSORY:['用品','Accessory'],TOY:['玩具','Toy'],OTHER:['其它','Other']};
     const pair=labels[value]||[value,value]; return lang()==='zh'?pair[0]:pair[1];
   }
 
   function fillBossProductTypes(){
     const sel=$('bossProductType'); if(!sel)return;
-    const old=normalizeText(sel.value),types=['FOOD','WET FOOD','TREAT','LITTER','LITTER BOX','HYGIENE / SUPPLEMENT','MILK','ACCESSORY','TOY','OTHER'];
-    sel.innerHTML=`<option value="">${lang()==='zh'?'请选择用途':'Select type'}</option>`+types.map(v=>`<option value="${esc(v)}">${esc(bossTypeLabel(v))}</option>`).join('');
-    if(old&&types.includes(old))sel.value=old;
+    const old=normalizeText(sel.value),fixed=['FOOD','WET FOOD','TREAT','MEDICINE','LITTER','LITTER BOX','HYGIENE / SUPPLEMENT','MILK','ACCESSORY','TOY','OTHER'],existing=[...new Set((bossProductsCache||[]).map(p=>normalizeText(p.type)).filter(Boolean))],types=[...new Set(fixed.concat(existing))];
+    sel.innerHTML=`<option value="">${lang()==='zh'?'请选择入口内分类':'Select category under entrance'}</option>`+types.map(v=>`<option value="${esc(v)}">${esc(bossTypeLabel(v))}</option>`).join('')+`<option value="__CUSTOM__">＋ ${lang()==='zh'?'新增入口内分类…':'New category…'}</option>`;
+    if(old&&types.includes(old))sel.value=old; else if(old==='__CUSTOM__')sel.value=old;
+    sel.onchange=bossProductTypeChanged;
   }
 
   function fillBossCategoryList(){
@@ -4309,6 +4330,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   function bossProductPayload(){
+    const selectedType=normalizeText(($('bossProductType')||{}).value);
     return {
       row: ($('bossProductRow')||{}).value || '',
       originalCode: ($('bossProductOriginalCode')||{}).value || '',
@@ -4321,13 +4343,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       stock: ($('bossProductStock')||{}).value || '',
       cost: ($('bossProductCost')||{}).value || '',
       active: ($('bossProductActive')||{}).value || 'TRUE'
-      ,type: normalizeText(($('bossProductType')||{}).value)
+      ,type: selectedType==='__CUSTOM__'?normalizeText(($('bossProductCustomType')||{}).value).toUpperCase():selectedType
       ,brand: normalizeText(($('bossProductBrand')||{}).value)
       ,productGroup: normalizeText(($('bossProductGroup')||{}).value)
       ,variant: normalizeText(($('bossProductVariant')||{}).value)
       ,appliesTo: bossProductAppliesToValue()
     };
   }
+
+  function bossProductTypeChanged(){const custom=$('bossProductCustomType');if(custom)custom.style.display=(($('bossProductType')||{}).value==='__CUSTOM__')?'block':'none';renderBossClassificationPreview();}
+  function renderBossClassificationPreview(){const box=$('bossClassificationPreview');if(!box)return;const entries=bossProductAppliesToValue().split(','),selected=normalizeText(($('bossProductType')||{}).value),custom=normalizeText(($('bossProductCustomType')||{}).value).toUpperCase(),type=selected==='__CUSTOM__'?custom:selected;box.textContent=type?(lang()==='zh'?'保存后显示在：':'Will show under: ')+entries.map(e=>`${mainCategoryLabel(e)} > ${subCategoryLabel(e,type)}`).join('、'):(lang()==='zh'?'先勾选入口，再选择入口内分类。':'Choose entrances, then a category.');}
 
   function bossProductAppliesToValue(){
     const out=[];
@@ -4339,10 +4364,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(($('bossProductForHamster')||{}).checked)out.push('HAMSTER');
     if(($('bossProductForBeverage')||{}).checked)out.push('BEVERAGE');
     if(($('bossProductForGeneral')||{}).checked)out.push('GENERAL');
+    document.querySelectorAll('#bossProductCustomEntranceList input[type="checkbox"]:checked').forEach(x=>{const v=normalizeText(x.value).toUpperCase();if(v)out.push(v);});
     return (out.length?out:['GENERAL']).join(',');
   }
 
+  window.bossAddCustomEntrance=function(value){const input=$('bossProductCustomEntrance'),raw=normalizeText(value||(input&&input.value)),key=raw.toUpperCase();if(!key)return;let list=$('bossProductCustomEntranceList');if(!list){list=document.createElement('div');list.id='bossProductCustomEntranceList';list.style.cssText='grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:10px';const preview=$('bossClassificationPreview');preview.parentNode.insertBefore(list,preview);}if(![...list.querySelectorAll('input')].some(x=>x.value===key)){const label=document.createElement('label');label.innerHTML=`<input type="checkbox" value="${esc(key)}" checked> ${esc(raw)}`;label.querySelector('input').onchange=renderBossClassificationPreview;list.appendChild(label);}if(input)input.value='';renderBossClassificationPreview();};
+
   function setBossProductAppliesTo(value){
+    const customList=$('bossProductCustomEntranceList');if(customList)customList.remove();
     const values=String(value||'').toUpperCase().split(/[,|/]+/).map(s=>s.trim()).filter(Boolean);
     if($('bossProductForChicken'))$('bossProductForChicken').checked=values.includes('CHICKEN');
     if($('bossProductForCat'))$('bossProductForCat').checked=values.includes('CAT');
@@ -4352,6 +4381,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if($('bossProductForHamster'))$('bossProductForHamster').checked=values.includes('HAMSTER');
     if($('bossProductForBeverage'))$('bossProductForBeverage').checked=values.includes('BEVERAGE');
     if($('bossProductForGeneral'))$('bossProductForGeneral').checked=values.includes('GENERAL');
+    const known=['CHICKEN','CAT','DOG','BIRD','FISH','HAMSTER','BEVERAGE','GENERAL'];values.filter(v=>!known.includes(v)).forEach(v=>bossAddCustomEntrance(v));
+    renderBossClassificationPreview();
   }
 
   function readProductImageForUpload(file){
@@ -4535,6 +4566,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     else if(/LITTER/.test(raw)||/LITTER/.test(cat))type='LITTER';
     else if(/POUCH|TIN|CAN\b/.test(raw))type='WET FOOD';
     else if(/TREAT|SNACK|STICK|JERKY|CHEW|MUNCHIEZZ|TEMPTATION/.test(raw)||/SNACK/.test(cat))type='TREAT';
+    else if(/DEWORM|WORM|MEDICINE|TABLET|UBAT|驱虫|药/.test(raw)||/MEDICINE|药/.test(cat))type='MEDICINE';
     else if(/SHAMPOO|SOAP|SPRAY|VITAMIN|OIL|FLEA|TICK|EAR|EYE/.test(raw)||/SOAP|LIQUID|SUPP/.test(cat))type='HYGIENE / SUPPLEMENT';
     else if(/TOY|BALL|DUCK|TUG/.test(raw)||/TOY/.test(cat))type='TOY';
     else if(/MILK/.test(raw)||/MILK/.test(cat))type='MILK';
@@ -4669,23 +4701,26 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const res=$('bossProductResult');
     const localRows=bossLocalProductRows();
     if(localRows.length){
+      bossProductsFullLoaded=false;
       bossProductsCache=localRows;
       fillBossReceiveCategories();
       fillBossStocktakeCategories();
       fillBossProductFilterCategories();
       renderBossProductList(($('bossProductSearch')||{}).value||'');
+      renderBossProductCounts();
       if(res)res.textContent=`${localRows.length} ${tr('products')}`;
     }else if(res){
       res.textContent=tr('loading');
     }
     try{
       const rows=await timeout(apiCall('getProductsForBoss',[]),9000,'Products');
-      if(Array.isArray(rows) && rows.length)bossProductsCache=rows;
+      if(Array.isArray(rows)){bossProductsCache=rows;bossProductsFullLoaded=true;}
       fillBossReceiveCategories();
       fillBossStocktakeCategories();
       fillBossCategoryList();
       fillBossProductFilterCategories();
       renderBossProductList(($('bossProductSearch')||{}).value||'');
+      renderBossProductCounts();
       if(res)res.textContent=`${bossProductsCache.length} ${tr('products')}`;
     }catch(e){
       if(localRows.length){
@@ -5180,6 +5215,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       lines.push(row('PAID', money(window.lastPaid||finalTotal)));
       lines.push(row('CHANGE', money(window.lastChange||0)));
     }
+    if(window.lastPayment==='mixed'){
+      const split=window.lastMixedBreakdown||lastMixedBreakdown||{};
+      if(num(split.cash)>0)lines.push(row('  CASH',money(split.cash)));
+      if(num(split.qr)>0)lines.push(row('  QR',money(split.qr)));
+      if(num(split.transfer)>0)lines.push(row('  TRANSFER',money(split.transfer)));
+    }
     lines.push(row('PAYMENT', paymentLabel(window.lastPayment)));
     lines.push(line('='));
     lines.push('');
@@ -5245,6 +5286,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const c = currentCart();
     if(!c.length){ showAppAlert(cartEmptyMessage(),tr('payment')); return; }
     const method = String(payment || '').toLowerCase();
+    if(method!=='mixed'){lastMixedBreakdown={cash:0,qr:0,transfer:0};window.lastMixedBreakdown=lastMixedBreakdown;}
     const due = calcDue();
     if((method === 'cash' || method === 'mixed') && cents(paid) < cents(due.final)){
       showAppAlert(`${tr('paymentNotEnough')}\n\n${tr('total')}: ${money(due.final)}\n${tr('paid')}: ${money(paid)}`,tr('payment'));
@@ -5273,10 +5315,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       return;
     }
     const clientId = getActiveCheckoutClientId(checkoutKey);
-    const pendingPayload = {id:clientId, key:checkoutKey, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, date:new Date().toISOString(), at:Date.now()};
+    const mixedBreakdown=method==='mixed'?Object.assign({},window.lastMixedBreakdown||lastMixedBreakdown||{}):null;
+    const pendingPayload = {id:clientId, key:checkoutKey, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, mixedBreakdown:mixedBreakdown, date:new Date().toISOString(), at:Date.now()};
     if(!navigator.onLine){
       const offline = JSON.parse(localStorage.getItem('offlineOrders') || '[]').filter(o=>o && String(o.id)!==String(clientId));
-      offline.push({id:clientId, key:checkoutKey, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, date:new Date().toISOString()});
+      offline.push({id:clientId, key:checkoutKey, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, mixedBreakdown:mixedBreakdown, date:new Date().toISOString()});
       localStorage.setItem('offlineOrders', JSON.stringify(offline));
       finishSavedOrder('OFFLINE-' + clientId, sendDiscount, checkoutKey);
       try{ scheduleTopStatsRefresh(800); }catch(e){}
@@ -5284,7 +5327,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       return;
     }
     try{
-      const savePromise = apiCall('saveOrder',[send,payment,sendDiscount,window.lastPaid,window.lastChange,clientId]);
+      const savePromise = apiCall('saveOrder',[send,payment,sendDiscount,window.lastPaid,window.lastChange,clientId,mixedBreakdown]);
       savePromise.then(r=>{
         if(r && r.orderId){
           applyConfirmedPendingOrder(clientId,r,pendingPayload);
@@ -5392,6 +5435,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const tr = num(($('mixed转账')||{}).value);
     const paid = moneyNum(cash + qr + tr);
     if(cents(paid) < cents(due)){ showAppAlert(tr('paymentNotEnough'),tr('mixed')); return; }
+    lastMixedBreakdown={cash:moneyNum(cash),qr:moneyNum(qr),transfer:moneyNum(tr)};
+    window.lastMixedBreakdown=lastMixedBreakdown;
     checkout('mixed', paid, Math.max(0, moneyNum(paid - due)));
   };
 
@@ -5434,7 +5479,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
     for(const o of batch){
       try{
-        const r=await timeout(apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id]),OFFLINE_SYNC_TIMEOUT_MS,'Sync offline order');
+        const r=await timeout(apiCall('saveOrder',[o.cart,o.payment,o.discount||0,o.paid||0,o.change||0,o.id,o.mixedBreakdown||null]),OFFLINE_SYNC_TIMEOUT_MS,'Sync offline order');
         if(!(r && r.orderId)){
           failed++;
           syncingOrderIds.delete(String(o.id||''));
