@@ -2903,7 +2903,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .boss-field{display:flex!important;flex-direction:column!important;gap:5px!important;min-width:0!important}
       .boss-field-label{font-size:12px!important;font-weight:800!important;line-height:1.15!important;color:#e5e7eb!important;opacity:.95!important}
       .boss-field.wide{grid-column:1/-1!important}
-      .boss-product-grid select,#bossLostType,#bossProductFilterCategory,#bossLostFilterCategory{background:#020617!important;color:#e5e7eb!important;border:1px solid rgba(148,163,184,.35)!important;border-radius:10px!important;height:48px!important;min-height:48px!important;box-sizing:border-box!important;padding:0 12px!important;font:inherit!important}
+      .boss-product-grid select,#bossLostType,#bossProductFilterCategory,#bossLostFilterCategory,#bossProductMainFilter,#bossProductTypeFilter,#bossProductGroupFilter,#bossLostMainFilter,#bossLostTypeFilter,#bossLostGroupFilter{background:#020617!important;color:#e5e7eb!important;border:1px solid rgba(148,163,184,.35)!important;border-radius:10px!important;height:48px!important;min-height:48px!important;box-sizing:border-box!important;padding:0 12px!important;font:inherit!important}
       #bossProductBox .boss-product-tools,#bossLostBox .boss-product-tools{grid-template-columns:minmax(0,1.05fr) minmax(280px,.95fr)!important;align-items:start!important}
       #bossProductBox .boss-product-filter-row,#bossLostBox .boss-product-filter-row{grid-template-columns:minmax(0,1fr) minmax(140px,.72fr)!important;gap:8px!important;align-items:end!important}
       #bossProductList.boss-product-list,#bossLostProductList.boss-product-list{height:168px!important;max-height:168px!important}
@@ -2915,7 +2915,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       #bossProductBox .boss-field,#bossLostBox .boss-field{gap:4px!important}
       #bossProductBox .boss-product-grid input,#bossProductBox .boss-product-grid select,#bossLostBox .boss-product-grid input,#bossLostBox .boss-product-grid select{height:46px!important;min-height:46px!important;width:100%!important}
       #bossProductBox .boss-product-grid input[type=file]{height:auto!important;min-height:46px!important}
-      #bossProductFilterCategory,#bossLostFilterCategory{height:46px!important;min-height:46px!important;width:100%!important}
+      #bossProductFilterCategory,#bossLostFilterCategory,#bossProductMainFilter,#bossProductTypeFilter,#bossProductGroupFilter,#bossLostMainFilter,#bossLostTypeFilter,#bossLostGroupFilter{height:46px!important;min-height:46px!important;width:100%!important}
       #bossProductBox select,#bossLostBox select{appearance:auto!important}
       .boss-notice{background:rgba(245,158,11,.14)!important;border:1px solid rgba(245,158,11,.65)!important;color:#fbbf24!important;border-radius:12px!important;padding:10px 12px!important;font-weight:900!important}
       .boss-notice small{display:block!important;color:#fde68a!important;font-weight:700!important;margin-top:3px!important}
@@ -2964,7 +2964,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       body.light .boss-hero{background:linear-gradient(135deg,#dbeafe,#f5f3ff)!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-panel,body.light .boss-tab-grid,body.light .overview-card,body.light .boss-money-card,body.light .boss-result{background:#f8fafc!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-field-label{color:#0f172a!important}
-      body.light .boss-product-grid input,body.light .boss-product-grid select,body.light #bossLostType,body.light #bossProductFilterCategory,body.light #bossLostFilterCategory{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.18)!important}
+      body.light .boss-product-grid input,body.light .boss-product-grid select,body.light #bossLostType,body.light #bossProductFilterCategory,body.light #bossLostFilterCategory,body.light #bossProductMainFilter,body.light #bossProductTypeFilter,body.light #bossProductGroupFilter,body.light #bossLostMainFilter,body.light #bossLostTypeFilter,body.light #bossLostGroupFilter{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.18)!important}
       body.light .boss-product-list,body.light .boss-product-list button,body.light .boss-product-preview{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-product-thumb,body.light .boss-product-preview img,body.light .boss-product-preview .no-img{background:#f1f5f9!important;color:#475569!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-image-viewer-card{background:#ffffff!important;color:#0f172a!important}
@@ -3977,7 +3977,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
           <div>
             <div class="boss-product-filter-row">
               <label class="boss-field"><span class="boss-field-label" data-product-label="selectProduct">${esc(tr('selectProduct'))}</span><input id="bossProductSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchProducts(this.value)"></label>
-              <label class="boss-field"><span class="boss-field-label" data-product-label="category">${esc(tr('category'))}</span><select id="bossProductFilterCategory" onchange="bossFilterProducts()"><option value="">${esc(tr('all'))}</option></select></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'主分类':'Main category'}</span><select id="bossProductMainFilter" onchange="bossProductFacetChanged('main')"></select></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'里面分类':'Subcategory'}</span><select id="bossProductTypeFilter" onchange="bossProductFacetChanged('type')"></select></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'商品系列':'Product series'}</span><select id="bossProductGroupFilter" onchange="bossFilterProducts()"></select></label>
              </div>
              <div id="bossProductList" class="boss-product-list"></div>
              <div id="bossProductPreview" class="boss-product-preview"></div>
@@ -4005,6 +4007,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
               <label class="boss-field"><span class="boss-field-label" data-product-label="stock">${esc(tr('stock'))}</span><input id="bossProductStock" type="number" step="1" placeholder="${esc(tr('stock'))}"></label>
               <label class="boss-field"><span class="boss-field-label" data-product-label="cost">${esc(tr('cost'))}</span><input id="bossProductCost" type="number" step="0.0001" placeholder="${esc(tr('cost'))}"></label>
               <label class="boss-field wide"><span class="boss-field-label" data-product-label="active">${esc(tr('active'))}</span><select id="bossProductActive"><option value="TRUE">${esc(tr('active'))}</option><option value="FALSE">${esc(tr('inactive'))}</option></select></label>
+              <button id="bossProductGroupActiveBtn" type="button" class="wide" onclick="bossToggleSelectedProductGroup()" style="display:none;background:#b45309;color:#fff"></button>
               <button id="bossProductSaveBtn" class="green wide" onclick="bossSaveProduct()">${esc(tr('saveProduct'))}</button>
             </div>
             <div id="bossProductHint" class="boss-result">${esc(tr('keepBlank'))}</div>
@@ -4052,7 +4055,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
           <div>
             <div class="boss-product-filter-row">
               <label class="boss-field"><span class="boss-field-label" data-lost-label="selectProduct">${esc(tr('selectProduct'))}</span><input id="bossLostSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchLostProducts(this.value)"></label>
-              <label class="boss-field"><span class="boss-field-label" data-lost-label="category">${esc(tr('category'))}</span><select id="bossLostFilterCategory" onchange="bossFilterLostProducts()"><option value="">${esc(tr('all'))}</option></select></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'主分类':'Main category'}</span><select id="bossLostMainFilter" onchange="bossLostFacetChanged('main')"></select></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'里面分类':'Subcategory'}</span><select id="bossLostTypeFilter" onchange="bossLostFacetChanged('type')"></select></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'商品系列':'Product series'}</span><select id="bossLostGroupFilter" onchange="bossFilterLostProducts()"></select></label>
             </div>
             <div id="bossLostProductList" class="boss-product-list"></div>
             <div id="bossLostProductPreview" class="boss-product-preview"></div>
@@ -4256,6 +4261,25 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     return normalizeCategoryName(value);
   }
 
+  function bossFacetMain(p){const tags=typeof productMainTags==='function'?productMainTags(p):[];return (tags&&tags[0])||'GENERAL';}
+  function bossFacetType(p){return normalizeText(typeof productPurpose==='function'?productPurpose(p):p.type)||'OTHER';}
+  function bossFacetGroup(p){return normalizeText(p.productGroup)||normalizeText(p.name)||'-';}
+  function bossMainText(v){return typeof mainCategoryLabel==='function'?mainCategoryLabel(v):(v||'General');}
+  function bossTypeText(v){return typeof subCategoryLabel==='function'?subCategoryLabel(v):(v||'Other');}
+  function bossFillSelect(id,items,current,placeholder,labelFn){const el=$(id);if(!el)return;el.innerHTML=`<option value="">${esc(placeholder)}</option>`+items.map(v=>`<option value="${esc(v)}">${esc(labelFn(v))}</option>`).join('');if(current&&items.includes(current))el.value=current;}
+  function fillBossProductFacets(){
+    const rows=bossProductsCache&&bossProductsCache.length?bossProductsCache:bossLocalProductRows(),mainEl=$('bossProductMainFilter'),typeEl=$('bossProductTypeFilter'),groupEl=$('bossProductGroupFilter');if(!mainEl||!typeEl||!groupEl)return;
+    const oldMain=mainEl.value,oldType=typeEl.value,oldGroup=groupEl.value,order=['CHICKEN','DOG','CAT','BIRD','FISH','HAMSTER','BEVERAGE','GENERAL'];
+    const mains=[...new Set(rows.map(bossFacetMain))].sort((a,b)=>(order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b))||a.localeCompare(b));
+    bossFillSelect('bossProductMainFilter',mains,oldMain,lang()==='zh'?'全部主分类':'All main categories',bossMainText);
+    const main=mainEl.value,mainRows=rows.filter(p=>!main||bossFacetMain(p)===main),types=[...new Set(mainRows.map(bossFacetType))].sort((a,b)=>bossTypeText(a).localeCompare(bossTypeText(b)));
+    bossFillSelect('bossProductTypeFilter',types,oldType,lang()==='zh'?'全部里面分类':'All subcategories',bossTypeText);
+    const type=typeEl.value,typeRows=mainRows.filter(p=>!type||bossFacetType(p)===type),groups=[...new Set(typeRows.map(bossFacetGroup))].sort((a,b)=>a.localeCompare(b));
+    bossFillSelect('bossProductGroupFilter',groups,oldGroup,lang()==='zh'?'全部商品系列':'All product series',v=>v);
+  }
+  window.bossProductFacetChanged=function(level){if(level==='main'){if($('bossProductTypeFilter'))$('bossProductTypeFilter').value='';if($('bossProductGroupFilter'))$('bossProductGroupFilter').value='';}else if(level==='type'&&$('bossProductGroupFilter'))$('bossProductGroupFilter').value='';fillBossProductFacets();renderBossProductList(($('bossProductSearch')||{}).value||'');};
+  function fillBossProductFilterCategories(){fillBossProductFacets();}
+
   function bossLocalProductRows(){
     return (currentProducts()||[]).map(p=>({
       code:normalizeText(p.code),
@@ -4357,11 +4381,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const box=$('bossProductList');
     if(!box)return;
     const q=String(query||'').trim().toLowerCase();
-    const filterCat=selectedBossProductFilterCategory();
+    const filterMain=normalizeText(($('bossProductMainFilter')||{}).value),filterType=normalizeText(($('bossProductTypeFilter')||{}).value),filterGroup=normalizeText(($('bossProductGroupFilter')||{}).value);
     const rows=(bossProductsCache||[]).map((p,i)=>({p,i})).filter(({p})=>{
-      if(filterCat && normalizeCategoryName(p.category)!==filterCat)return false;
+      if(filterMain && bossFacetMain(p)!==filterMain)return false;
+      if(filterType && bossFacetType(p)!==filterType)return false;
+      if(filterGroup && bossFacetGroup(p)!==filterGroup)return false;
       if(!q)return true;
-      return [p.code,p.name,p.category].some(v=>String(v||'').toLowerCase().includes(q));
+      return [p.code,p.name,p.category,p.type,p.productGroup].some(v=>String(v||'').toLowerCase().includes(q));
     }).slice(0,40);
     if(!rows.length){
       box.innerHTML=`<div class="empty">${esc(tr('noProducts'))}</div>`;
@@ -4532,6 +4558,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const filter=$('bossProductFilterCategory'); if(filter)filter.value='';
     }
     const active=$('bossProductActive'); if(active)active.value='TRUE';
+    setBossMoneyVariantLock(null);
+    const cost=$('bossProductCost');if(cost){cost.disabled=false;cost.title='';const label=cost.closest('label')&&cost.closest('label').querySelector('.boss-field-label');if(label)label.textContent=tr('cost');}
+    updateBossGroupActiveButton(null);
     setBossProductAppliesTo('');
     const hint=$('bossProductHint'); if(hint)hint.textContent=tr('keepBlank');
     renderBossProductPreview(null);
@@ -4571,6 +4600,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
   };
 
+  function bossSelectedGroupMembers(p){const group=bossFacetGroup(p);return (bossProductsCache||[]).filter(x=>bossFacetGroup(x)===group);}
+  function bossIsLooseChild(p){const members=bossSelectedGroupMembers(p),hasBulk=members.some(x=>/(\(\s*[2-9][0-9]*(?:\.[0-9]+)?\s*KG\s*\))/i.test(x.name||'')),hasMoney=members.some(x=>/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test(x.name||''));return hasBulk&&hasMoney&&!/(\(\s*[2-9][0-9]*(?:\.[0-9]+)?\s*KG\s*\))/i.test(p.name||'');}
+  function bossIsMoneyLooseVariant(p){return bossIsLooseChild(p)&&/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test((p&&p.name)||'');}
+  function setBossMoneyVariantLock(p){const locked=!!p&&bossIsMoneyLooseVariant(p),ids=['bossProductCode','bossProductName','bossProductPrice','bossProductCategory','bossProductType','bossProductBrand','bossProductGroup','bossProductVariant','bossProductForCat','bossProductForDog','bossProductForGeneral','bossSuggestProductMetaBtn','bossProductStock','bossProductCost','bossProductActive'];ids.forEach(id=>{const el=$(id);if(el)el.disabled=locked;});const hint=$('bossProductHint');if(locked&&hint)hint.textContent=lang()==='zh'?'RM1／RM0.10 金额规格已锁定，只能修改商品照片；售价、成本和扣除重量由系统管理。':'RM1/RM0.10 is locked. Only its photo can be changed; price, cost and stock usage are system-managed.';}
+  function updateBossGroupActiveButton(p){const btn=$('bossProductGroupActiveBtn');if(!btn)return;if(!p||bossSelectedGroupMembers(p).length<2){btn.style.display='none';btn.dataset.group='';return;}btn.style.display='block';btn.dataset.group=bossFacetGroup(p);btn.dataset.nextActive=p.active===false?'TRUE':'FALSE';btn.textContent=p.active===false?(lang()==='zh'?'启用整个系列':'Enable entire series'):(lang()==='zh'?'停用整个系列':'Disable entire series');}
+  window.bossToggleSelectedProductGroup=function(){const btn=$('bossProductGroupActiveBtn'),group=normalizeText(btn&&btn.dataset.group),active=(btn&&btn.dataset.nextActive)==='TRUE';if(!group)return;const msg=lang()==='zh'?`确认${active?'启用':'停用'}「${group}」整个系列？所有重量和价钱规格会一起处理。`:`${active?'Enable':'Disable'} the entire ${group} series?`;showConfirm(msg,()=>bossSetGroupActiveNow(group,active));};
+  async function bossSetGroupActiveNow(group,active){setSubmitBusy(true,lang()==='zh'?(active?'正在启用整个系列...':'正在停用整个系列...'):(active?'Enabling series...':'Disabling series...'));try{const out=await timeout(apiCall('setProductGroupActive',[{group:group,active:active}]),45000,'Product group status');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?`已${active?'启用':'停用'} ${out.count||0} 个规格。`:`${out.count||0} variants updated.`,tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
+
   window.bossPickProduct = function(index){
     const p=(bossProductsCache||[])[Number(index)];
     if(!p)return;
@@ -4596,6 +4633,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     };
     Object.keys(values).forEach(id=>{ const el=$(id); if(el)el.value=values[id]; });
     const active=$('bossProductActive'); if(active)active.value=p.active===false?'FALSE':'TRUE';
+    const cost=$('bossProductCost'),costLabel=cost&&cost.closest('label')&&cost.closest('label').querySelector('.boss-field-label');
+    if(cost){cost.disabled=bossIsLooseChild(p);cost.title=cost.disabled?(lang()==='zh'?'由大包装进货成本自动计算':'Automatically calculated from bulk purchase cost'):'';}
+    if(costLabel)costLabel.textContent=bossIsLooseChild(p)?(lang()==='zh'?'进货成本（由大包装自动计算）':'Purchase cost (auto from bulk)'):tr('cost');
+    setBossMoneyVariantLock(p);
+    updateBossGroupActiveButton(p);
     setBossProductAppliesTo(p.appliesTo||'');
     const hint=$('bossProductHint'); if(hint)hint.textContent=`${tr('currentCost')}: ${money(p.cost||0)}. ${tr('keepBlank')}`;
     renderBossProductPreview(p);
@@ -4711,6 +4753,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     return normalizeCategoryName(value);
   }
 
+  function fillBossLostFacets(){
+    const rows=bossLostProductsCache&&bossLostProductsCache.length?bossLostProductsCache:bossLocalProductRows(),mainEl=$('bossLostMainFilter'),typeEl=$('bossLostTypeFilter'),groupEl=$('bossLostGroupFilter');if(!mainEl||!typeEl||!groupEl)return;
+    const oldMain=mainEl.value,oldType=typeEl.value,oldGroup=groupEl.value,order=['CHICKEN','DOG','CAT','BIRD','FISH','HAMSTER','BEVERAGE','GENERAL'];
+    const mains=[...new Set(rows.map(bossFacetMain))].sort((a,b)=>(order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b))||a.localeCompare(b));
+    bossFillSelect('bossLostMainFilter',mains,oldMain,lang()==='zh'?'全部主分类':'All main categories',bossMainText);
+    const main=mainEl.value,mainRows=rows.filter(p=>!main||bossFacetMain(p)===main),types=[...new Set(mainRows.map(bossFacetType))].sort((a,b)=>bossTypeText(a).localeCompare(bossTypeText(b)));
+    bossFillSelect('bossLostTypeFilter',types,oldType,lang()==='zh'?'全部里面分类':'All subcategories',bossTypeText);
+    const type=typeEl.value,typeRows=mainRows.filter(p=>!type||bossFacetType(p)===type),groups=[...new Set(typeRows.map(bossFacetGroup))].sort((a,b)=>a.localeCompare(b));
+    bossFillSelect('bossLostGroupFilter',groups,oldGroup,lang()==='zh'?'全部商品系列':'All product series',v=>v);
+  }
+  window.bossLostFacetChanged=function(level){if(level==='main'){if($('bossLostTypeFilter'))$('bossLostTypeFilter').value='';if($('bossLostGroupFilter'))$('bossLostGroupFilter').value='';}else if(level==='type'&&$('bossLostGroupFilter'))$('bossLostGroupFilter').value='';fillBossLostFacets();renderBossLostProductList(($('bossLostSearch')||{}).value||'');};
+  function fillBossLostFilterCategories(){fillBossLostFacets();}
+
   function bossLostProductThumbHtml(p,index){
     const img=normalizeText(p&&p.image);
     const label=lang()==='zh'?'å›¾ç‰‡':'Image';
@@ -4744,11 +4799,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const box=$('bossLostProductList');
     if(!box)return;
     const q=String(query||'').trim().toLowerCase();
-    const cat=selectedBossLostFilterCategory();
+    const main=normalizeText(($('bossLostMainFilter')||{}).value),type=normalizeText(($('bossLostTypeFilter')||{}).value),group=normalizeText(($('bossLostGroupFilter')||{}).value);
     const rows=(bossLostProductsCache||[]).map((p,i)=>({p,i})).filter(({p})=>{
-      if(cat && normalizeCategoryName(p.category)!==cat)return false;
+      if(main && bossFacetMain(p)!==main)return false;
+      if(type && bossFacetType(p)!==type)return false;
+      if(group && bossFacetGroup(p)!==group)return false;
       if(!q)return true;
-      return [p.code,p.name,p.category].some(v=>String(v||'').toLowerCase().includes(q));
+      return [p.code,p.name,p.category,p.type,p.productGroup].some(v=>String(v||'').toLowerCase().includes(q));
     });
     if(!rows.length){ box.innerHTML=`<div class="empty">${esc(tr('noProducts'))}</div>`; return; }
     box.innerHTML=rows.map(({p,i})=>`
