@@ -2975,6 +2975,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       body.light .boss-tab-grid button{background:#ffffff!important;color:#0f172a!important;border-color:rgba(15,23,42,.14)!important}
       body.light .boss-tab-grid button.active{background:linear-gradient(135deg,#2563eb,#14b8a6)!important;color:#fff!important}
       body.light #appAlertText,body.light #bossLoginMsg{color:#0f172a!important}
+      .boss-work-menu{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px!important}
+      .boss-work-menu button{min-height:52px!important;text-align:left!important;padding:12px 16px!important;background:#172238!important;color:#e5e7eb!important;border:1px solid #334155!important;border-radius:12px!important;font-weight:900!important}
+      .boss-work-menu button.active{background:linear-gradient(135deg,#2563eb,#0891b2)!important;border-color:#60a5fa!important;color:#fff!important}
+      .boss-work-selector{display:none;padding-top:4px}
+      .boss-work-panel{display:none;border:1px solid #334155;border-radius:16px;padding:16px;background:#0a1326}
+      .boss-work-panel.active{display:block!important}
+      .boss-work-panel summary{display:none!important}
+      .boss-work-panel input:not([type=checkbox]):not([type=radio]),.boss-work-panel select{background:#172b46!important;border:2px solid #3b82a0!important;color:#f8fafc!important}
+      .boss-work-panel input::placeholder{color:#9fb2c8!important}
+      .boss-work-intro{min-height:360px;display:flex;align-items:center;justify-content:center;text-align:center;border:2px dashed #334155;border-radius:16px;color:#94a3b8;font-size:18px;font-weight:800;padding:30px}
+      .boss-subchoice{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+      .boss-subchoice button{background:#24324a;color:#fff;border:1px solid #64748b;padding:11px 16px;border-radius:10px;font-weight:800}
+      .boss-edit-prompt{padding:24px;border:2px dashed #334155;border-radius:14px;text-align:center;color:#94a3b8;font-weight:800}
+      body.light .boss-work-menu button{background:#e8eef7!important;color:#0f172a!important;border-color:#cbd5e1!important}
+      body.light .boss-work-menu button.active{background:linear-gradient(135deg,#2563eb,#0891b2)!important;color:#fff!important}
+      body.light .boss-work-panel{background:#eef6ff!important;border-color:#93c5fd!important}
+      body.light .boss-work-panel input:not([type=checkbox]):not([type=radio]),body.light .boss-work-panel select{background:#dbeafe!important;border-color:#3b82f6!important;color:#0f172a!important}
     `;
     document.head.appendChild(style);
   }
@@ -3669,6 +3686,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function productMainTags(p){
     const tags=[],raw=String(p.category||'').toUpperCase(),name=String(p.name||'').toUpperCase(),applies=String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).map(s=>s.trim());
     const add=key=>{const full='MAIN:'+key;if(!tags.some(x=>x.key===full))tags.push({key:full,label:mainCategoryLabel(key)});};
+    if(applies.includes('GENERAL')||(/UNCLASSIFIED|UNCATEGORIZED|未分类/.test(raw)&&!applies.some(x=>x&&x!=='GENERAL'))){add('GENERAL');return tags;}
     if(applies.includes('CHICKEN')||/CHIKEN|CHICKEN|鸡/.test(raw)||/AYAM|CHICKEN/.test(name))add('CHICKEN');
     if(applies.includes('DOG')||/\bDOG\b|狗/.test(raw)||/\bDOG\b|PUPPY|狗/.test(name))add('DOG');
     if(applies.includes('CAT')||/\bCAT\b|猫/.test(raw)||/\bCAT\b|KITTEN|逗猫棒|猫爬架|猫抓板/.test(name))add('CAT');
@@ -4057,11 +4075,73 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const receiveNewName=panel.querySelector('#bossReceiveNewNameLabel');if(receiveNewName){const mainLabel=document.createElement('label');mainLabel.id='bossReceiveMainLabel';mainLabel.className='boss-field';mainLabel.style.display='none';mainLabel.innerHTML=`<span class="boss-field-label">${lang()==='zh'?'新品属于哪里':'New product entrance'}</span><select id="bossReceiveMain"><option value="">${lang()==='zh'?'请选择':'Select'}</option><option value="CHICKEN">${lang()==='zh'?'鸡':'Chicken'}</option><option value="DOG">${lang()==='zh'?'狗':'Dog'}</option><option value="CAT">${lang()==='zh'?'猫':'Cat'}</option><option value="CAT,DOG">${lang()==='zh'?'猫和狗通用':'Cat and Dog'}</option><option value="BIRD">${lang()==='zh'?'鸟':'Bird'}</option><option value="FISH">${lang()==='zh'?'鱼':'Fish'}</option><option value="HAMSTER">${lang()==='zh'?'仓鼠':'Hamster'}</option><option value="BEVERAGE">${lang()==='zh'?'人喝的饮料':'Beverage'}</option><option value="GENERAL">${lang()==='zh'?'其它通用':'General'}</option></select>`;const typeLabel=document.createElement('label');typeLabel.id='bossReceiveTypeLabel';typeLabel.className='boss-field';typeLabel.style.display='none';typeLabel.innerHTML=`<span class="boss-field-label">${lang()==='zh'?'新品分类':'New product category'}</span><select id="bossReceiveType"><option value="FOOD">${lang()==='zh'?'食物':'Food'}</option><option value="WET FOOD">${lang()==='zh'?'湿粮':'Wet food'}</option><option value="TREAT">${lang()==='zh'?'零食':'Treat'}</option><option value="MILK">${lang()==='zh'?'奶粉':'Milk'}</option><option value="LITTER">${lang()==='zh'?'猫砂':'Litter'}</option><option value="LITTER BOX">${lang()==='zh'?'猫砂盆':'Litter box'}</option><option value="TOY">${lang()==='zh'?'玩具':'Toy'}</option><option value="ACCESSORY">${lang()==='zh'?'用品／饮水器':'Accessory / drinker'}</option><option value="HYGIENE / SUPPLEMENT">${lang()==='zh'?'卫生／营养品':'Hygiene / Supplement'}</option><option value="OTHER">${lang()==='zh'?'其它':'Other'}</option></select>`;receiveNewName.parentNode.insertBefore(mainLabel,receiveNewName.nextSibling);mainLabel.parentNode.insertBefore(typeLabel,mainLabel.nextSibling);}
       const unclassifiedOption=panel.querySelector('#bossReceiveMain option[value="GENERAL"]');if(unclassifiedOption)unclassifiedOption.textContent=lang()==='zh'?'未分类':'Unclassified';
       const legacyReceiveCategory=panel.querySelector('#bossReceiveCategory');if(legacyReceiveCategory&&legacyReceiveCategory.closest('label'))legacyReceiveCategory.closest('label').style.display='none';const receivePrice=panel.querySelector('#bossReceivePrice');if(receivePrice&&receivePrice.closest('label')){receivePrice.closest('label').id='bossReceivePriceLabel';receivePrice.closest('label').style.display='none';}
+      setupBossProductWorkflow(panel);
       const result=$('bossResult');
       if(result)content.insertBefore(panel,result);
       else content.appendChild(panel);
       setupEnterNext('#bossProductBox');
     }
+  }
+
+  function setupBossProductWorkflow(panel){
+    if(!panel||panel.dataset.simpleWorkflow==='1')return;
+    const tools=panel.querySelector('.boss-product-tools'),left=tools&&tools.children[0],right=tools&&tools.children[1];
+    if(!left||!right)return;
+    panel.dataset.simpleWorkflow='1';
+    const details=[...left.querySelectorAll(':scope > details')],receive=details.find(x=>x.querySelector('#bossReceiveName')),series=details.find(x=>x.querySelector('#bossSeriesName')),loose=details.find(x=>x.querySelector('#bossLooseGroup')),stocktake=details.find(x=>x.querySelector('#bossStocktakeCategory'));
+    const selector=document.createElement('div');selector.id='bossProductSelectorArea';selector.className='boss-work-selector';
+    [...left.children].filter(x=>!details.includes(x)).forEach(x=>selector.appendChild(x));
+    const menu=document.createElement('div');menu.className='boss-work-menu';menu.innerHTML=`
+      <button type="button" data-work="edit" onclick="bossChooseProductWork('edit')">✏️ ${lang()==='zh'?'修改现有商品':'Edit existing product'}</button>
+      <button type="button" data-work="receive" onclick="bossChooseProductWork('receive')">📥 ${lang()==='zh'?'商品进货':'Receive stock'}</button>
+      <button type="button" data-work="stocktake" onclick="bossChooseProductWork('stocktake')">📋 ${lang()==='zh'?'盘点／耗损':'Stocktake / loss'}</button>
+      <button type="button" data-work="create" onclick="bossChooseProductWork('create')">＋ ${lang()==='zh'?'建立新商品':'Create new product'}</button>`;
+    left.appendChild(menu);left.appendChild(selector);
+    const editor=document.createElement('div');editor.id='bossWorkEdit';editor.className='boss-work-panel';
+    while(right.firstChild)editor.appendChild(right.firstChild);
+    const editPrompt=document.createElement('div');editPrompt.id='bossEditPrompt';editPrompt.className='boss-edit-prompt';editPrompt.textContent=lang()==='zh'?'请先从左边选择要修改的商品':'Select a product on the left';editor.insertBefore(editPrompt,editor.firstChild);
+    const editorGrid=editor.querySelector('.boss-product-grid');if(editorGrid)editorGrid.style.display='none';
+    const editorHint=editor.querySelector('#bossProductHint');if(editorHint)editorHint.style.display='none';
+    const applies=editor.querySelector('.boss-applies-grid'),type=editor.querySelector('#bossProductType'),typeLabel=type&&type.closest('label');
+    if(applies&&typeLabel){const entranceField=applies.parentElement;entranceField.insertAdjacentElement('afterend',typeLabel);}
+    const intro=document.createElement('div');intro.id='bossWorkIntro';intro.className='boss-work-intro';intro.innerHTML=lang()==='zh'?'<div>请先从左边选择要做的工作<br><small>一次只显示一个表格</small><br><br><button type="button" style="background:#991b1b;color:#fff;border:1px solid #ef4444;padding:12px 18px;border-radius:10px;font-weight:900" onclick="bossConfirmResetClassification()">一次性：全部商品改为未分类</button><br><small>只清除旧分类，不改变库存、售价、成本、照片或启用状态</small></div>':'<div>Choose a task on the left<br><small>Only one form is shown at a time</small><br><br><button type="button" style="background:#991b1b;color:#fff;border:1px solid #ef4444;padding:12px 18px;border-radius:10px;font-weight:900" onclick="bossConfirmResetClassification()">One time: move all products to Unclassified</button><br><small>Stock, prices, costs, photos and active status are preserved</small></div>';
+    const stockHub=document.createElement('div');stockHub.id='bossWorkStocktake';stockHub.className='boss-work-panel';stockHub.innerHTML=`<div class="boss-subchoice"><button type="button" onclick="bossChooseProductSubWork('normalStock')">${lang()==='zh'?'普通商品盘点':'Ordinary stocktake'}</button><button type="button" onclick="bossChooseProductSubWork('looseStock')">${lang()==='zh'?'散卖商品盘点／进货':'Loose stock'}</button></div><div id="bossStocktakeChoiceHint" class="boss-edit-prompt">${lang()==='zh'?'请选择普通商品或散卖商品':'Choose ordinary or loose stock'}</div>`;
+    const createHub=document.createElement('div');createHub.id='bossWorkCreate';createHub.className='boss-work-panel';createHub.innerHTML=`<div class="boss-subchoice"><button type="button" onclick="bossChooseProductSubWork('ordinaryNew')">${lang()==='zh'?'建立普通商品':'Create ordinary product'}</button><button type="button" onclick="bossChooseProductSubWork('looseNew')">${lang()==='zh'?'建立整套散卖商品':'Create loose-sale series'}</button></div><div id="bossCreateChoiceHint" class="boss-edit-prompt">${lang()==='zh'?'请选择要建立哪一种新商品':'Choose the kind of product to create'}</div>`;
+    right.append(intro,editor,stockHub,createHub);
+    [receive,series,loose,stocktake].forEach(x=>{if(!x)return;x.open=true;x.classList.add('boss-work-panel');right.appendChild(x);});
+    if(receive)receive.id='bossWorkReceive';if(series)series.id='bossWorkLooseNew';if(loose)loose.id='bossWorkLooseStock';if(stocktake)stocktake.id='bossWorkNormalStock';
+  }
+
+  window.bossChooseProductWork=function(work,keepSelection){
+    document.querySelectorAll('#bossProductBox .boss-work-menu button').forEach(x=>x.classList.toggle('active',x.dataset.work===work));
+    document.querySelectorAll('#bossProductBox .boss-work-panel').forEach(x=>x.classList.remove('active'));
+    const intro=$('bossWorkIntro'),selector=$('bossProductSelectorArea');if(intro)intro.style.display='none';if(selector)selector.style.display=work==='edit'?'block':'none';
+    if(work==='edit'){const box=$('bossWorkEdit');if(box)box.classList.add('active');if(!keepSelection&&$('bossProductRow')){$('bossProductRow').value='';const grid=box&&box.querySelector('.boss-product-grid'),hint=$('bossProductHint'),prompt=$('bossEditPrompt');if(grid)grid.style.display='none';if(hint)hint.style.display='none';if(prompt)prompt.style.display='block';}}
+    if(work==='receive'){const box=$('bossWorkReceive');if(box)box.classList.add('active');const cat=$('bossReceiveFilterCategory');if(cat&&cat.value==='__NEW__'){cat.value='';fillBossReceiveProductList();}}
+    if(work==='stocktake'){const box=$('bossWorkStocktake');if(box)box.classList.add('active');}
+    if(work==='create'){const box=$('bossWorkCreate');if(box)box.classList.add('active');}
+  };
+
+  window.bossChooseProductSubWork=function(kind){
+    if(kind==='normalStock'||kind==='looseStock')bossChooseProductWork('stocktake',true);else bossChooseProductWork('create',true);
+    const id={normalStock:'bossWorkNormalStock',looseStock:'bossWorkLooseStock',ordinaryNew:'bossWorkReceive',looseNew:'bossWorkLooseNew'}[kind],box=$(id);if(box)box.classList.add('active');
+    if(kind==='ordinaryNew'){const cat=$('bossReceiveFilterCategory');if(cat){cat.value='__NEW__';fillBossReceiveProductList();}}
+  };
+
+  function resetBossProductWorkflow(){
+    document.querySelectorAll('#bossProductBox .boss-work-menu button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('#bossProductBox .boss-work-panel').forEach(x=>x.classList.remove('active'));
+    const selector=$('bossProductSelectorArea');if(selector)selector.style.display='none';
+    const intro=$('bossWorkIntro');if(intro)intro.style.display='flex';
+  }
+
+  window.bossConfirmResetClassification=function(){
+    const msg=lang()==='zh'?'确认放弃全部旧分类？所有商品会进入“未分类”，但库存、售价、进货价、照片、编号和启用状态都会保留。此操作只需要执行一次。':'Discard all old classifications? Every product will move to Unclassified while stock, prices, costs, photos, codes and active status remain.';
+    showConfirm(msg,bossResetClassificationNow);
+  };
+  async function bossResetClassificationNow(){
+    setSubmitBusy(true,lang()==='zh'?'正在把全部商品改为未分类...':'Moving all products to Unclassified...');
+    try{const out=await timeout(apiCall('resetProductsForNewClassification',[]),60000,'Reset product classification');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?`完成：${Number(out&&out.updated)||0} 个商品已进入未分类。现在可以逐个重新分类。`:`Complete: ${Number(out&&out.updated)||0} products moved to Unclassified.`,tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}
   }
 
   function ensureBossLostPanel(){
@@ -4246,7 +4326,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const box=$('bossProductCounts'); if(!box)return;
     const rows=(bossProductsCache||[]).filter(p=>normalizeText(p.name)||normalizeText(p.code));
     const inactive=rows.filter(p=>p.active===false).length,active=rows.length-inactive;
-    const unclassified=rows.filter(p=>{const entries=String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).filter(Boolean);return !entries.length||entries.includes('GENERAL')||/UNCLASSIFIED|UNCATEGORIZED|未分类/.test(String(p.category||'').toUpperCase());}).length;
+    const unclassified=rows.filter(p=>{const entries=String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).filter(Boolean);return entries.length?entries.includes('GENERAL'):/UNCLASSIFIED|UNCATEGORIZED|未分类/.test(String(p.category||'').toUpperCase());}).length;
     const cards=[[lang()==='zh'?'商品总数':'Total',rows.length,'#3b82f6'],[lang()==='zh'?'已上架':'Active',active,'#22c55e'],[lang()==='zh'?'已停用':'Inactive',inactive,'#ef4444'],[lang()==='zh'?'未分类':'Unclassified',unclassified,'#f59e0b']];
     box.innerHTML=cards.map(x=>`<div style="min-width:120px;flex:1;padding:12px 14px;border:1px solid #334155;border-left:4px solid ${x[2]};border-radius:12px;background:#111c31"><small style="color:#94a3b8">${x[0]}</small><div style="font-size:24px;font-weight:900;color:#fff">${x[1]}</div></div>`).join('')+(!bossProductsFullLoaded?`<div style="width:100%;color:#94a3b8;font-size:12px">${lang()==='zh'?'正在读取完整总数…':'Loading full count…'}</div>`:'');
   }
@@ -4351,6 +4431,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   function bossProductPayload(){
     const selectedType=normalizeText(($('bossProductType')||{}).value);
+    const finalType=selectedType==='__CUSTOM__'?normalizeText(($('bossProductCustomType')||{}).value).toUpperCase():selectedType;
+    const finalApplies=bossProductAppliesToValue();
+    const finalCategory=finalApplies==='GENERAL'||!finalType?'未分类':finalApplies.split(',').join('+')+' '+finalType;
     return {
       row: ($('bossProductRow')||{}).value || '',
       originalCode: ($('bossProductOriginalCode')||{}).value || '',
@@ -4358,16 +4441,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       code: normalizeText(($('bossProductCode')||{}).value),
       name: normalizeText(($('bossProductName')||{}).value),
       price: ($('bossProductPrice')||{}).value || '',
-      category: normalizeCategoryName(($('bossProductCategory')||{}).value),
+      category: finalCategory,
       image: normalizeText(($('bossProductImage')||{}).value),
       stock: ($('bossProductStock')||{}).value || '',
       cost: ($('bossProductCost')||{}).value || '',
       active: ($('bossProductActive')||{}).value || 'TRUE'
-      ,type: selectedType==='__CUSTOM__'?normalizeText(($('bossProductCustomType')||{}).value).toUpperCase():selectedType
+      ,type: finalType
       ,brand: normalizeText(($('bossProductBrand')||{}).value)
       ,productGroup: normalizeText(($('bossProductGroup')||{}).value)
       ,variant: normalizeText(($('bossProductVariant')||{}).value)
-      ,appliesTo: bossProductAppliesToValue()
+      ,appliesTo: finalApplies
     };
   }
 
@@ -4679,6 +4762,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.bossPickProduct = function(index){
     const p=(bossProductsCache||[])[Number(index)];
     if(!p)return;
+    bossChooseProductWork('edit',true);
+    const editBox=$('bossWorkEdit'),editGrid=editBox&&editBox.querySelector('.boss-product-grid'),editHint=$('bossProductHint'),editPrompt=$('bossEditPrompt');if(editGrid)editGrid.style.display='grid';if(editHint)editHint.style.display='block';if(editPrompt)editPrompt.style.display='none';
     const picker=$('bossProductImageFile'); if(picker)picker.value='';
     const values={
       bossProductRow:p.row||'',
@@ -4717,6 +4802,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     fillBossCategoryList();
     showBossPanel('bossProductBox','productManage');
     keepBossDashboardOpen('productManage');
+    resetBossProductWorkflow();
     loadBossLooseGroups();
     const res=$('bossProductResult');
     const localRows=bossLocalProductRows();
