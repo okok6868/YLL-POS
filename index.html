@@ -3248,6 +3248,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   function applyProducts(list, fromCache=false){
+    const savedMain=window.__posMainCategory||'',savedSub=window.__posSubCategory||'ALL',savedPage=Math.max(1,Number(currentPage)||1),savedSearch=String(typeof searchText==='undefined'?'':searchText||'').trim();
     list=(list||[]).filter(p=>p && p.name && Number(p.price)>0 && p.active!==false).map(p=>Object.assign({}, p, {
       code: normalizeText(p.code),
       name: normalizeText(p.name),
@@ -3268,10 +3269,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     };
     const productCategoryPriority=p=>/CHIKEN|CHICKEN|鸡/.test(String(p.category).toUpperCase())?0:/DOG|狗/.test(String(p.category).toUpperCase())?1:/CAT|猫/.test(String(p.category).toUpperCase())?2:/FISH|鱼/.test(String(p.category).toUpperCase())?3:/BIRD|鸟/.test(String(p.category).toUpperCase())?4:20;
     list.sort((a,b)=>productCategoryPriority(a)-productCategoryPriority(b) || normalizeCategoryName(a.category).localeCompare(normalizeCategoryName(b.category)) || brandKey(a).localeCompare(brandKey(b)) || String(a.name).localeCompare(String(b.name)));
-    try{ products=list; window.products=list; currentList=list; currentPage=1; }catch(e){
-      window.products=list; window.currentList=list; window.currentPage=1;
+    try{ products=list; window.products=list; }catch(e){
+      window.products=list;
     }
+    if(savedMain){
+      const rows=productsForMain(savedMain);
+      currentList=savedSub&&savedSub!=='ALL'?rows.filter(p=>productPurpose(p)===savedSub):rows;
+      currentPage=savedPage;
+    }else if(savedSearch){
+      currentList=list.filter(p=>String(p.name||'').toLowerCase().includes(savedSearch.toLowerCase())||normalizeCategoryName(p.category).toLowerCase().includes(savedSearch.toLowerCase())||String(p.price||'').includes(savedSearch));
+      currentPage=savedPage;
+    }else{
+      currentList=list;
+      currentPage=1;
+    }
+    window.currentList=currentList;window.currentPage=currentPage;
     renderCategories();
+    if(savedMain){const selected=document.querySelector(`.maincat-btn[data-main-key="${savedMain}"]`);if(selected)setActiveCategory(selected);renderSubCategories(savedMain);if(savedSub&&savedSub!=='ALL'){const sub=[...document.querySelectorAll('#subMenuList .cat-btn')].find(x=>String(x.getAttribute('onclick')||'').includes(JSON.stringify(savedSub)));if(sub){document.querySelectorAll('#subMenuList .cat-btn').forEach(x=>x.classList.remove('active'));sub.classList.add('active');}}}
     render(currentList);
     setStaticText();
     const items=$('todayItems'); if(items)items.textContent=list.length||0;
@@ -3602,7 +3616,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const isLooseGroup=g=>g.items.some(p=>/RM\s*(?:0\.10|1)(?![0-9.])|\(\s*1\s*KG\s*\)/i.test(String(p.name||'')));
     const isFoodGroup=g=>g.items.some(p=>productPurpose(p)==='FOOD');
     const homePopular=!window.__posMainCategory&&!searching,rankMap=window.__popularRankByGroup||{};
-    return [...groups.values()].sort((a,b)=>{if(homePopular){const ar=(rankMap[a.key]||{}).rank||999999,br=(rankMap[b.key]||{}).rank||999999;if(ar!==br)return ar-br;}const at=isLooseGroup(a)?0:(isFoodGroup(a)?1:2),bt=isLooseGroup(b)?0:(isFoodGroup(b)?1:2);if(at!==bt)return at-bt;const af=familyRank(a.label),bf=familyRank(b.label);if(af!==bf)return af-bf;if(window.__posMainCategory&&!searching){const ab=String(a.brand||a.label),bb=String(b.brand||b.label),bc=ab.localeCompare(bb,undefined,{numeric:true,sensitivity:'base'});if(bc)return bc;}return String(a.label).localeCompare(String(b.label),undefined,{numeric:true,sensitivity:'base'});});
+    return [...groups.values()].sort((a,b)=>{if(homePopular){const ar=(rankMap[a.key]||{}).rank||999999,br=(rankMap[b.key]||{}).rank||999999;if(ar!==br)return ar-br;}const af=familyRank(a.label),bf=familyRank(b.label);if(af!==bf)return af-bf;if(window.__posMainCategory&&!searching){const ab=String(a.brand||a.label),bb=String(b.brand||b.label),bc=ab.localeCompare(bb,undefined,{numeric:true,sensitivity:'base'});if(bc)return bc;}const at=isLooseGroup(a)?0:(isFoodGroup(a)?1:2),bt=isLooseGroup(b)?0:(isFoodGroup(b)?1:2);if(at!==bt)return at-bt;return String(a.label).localeCompare(String(b.label),undefined,{numeric:true,sensitivity:'base'});});
   }
 
   function visibleVariant(p){const stored=normalizeText(p&&p.variant);if(stored&&stored.toUpperCase()!=='STANDARD')return stored;const name=String((p&&p.name)||'').toUpperCase(),size=name.match(/\(\s*(XXL|XL|S|M|L)\s*\)/),unit=name.match(/\(\s*(RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|\d+\s*PCS)\s*\)/);return size?size[1]:(unit?unit[1].replace(/\s+/g,''):(stored||'STANDARD'));}
