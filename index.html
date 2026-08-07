@@ -3976,7 +3976,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <div class="boss-product-tools">
           <div>
             <div class="boss-product-filter-row">
-              <label class="boss-field"><span class="boss-field-label" data-product-label="selectProduct">${esc(tr('selectProduct'))}</span><input id="bossProductSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchProducts(this.value)"></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'搜索商品（可不填）':'Search product (optional)'}</span><input id="bossProductSearch" placeholder="${lang()==='zh'?'输入名字快速寻找':'Type a name to search'}" oninput="bossSearchProducts(this.value)"></label>
               <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'主分类':'Main category'}</span><select id="bossProductMainFilter" onchange="bossProductFacetChanged('main')"></select></label>
               <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'里面分类':'Subcategory'}</span><select id="bossProductTypeFilter" onchange="bossProductFacetChanged('type')"></select></label>
               <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'商品系列':'Product series'}</span><select id="bossProductGroupFilter" onchange="bossFilterProducts()"></select></label>
@@ -4054,7 +4054,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <div class="boss-product-tools">
           <div>
             <div class="boss-product-filter-row">
-              <label class="boss-field"><span class="boss-field-label" data-lost-label="selectProduct">${esc(tr('selectProduct'))}</span><input id="bossLostSearch" placeholder="${esc(tr('selectProduct'))}" oninput="bossSearchLostProducts(this.value)"></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'搜索商品（可不填）':'Search product (optional)'}</span><input id="bossLostSearch" placeholder="${lang()==='zh'?'输入名字快速寻找':'Type a name to search'}" oninput="bossSearchLostProducts(this.value)"></label>
               <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'主分类':'Main category'}</span><select id="bossLostMainFilter" onchange="bossLostFacetChanged('main')"></select></label>
               <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'里面分类':'Subcategory'}</span><select id="bossLostTypeFilter" onchange="bossLostFacetChanged('type')"></select></label>
               <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'商品系列':'Product series'}</span><select id="bossLostGroupFilter" onchange="bossFilterLostProducts()"></select></label>
@@ -4261,11 +4261,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     return normalizeCategoryName(value);
   }
 
-  function bossFacetMain(p){const tags=typeof productMainTags==='function'?productMainTags(p):[];return (tags&&tags[0])||'GENERAL';}
-  function bossFacetType(p){return normalizeText(typeof productPurpose==='function'?productPurpose(p):p.type)||'OTHER';}
+  function bossFacetMain(p){try{const tags=typeof productMainTags==='function'?productMainTags(p):[],first=tags&&tags[0],key=typeof first==='string'?first:(first&&first.key)||'';return String(key||'MAIN:GENERAL').replace(/^MAIN:/,'');}catch(e){return 'GENERAL';}}
+  function bossFacetType(p){try{return normalizeText(typeof productPurpose==='function'?productPurpose(p):p.type)||'OTHER';}catch(e){return normalizeText((p&&p.type)||'')||'OTHER';}}
   function bossFacetGroup(p){return normalizeText(p.productGroup)||normalizeText(p.name)||'-';}
   function bossMainText(v){return typeof mainCategoryLabel==='function'?mainCategoryLabel(v):(v||'General');}
-  function bossTypeText(v){return typeof subCategoryLabel==='function'?subCategoryLabel(v):(v||'Other');}
+  function bossTypeText(v){const zh={FOOD:'食品','WET FOOD':'湿粮',TREAT:'零食',MILK:'奶粉',TOY:'玩具',ACCESSORY:'用品',LITTER:'猫砂','LITTER BOX':'猫砂盆','HYGIENE / SUPPLEMENT':'卫生／营养品',OTHER:'其它'},en={FOOD:'Food','WET FOOD':'Wet food',TREAT:'Treat',MILK:'Milk',TOY:'Toy',ACCESSORY:'Accessory',LITTER:'Litter','LITTER BOX':'Litter box','HYGIENE / SUPPLEMENT':'Hygiene / Supplement',OTHER:'Other'};return (lang()==='zh'?zh:en)[v]||v||'Other';}
   function bossFillSelect(id,items,current,placeholder,labelFn){const el=$(id);if(!el)return;el.innerHTML=`<option value="">${esc(placeholder)}</option>`+items.map(v=>`<option value="${esc(v)}">${esc(labelFn(v))}</option>`).join('');if(current&&items.includes(current))el.value=current;}
   function fillBossProductFacets(){
     const rows=bossProductsCache&&bossProductsCache.length?bossProductsCache:bossLocalProductRows(),mainEl=$('bossProductMainFilter'),typeEl=$('bossProductTypeFilter'),groupEl=$('bossProductGroupFilter');if(!mainEl||!typeEl||!groupEl)return;
