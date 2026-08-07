@@ -3586,19 +3586,21 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     return [...groups.values()];
   }
 
+  function visibleVariant(p){const stored=normalizeText(p&&p.variant);if(stored&&stored.toUpperCase()!=='STANDARD')return stored;const name=String((p&&p.name)||'').toUpperCase(),size=name.match(/\(\s*(XXL|XL|S|M|L)\s*\)/),unit=name.match(/\(\s*(RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|\d+\s*PCS)\s*\)/);return size?size[1]:(unit?unit[1].replace(/\s+/g,''):(stored||'STANDARD'));}
+
   window.openProductVariants = function(key){
     const group=productDisplayGroups(currentList).find(g=>g.key===String(key||''));
     if(!group)return;
     window.__variantPickerGroup=group;
-    const variantWeight=p=>{const v=String(p.variant||p.name||'').toUpperCase(),kg=v.match(/(\d+(?:\.\d+)?)\s*KG/);if(kg)return 100+Number(kg[1]);if(/RM\s*1(?![0-9.])/.test(v))return 2;if(/RM\s*0\.10/.test(v))return 1;return 0;};
+    const variantWeight=p=>{const v=String(visibleVariant(p)||p.name||'').toUpperCase(),kg=v.match(/(\d+(?:\.\d+)?)\s*KG/);if(kg)return 100+Number(kg[1]);const sizes={S:50,M:40,L:30,XL:20,XXL:10};if(sizes[v])return sizes[v];if(/RM\s*1(?![0-9.])/.test(v))return 2;if(/RM\s*0\.10/.test(v))return 1;return 0;};
     group.items.sort((a,b)=>variantWeight(b)-variantWeight(a)||String(a.name).localeCompare(String(b.name)));
     const old=$('productVariantPicker'); if(old)old.remove();
     const wrap=document.createElement('div');
     wrap.id='productVariantPicker';
     wrap.style.cssText='position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
-    const oneKg=group.items.find(p=>String(p.variant||'').toUpperCase()==='1KG'||/\(\s*1\s*KG\s*\)/i.test(p.name||''));
+    const oneKg=group.items.find(p=>String(visibleVariant(p)||'').toUpperCase()==='1KG'||/\(\s*1\s*KG\s*\)/i.test(p.name||''));
     const quickKg=oneKg?`<div style="display:flex;gap:12px;flex-wrap:wrap;margin:14px 0"><button type="button" style="background:#166534;color:#fff;border:1px solid #22c55e;padding:13px 22px;border-radius:12px;font-weight:800" onclick='addProductQty(${JSON.stringify(oneKg.name)},${Number(oneKg.price)||0},${JSON.stringify(oneKg.code||'')},10)'>＋10KG · ${money((Number(oneKg.price)||0)*10)}</button><button type="button" style="background:#166534;color:#fff;border:1px solid #22c55e;padding:13px 22px;border-radius:12px;font-weight:800" onclick='addProductQty(${JSON.stringify(oneKg.name)},${Number(oneKg.price)||0},${JSON.stringify(oneKg.code||'')},5)'>＋5KG · ${money((Number(oneKg.price)||0)*5)}</button></div>`:'';
-    wrap.innerHTML=`<div style="width:min(720px,96vw);max-height:86vh;overflow:auto;background:#0f172a;color:#f8fafc;border:1px solid #334155;border-radius:20px;padding:20px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 style="margin:0;color:#fff">${esc(group.label)}</h2><button type="button" style="background:#24324a;color:#fff;border:1px solid #64748b;padding:10px 16px;border-radius:10px" onclick="document.getElementById('productVariantPicker').remove()">${lang()==='zh'?'完成 / 关闭':'Done / Close'}</button></div><div id="variantPickerSummary" style="margin:12px 0;padding:12px 14px;border-radius:12px;background:#091225;border:1px solid #334155;color:#cbd5e1"></div><p style="color:#cbd5e1">${lang()==='zh'?'可以连续点同一个或不同规格。':'Tap the same or different variants repeatedly.'}</p>${quickKg}<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px">${group.items.map(p=>`<button type="button" style="text-align:left;padding:16px;border-radius:14px;background:#182338;color:#f8fafc;border:1px solid #475569;min-height:92px" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})'><b style="color:#fff;font-size:16px">${esc(p.variant||p.name)}</b><br><span style="color:#22c55e;font-weight:700">${money(p.price)}</span><br><small style="color:#94a3b8">${lang()==='zh'?'库存':'Stock'} ${Number(p.stock||0)}</small></button>`).join('')}</div></div>`;
+    wrap.innerHTML=`<div style="width:min(820px,96vw);max-height:86vh;overflow:auto;background:#0f172a;color:#f8fafc;border:1px solid #334155;border-radius:20px;padding:20px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 style="margin:0;color:#fff">${esc(group.label)}</h2><button type="button" style="background:#24324a;color:#fff;border:1px solid #64748b;padding:10px 16px;border-radius:10px" onclick="document.getElementById('productVariantPicker').remove()">${lang()==='zh'?'完成 / 关闭':'Done / Close'}</button></div><div id="variantPickerSummary" style="margin:12px 0;padding:12px 14px;border-radius:12px;background:#091225;border:1px solid #334155;color:#cbd5e1"></div><p style="color:#cbd5e1">${lang()==='zh'?'可以连续点同一个或不同规格。':'Tap the same or different variants repeatedly.'}</p>${quickKg}<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:18px">${group.items.map(p=>{const img=normalizeText(p.image),label=visibleVariant(p);return `<button type="button" style="text-align:left;padding:10px;border-radius:14px;background:#182338;color:#f8fafc;border:1px solid #475569;min-height:190px" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})'><div style="height:105px;border-radius:10px;overflow:hidden;background:#091225;display:flex;align-items:center;justify-content:center;margin-bottom:10px">${img?`<img src="${esc(img)}" alt="${esc(p.name||'')}" style="width:100%;height:100%;object-fit:contain" onerror="this.parentNode.innerHTML='${lang()==='zh'?'没有图片':'No image'}'">`:(lang()==='zh'?'没有图片':'No image')}</div><b style="color:#fff;font-size:17px">${esc(label)}</b><br><span style="color:#22c55e;font-weight:700">${money(p.price)}</span><br><small style="color:#94a3b8">${lang()==='zh'?'库存':'Stock'} ${Number(p.stock||0)}</small></button>`;}).join('')}</div></div>`;
     wrap.onclick=e=>{if(e.target===wrap)wrap.remove();};
     document.body.appendChild(wrap);
     renderVariantPickerSummary();
@@ -4485,7 +4487,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     else if(/FOOD|PALLET|JAGUNG|KAMBU|POLLARD|\b20KG\b|\b40KG\b|\b50KG\b/.test(raw)||/DOG|CAT|CHIKEN|FISH|BIRD|HAMSTER/.test(cat))type='FOOD';
     else if(/ACC/.test(cat))type='ACCESSORY';
     const variants=raw.match(/(?:RM\s*0\.10(?![0-9.])|RM\s*1(?![0-9.])|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|\d+\s*PCS|\d+\s*X\s*\d+)/g);
-    const variant=variants?variants.join(' / ').replace(/\s+/g,''):'STANDARD';
+    const letterSize=raw.match(/\(\s*(XXL|XL|S|M|L)\s*\)/);
+    const variant=variants?variants.join(' / ').replace(/\s+/g,''):(letterSize?letterSize[1]:'STANDARD');
     let productGroup=raw.replace(/\([^)]*(?:KG|RM|ML|\bS\b|\bM\b|\bL\b)[^)]*\)/g,' ').replace(/RM\s*0\.10(?![0-9.])|RM\s*1(?![0-9.])|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)/g,' ').replace(/\s+/g,' ').trim();
     if(brand==='PROBALANCE'){
       if(type==='WET FOOD')productGroup=/POUCH/.test(raw)?'PROBALANCE DOG POUCH':'PROBALANCE DOG TIN';
@@ -5102,13 +5105,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.printReceipt = function(auto=false){
     const text=buildReceiptText();
     if(!text || !/YLL FEEDS/.test(text)){ showAppAlert(lang()==='zh'?'\u6ca1\u6709\u6536\u636e\u53ef\u4ee5\u6253\u5370':'No receipt to print', tr('print')); return; }
-    try{
-      if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>{ if(typeof showToast==='function')showToast(tr('receiptCopied')); }).catch(()=>{});
-    }catch(e){}
-    showAppAlert(text, tr('print'));
-    if(auto && typeof runAutoPrint === 'function'){
-      setTimeout(()=>{ try{ runAutoPrint(); }catch(e){} }, 80);
-    }
+    window.lastReceiptText=text;try{lastReceiptText=text;}catch(e){}
+    const mode=typeof getPrintMode==='function'?getPrintMode():'telegram';
+    if(auto){if(typeof runAutoPrint==='function')setTimeout(()=>{try{runAutoPrint();}catch(e){}},80);return;}
+    if(mode==='telegram'&&typeof sendToTelegram==='function'){sendToTelegram(text);return;}
+    if(mode==='rawbt'&&typeof openRawBT==='function'){openRawBT(text);return;}
+    try{if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>{if(typeof showToast==='function')showToast(tr('receiptCopied'));}).catch(()=>showAppAlert(text,tr('print')));else showAppAlert(text,tr('print'));}catch(e){showAppAlert(text,tr('print'));}
   };
   window.smartPrintLast = function(){ window.printReceipt(false); };
   function reduceLocalStock(savedCart){
