@@ -2744,7 +2744,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       received:'Received', pendingRefunds:'Pending Refunds', requests:'requests', records:'Records', pending:'Pending', last30:'Last 30 records',
       actualPaidRequired:'Please enter actual paid amount.', saveFailed:'Save failed: ', receiptFailed:'Order saved. Receipt failed; tap Print Receipt.',
       receiptCopied:'Receipt copied',
-      saveSentSlow:'Order sent. Network is slow, POS will confirm in background.', saveStillChecking:'Order sent. Please do not press checkout again.'
+      saveSentSlow:'Order sent. Network is slow, POS will confirm in background.', saveStillChecking:'Order sent. Please do not press checkout again.', lookupNo:'Lookup No.', lookupHint:'Search this number in the ClientId column of Orders_Main. If it exists, the order is saved; the OrderId on the same row is the actual order number.', orderConfirmedNo:'Order confirmed', quietlyConfirming:'Finishing order {number}. Please wait...', unableToConfirm:'Order {number} still cannot be confirmed. Please inform the boss and do not press checkout again.'
       ,offlinePending:'Sync pending', offlineCash:'Sync pending', uploadingOffline:'Syncing data, please wait...', offlineUploaded:'Data synced', offlineStillPending:'Data sync pending', networkUnstable:'Network unstable. Contact boss if it continues.'
       ,bossReady:'Boss mode opened. Choose a function.', bossFastHint:'Tap a function to load details.', bossLoginSlow:'Boss login is slow. Check Apps Script deployment URL or connection.', networkLog:'Network Log', outages:'Outages', totalOffline:'Offline Minutes', over30:'Over 30 Min', apiFailures:'API Fails', recentNetwork:'Recent Network Records', minutes:'min', noNetworkRecords:'No network records'
       ,reportToday:'Today', yesterday:'Yesterday', thisWeek:'This Week', lastWeek:'Last Week', thisMonth:'This Month', lastMonth:'Last Month', thisYear:'This Year', custom:'Custom', searchBtn:'Search'
@@ -2791,7 +2791,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       received:'\u5df2\u6536', pendingRefunds:'\u5f85\u6279\u9000\u6b3e', requests:'\u7533\u8bf7', records:'\u8bb0\u5f55', pending:'\u672a\u6536', last30:'\u6700\u8fd1 30 \u7b14',
       actualPaidRequired:'\u8bf7\u8f93\u5165\u5b9e\u6536\u91d1\u989d\u3002', saveFailed:'\u8bb0\u5f55\u5931\u8d25\uff1a', receiptFailed:'\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u4f46\u6536\u636e\u5217\u5370\u5931\u8d25\uff0c\u8bf7\u70b9\u51fb\u6253\u5370\u6536\u636e\u3002',
       receiptCopied:'\u6536\u636e\u5df2\u590d\u5236',
-      saveSentSlow:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u7f51\u7edc\u6162\uff0cPOS \u4f1a\u5728\u540e\u53f0\u7ee7\u7eed\u786e\u8ba4\u3002', saveStillChecking:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u8bf7\u4e0d\u8981\u518d\u91cd\u590d\u70b9\u4e70\u5355\u3002'
+      saveSentSlow:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u7f51\u7edc\u6162\uff0cPOS \u4f1a\u5728\u540e\u53f0\u7ee7\u7eed\u786e\u8ba4\u3002', saveStillChecking:'\u8ba2\u5355\u5df2\u9001\u51fa\uff0c\u8bf7\u4e0d\u8981\u518d\u91cd\u590d\u70b9\u4e70\u5355\u3002', lookupNo:'\u67e5\u8be2\u7f16\u53f7', lookupHint:'\u8bf7\u5230 Orders_Main \u7684 ClientId \u680f\u641c\u7d22\u8fd9\u4e2a\u7f16\u53f7\u3002\u627e\u5230\u5c31\u4ee3\u8868\u5df2\u4fdd\u5b58\uff0c\u540c\u4e00\u884c\u7684 OrderId \u5c31\u662f\u771f\u6b63\u8ba2\u5355\u53f7\u3002', orderConfirmedNo:'\u8ba2\u5355\u5df2\u786e\u8ba4', quietlyConfirming:'\u6b63\u5728\u5b8c\u6210\u4eca\u5929\u7b2c {number} \u5f20\u8ba2\u5355\uff0c\u8bf7\u7a0d\u7b49...', unableToConfirm:'\u4eca\u5929\u7b2c {number} \u5f20\u8ba2\u5355\u4ecd\u65e0\u6cd5\u786e\u8ba4\uff0c\u8bf7\u901a\u77e5\u8001\u677f\uff0c\u4e0d\u8981\u91cd\u590d\u70b9\u4e70\u5355\u3002'
       ,offlinePending:'\u5f85\u540c\u6b65', offlineCash:'\u5f85\u540c\u6b65', uploadingOffline:'\u6b63\u5728\u540c\u6b65\u8d44\u6599\uff0c\u8bf7\u7a0d\u7b49...', offlineUploaded:'\u8d44\u6599\u5df2\u540c\u6b65', offlineStillPending:'\u8d44\u6599\u5f85\u540c\u6b65', networkUnstable:'\u7f51\u7edc\u4e0d\u7a33\u5b9a\uff0c\u5982\u6301\u7eed\u53d1\u751f\u8bf7\u8054\u7cfb\u8001\u677f\u3002'
       ,bossReady:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\uff0c\u8bf7\u9009\u62e9\u529f\u80fd\u3002', bossFastHint:'\u70b9\u51fb\u529f\u80fd\u540e\u624d\u8f7d\u5165\u8be6\u7ec6\u8d44\u6599\u3002', bossLoginSlow:'\u8001\u677f\u767b\u5165\u56de\u5e94\u592a\u6162\uff0c\u8bf7\u68c0\u67e5 Apps Script \u90e8\u7f72 URL \u6216\u7f51\u7edc\u3002', networkLog:'\u7f51\u7edc\u8bb0\u5f55', outages:'\u65ad\u7ebf\u6b21\u6570', totalOffline:'\u65ad\u7ebf\u5206\u949f', over30:'\u8d85\u8fc7 30 \u5206\u949f', apiFailures:'API \u5931\u8d25', recentNetwork:'\u6700\u8fd1\u7f51\u7edc\u8bb0\u5f55', minutes:'\u5206\u949f', noNetworkRecords:'\u6ca1\u6709\u7f51\u7edc\u8bb0\u5f55'
       ,reportToday:'\u4eca\u5929', yesterday:'\u6628\u5929', thisWeek:'\u672c\u5468', lastWeek:'\u4e0a\u5468', thisMonth:'\u672c\u6708', lastMonth:'\u4e0a\u6708', thisYear:'\u4eca\u5e74', custom:'\u81ea\u8ba2', searchBtn:'\u67e5\u8be2'
@@ -3621,13 +3621,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function productDisplayGroups(list){
     const groups=new Map();
     const searching=String(typeof searchText==='undefined'?'':searchText||'').trim();
+    const inferredSeries=p=>{
+      const name=normalizeText(p&&p.name),stored=normalizeText(p&&p.productGroup);
+      if(stored&&stored.toUpperCase()!==name.toUpperCase())return stored;
+      const base=name.replace(/\(\s*(?:RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|(?:XXL|XL|S|M|L))\s*\)\s*$/i,'').replace(/\s+(?:RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML))\s*$/i,'').replace(/\s+/g,' ').trim();
+      return base||stored||name;
+    };
     (list||[]).forEach(p=>{
-      const brand=normalizeText(p.brand),brandUsable=!!brand&&!/^(OTHER|UNKNOWN|GENERAL)$/i.test(brand);
-      const label=searching?normalizeText(p.name):(normalizeText(p.productGroup)||normalizeText(p.name));
+      const storedBrand=normalizeText(p.brand),brandUsable=!!storedBrand&&!/^(OTHER|UNKNOWN|GENERAL)$/i.test(storedBrand),label=searching?normalizeText(p.name):inferredSeries(p);
+      const guessedBrand=(String(label||'').toUpperCase().match(/^[A-Z0-9&-]+(?:\s+[A-Z0-9&-]+)?/)||[''])[0];
+      const brand=brandUsable?storedBrand:(guessedBrand||label);
       const key=label.toUpperCase();
-      if(!groups.has(key))groups.set(key,{key:key,label:label,items:[],brand:brandUsable?brand:''});
+      if(!groups.has(key))groups.set(key,{key:key,label:label,items:[],brand:brand});
       groups.get(key).items.push(p);
-      if(!groups.get(key).brand&&brandUsable)groups.get(key).brand=brand;
+      if(!groups.get(key).brand)groups.get(key).brand=brand;
     });
     const familyRank=label=>{const s=String(label||'').toUpperCase();if(/^JAGUNG\b/.test(s))return 0;if(/^20[12]\b/.test(s))return 1;if(/^TP[- ]?\d/.test(s))return 2;if(/^KAMBU\b/.test(s))return 3;if(/POLLARD|WHEAT/.test(s))return 4;if(/GOBBY/.test(s))return 5;return 20;};
     const isLooseGroup=g=>g.items.some(p=>/RM\s*(?:0\.10|1)(?![0-9.])|\(\s*1\s*KG\s*\)/i.test(String(p.name||'')));
@@ -5069,7 +5076,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     return {subtotal:moneyNum(sub), discount:moneyNum(d), final:moneyNum(sub-d)};
   }
   function makeClientOrderId(){
-    return 'POS-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
+    const d=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    const stamp=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    return 'POS-' + stamp + '-' + Math.random().toString(36).slice(2,7).toUpperCase();
   }
   function checkoutItemFingerprint(i){
     return {
@@ -5194,9 +5204,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       pendingPayload.paid||0,
       pendingPayload.change||0
     );
+    const wasSlow=!!pendingPayload.slow;
     if(canFinish){
       finishSavedOrder(saved.orderId, moneyNum(pendingPayload.discount||0), checkoutKey);
-      if(typeof showToast === 'function')showToast(tr('orderSlow'));
+      if(typeof showToast === 'function')showToast(`${tr('orderConfirmedNo')}: ${saved.orderId}`);
     }else{
       try{
         if(Array.isArray(window.lastCart))window.lastCart.forEach(i=>i.orderId=saved.orderId);
@@ -5204,13 +5215,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       }catch(e){}
       setCheckoutBusy(false);
       if(typeof loadTodayStats === 'function')loadTodayStats();
-      if(typeof showToast === 'function')showToast(tr('orderSlow'));
+      if(typeof showToast === 'function')showToast(`${tr('orderConfirmedNo')}: ${saved.orderId}`);
     }
+    if(wasSlow)showAppAlert(`${tr('orderConfirmedNo')}: ${saved.orderId}\n${tr('lookupNo')}: ${clientId}`, tr('payment'));
     return true;
   }
   function finishSlowOrder(clientId, sendDiscount, pendingPayload){
-    setCheckoutBusy(false);
-    showAppAlert(tr('saveUnconfirmed') + '\n\n' + tr('saveStillChecking'), tr('payment'));
+    if(pendingPayload)pendingPayload.slow=true;
+    setCheckoutBusy(true);
+    const busy=$('checkoutBusy'),number=Number((pendingPayload&&pendingPayload.expectedNumber)||0)||'?';
+    if(busy)busy.textContent=trf('quietlyConfirming',{number:number});
   }
   function confirmPendingInBackground(clientId,pendingPayload){
     if(!clientId || !navigator.onLine)return;
@@ -5218,12 +5232,22 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const payload=pendingPayload||{};
     const run=(idx)=>{
       setTimeout(async()=>{
-        if(!navigator.onLine)return;
+        if(!navigator.onLine){
+          setCheckoutBusy(false);
+          const number=Number(payload.expectedNumber||0)||'?';
+          showAppAlert(`${trf('unableToConfirm',{number:number})}\n\n${tr('offlineSaved')}\n${tr('lookupNo')}: ${clientId}`,tr('payment'));
+          return;
+        }
         try{
           const saved=await timeout(apiCall('getOrderByClientId',[clientId]),8000,'Check saved order');
           if(applyConfirmedPendingOrder(clientId,saved,payload))return;
         }catch(e){}
         if(idx+1<delays.length)run(idx+1);
+        else{
+          setCheckoutBusy(false);
+          const number=Number(payload.expectedNumber||0)||'?';
+          showAppAlert(`${trf('unableToConfirm',{number:number})}\n\n${tr('lookupNo')}: ${clientId}`,tr('payment'));
+        }
       },delays[idx]||25000);
     };
     run(0);
@@ -5422,7 +5446,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
     const clientId = getActiveCheckoutClientId(checkoutKey);
     const mixedBreakdown=method==='mixed'?Object.assign({},window.lastMixedBreakdown||lastMixedBreakdown||{}):null;
-    const pendingPayload = {id:clientId, key:checkoutKey, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, mixedBreakdown:mixedBreakdown, date:new Date().toISOString(), at:Date.now()};
+    const currentOrderCount=Number(String((($('todayOrders')||{}).textContent)||'0').replace(/[^0-9.-]/g,''))||0;
+    const pendingPayload = {id:clientId, key:checkoutKey, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, mixedBreakdown:mixedBreakdown, expectedNumber:currentOrderCount+1, date:new Date().toISOString(), at:Date.now()};
     if(!navigator.onLine){
       const offline = JSON.parse(localStorage.getItem('offlineOrders') || '[]').filter(o=>o && String(o.id)!==String(clientId));
       offline.push({id:clientId, key:checkoutKey, cart:send, payment, discount:sendDiscount, paid:window.lastPaid, change:window.lastChange, mixedBreakdown:mixedBreakdown, date:new Date().toISOString()});
@@ -5430,6 +5455,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       finishSavedOrder('OFFLINE-' + clientId, sendDiscount, checkoutKey);
       try{ scheduleTopStatsRefresh(800); }catch(e){}
       if(typeof showToast === 'function')showToast(tr('offlineSaved'));
+      showAppAlert(`${tr('offlineSaved')}\n\n${tr('networkUnstable')}`,tr('payment'));
       return;
     }
     try{
