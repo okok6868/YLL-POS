@@ -3625,6 +3625,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function productDisplayGroups(list){
     const groups=new Map();
     const searching=String(typeof searchText==='undefined'?'':searchText||'').trim();
+    const inferredBrand=p=>{
+      const stored=normalizeText(p&&p.brand);
+      if(stored&&!/^(OTHER|UNKNOWN|GENERAL)$/i.test(stored))return stored.toUpperCase();
+      const name=normalizeText(p&&p.name).toUpperCase().replace(/PROBLANCE|PRO BALANCE/g,'PROBALANCE');
+      const known=['KING PAWZ','I AM SO','AG-SCIENCE','AG SCIENCE','TP-1','TP-2'];
+      const match=known.find(x=>name.startsWith(x+' ')||name===x);
+      if(match)return match;
+      return (name.match(/^[A-Z][A-Z0-9&-]*/)||[name])[0];
+    };
     const inferredSeries=p=>{
       const name=normalizeText(p&&p.name),stored=normalizeText(p&&p.productGroup);
       if(stored&&stored.toUpperCase()!==name.toUpperCase())return stored;
@@ -3632,9 +3641,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       return base||stored||name;
     };
     (list||[]).forEach(p=>{
-      const storedBrand=normalizeText(p.brand),brandUsable=!!storedBrand&&!/^(OTHER|UNKNOWN|GENERAL)$/i.test(storedBrand),label=searching?normalizeText(p.name):inferredSeries(p);
-      const guessedBrand=(String(label||'').toUpperCase().match(/^[A-Z0-9&-]+(?:\s+[A-Z0-9&-]+)?/)||[''])[0];
-      const brand=brandUsable?storedBrand:(guessedBrand||label);
+      const label=searching?normalizeText(p.name):inferredSeries(p);
+      const brand=inferredBrand(p)||label;
       const key=label.toUpperCase();
       if(!groups.has(key))groups.set(key,{key:key,label:label,items:[],brand:brand});
       groups.get(key).items.push(p);
@@ -3642,9 +3650,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     });
     const familyRank=label=>{const s=String(label||'').toUpperCase();if(/^JAGUNG\b/.test(s))return 0;if(/^20[12]\b/.test(s))return 1;if(/^TP[- ]?\d/.test(s))return 2;if(/^KAMBU\b/.test(s))return 3;if(/POLLARD|WHEAT/.test(s))return 4;if(/GOBBY/.test(s))return 5;return 20;};
     const isLooseGroup=g=>g.items.some(p=>/RM\s*(?:0\.10|1)(?![0-9.])|\(\s*1\s*KG\s*\)/i.test(String(p.name||'')));
-    const isFoodGroup=g=>g.items.some(p=>productPurpose(p)==='FOOD');
+    const purposeRank=g=>{const order=['FOOD','WET FOOD','TREAT','MILK','MEDICINE','LITTER','LITTER BOX','TOY','ACCESSORY','HYGIENE / SUPPLEMENT','OTHER'];return Math.min(...g.items.map(p=>{const i=order.indexOf(productPurpose(p));return i<0?99:i;}));};
+    const brandPurpose=new Map();
+    groups.forEach(g=>brandPurpose.set(String(g.brand||'').toUpperCase(),Math.min(brandPurpose.has(String(g.brand||'').toUpperCase())?brandPurpose.get(String(g.brand||'').toUpperCase()):99,purposeRank(g))));
     const homePopular=!window.__posMainCategory&&!searching,rankMap=window.__popularRankByGroup||{};
-    return [...groups.values()].sort((a,b)=>{if(homePopular){const ar=(rankMap[a.key]||{}).rank||999999,br=(rankMap[b.key]||{}).rank||999999;if(ar!==br)return ar-br;}const af=familyRank(a.label),bf=familyRank(b.label);if(af!==bf)return af-bf;if(window.__posMainCategory&&!searching){const ab=String(a.brand||a.label),bb=String(b.brand||b.label),bc=ab.localeCompare(bb,undefined,{numeric:true,sensitivity:'base'});if(bc)return bc;}const at=isLooseGroup(a)?0:(isFoodGroup(a)?1:2),bt=isLooseGroup(b)?0:(isFoodGroup(b)?1:2);if(at!==bt)return at-bt;return String(a.label).localeCompare(String(b.label),undefined,{numeric:true,sensitivity:'base'});});
+    return [...groups.values()].sort((a,b)=>{if(homePopular){const ar=(rankMap[a.key]||{}).rank||999999,br=(rankMap[b.key]||{}).rank||999999;if(ar!==br)return ar-br;}const af=familyRank(a.label),bf=familyRank(b.label);if(af!==bf)return af-bf;if(window.__posMainCategory&&!searching){const al=isLooseGroup(a)?0:1,bl=isLooseGroup(b)?0:1;if(al!==bl)return al-bl;const abr=brandPurpose.get(String(a.brand||'').toUpperCase())??99,bbr=brandPurpose.get(String(b.brand||'').toUpperCase())??99;if(abr!==bbr)return abr-bbr;const ab=String(a.brand||a.label),bb=String(b.brand||b.label),bc=ab.localeCompare(bb,undefined,{numeric:true,sensitivity:'base'});if(bc)return bc;const ap=purposeRank(a),bp=purposeRank(b);if(ap!==bp)return ap-bp;}return String(a.label).localeCompare(String(b.label),undefined,{numeric:true,sensitivity:'base'});});
   }
 
   function visibleVariant(p){const stored=normalizeText(p&&p.variant);if(stored&&stored.toUpperCase()!=='STANDARD')return stored;const name=String((p&&p.name)||'').toUpperCase(),size=name.match(/\(\s*(XXL|XL|S|M|L)\s*\)/),unit=name.match(/\(\s*(RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|\d+\s*PCS)\s*\)/);return size?size[1]:(unit?unit[1].replace(/\s+/g,''):(stored||'STANDARD'));}
@@ -4337,7 +4347,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const box=$('bossProductCounts'); if(!box)return;
     const rows=(bossProductsCache||[]).filter(p=>normalizeText(p.name)||normalizeText(p.code));
     const inactive=rows.filter(p=>p.active===false).length,active=rows.length-inactive;
-    const unclassified=rows.filter(p=>{const entries=String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).filter(Boolean);return entries.length?entries.includes('GENERAL'):/UNCLASSIFIED|UNCATEGORIZED|未分类/.test(String(p.category||'').toUpperCase());}).length;
+    const unclassified=rows.filter(p=>{if(bossNeedsClassification(p))return true;const entries=String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).filter(Boolean);return entries.length?entries.includes('GENERAL'):/UNCLASSIFIED|UNCATEGORIZED|未分类/.test(String(p.category||'').toUpperCase());}).length;
     const cards=[[lang()==='zh'?'商品总数':'Total',rows.length,'#3b82f6'],[lang()==='zh'?'已上架':'Active',active,'#22c55e'],[lang()==='zh'?'已停用':'Inactive',inactive,'#ef4444'],[lang()==='zh'?'未分类':'Unclassified',unclassified,'#f59e0b']];
     box.innerHTML=cards.map(x=>`<div style="min-width:120px;flex:1;padding:12px 14px;border:1px solid #334155;border-left:4px solid ${x[2]};border-radius:12px;background:#111c31"><small style="color:#94a3b8">${x[0]}</small><div style="font-size:24px;font-weight:900;color:#fff">${x[1]}</div></div>`).join('')+(!bossProductsFullLoaded?`<div style="width:100%;color:#94a3b8;font-size:12px">${lang()==='zh'?'正在读取完整总数…':'Loading full count…'}</div>`:'');
   }
@@ -4399,7 +4409,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     return normalizeCategoryName(value);
   }
 
-  function bossFacetMain(p){try{const tags=typeof productMainTags==='function'?productMainTags(p):[],first=tags&&tags[0],key=typeof first==='string'?first:(first&&first.key)||'';return String(key||'MAIN:GENERAL').replace(/^MAIN:/,'');}catch(e){return 'GENERAL';}}
+  function bossNeedsClassification(p){return !normalizeText(p&&p.code)||!normalizeText(p&&p.type)||!normalizeText(p&&p.productGroup)||!normalizeText(p&&p.appliesTo);}
+  function bossFacetMain(p){if(bossNeedsClassification(p))return 'GENERAL';try{const tags=typeof productMainTags==='function'?productMainTags(p):[],first=tags&&tags[0],key=typeof first==='string'?first:(first&&first.key)||'';return String(key||'MAIN:GENERAL').replace(/^MAIN:/,'');}catch(e){return 'GENERAL';}}
   function bossFacetType(p){try{return normalizeText(typeof productPurpose==='function'?productPurpose(p):p.type)||'OTHER';}catch(e){return normalizeText((p&&p.type)||'')||'OTHER';}}
   function bossFacetGroup(p){return normalizeText(p.productGroup)||normalizeText(p.name)||'-';}
   function bossMainText(v){return typeof mainCategoryLabel==='function'?mainCategoryLabel(v):(v||'General');}
