@@ -4070,6 +4070,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
               <label class="boss-field"><span class="boss-field-label" data-product-label="cost">${esc(tr('cost'))}</span><input id="bossProductCost" type="number" step="0.0001" placeholder="${esc(tr('cost'))}"></label>
               <label class="boss-field wide"><span class="boss-field-label" data-product-label="active">${esc(tr('active'))}</span><select id="bossProductActive"><option value="TRUE">${esc(tr('active'))}</option><option value="FALSE">${esc(tr('inactive'))}</option></select></label>
               <button id="bossProductGroupActiveBtn" type="button" class="wide" onclick="bossToggleSelectedProductGroup()" style="display:none;background:#b45309;color:#fff"></button>
+              <label id="bossProductApplyGroupWrap" class="boss-field wide" style="display:none;background:#13233d;border:1px solid #3b82f6;padding:12px"><span><input id="bossProductApplyGroup" type="checkbox" checked> <b id="bossProductApplyGroupText"></b></span><small>${lang()==='zh'?'只同步入口、入口内分类、品牌和商品系列；不会改变各规格的售价、库存、成本或照片。':'Only classification, brand and series are shared. Prices, stock, costs and photos stay separate.'}</small></label>
               <button id="bossProductSaveBtn" class="green wide" onclick="bossSaveProduct()">${esc(tr('saveProduct'))}</button>
             </div>
             <div id="bossProductHint" class="boss-result">${esc(tr('keepBlank'))}</div>
@@ -4414,7 +4415,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function bossFacetMains(p){try{const tags=typeof productMainTags==='function'?productMainTags(p):[],keys=(tags||[]).map(x=>String(typeof x==='string'?x:(x&&x.key)||'').replace(/^MAIN:/,'')).filter(Boolean);if(bossNeedsClassification(p)&&!keys.includes('GENERAL'))keys.push('GENERAL');return keys.length?[...new Set(keys)]:['GENERAL'];}catch(e){return ['GENERAL'];}}
   function bossFacetMain(p){return bossFacetMains(p)[0]||'GENERAL';}
   function bossFacetType(p){try{return normalizeText(typeof productPurpose==='function'?productPurpose(p):p.type)||'OTHER';}catch(e){return normalizeText((p&&p.type)||'')||'OTHER';}}
-  function bossFacetGroup(p){return normalizeText(p.productGroup)||normalizeText(p.name)||'-';}
+  function bossInferredSeries(p){const name=normalizeText(p&&p.name),stored=normalizeText(p&&p.productGroup);if(stored&&stored.toUpperCase()!==name.toUpperCase())return stored;return name.replace(/\(\s*(?:RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|(?:XXL|XL|S|M|L))\s*\)\s*$/i,'').replace(/\s+(?:RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML))\s*$/i,'').replace(/\s+/g,' ').trim()||stored||name||'-';}
+  function bossFacetGroup(p){return bossInferredSeries(p);}
   function bossMainText(v){return typeof mainCategoryLabel==='function'?mainCategoryLabel(v):(v||'General');}
   function bossTypeText(v){return bossTypeLabel(v)||v||'Other';}
   function bossFillSelect(id,items,current,placeholder,labelFn){const el=$(id);if(!el)return;el.innerHTML=`<option value="">${esc(placeholder)}</option>`+items.map(v=>`<option value="${esc(v)}">${esc(labelFn(v))}</option>`).join('');if(current&&items.includes(current))el.value=current;}
@@ -4458,6 +4460,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const finalType=selectedType==='__CUSTOM__'?normalizeText(($('bossProductCustomType')||{}).value).toUpperCase():selectedType;
     const finalApplies=bossProductAppliesToValue();
     const finalCategory=finalApplies==='GENERAL'||!finalType?'未分类':finalApplies.split(',').join('+')+' '+finalType;
+    const selectedRow=Number(($('bossProductRow')||{}).value||0),selectedProduct=(bossProductsCache||[]).find(p=>Number(p.row)===selectedRow),members=selectedProduct?bossSelectedGroupMembers(selectedProduct):[];
     return {
       row: ($('bossProductRow')||{}).value || '',
       originalCode: ($('bossProductOriginalCode')||{}).value || '',
@@ -4475,6 +4478,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ,productGroup: normalizeText(($('bossProductGroup')||{}).value)
       ,variant: normalizeText(($('bossProductVariant')||{}).value)
       ,appliesTo: finalApplies
+      ,applyGroup: !!(($('bossProductApplyGroup')||{}).checked&&members.length>1)
+      ,groupRows: members.map(p=>Number(p.row)||0).filter(n=>n>=2)
     };
   }
 
@@ -4783,7 +4788,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function bossIsLooseChild(p){const members=bossSelectedGroupMembers(p),hasBulk=members.some(x=>/(\(\s*[2-9][0-9]*(?:\.[0-9]+)?\s*KG\s*\))/i.test(x.name||'')),hasMoney=members.some(x=>/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test(x.name||''));return hasBulk&&hasMoney&&!/(\(\s*[2-9][0-9]*(?:\.[0-9]+)?\s*KG\s*\))/i.test(p.name||'');}
   function bossIsMoneyLooseVariant(p){return bossIsLooseChild(p)&&/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test((p&&p.name)||'');}
   function setBossMoneyVariantLock(p){const locked=!!p&&bossIsMoneyLooseVariant(p),ids=['bossProductCode','bossProductName','bossProductPrice','bossProductCategory','bossProductType','bossProductBrand','bossProductGroup','bossProductVariant','bossProductForChicken','bossProductForCat','bossProductForDog','bossProductForBird','bossProductForFish','bossProductForHamster','bossProductForBeverage','bossProductForGeneral','bossSuggestProductMetaBtn','bossProductStock','bossProductCost','bossProductActive'];ids.forEach(id=>{const el=$(id);if(el)el.disabled=locked;});const hint=$('bossProductHint');if(locked&&hint)hint.textContent=lang()==='zh'?'RM1／RM0.10 金额规格已锁定，只能修改商品照片；售价、成本和扣除重量由系统管理。':'RM1/RM0.10 is locked. Only its photo can be changed; price, cost and stock usage are system-managed.';}
-  function updateBossGroupActiveButton(p){const btn=$('bossProductGroupActiveBtn');if(!btn)return;if(!p||bossSelectedGroupMembers(p).length<2){btn.style.display='none';btn.dataset.group='';return;}btn.style.display='block';btn.dataset.group=bossFacetGroup(p);btn.dataset.nextActive=p.active===false?'TRUE':'FALSE';btn.textContent=p.active===false?(lang()==='zh'?'启用整个系列':'Enable entire series'):(lang()==='zh'?'停用整个系列':'Disable entire series');}
+  function updateBossGroupActiveButton(p){const btn=$('bossProductGroupActiveBtn'),wrap=$('bossProductApplyGroupWrap'),text=$('bossProductApplyGroupText');if(!btn)return;const members=p?bossSelectedGroupMembers(p):[];if(!p||members.length<2){btn.style.display='none';btn.dataset.group='';if(wrap)wrap.style.display='none';return;}btn.style.display='block';btn.dataset.group=bossFacetGroup(p);btn.dataset.nextActive=p.active===false?'TRUE':'FALSE';btn.textContent=p.active===false?(lang()==='zh'?'启用整个系列':'Enable entire series'):(lang()==='zh'?'停用整个系列':'Disable entire series');if(wrap)wrap.style.display='flex';if(text)text.textContent=lang()==='zh'?`保存并应用到整个「${bossFacetGroup(p)}」系列（${members.length} 个规格）`:`Save for the entire ${bossFacetGroup(p)} series (${members.length} variants)`;}
   window.bossToggleSelectedProductGroup=function(){const btn=$('bossProductGroupActiveBtn'),group=normalizeText(btn&&btn.dataset.group),active=(btn&&btn.dataset.nextActive)==='TRUE';if(!group)return;const msg=lang()==='zh'?`确认${active?'启用':'停用'}「${group}」整个系列？所有重量和价钱规格会一起处理。`:`${active?'Enable':'Disable'} the entire ${group} series?`;showConfirm(msg,()=>bossSetGroupActiveNow(group,active));};
   async function bossSetGroupActiveNow(group,active){setSubmitBusy(true,lang()==='zh'?(active?'正在启用整个系列...':'正在停用整个系列...'):(active?'Enabling series...':'Disabling series...'));try{const out=await timeout(apiCall('setProductGroupActive',[{group:group,active:active}]),45000,'Product group status');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?`已${active?'启用':'停用'} ${out.count||0} 个规格。`:`${out.count||0} variants updated.`,tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
 
@@ -4803,7 +4808,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       bossProductCategory:p.category||'',
       bossProductType:p.type||'',
       bossProductBrand:p.brand||'',
-      bossProductGroup:p.productGroup||'',
+      bossProductGroup:bossFacetGroup(p)||'',
       bossProductVariant:p.variant||'',
       bossProductInventoryGroup:p.inventoryGroup||'',
       bossProductStockFactor:p.stockFactor||1,
@@ -4870,7 +4875,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const payload=bossProductPayload();
     if(!String(payload.row||payload.originalCode||payload.originalName||'').trim()){ showAppAlert(lang()==='zh'?'请先从左边选择现有商品；新品请使用“进货 / 建立新品”。':'Select an existing product; create new products under Receiving.', tr('productEditor')); return; }
     if(!String(payload.name||'').trim()){ showAppAlert(tr('productName'), tr('productEditor')); return; }
-    if(!(Number(payload.price)>0)){ showAppAlert(tr('price'), tr('productEditor')); return; }
+    if(!(Number(payload.price)>=0)){ showAppAlert(tr('price'), tr('productEditor')); return; }
     const res=$('bossProductResult');
     const listQuery=($('bossProductSearch')||{}).value||'';
     setSubmitBusy(true, tr('savingProduct'));
@@ -4897,7 +4902,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const savedName=(out&&out.product&&out.product.name) || payload.name || '';
       const changedText=(out&&out.isNew ? tr('productAdded') : tr('productChanged')) + (savedName ? `: ${savedName}` : '');
       const variantText=(out && out.variantUpdated) ? `<small>${esc(tr('variantsUpdated'))}: ${esc(out.variantUpdated)}</small>` : '';
-      if(res)res.innerHTML=`<div class="boss-notice">${esc(changedText)}${variantText}</div>`;
+      const groupText=(out&&out.groupClassificationUpdated)?`<small>${lang()==='zh'?`整个系列已同步：${Number(out.groupClassificationUpdated)+1} 个规格`:`Series synchronized: ${Number(out.groupClassificationUpdated)+1} variants`}</small>`:'';
+      if(res)res.innerHTML=`<div class="boss-notice">${esc(changedText)}${variantText}${groupText}</div>`;
       bossProductsCache=bossLocalProductRows();
       fillBossProductFilterCategories();
       bossClearProductForm({keepList:true});
