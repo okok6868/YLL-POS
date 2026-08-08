@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-063-SERIES-LEAVES-UNCLASSIFIED-20260808 -->
+<!-- YLL POS BUILD: SESSION-066-REMOVE-CLASSIFIED-RESIDUE-20260808 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -4480,6 +4480,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ,variant: normalizeText(($('bossProductVariant')||{}).value)
       ,appliesTo: finalApplies
       ,applyGroup: !!(($('bossProductApplyGroup')||{}).checked&&members.length>1)
+      ,applyGroupName: selectedProduct?bossFacetGroup(selectedProduct):''
       ,groupRows: members.map(p=>Number(p.row)||0).filter(n=>n>=2)
     };
   }
@@ -4789,7 +4790,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function bossIsLooseChild(p){const members=bossSelectedGroupMembers(p),hasBulk=members.some(x=>/(\(\s*[2-9][0-9]*(?:\.[0-9]+)?\s*KG\s*\))/i.test(x.name||'')),hasMoney=members.some(x=>/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test(x.name||''));return hasBulk&&hasMoney&&!/(\(\s*[2-9][0-9]*(?:\.[0-9]+)?\s*KG\s*\))/i.test(p.name||'');}
   function bossIsMoneyLooseVariant(p){return bossIsLooseChild(p)&&/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test((p&&p.name)||'');}
   function setBossMoneyVariantLock(p){const locked=!!p&&bossIsMoneyLooseVariant(p),ids=['bossProductCode','bossProductName','bossProductPrice','bossProductCategory','bossProductType','bossProductBrand','bossProductGroup','bossProductVariant','bossProductForChicken','bossProductForCat','bossProductForDog','bossProductForBird','bossProductForFish','bossProductForHamster','bossProductForBeverage','bossProductForGeneral','bossSuggestProductMetaBtn','bossProductCost','bossProductActive'];ids.forEach(id=>{const el=$(id);if(el)el.disabled=locked;});const hint=$('bossProductHint');if(locked&&hint)hint.textContent=lang()==='zh'?'RM1／RM0.10 金额规格已锁定，只能修改商品照片；售价、成本和扣除重量由系统管理。':'RM1/RM0.10 is locked. Only its photo can be changed; price, cost and stock usage are system-managed.';}
-  function updateBossGroupActiveButton(p){const btn=$('bossProductGroupActiveBtn'),wrap=$('bossProductApplyGroupWrap'),text=$('bossProductApplyGroupText');if(!btn)return;const members=p?bossSelectedGroupMembers(p):[];if(!p||members.length<2){btn.style.display='none';btn.dataset.group='';if(wrap)wrap.style.display='none';return;}btn.style.display='block';btn.dataset.group=bossFacetGroup(p);btn.dataset.nextActive=p.active===false?'TRUE':'FALSE';btn.textContent=p.active===false?(lang()==='zh'?'启用整个系列':'Enable entire series'):(lang()==='zh'?'停用整个系列':'Disable entire series');if(wrap)wrap.style.display='flex';if(text)text.textContent=lang()==='zh'?`保存并应用到整个「${bossFacetGroup(p)}」系列（${members.length} 个规格）`:`Save for the entire ${bossFacetGroup(p)} series (${members.length} variants)`;}
+  function updateBossGroupActiveButton(p){const btn=$('bossProductGroupActiveBtn'),wrap=$('bossProductApplyGroupWrap'),text=$('bossProductApplyGroupText'),check=$('bossProductApplyGroup');if(!btn)return;const members=p?bossSelectedGroupMembers(p):[];if(!p||members.length<2){btn.style.setProperty('display','none','important');btn.dataset.group='';if(wrap)wrap.style.setProperty('display','none','important');if(text)text.textContent='';if(check)check.checked=false;return;}btn.style.setProperty('display','block','important');btn.dataset.group=bossFacetGroup(p);btn.dataset.nextActive=p.active===false?'TRUE':'FALSE';btn.textContent=p.active===false?(lang()==='zh'?'启用整个系列':'Enable entire series'):(lang()==='zh'?'停用整个系列':'Disable entire series');if(wrap)wrap.style.setProperty('display','flex','important');if(check)check.checked=true;if(text)text.textContent=lang()==='zh'?`保存并应用到整个「${bossFacetGroup(p)}」系列（${members.length} 个规格）`:`Save for the entire ${bossFacetGroup(p)} series (${members.length} variants)`;}
   window.bossToggleSelectedProductGroup=function(){const btn=$('bossProductGroupActiveBtn'),group=normalizeText(btn&&btn.dataset.group),active=(btn&&btn.dataset.nextActive)==='TRUE';if(!group)return;const msg=lang()==='zh'?`确认${active?'启用':'停用'}「${group}」整个系列？所有重量和价钱规格会一起处理。`:`${active?'Enable':'Disable'} the entire ${group} series?`;showConfirm(msg,()=>bossSetGroupActiveNow(group,active));};
   async function bossSetGroupActiveNow(group,active){setSubmitBusy(true,lang()==='zh'?(active?'正在启用整个系列...':'正在停用整个系列...'):(active?'Enabling series...':'Disabling series...'));try{const out=await timeout(apiCall('setProductGroupActive',[{group:group,active:active}]),45000,'Product group status');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?`已${active?'启用':'停用'} ${out.count||0} 个规格。`:`${out.count||0} variants updated.`,tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
 
@@ -4906,9 +4907,17 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const savedName=(out&&out.product&&out.product.name) || payload.name || '';
       const changedText=(out&&out.isNew ? tr('productAdded') : tr('productChanged')) + (savedName ? `: ${savedName}` : '');
       const variantText=(out && out.variantUpdated) ? `<small>${esc(tr('variantsUpdated'))}: ${esc(out.variantUpdated)}</small>` : '';
-      const groupText=(out&&out.groupClassificationUpdated)?`<small>${lang()==='zh'?`整个系列已同步：${Number(out.groupClassificationUpdated)+1} 个规格`:`Series synchronized: ${Number(out.groupClassificationUpdated)+1} variants`}</small>`:'';
+      const groupTotal=Number(out&&out.groupClassificationTotal)||((out&&out.groupClassificationUpdated)?Number(out.groupClassificationUpdated)+1:0);
+      const groupText=groupTotal>1?`<small>${lang()==='zh'?`整个系列已完成：${groupTotal} 个规格`:`Entire series completed: ${groupTotal} variants`}</small>`:'';
       if(res)res.innerHTML=`<div class="boss-notice">${esc(changedText)}${variantText}${groupText}</div>`;
-      bossProductsCache=bossLocalProductRows();
+      const refreshedGroup=(out&&Array.isArray(out.groupProducts))?out.groupProducts:[];
+      if(refreshedGroup.length){
+        const byRow={};refreshedGroup.forEach(p=>{if(Number(p.row)>=2)byRow[Number(p.row)]=p;});
+        bossProductsCache=(bossProductsCache||[]).map(p=>byRow[Number(p.row)]||p);
+      }else bossProductsCache=bossLocalProductRows();
+      bossProductsFullLoaded=true;
+      renderBossProductCounts();
+      fillBossProductFacets();
       fillBossProductFilterCategories();
       bossClearProductForm({keepList:true});
       renderBossProductList(listQuery);
