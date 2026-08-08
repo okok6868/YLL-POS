@@ -820,7 +820,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div class="header">
   <div class="header-top">
     <div class="title">YLL FEEDS ENTERPRISE</div>
-    <div class="tools"><span id="clock"></span><button class="plain-gear" title="" aria-label="系统" onclick="openBossLogin()">⚙️</button><button id="themeBtn" type="button" onclick="toggleMode()">☀</button><button id="langBtn" type="button" onclick="toggleLanguage()">中</button></div>
+    <div class="tools"><span id="clock"></span><button class="plain-gear" title="" aria-label="系统" onclick="openBossLogin()">⚙️</button><button id="themeBtn" type="button" onclick="toggleMode()">☀</button><button id="langBtn" type="button" onclick="toggleLanguage(event)">中</button></div>
   </div>
   <div class="stats">
     <div class="stat blue"><div class="icon">📊</div><div><small>今日 销售</small><b id="todaySales">RM 0.00</b></div></div>
@@ -2692,12 +2692,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     style.textContent=`
       .parcel-short-list{display:grid;gap:8px;margin:8px 0 10px}
       .parcel-short-card{display:block;width:100%;text-align:left;border:1px solid rgba(148,163,184,.28);border-radius:12px;background:rgba(15,23,42,.78);padding:10px;color:inherit}
-      .parcel-short-card.active{border-color:#22c55e;background:rgba(34,197,94,.16);box-shadow:0 0 0 2px rgba(34,197,94,.18)}
+      .parcel-short-card{position:relative;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+      .parcel-short-card.active{border-color:#22c55e;background:rgba(34,197,94,.30);box-shadow:0 0 0 3px rgba(34,197,94,.32)}
+      .parcel-short-card.active::before{content:'✓ 已选择';position:absolute;top:8px;right:10px;padding:4px 8px;border-radius:999px;background:#16a34a;color:#fff;font-size:12px;font-weight:900}
+      #parcelRecoverySelected{position:sticky;bottom:0;z-index:2;border:2px solid #22c55e!important;background:#14532d!important;color:#fff!important;font-weight:900!important}
       .parcel-short-date{font-weight:900;margin-bottom:8px;color:#e5e7eb}
       .parcel-short-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
       .parcel-short-grid span{display:flex;flex-direction:column;gap:2px;background:rgba(2,6,23,.52);border-radius:10px;padding:7px;color:#94a3b8;font-size:12px;line-height:1.2}
       .parcel-short-grid b{color:#f8fafc;font-size:16px;line-height:1.1}
       body.light .parcel-short-card{background:#fff;border-color:#d1d5db}
+      body.light .parcel-short-card.active{background:#dcfce7;border-color:#16a34a}
       body.light .parcel-short-date{color:#0f172a}
       body.light .parcel-short-grid span{background:#f1f5f9;color:#475569}
       body.light .parcel-short-grid b{color:#0f172a}
@@ -5739,6 +5743,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       <label class="boss-field"><span class="boss-field-label">${esc(tr('shortParcels'))}</span><input id="parcelMissing" type="number" inputmode="numeric" min="0" placeholder="0"></label>
       <label class="boss-field"><span class="boss-field-label">${esc(tr('returnedParcels'))}</span><input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}"></label>
       <div id="parcelRecoveryWrap" style="display:none">
+        <input id="parcelRecoveryDate" type="hidden" value="">
         <div class="discount-preview">${esc(tr('previousMissing'))}<br><small>${esc(tr('chooseRecoveryDate'))}</small></div>
         <div id="parcelRecoveryList"></div>
         <div id="parcelRecoverySelected" class="discount-preview" style="display:none"></div>
@@ -5759,7 +5764,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(wrap && list && rows.length){
         wrap.style.display='block';
         list.className='parcel-short-list';
-        list.innerHTML=rows.map(x=>`<button type="button" class="parcel-short-card" data-recovery-date="${esc(x.date)}" onclick="selectParcelRecoveryDate(${JSON.stringify(x.date)},${num(x.outstanding)},this)">
+        list.innerHTML=rows.map(x=>`<button type="button" class="parcel-short-card" data-recovery-date="${esc(x.date)}" data-recovery-outstanding="${num(x.outstanding)}">
           <div class="parcel-short-date">${esc(x.date)}</div>
           <div class="parcel-short-grid">
             <span>${esc(tr('missing'))}<b>${num(x.missing)}</b></span>
@@ -5767,6 +5772,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
             <span>${esc(tr('stillMissing'))}<b>${num(x.outstanding)}</b></span>
           </div>
         </button>`).join('');
+        list.onclick=e=>{
+          const card=e.target&&e.target.closest?e.target.closest('.parcel-short-card'):null;
+          if(!card||!list.contains(card))return;
+          e.preventDefault();e.stopPropagation();
+          selectParcelRecoveryDate(card.dataset.recoveryDate,num(card.dataset.recoveryOutstanding),card);
+        };
       }
     }catch(e){
       const el=$('parcelTodayStatus');
@@ -5796,18 +5807,21 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.selectParcelRecoveryDate = function(date,outstanding,el){
     window.__parcelRecoveryDate=String(date||'');
     window.__parcelRecoveryOutstanding=num(outstanding);
+    const dateInput=$('parcelRecoveryDate');
+    if(dateInput)dateInput.value=String(date||'');
     document.querySelectorAll('#parcelRecoveryList .parcel-short-card').forEach(x=>x.classList.remove('active'));
-    if(el)el.classList.add('active');
+    document.querySelectorAll('#parcelRecoveryList .parcel-short-card').forEach(x=>x.setAttribute('aria-pressed','false'));
+    if(el){el.classList.add('active');el.setAttribute('aria-pressed','true');}
     const selected=$('parcelRecoverySelected');
     if(selected){selected.style.display='block';selected.textContent=`${tr('selectedRecoveryDate')}: ${date} (${tr('stillMissing')} ${num(outstanding)})`;}
     const input=$('parcelRecovered');
-    if(input){input.max=String(num(outstanding));input.focus();}
+    if(input)input.max=String(num(outstanding));
   };
   window.saveParcelLog = async function(){
     if(parcelSubmitting)return;
     const delivered=num(($('parcelDelivered')||{}).value), missing=num(($('parcelMissing')||{}).value), returned=num(($('parcelReturned')||{}).value), recovered=num(($('parcelRecovered')||{}).value);
     const expected=delivered+missing;
-    const recoveryForDate=String(window.__parcelRecoveryDate||'');
+    const recoveryForDate=String((($('parcelRecoveryDate')||{}).value)||window.__parcelRecoveryDate||'');
     let note=($('parcelNote')||{}).value||'';
     if(!delivered && !missing && !returned && !recovered){ showAppAlert(tr('parcelRequired'),tr('shopee')); return; }
     if(recovered>0 && !recoveryForDate){ showAppAlert(tr('recoveryDateRequired'),tr('shopee')); return; }
@@ -6242,14 +6256,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setStaticText();
   };
 
-  window.toggleLanguage = function(){
+  let languageTapLocked=false;
+  window.toggleLanguage = function(event){
+    if(event){event.preventDefault();event.stopPropagation();}
+    if(languageTapLocked)return;
+    languageTapLocked=true;
+    setTimeout(()=>{languageTapLocked=false;},500);
     localStorage.setItem('yllLang', lang()==='zh' ? 'en' : 'zh');
     setStaticText();
     try{ renderCategories(); }catch(e){}
     try{ render(currentList || currentProducts()); }catch(e){}
     try{
-      const productBox=$('bossProductBox');
-      if(productBox){productBox.remove();ensureBossProductPanel();window.bossOpenProducts();}
+      const dashboard=$('bossDashboard'),productBox=$('bossProductBox');
+      const bossVisible=!!(dashboard&&dashboard.classList.contains('active'));
+      if(productBox&&bossVisible){productBox.remove();ensureBossProductPanel();window.bossOpenProducts();}
     }catch(e){}
   };
 
