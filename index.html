@@ -4157,6 +4157,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   window.bossConfirmResetClassification=function(){
+    if(!bossProductsFullLoaded){showAppAlert(lang()==='zh'?'完整商品资料还没读取完成。请先点“重新读取完整商品”，确认商品总数后再执行。':'The complete product list is not loaded. Reload it and confirm the total before continuing.',tr('productEditor'));return;}
     const msg=lang()==='zh'?'确认放弃全部旧分类？所有商品会进入“未分类”，但库存、售价、进货价、照片、编号和启用状态都会保留。此操作只需要执行一次。':'Discard all old classifications? Every product will move to Unclassified while stock, prices, costs, photos, codes and active status remain.';
     showConfirm(msg,bossResetClassificationNow);
   };
@@ -4345,10 +4346,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   function renderBossProductCounts(){
     const box=$('bossProductCounts'); if(!box)return;
-    const rows=(bossProductsCache||[]).filter(p=>normalizeText(p.name)||normalizeText(p.code));
-    const inactive=rows.filter(p=>p.active===false).length,active=rows.length-inactive;
+    const rows=(bossProductsCache||[]).filter(p=>normalizeText(p.name));
+    const inactive=rows.filter(p=>p.active===false).length,unlisted=rows.filter(p=>p.active!==false&&!(Number(p.price)>0)).length,listed=rows.filter(p=>p.active!==false&&Number(p.price)>0).length;
     const unclassified=rows.filter(p=>{if(bossNeedsClassification(p))return true;const entries=String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).filter(Boolean);return entries.length?entries.includes('GENERAL'):/UNCLASSIFIED|UNCATEGORIZED|未分类/.test(String(p.category||'').toUpperCase());}).length;
-    const cards=[[lang()==='zh'?'商品总数':'Total',rows.length,'#3b82f6'],[lang()==='zh'?'已上架':'Active',active,'#22c55e'],[lang()==='zh'?'已停用':'Inactive',inactive,'#ef4444'],[lang()==='zh'?'未分类':'Unclassified',unclassified,'#f59e0b']];
+    const cards=[[lang()==='zh'?'商品总数':'Total',rows.length,'#3b82f6'],[lang()==='zh'?'已上架':'Listed',listed,'#22c55e'],[lang()==='zh'?'未上架（价钱为 0）':'Unlisted (price 0)',unlisted,'#a855f7'],[lang()==='zh'?'已停用':'Inactive',inactive,'#ef4444'],[lang()==='zh'?'未分类':'Unclassified',unclassified,'#f59e0b']];
     box.innerHTML=cards.map(x=>`<div style="min-width:120px;flex:1;padding:12px 14px;border:1px solid #334155;border-left:4px solid ${x[2]};border-radius:12px;background:#111c31"><small style="color:#94a3b8">${x[0]}</small><div style="font-size:24px;font-weight:900;color:#fff">${x[1]}</div></div>`).join('')+(!bossProductsFullLoaded?`<div style="width:100%;color:#94a3b8;font-size:12px">${lang()==='zh'?'正在读取完整总数…':'Loading full count…'}</div>`:'');
   }
 
@@ -4410,7 +4411,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   function bossNeedsClassification(p){return !normalizeText(p&&p.code)||!normalizeText(p&&p.type)||!normalizeText(p&&p.productGroup)||!normalizeText(p&&p.appliesTo);}
-  function bossFacetMains(p){if(bossNeedsClassification(p))return ['GENERAL'];try{const tags=typeof productMainTags==='function'?productMainTags(p):[],keys=(tags||[]).map(x=>String(typeof x==='string'?x:(x&&x.key)||'').replace(/^MAIN:/,'')).filter(Boolean);return keys.length?[...new Set(keys)]:['GENERAL'];}catch(e){return ['GENERAL'];}}
+  function bossFacetMains(p){try{const tags=typeof productMainTags==='function'?productMainTags(p):[],keys=(tags||[]).map(x=>String(typeof x==='string'?x:(x&&x.key)||'').replace(/^MAIN:/,'')).filter(Boolean);if(bossNeedsClassification(p)&&!keys.includes('GENERAL'))keys.push('GENERAL');return keys.length?[...new Set(keys)]:['GENERAL'];}catch(e){return ['GENERAL'];}}
   function bossFacetMain(p){return bossFacetMains(p)[0]||'GENERAL';}
   function bossFacetType(p){try{return normalizeText(typeof productPurpose==='function'?productPurpose(p):p.type)||'OTHER';}catch(e){return normalizeText((p&&p.type)||'')||'OTHER';}}
   function bossFacetGroup(p){return normalizeText(p.productGroup)||normalizeText(p.name)||'-';}
@@ -4846,7 +4847,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       res.textContent=tr('loading');
     }
     try{
-      const rows=await timeout(apiCall('getProductsForBoss',[]),9000,'Products');
+      const rows=await timeout(apiCall('getProductsForBoss',[]),30000,'Products');
       if(Array.isArray(rows)){bossProductsCache=rows;bossProductsFullLoaded=true;}
       fillBossReceiveCategories();
       fillBossStocktakeCategories();
@@ -4857,7 +4858,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(res)res.textContent=`${bossProductsCache.length} ${tr('products')}`;
     }catch(e){
       if(localRows.length){
-        if(res)res.textContent=`${localRows.length} ${tr('products')} (${tr('dashboardSlow')})`;
+        if(res)res.innerHTML=`${localRows.length} ${tr('products')} (${tr('dashboardSlow')}) <button type="button" onclick="bossOpenProducts()" style="margin-left:8px;padding:7px 12px;border-radius:8px">${lang()==='zh'?'重新读取完整商品':'Reload complete list'}</button>`;
       }else if(res){
         res.textContent=tr('loadFailed') + (e.message||e);
       }
