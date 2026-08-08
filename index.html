@@ -4410,7 +4410,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   function bossNeedsClassification(p){return !normalizeText(p&&p.code)||!normalizeText(p&&p.type)||!normalizeText(p&&p.productGroup)||!normalizeText(p&&p.appliesTo);}
-  function bossFacetMain(p){if(bossNeedsClassification(p))return 'GENERAL';try{const tags=typeof productMainTags==='function'?productMainTags(p):[],first=tags&&tags[0],key=typeof first==='string'?first:(first&&first.key)||'';return String(key||'MAIN:GENERAL').replace(/^MAIN:/,'');}catch(e){return 'GENERAL';}}
+  function bossFacetMains(p){if(bossNeedsClassification(p))return ['GENERAL'];try{const tags=typeof productMainTags==='function'?productMainTags(p):[],keys=(tags||[]).map(x=>String(typeof x==='string'?x:(x&&x.key)||'').replace(/^MAIN:/,'')).filter(Boolean);return keys.length?[...new Set(keys)]:['GENERAL'];}catch(e){return ['GENERAL'];}}
+  function bossFacetMain(p){return bossFacetMains(p)[0]||'GENERAL';}
   function bossFacetType(p){try{return normalizeText(typeof productPurpose==='function'?productPurpose(p):p.type)||'OTHER';}catch(e){return normalizeText((p&&p.type)||'')||'OTHER';}}
   function bossFacetGroup(p){return normalizeText(p.productGroup)||normalizeText(p.name)||'-';}
   function bossMainText(v){return typeof mainCategoryLabel==='function'?mainCategoryLabel(v):(v||'General');}
@@ -4419,9 +4420,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function fillBossProductFacets(){
     const rows=bossProductsCache&&bossProductsCache.length?bossProductsCache:bossLocalProductRows(),mainEl=$('bossProductMainFilter'),typeEl=$('bossProductTypeFilter'),groupEl=$('bossProductGroupFilter');if(!mainEl||!typeEl||!groupEl)return;
     const oldMain=mainEl.value,oldType=typeEl.value,oldGroup=groupEl.value,order=['CHICKEN','DOG','CAT','BIRD','FISH','HAMSTER','BEVERAGE','GENERAL'];
-    const mains=[...new Set(rows.map(bossFacetMain))].sort((a,b)=>(order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b))||a.localeCompare(b));
+    const mains=[...new Set(rows.flatMap(bossFacetMains))].sort((a,b)=>(order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b))||a.localeCompare(b));
     bossFillSelect('bossProductMainFilter',mains,oldMain,lang()==='zh'?'全部主分类':'All main categories',bossMainText);
-    const main=mainEl.value,mainRows=rows.filter(p=>!main||bossFacetMain(p)===main),types=[...new Set(mainRows.map(bossFacetType))].sort((a,b)=>bossTypeText(a).localeCompare(bossTypeText(b)));
+    const main=mainEl.value,mainRows=rows.filter(p=>!main||bossFacetMains(p).includes(main)),types=[...new Set(mainRows.map(bossFacetType))].sort((a,b)=>bossTypeText(a).localeCompare(bossTypeText(b)));
     bossFillSelect('bossProductTypeFilter',types,oldType,lang()==='zh'?'全部里面分类':'All subcategories',bossTypeText);
     const type=typeEl.value,typeRows=mainRows.filter(p=>!type||bossFacetType(p)===type),groups=[...new Set(typeRows.map(bossFacetGroup))].sort((a,b)=>a.localeCompare(b));
     bossFillSelect('bossProductGroupFilter',groups,oldGroup,lang()==='zh'?'全部商品系列':'All product series',v=>v);
@@ -4557,7 +4558,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const q=String(query||'').trim().toLowerCase();
     const filterMain=normalizeText(($('bossProductMainFilter')||{}).value),filterType=normalizeText(($('bossProductTypeFilter')||{}).value),filterGroup=normalizeText(($('bossProductGroupFilter')||{}).value);
     const rows=(bossProductsCache||[]).map((p,i)=>({p,i})).filter(({p})=>{
-      if(filterMain && bossFacetMain(p)!==filterMain)return false;
+      if(filterMain && !bossFacetMains(p).includes(filterMain))return false;
       if(filterType && bossFacetType(p)!==filterType)return false;
       if(filterGroup && bossFacetGroup(p)!==filterGroup)return false;
       if(!q)return true;
@@ -4939,9 +4940,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function fillBossLostFacets(){
     const rows=bossLostProductsCache&&bossLostProductsCache.length?bossLostProductsCache:bossLocalProductRows(),mainEl=$('bossLostMainFilter'),typeEl=$('bossLostTypeFilter'),groupEl=$('bossLostGroupFilter');if(!mainEl||!typeEl||!groupEl)return;
     const oldMain=mainEl.value,oldType=typeEl.value,oldGroup=groupEl.value,order=['CHICKEN','DOG','CAT','BIRD','FISH','HAMSTER','BEVERAGE','GENERAL'];
-    const mains=[...new Set(rows.map(bossFacetMain))].sort((a,b)=>(order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b))||a.localeCompare(b));
+    const mains=[...new Set(rows.flatMap(bossFacetMains))].sort((a,b)=>(order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b))||a.localeCompare(b));
     bossFillSelect('bossLostMainFilter',mains,oldMain,lang()==='zh'?'全部主分类':'All main categories',bossMainText);
-    const main=mainEl.value,mainRows=rows.filter(p=>!main||bossFacetMain(p)===main),types=[...new Set(mainRows.map(bossFacetType))].sort((a,b)=>bossTypeText(a).localeCompare(bossTypeText(b)));
+    const main=mainEl.value,mainRows=rows.filter(p=>!main||bossFacetMains(p).includes(main)),types=[...new Set(mainRows.map(bossFacetType))].sort((a,b)=>bossTypeText(a).localeCompare(bossTypeText(b)));
     bossFillSelect('bossLostTypeFilter',types,oldType,lang()==='zh'?'全部里面分类':'All subcategories',bossTypeText);
     const type=typeEl.value,typeRows=mainRows.filter(p=>!type||bossFacetType(p)===type),groups=[...new Set(typeRows.map(bossFacetGroup))].sort((a,b)=>a.localeCompare(b));
     bossFillSelect('bossLostGroupFilter',groups,oldGroup,lang()==='zh'?'全部商品系列':'All product series',v=>v);
@@ -4984,7 +4985,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const q=String(query||'').trim().toLowerCase();
     const main=normalizeText(($('bossLostMainFilter')||{}).value),type=normalizeText(($('bossLostTypeFilter')||{}).value),group=normalizeText(($('bossLostGroupFilter')||{}).value);
     const rows=(bossLostProductsCache||[]).map((p,i)=>({p,i})).filter(({p})=>{
-      if(main && bossFacetMain(p)!==main)return false;
+      if(main && !bossFacetMains(p).includes(main))return false;
       if(type && bossFacetType(p)!==type)return false;
       if(group && bossFacetGroup(p)!==group)return false;
       if(!q)return true;
