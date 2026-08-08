@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-066-REMOVE-CLASSIFIED-RESIDUE-20260808 -->
+<!-- YLL POS BUILD: SESSION-068-SAVE-CONFIRM-NO-JUMP-20260808 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -4919,8 +4919,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       renderBossProductCounts();
       fillBossProductFacets();
       fillBossProductFilterCategories();
-      bossClearProductForm({keepList:true});
       renderBossProductList(listQuery);
+      const savedRow=Number(out&&out.row);
+      const savedIndex=(bossProductsCache||[]).findIndex(p=>Number(p.row)===savedRow);
+      if(savedIndex>=0)bossPickProduct(savedIndex);
       if(typeof showToast === 'function')showToast(changedText);
     }catch(e){
       const errMsg=String((e&&e.message)||e||'');
@@ -4928,8 +4930,18 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         keepBossDashboardOpen('productManage');
         showBossPanel('bossProductBox','productManage');
         try{ localStorage.removeItem('yllProductsCacheV1'); }catch(_){}
-        if(res)res.innerHTML=`<div class="boss-notice">${esc(tr('productSaveSlow'))}<small>${esc(tr('dashboardSlow'))}</small></div>`;
-        setTimeout(()=>{ try{ if(window.__bossSessionActive && typeof bossOpenProducts==='function') bossOpenProducts(); }catch(_){} }, 2500);
+        let confirmed=null;
+        try{
+          await new Promise(resolve=>setTimeout(resolve,1800));
+          const check=await timeout(apiCall('getProductSaveStatus',[{row:payload.row,code:payload.code,originalCode:payload.originalCode,name:payload.name,originalName:payload.originalName}]),15000,'Product save confirmation');
+          if(check&&check.found&&check.product&&normalizeText(check.product.name)===normalizeText(payload.name))confirmed=check.product;
+        }catch(_){ }
+        if(confirmed){
+          const rowNo=Number(confirmed.row),idx=(bossProductsCache||[]).findIndex(p=>Number(p.row)===rowNo);
+          if(idx>=0)bossProductsCache[idx]=confirmed;
+          renderBossProductCounts();fillBossProductFilterCategories();renderBossProductList(listQuery);
+          if(res)res.innerHTML=`<div class="boss-notice">${lang()==='zh'?'已检查Sheet：商品确定保存成功。':'Sheet checked: product was saved successfully.'}<small>${esc(confirmed.name||payload.name)}</small></div>`;
+        }else if(res)res.innerHTML=`<div class="boss-notice">${esc(tr('productSaveSlow'))}<small>${lang()==='zh'?'画面会停留在这里，不会自动跳页。请稍后再按保存或刷新商品资料。':'This page will stay open. Wait, then save again or refresh products.'}</small></div>`;
       }else{
         if(res)res.textContent=tr('saveFailed') + errMsg;
         showAppAlert(tr('saveFailed') + errMsg, tr('productEditor'));
