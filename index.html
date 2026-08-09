@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-073-ZERO-STOCK-DEBT-LIMIT-20260809 -->
+<!-- YLL POS BUILD: SESSION-074-USED-INNER-CATEGORIES-FIRST-20260809 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -4453,7 +4453,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const sel=$('bossProductType'); if(!sel)return;
     const old=normalizeText(sel.value),fixed=bossFixedProductTypes(),rows=bossProductsCache||[],existing=[...new Set(rows.map(p=>normalizeText(p.type)).filter(Boolean))],types=[...new Set(fixed.concat(existing))],selected=String(bossProductAppliesToValue()).split(',').filter(Boolean),counts={};
     rows.forEach(p=>{const type=normalizeText(p.type)||'OTHER',mains=[];try{(productMainTags(p)||[]).forEach(x=>mains.push(String(typeof x==='string'?x:(x&&x.key)||'').replace(/^MAIN:/,'')));}catch(e){mains.push(bossFacetMain(p));}if(selected.some(x=>mains.includes(x)||(x==='GENERAL'&&bossNeedsClassification(p))))counts[type]=(counts[type]||0)+1;});
-    sel.innerHTML=`<option value="">${lang()==='zh'?'请选择入口内分类':'Select category under entrance'}</option>`+types.map(v=>`<option value="${esc(v)}">${esc(bossTypeLabel(v))}（${Number(counts[v]||0)}）</option>`).join('');
+    const orderedTypes=types.map((value,index)=>({value,index,count:Number(counts[value]||0)})).sort((a,b)=>(b.count>0)-(a.count>0)||a.index-b.index).map(x=>x.value);
+    sel.innerHTML=`<option value="">${lang()==='zh'?'请选择入口内分类':'Select category under entrance'}</option>`+orderedTypes.map(v=>`<option value="${esc(v)}">${esc(bossTypeLabel(v))}（${Number(counts[v]||0)}）</option>`).join('');
     if(old&&types.includes(old))sel.value=old;
     sel.onchange=bossProductTypeChanged;
   }
