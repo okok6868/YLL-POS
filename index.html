@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-082-IPAD-CHECKOUT-SCOPE-FIX-20260809 -->
+<!-- YLL POS BUILD: SESSION-084-IPAD-BOSS-EDITOR-20260809 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -574,7 +574,7 @@ body.light .auto-print-btn{
 
 
 /* V4.3.2 权限 / 安全 / busy lock */
-body.pos-busy .products, body.pos-busy .cart, body.pos-busy .sidebar{pointer-events:none;opacity:.55}
+body.pos-busy .products, body.pos-busy .cart, body.pos-busy .paybar, body.pos-busy .sidebar{pointer-events:none;opacity:.55}
 .security-lock{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#020617,#111827);display:none;align-items:center;justify-content:center;text-align:center;padding:22px}
 .security-lock.active{display:flex}
 .security-card{max-width:520px;background:#111827;border:1px solid rgba(239,68,68,.55);box-shadow:0 30px 90px rgba(0,0,0,.75);border-radius:24px;padding:28px;color:#fff}
@@ -715,6 +715,23 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
   #bossDashboard .modal-content{width:calc(100vw - 12px)!important;max-height:calc(100dvh - 12px)!important;border-radius:22px!important}
   .boss-dashboard-shell{padding:12px!important}.boss-layout{grid-template-columns:1fr!important}.boss-tab-grid{position:static;display:grid!important;grid-template-columns:repeat(2,1fr)!important}.boss-tab-grid button{text-align:center!important;justify-content:center!important}.boss-overview-grid,.boss-money-cards{grid-template-columns:1fr!important}.boss-report-grid{grid-template-columns:repeat(2,1fr)!important}.boss-hero{position:static!important}
 }
+/* SESSION-084: iPad Boss product editor uses one readable work column. */
+@media (min-width:700px) and (max-width:1180px) and (min-aspect-ratio:1/1){
+  #bossDashboard .modal-content{width:calc(100vw - 16px)!important;}
+  #bossDashboard .boss-dashboard-shell{padding:12px!important;}
+  #bossDashboard .boss-hero{position:static!important;padding:14px!important;margin-bottom:12px!important;}
+  #bossDashboard .boss-layout{grid-template-columns:170px minmax(0,1fr)!important;gap:12px!important;}
+  #bossDashboard .boss-tab-grid{top:0!important;padding:8px!important;gap:7px!important;}
+  #bossDashboard .boss-tab-grid button{min-height:43px!important;padding:9px 10px!important;font-size:13px!important;}
+  #bossDashboard .boss-panel{padding:14px!important;}
+  #bossProductBox .boss-product-tools{grid-template-columns:1fr!important;gap:12px!important;}
+  #bossProductBox .boss-work-menu{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #bossProductBox .boss-work-menu button{min-height:46px!important;}
+  #bossProductSelectorArea{padding-bottom:4px!important;}
+  #bossWorkEdit{width:100%!important;box-sizing:border-box!important;}
+  #bossWorkEdit .boss-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #bossWorkEdit .boss-applies-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+}
 html,body,#app,.layout{background-color:#050816!important}
 body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-area-inset-bottom);background:#050816;z-index:1;pointer-events:none}
 
@@ -807,6 +824,9 @@ body{overflow:hidden!important}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none!important;margin:0!important}
 input[type=number]{-moz-appearance:textfield!important;appearance:textfield!important}
 .phone-admin-launcher{display:none}
+#subMenuList.pos-subcategory-bar{display:none;gap:8px;padding:9px 12px;overflow-x:auto;overflow-y:hidden;border-bottom:1px solid var(--line);background:var(--panel);flex:0 0 auto;scrollbar-width:thin}
+#subMenuList.pos-subcategory-bar .subcat-heading{display:none}
+#subMenuList.pos-subcategory-bar .cat-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:max-content;min-height:42px;padding:8px 13px;margin:0;border-radius:12px;flex:0 0 auto}
 @media (max-width:700px) and (hover:none) and (pointer:coarse){
   body>.header,body>.layout{display:none!important}
   .phone-admin-launcher{display:flex;min-height:100dvh;padding:24px;align-items:center;justify-content:center;background:linear-gradient(145deg,#020617,#111827);color:#fff}
@@ -857,7 +877,6 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <div class="sidebar">
     <div class="cat-btn active" onclick="quickCat('全部分类',this)"><span>常卖优先</span><span class="cat-count">0</span></div>
     <div id="menuList"></div>
-    <div id="subMenuList" style="display:none"></div>
   </div>
 
   <div class="main">
@@ -873,6 +892,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
         <button onclick="nextPage()">➡</button>
       </div>
     </div>
+    <div id="subMenuList" class="pos-subcategory-bar" style="display:none"></div>
     <div id="list" class="products"></div>
   </div>
 
@@ -2345,7 +2365,7 @@ function checkoutStockStatus(){
 }
 
 openPay = function(){
-  if(typeof window.checkoutActionAllowed==='function'&&!window.checkoutActionAllowed())return;
+  if(isCheckingOut)return;
   if(!cart.length){alert('No item in cart');return;}
   const status=checkoutStockStatus(),short=status.short;
   if(status.blocked.length){
@@ -3015,6 +3035,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         #bossProductBox .boss-product-tools,#bossLostBox .boss-product-tools{grid-template-columns:1fr!important}
       }
       #bossWorkEdit:not(.has-product)>:not(#bossEditPrompt){display:none!important}
+      #bossWorkEdit:not(.has-product) .boss-product-grid,#bossWorkEdit:not(.has-product) #bossProductHint{display:none!important}
       #bossWorkEdit.has-product>#bossEditPrompt{display:none!important}
       body.light,body.light #app,body.light .app,body.light .layout,body.light .main,body.light .products{background:#f3f4f6!important;background-color:#f3f4f6!important;color:#0f172a!important}
       body.light::after,body.light .modal::after{background:#f3f4f6!important}
@@ -3263,21 +3284,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       busy.style.zIndex='';
     }
   }
-
-  function checkoutActionAllowed(){
-    let checking=!!window.isCheckingOut;
-    try{ checking=checking||!!isCheckingOut; }catch(e){}
-    if(!checking)return true;
-    const busy=$('checkoutBusy'),started=Number(window.__checkoutBusyStartedAt)||0;
-    const visible=!!(busy&&busy.classList.contains('active'));
-    if(!visible||!started||Date.now()-started>90000){
-      if(typeof setCheckoutBusy==='function')setCheckoutBusy(false);
-      return true;
-    }
-    if(typeof showToast==='function')showToast(tr('processingCheckout'));
-    return false;
-  }
-  window.checkoutActionAllowed=checkoutActionAllowed;
 
   function setStatDetail(id, html){
     const b=$(id);
@@ -3818,13 +3824,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     };
     if(main==='PROMOTION')return lang()==='zh'?'促销':'Promotion';
     if(beverageLabels[type])return beverageLabels[type][lang()==='zh'?0:1];
-    const animal={CHICKEN:['鸡','Chicken'],DOG:['狗','Dog'],CAT:['猫','Cat'],BIRD:['鸟','Bird'],FISH:['鱼','Fish'],HAMSTER:['仓鼠','Hamster']},a=animal[main],zh={FOOD:'食品','DRY FOOD':'干粮','WET FOOD':'湿粮','CANNED FOOD':'罐头',TREAT:'零食',MILK:'奶粉',MEDICINE:'药品',DEWORMING:'驱虫药',SUPPLEMENT:'营养品',HYGIENE:'卫生用品',SHAMPOO:'洗毛水','FLEA & TICK':'跳蚤／牛蜱护理',GROOMING:'美容护理',TOY:'玩具',ACCESSORY:'用品','FEEDER / DRINKER':'食盆／饮水器','CAGE / BEDDING':'笼子／垫材',AQUARIUM:'鱼缸用品','MINERAL WATER':'矿泉水','SOFT DRINK':'汽水',LITTER:'猫砂','LITTER BOX':'猫砂盆','HYGIENE / SUPPLEMENT':'旧分类（待细分）',OTHER:'其它'},en={FOOD:'Food','DRY FOOD':'Dry food','WET FOOD':'Wet food','CANNED FOOD':'Canned food',TREAT:'Treat',MILK:'Milk',MEDICINE:'Medicine',DEWORMING:'Deworming',SUPPLEMENT:'Supplement',HYGIENE:'Hygiene',SHAMPOO:'Shampoo','FLEA & TICK':'Flea & tick care',GROOMING:'Grooming',TOY:'Toy',ACCESSORY:'Accessory','FEEDER / DRINKER':'Feeder / drinker','CAGE / BEDDING':'Cage / bedding',AQUARIUM:'Aquarium supplies','MINERAL WATER':'Mineral water','SOFT DRINK':'Soft drink',LITTER:'Litter','LITTER BOX':'Litter box','HYGIENE / SUPPLEMENT':'Legacy category (review)',OTHER:'Other'};
+    const animal={CHICKEN:['鸡','Chicken'],DOG:['狗','Dog'],CAT:['猫','Cat'],BIRD:['鸟','Bird'],FISH:['鱼','Fish'],HAMSTER:['仓鼠','Hamster']},a=animal[main],zh={FOOD:'食品','DRY FOOD':'干粮','WET FOOD':'湿粮','CANNED FOOD':'罐头',TREAT:'零食',MILK:'奶粉',MEDICINE:'药品',DEWORMING:'驱虫药',SUPPLEMENT:'营养品',HYGIENE:'卫生用品',SHAMPOO:'冲凉液','FLEA & TICK':'跳蚤／牛蜱护理',GROOMING:'美容护理',TOY:'玩具',ACCESSORY:'用品','FEEDER / DRINKER':'食盆／饮水器','CAGE / BEDDING':'笼子／垫材',AQUARIUM:'鱼缸用品','MINERAL WATER':'矿泉水','SOFT DRINK':'汽水',LITTER:'猫砂','LITTER BOX':'猫砂盆','HYGIENE / SUPPLEMENT':'旧分类（待细分）',OTHER:'其它'},en={FOOD:'Food','DRY FOOD':'Dry food','WET FOOD':'Wet food','CANNED FOOD':'Canned food',TREAT:'Treat',MILK:'Milk',MEDICINE:'Medicine',DEWORMING:'Deworming',SUPPLEMENT:'Supplement',HYGIENE:'Hygiene',SHAMPOO:'Shampoo','FLEA & TICK':'Flea & tick care',GROOMING:'Grooming',TOY:'Toy',ACCESSORY:'Accessory','FEEDER / DRINKER':'Feeder / drinker','CAGE / BEDDING':'Cage / bedding',AQUARIUM:'Aquarium supplies','MINERAL WATER':'Mineral water','SOFT DRINK':'Soft drink',LITTER:'Litter','LITTER BOX':'Litter box','HYGIENE / SUPPLEMENT':'Legacy category (review)',OTHER:'Other'};
     if(lang()==='zh')return (a&&['FOOD','DRY FOOD','WET FOOD','CANNED FOOD','TREAT','MILK','TOY','ACCESSORY','FEEDER / DRINKER'].includes(type)?a[0]:'')+(zh[type]||type);
     return (a&&['FOOD','DRY FOOD','WET FOOD','CANNED FOOD','TREAT','MILK','TOY','ACCESSORY','FEEDER / DRINKER'].includes(type)?a[1]+' ':'')+(en[type]||type);
   }
   function productsForMain(main){return currentProducts().filter(p=>productMainTags(p).some(t=>t.key===main));}
   function hideSubCategories(){const sub=$('subMenuList');if(sub){sub.style.display='none';sub.innerHTML='';}}
-  function renderSubCategories(main){const sub=$('subMenuList');if(!sub)return;const rows=productsForMain(main),mainName=main.replace('MAIN:',''),groups=new Map();rows.forEach(p=>{const type=mainName==='PROMOTION'?'PROMOTION':productPurpose(p);if(!groups.has(type))groups.set(type,0);groups.set(type,groups.get(type)+1);});if(groups.size<=1&&mainName!=='PROMOTION'){hideSubCategories();return;}const order=['PROMOTION','FOOD','DRY FOOD','WET FOOD','CANNED FOOD','TREAT','MILK','MEDICINE','DEWORMING','SUPPLEMENT','HYGIENE','SHAMPOO','FLEA & TICK','GROOMING','LITTER','LITTER BOX','TOY','ACCESSORY','FEEDER / DRINKER','CAGE / BEDDING','AQUARIUM','SOFT DRINK','MINERAL WATER','PACKAGED WATER','LARGE BOTTLE','SMALL BOTTLE','OTHER'];sub.style.display='block';sub.innerHTML=`<div class="subcat-heading">${lang()==='zh'?'里面的分类':'Categories'}</div><div class="cat-btn subcat-btn active" onclick='quickSubCat("ALL",this)'><span>${lang()==='zh'?'全部':'All'}</span><span class="cat-count">${rows.length}</span></div>`+[...groups.entries()].sort((a,b)=>{const ai=order.indexOf(a[0]),bi=order.indexOf(b[0]);return (ai<0?99:ai)-(bi<0?99:bi);}).map(([type,count])=>`<div class="cat-btn subcat-btn" onclick='quickSubCat(${JSON.stringify(type)},this)'><span>${esc(subCategoryLabel(mainName,type))}</span><span class="cat-count">${count}</span></div>`).join('');}
+  function renderSubCategories(main){const sub=$('subMenuList');if(!sub)return;const rows=productsForMain(main),mainName=main.replace('MAIN:',''),groups=new Map();rows.forEach(p=>{const type=mainName==='PROMOTION'?'PROMOTION':productPurpose(p);if(!groups.has(type))groups.set(type,0);groups.set(type,groups.get(type)+1);});if(groups.size<=1&&mainName!=='PROMOTION'){hideSubCategories();return;}const order=['PROMOTION','FOOD','DRY FOOD','WET FOOD','CANNED FOOD','TREAT','MILK','MEDICINE','DEWORMING','SUPPLEMENT','HYGIENE','SHAMPOO','FLEA & TICK','GROOMING','LITTER','LITTER BOX','TOY','ACCESSORY','FEEDER / DRINKER','CAGE / BEDDING','AQUARIUM','SOFT DRINK','MINERAL WATER','PACKAGED WATER','LARGE BOTTLE','SMALL BOTTLE','OTHER'];sub.style.display='flex';sub.innerHTML=`<div class="subcat-heading">${lang()==='zh'?'里面的分类':'Categories'}</div><div class="cat-btn subcat-btn active" onclick='quickSubCat("ALL",this)'><span>${lang()==='zh'?'全部':'All'}</span><span class="cat-count">${rows.length}</span></div>`+[...groups.entries()].sort((a,b)=>{const ai=order.indexOf(a[0]),bi=order.indexOf(b[0]);return (ai<0?99:ai)-(bi<0?99:bi);}).map(([type,count])=>`<div class="cat-btn subcat-btn" onclick='quickSubCat(${JSON.stringify(type)},this)'><span>${esc(subCategoryLabel(mainName,type))}</span><span class="cat-count">${count}</span></div>`).join('');}
   function setActiveCategory(el){
     document.querySelectorAll('.cat-btn').forEach(x=>x.classList.remove('active'));
     if(el)el.classList.add('active');
@@ -4039,7 +4045,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.setCheckoutBusy = function(on){
     window.isCheckingOut=!!on;
     try{ isCheckingOut=!!on; }catch(e){}
-    window.__checkoutBusyStartedAt=on?Date.now():0;
     const busy=$('checkoutBusy');
     if(busy){
       busy.textContent=tr('processingCheckout');
@@ -4489,7 +4494,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function bossTypeLabel(value){
     const beverageLabels={'SOFT DRINK':['汽水','Soft drink'],'MINERAL WATER':['矿泉水','Mineral water'],'PACKAGED WATER':['包装水','Packaged water'],'LARGE BOTTLE':['大支装','Large bottle'],'SMALL BOTTLE':['小支装','Small bottle']};
     if(beverageLabels[value])return beverageLabels[value][lang()==='zh'?0:1];
-    const labels={PROMOTION:['促销','Promotion'],FOOD:['食品','Food'],'DRY FOOD':['干粮','Dry food'],'WET FOOD':['湿粮','Wet food'],'CANNED FOOD':['罐头','Canned food'],TREAT:['零食','Treat'],MEDICINE:['药品','Medicine'],DEWORMING:['驱虫药','Deworming'],SUPPLEMENT:['营养品','Supplement'],HYGIENE:['卫生用品','Hygiene'],SHAMPOO:['洗毛水','Shampoo'],'FLEA & TICK':['跳蚤／牛蜱护理','Flea & tick care'],GROOMING:['美容护理','Grooming'],LITTER:['猫砂','Litter'],'LITTER BOX':['猫砂盆','Litter box'],'HYGIENE / SUPPLEMENT':['旧分类（待细分）','Legacy category (review)'],MILK:['奶粉','Milk'],ACCESSORY:['用品','Accessory'],'FEEDER / DRINKER':['食盆／饮水器','Feeder / drinker'],'CAGE / BEDDING':['笼子／垫材','Cage / bedding'],AQUARIUM:['鱼缸用品','Aquarium supplies'],'MINERAL WATER':['矿泉水','Mineral water'],'SOFT DRINK':['汽水','Soft drink'],TOY:['玩具','Toy'],OTHER:['其它','Other']};
+    const labels={PROMOTION:['促销','Promotion'],FOOD:['食品','Food'],'DRY FOOD':['干粮','Dry food'],'WET FOOD':['湿粮','Wet food'],'CANNED FOOD':['罐头','Canned food'],TREAT:['零食','Treat'],MEDICINE:['药品','Medicine'],DEWORMING:['驱虫药','Deworming'],SUPPLEMENT:['营养品','Supplement'],HYGIENE:['卫生用品','Hygiene'],SHAMPOO:['冲凉液','Shampoo'],'FLEA & TICK':['跳蚤／牛蜱护理','Flea & tick care'],GROOMING:['美容护理','Grooming'],LITTER:['猫砂','Litter'],'LITTER BOX':['猫砂盆','Litter box'],'HYGIENE / SUPPLEMENT':['旧分类（待细分）','Legacy category (review)'],MILK:['奶粉','Milk'],ACCESSORY:['用品','Accessory'],'FEEDER / DRINKER':['食盆／饮水器','Feeder / drinker'],'CAGE / BEDDING':['笼子／垫材','Cage / bedding'],AQUARIUM:['鱼缸用品','Aquarium supplies'],'MINERAL WATER':['矿泉水','Mineral water'],'SOFT DRINK':['汽水','Soft drink'],TOY:['玩具','Toy'],OTHER:['其它','Other']};
     const pair=labels[value]||[value,value]; return lang()==='zh'?pair[0]:pair[1];
   }
   function bossFixedProductTypes(){return ['PROMOTION','FOOD','DRY FOOD','WET FOOD','CANNED FOOD','TREAT','MILK','MEDICINE','DEWORMING','SUPPLEMENT','HYGIENE','SHAMPOO','FLEA & TICK','GROOMING','LITTER','LITTER BOX','TOY','ACCESSORY','FEEDER / DRINKER','CAGE / BEDDING','AQUARIUM','MINERAL WATER','PACKAGED WATER','LARGE BOTTLE','SMALL BOTTLE','SOFT DRINK','OTHER'];}
@@ -4561,6 +4566,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(hint)hint.style.display=show?'block':'none';
     if(prompt)prompt.style.display=show?'none':'block';
     if(!show&&$('bossProductRow'))$('bossProductRow').value='';
+    updateBossProductTypeVisibility();
   }
   window.bossProductFacetChanged=function(level){bossSetProductEditorVisible(false);if(level==='main'){if($('bossProductTypeFilter'))$('bossProductTypeFilter').value='';if($('bossProductGroupFilter'))$('bossProductGroupFilter').value='';}else if(level==='type'&&$('bossProductGroupFilter'))$('bossProductGroupFilter').value='';fillBossProductFacets();renderBossProductList(($('bossProductSearch')||{}).value||'');};
   function fillBossProductFilterCategories(){fillBossProductFacets();}
@@ -4616,7 +4622,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   function bossProductTypeChanged(){renderBossClassificationPreview();}
-  function bossClassificationSelectionChanged(event){const target=event&&event.target,general=$('bossProductForGeneral'),fixed=['bossProductForPromotion','bossProductForChicken','bossProductForDog','bossProductForCat','bossProductForBird','bossProductForFish','bossProductForHamster','bossProductForBeverage'];if(target&&target.checked){if(target===general)fixed.forEach(id=>{if($(id))$(id).checked=false;});else if(general)general.checked=false;}fillBossProductTypes();renderBossEntranceCounts();renderBossClassificationPreview();}
+  function updateBossProductTypeVisibility(){const type=$('bossProductType'),field=type&&type.closest('label'),hasEntrance=!!bossProductAppliesToValue();if(field)field.style.display=hasEntrance?'flex':'none';if(type)type.disabled=!hasEntrance;}
+  function bossClassificationSelectionChanged(event){const target=event&&event.target,general=$('bossProductForGeneral'),fixed=['bossProductForPromotion','bossProductForChicken','bossProductForDog','bossProductForCat','bossProductForBird','bossProductForFish','bossProductForHamster','bossProductForBeverage'];if(target&&target.checked){if(target===general)fixed.forEach(id=>{if($(id))$(id).checked=false;});else if(general)general.checked=false;}fillBossProductTypes();updateBossProductTypeVisibility();renderBossEntranceCounts();renderBossClassificationPreview();}
   function renderBossEntranceCounts(){const rows=bossProductsCache||[],counts={};rows.forEach(p=>{let tags=[];try{tags=(productMainTags(p)||[]).map(x=>String(typeof x==='string'?x:(x&&x.key)||'').replace(/^MAIN:/,''));}catch(e){tags=[bossFacetMain(p)];}if(bossNeedsClassification(p)&&!tags.includes('GENERAL'))tags.push('GENERAL');[...new Set(tags)].forEach(x=>counts[x]=(counts[x]||0)+1);});document.querySelectorAll('[data-boss-entrance]').forEach(el=>{const key=el.getAttribute('data-boss-entrance'),base=mainCategoryLabel(key);el.textContent=`${base}（${Number(counts[key]||0)}）`;});}
   function renderBossClassificationPreview(){const box=$('bossClassificationPreview');if(!box)return;const entries=bossProductAppliesToValue().split(',').filter(Boolean),type=normalizeText(($('bossProductType')||{}).value);box.textContent=!entries.length?(lang()==='zh'?'尚未选择入口：保存后只留在 Boss Mode，不会显示在 POS。':'No entrance selected: it stays in Boss Mode and is hidden from POS.'):(type?(lang()==='zh'?'保存后显示在：':'Will show under: ')+entries.map(e=>`${mainCategoryLabel(e)} > ${subCategoryLabel(e,type)}`).join('、'):(lang()==='zh'?'已经选择入口，请再选择入口内分类。':'Entrance selected; now choose a category.'));}
 
@@ -4981,6 +4988,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(stockLabel)stockLabel.textContent=looseChild?(lang()==='zh'?'系统换算库存（KG）':'Calculated stock (KG)'):(bulkKg>1?(lang()==='zh'?`整包数量（每包 ${bulkKg}KG）`:`Full bags (${bulkKg}KG each)`):tr('stock'));
     updateBossGroupActiveButton(p);
     setBossProductAppliesTo(p.appliesTo||'');
+    updateBossProductTypeVisibility();
     const hint=$('bossProductHint'); if(hint)hint.textContent=`${tr('currentCost')}: ${money(p.cost||0)}. ${tr('keepBlank')}`;
     renderBossProductPreview(p);
   };
@@ -5617,7 +5625,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   }
 
   window.checkout = async function(payment, paid=0, change=0){
-    if(!checkoutActionAllowed())return;
+    if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut)) return;
     const c = currentCart();
     if(!c.length){ showAppAlert(cartEmptyMessage(),tr('payment')); return; }
     const method = String(payment || '').toLowerCase();
