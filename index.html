@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-077-SAFE-PRODUCT-REMOVAL-20260809 -->
+<!-- YLL POS BUILD: SESSION-078-PRODUCT-FILTER-LAYOUT-20260809 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2965,6 +2965,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       #bossDashboard input,#bossDashboard select,#bossDashboard button{box-sizing:border-box!important}
       #bossProductBox .boss-product-tools,#bossLostBox .boss-product-tools{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
       #bossProductBox .boss-product-filter-row,#bossLostBox .boss-product-filter-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      #bossProductBox .boss-product-filter-row .boss-filter-search,
+      #bossProductBox .boss-product-filter-row .boss-filter-series{grid-column:1/-1!important}
       #bossProductBox .boss-field,#bossLostBox .boss-field{width:100%!important;min-width:0!important}
       #bossProductBox input,#bossProductBox select,#bossLostBox input,#bossLostBox select{width:100%!important;min-width:0!important}
       #bossLostBox .boss-product-filter-row,#bossLostBox .boss-product-grid{align-items:start!important}
@@ -4101,10 +4103,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <div class="boss-product-tools">
           <div>
             <div class="boss-product-filter-row">
-              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'搜索商品（可不填）':'Search product (optional)'}</span><input id="bossProductSearch" placeholder="${lang()==='zh'?'输入名字快速寻找':'Type a name to search'}" oninput="bossSearchProducts(this.value)"></label>
-              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'主分类':'Main category'}</span><select id="bossProductMainFilter" onchange="bossProductFacetChanged('main')"></select></label>
-              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'里面分类':'Subcategory'}</span><select id="bossProductTypeFilter" onchange="bossProductFacetChanged('type')"></select></label>
-              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'商品系列':'Product series'}</span><select id="bossProductGroupFilter" onchange="bossFilterProducts()"></select></label>
+              <label class="boss-field boss-filter-search"><span class="boss-field-label">${lang()==='zh'?'① 搜索商品（可不填）':'① Search product (optional)'}</span><input id="bossProductSearch" placeholder="${lang()==='zh'?'输入名字快速寻找':'Type a name to search'}" oninput="bossSearchProducts(this.value)"></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'② 入口':'② Entrance'}</span><select id="bossProductMainFilter" onchange="bossProductFacetChanged('main')"></select></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'③ 入口内分类':'③ Inner category'}</span><select id="bossProductTypeFilter" onchange="bossProductFacetChanged('type')"></select></label>
+              <label class="boss-field boss-filter-series"><span class="boss-field-label">${lang()==='zh'?'④ 商品系列':'④ Product series'}</span><select id="bossProductGroupFilter" onchange="bossFilterProducts()"></select></label>
              </div>
              <div id="bossProductList" class="boss-product-list"></div>
              <div id="bossProductPreview" class="boss-product-preview"></div>
