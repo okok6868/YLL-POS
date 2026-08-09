@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-084-IPAD-BOSS-EDITOR-20260809 -->
+<!-- YLL POS BUILD: SESSION-085-CHECKOUT-CART-RECEIVE-COST-20260809 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2333,7 +2333,7 @@ bossConfirmOtherIncome = async function(id){
 
 function showPaymentConfirm(payment,label){
   if(isCheckingOut)return;
-  if(!cart.length){alert('No item in cart');return;}
+  if(!checkoutCartRows().length){alert(lang()==='zh'?'购物车是空的':'Cart is empty');return;}
   const data=calcCartData();
   const title=document.getElementById('paymentConfirmTitle');
   const text=document.getElementById('paymentConfirmText');
@@ -2347,8 +2347,17 @@ function showPaymentConfirm(payment,label){
 }
 confirmDirectCheckout = function(payment,label){ showPaymentConfirm(payment,label); };
 
+function checkoutCartRows(){
+  if(Array.isArray(cart)&&cart.length)return cart;
+  if(Array.isArray(window.cart)&&window.cart.length)return window.cart;
+  return Array.isArray(cart)?cart:(Array.isArray(window.cart)?window.cart:[]);
+}
+function checkoutProductRows(){
+  if(Array.isArray(window.products)&&window.products.length)return window.products;
+  return Array.isArray(products)?products:[];
+}
 function checkoutStockStatus(){
-  const rows=currentCart(),catalog=currentProducts(),short=[],blocked=[],sharedUse=new Map(),sharedProducts=new Map();
+  const rows=checkoutCartRows(),catalog=checkoutProductRows(),short=[],blocked=[],sharedUse=new Map(),sharedProducts=new Map();
   rows.forEach(i=>{
     const p=(catalog||[]).find(x=>(i.code&&String(x.code)===String(i.code))||String(x.name)===String(i.name));
     if(!p)return;
@@ -2366,7 +2375,7 @@ function checkoutStockStatus(){
 
 openPay = function(){
   if(isCheckingOut)return;
-  if(!cart.length){alert('No item in cart');return;}
+  if(!checkoutCartRows().length){alert(lang()==='zh'?'购物车是空的':'Cart is empty');return;}
   const status=checkoutStockStatus(),short=status.short;
   if(status.blocked.length){
     const lines=status.blocked.map(x=>`${x.name} — ${lang()==='zh'?'欠库存':'Stock debt'} ${Number(x.debt).toFixed(2)}${x.unit||''}`).join('\n');
@@ -2382,7 +2391,7 @@ openPay = function(){
 };
 
 openCash = function(){
-  if(!cart.length){alert('No item in cart');return;}
+  if(!checkoutCartRows().length){alert(lang()==='zh'?'购物车是空的':'Cart is empty');return;}
   const data=calcCartData(); cashTotal=data.final;
   const e=document.getElementById('cashTotal');
   if(e){ e.innerText=`Subtotal ${fmt(data.subtotal)}\nDiscount -${fmt(data.discount)}\nTOTAL ${fmt(data.final)}`; }
@@ -2407,7 +2416,7 @@ confirmCash = function(){
 };
 
 openMixedPayment = function(){
-  if(!cart.length){alert('No item in cart');return;}
+  if(!checkoutCartRows().length){alert(lang()==='zh'?'购物车是空的':'Cart is empty');return;}
   const data=calcCartData(); cashTotal=data.final; closePay();
   const t=document.getElementById('mixedTotal'); if(t)t.textContent='Total '+fmt(data.final);
   const h=document.querySelector('#mixedBox h3'); if(h)h.textContent='➗ Mixed Payment';
@@ -4224,7 +4233,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const details=[...left.querySelectorAll(':scope > details')],receive=details.find(x=>x.querySelector('#bossReceiveName')),series=details.find(x=>x.querySelector('#bossSeriesName')),loose=details.find(x=>x.querySelector('#bossLooseGroup')),stocktake=details.find(x=>x.querySelector('#bossStocktakeCategory'));
     if(receive){
       receive.open=true;
-      receive.innerHTML=`<summary style="cursor:pointer;font-weight:800">${lang()==='zh'?'📥 商品进货':'📥 Receive stock'}</summary><div class="boss-product-grid" style="margin-top:12px"><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'入口分类':'Entrance'}</span><select id="bossReceiveFilterCategory" onchange="bossReceiveCategoryChanged()"><option value="">${lang()==='zh'?'请选择入口':'Select entrance'}</option></select></label><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'商品':'Product'}</span><select id="bossReceiveName" onchange="bossReceiveProductChanged()"><option value="">${lang()==='zh'?'请先选择入口':'Choose entrance first'}</option></select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'收到数量／包数':'Quantity / bags received'}</span><input id="bossReceiveQty" type="number" min="0.01" step="0.01"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'本次总进货价':'Total purchase cost'}</span><input id="bossReceiveCost" type="number" min="0" step="0.01"></label><div id="bossReceiveHint" class="wide boss-result">${lang()==='zh'?'散卖系列只会显示最大包装；1KG、RM1、RM0.10 不需要单独进货。':'Loose-sale series show the largest bag only; derived variants are not received separately.'}</div><button type="button" class="green wide" onclick="bossReceiveProductStock()">${lang()==='zh'?'记录进货':'Record received stock'}</button></div>`;
+      receive.innerHTML=`<summary style="cursor:pointer;font-weight:800">${lang()==='zh'?'📥 商品进货':'📥 Receive stock'}</summary><div class="boss-product-grid" style="margin-top:12px"><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'入口分类':'Entrance'}</span><select id="bossReceiveFilterCategory" onchange="bossReceiveCategoryChanged()"><option value="">${lang()==='zh'?'请选择入口':'Select entrance'}</option></select></label><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'商品':'Product'}</span><select id="bossReceiveName" onchange="bossReceiveProductChanged()"><option value="">${lang()==='zh'?'请先选择入口':'Choose entrance first'}</option></select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'收到数量／包数':'Quantity / bags received'}</span><input id="bossReceiveQty" type="number" min="0.01" step="0.01" oninput="bossReceiveProductChanged()"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'本次总进货价（可留空）':'Total purchase cost (optional)'}</span><input id="bossReceiveCost" type="number" min="0" step="0.01" placeholder="${lang()==='zh'?'留空沿用上次进货价':'Blank keeps previous cost'}"></label><div id="bossReceivePreviousCost" class="wide boss-result">${lang()==='zh'?'请先选择商品查看上次进货价。':'Choose a product to see its previous purchase cost.'}</div><div id="bossReceiveHint" class="wide boss-result">${lang()==='zh'?'散卖系列只会显示最大包装；1KG、RM1、RM0.10 不需要单独进货。':'Loose-sale series show the largest bag only; derived variants are not received separately.'}</div><button type="button" class="green wide" onclick="bossReceiveProductStock()">${lang()==='zh'?'记录进货':'Record received stock'}</button></div>`;
     }
     if(stocktake){
       stocktake.open=true;
@@ -4792,9 +4801,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function fillBossReceiveProductList(){const sel=$('bossReceiveName'),key=normalizeText(($('bossReceiveFilterCategory')||{}).value);if(!sel)return;const rows=(bossProductsCache||[]).filter(p=>p.active!==false&&key&&productInEntrance(p,key)&&isLooseBulkProduct(p)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));sel.innerHTML=`<option value="">${key?(lang()==='zh'?'请选择商品':'Select product'):(lang()==='zh'?'请先选择入口':'Choose entrance first')}</option>`+rows.map(p=>`<option value="${esc(p.code||p.name||'')}">${esc(p.name||'')} · ${money(p.price||0)}</option>`).join('');window.bossReceiveProductChanged();}
   function fillBossReceiveCategories(){const sel=$('bossReceiveFilterCategory');if(!sel)return;const old=sel.value;sel.innerHTML=`<option value="">${lang()==='zh'?'请选择入口':'Select entrance'}</option>`+bossEntranceOptions().map(x=>`<option value="${x[0]}">${esc(x[1])}</option>`).join('');if(old)sel.value=old;fillBossReceiveProductList();}
   window.bossReceiveCategoryChanged=fillBossReceiveProductList;
-  window.bossReceiveProductChanged=function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),hint=$('bossReceiveHint');if(hint&&p)hint.textContent=normalizeText(p.inventoryGroup)?(lang()==='zh'?`散卖系列 ${p.inventoryGroup}：本次填写包数和总进货价。`:`Loose series ${p.inventoryGroup}: enter bags and total cost.`):(lang()==='zh'?'普通商品：填写收到件数和总进货价。':'Ordinary product: enter quantity and total cost.');};
+  window.bossReceiveProductChanged=function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),hint=$('bossReceiveHint'),previous=$('bossReceivePreviousCost'),qty=Number(($('bossReceiveQty')||{}).value)||0;if(!p){if(previous)previous.textContent=lang()==='zh'?'请先选择商品查看上次进货价。':'Choose a product to see its previous purchase cost.';return;}const oldCost=Math.max(0,Number(p.cost)||0),unit=normalizeText(p.inventoryGroup)?(lang()==='zh'?'每包':'per bag'):(lang()==='zh'?'每件':'per item');if(previous)previous.textContent=(lang()==='zh'?`上次进货价：${unit} RM ${oldCost.toFixed(2)}`:`Previous purchase cost: RM ${oldCost.toFixed(2)} ${unit}`)+(qty>0?` · ${lang()==='zh'?'按本次数量合计':'Total for this quantity'} RM ${(oldCost*qty).toFixed(2)}`:'');if(hint)hint.textContent=normalizeText(p.inventoryGroup)?(lang()==='zh'?`散卖系列 ${p.inventoryGroup}：本次填写包数；总进货价留空会沿用上次每包价格。`:`Loose series ${p.inventoryGroup}: enter bags; blank total keeps the previous bag cost.`):(lang()==='zh'?'普通商品：填写收到件数；总进货价留空会沿用上次每件价格。':'Ordinary product: enter quantity; blank total keeps the previous item cost.');};
   function receiveMainCategory(main){const labels={PROMOTION:'促销 PROMOTION',CHICKEN:'鸡 CHICKEN',DOG:'狗 DOG',CAT:'猫 CAT','CAT,DOG':'猫狗 CAT DOG',BIRD:'鸟 BIRD',FISH:'鱼 FISH',HAMSTER:'仓鼠 HAMSTER',BEVERAGE:'饮料 BEVERAGE',GENERAL:'未分类 UNCLASSIFIED'};return labels[main]||'未分类 UNCLASSIFIED';}
-  window.bossReceiveProductStock=async function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),qty=Number(($('bossReceiveQty')||{}).value),total=Number(($('bossReceiveCost')||{}).value);if(!p||!(qty>0)||total<0){showAppAlert(lang()==='zh'?'请选择商品，并填写收到数量／包数和本次总进货价。':'Select a product and enter quantity/bags and total purchase cost.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在记录进货...':'Recording received stock...');try{let out;if(normalizeText(p.inventoryGroup)){const m=String(p.name||'').toUpperCase().match(/(\d+(?:\.\d+)?)\s*KG/),kg=m?Number(m[1]):0;if(!(kg>1))throw new Error('Bulk KG not found');out=await timeout(apiCall('receiveLooseStock',[{group:p.inventoryGroup,bags:qty,kgPerBag:kg,bagCost:total/qty}]),45000,'Receive loose stock');}else out=await timeout(apiCall('receiveProductStock',[{code:p.code,name:p.name,qty:qty,cost:total/qty}]),45000,'Receive product stock');['bossReceiveName','bossReceiveQty','bossReceiveCost'].forEach(id=>{if($(id))$(id).value='';});try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?'进货已记录，库存和平均成本已更新。':'Receiving recorded; stock and average cost updated.',tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}};
+  window.bossReceiveProductStock=async function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),qty=Number(($('bossReceiveQty')||{}).value),raw=String(($('bossReceiveCost')||{}).value||'').trim(),oldUnitCost=Math.max(0,Number((p||{}).cost)||0),total=raw===''?oldUnitCost*qty:Number(raw);if(!p||!(qty>0)||!Number.isFinite(total)||total<0){showAppAlert(lang()==='zh'?'请选择商品并填写收到数量／包数；本次总进货价可以留空沿用上次价格。':'Select a product and enter quantity/bags; total purchase cost may be blank to keep the previous cost.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在记录进货...':'Recording received stock...');try{let out;if(normalizeText(p.inventoryGroup)){const m=String(p.name||'').toUpperCase().match(/(\d+(?:\.\d+)?)\s*KG/),kg=m?Number(m[1]):0;if(!(kg>1))throw new Error('Bulk KG not found');out=await timeout(apiCall('receiveLooseStock',[{group:p.inventoryGroup,bags:qty,kgPerBag:kg,bagCost:total/qty}]),45000,'Receive loose stock');}else out=await timeout(apiCall('receiveProductStock',[{code:p.code,name:p.name,qty:qty,cost:total/qty}]),45000,'Receive product stock');['bossReceiveName','bossReceiveQty','bossReceiveCost'].forEach(id=>{if($(id))$(id).value='';});try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?'进货已记录，库存和平均成本已更新。':'Receiving recorded; stock and average cost updated.',tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}};
 
   window.bossClassifyExistingProducts = async function(){
     if(typeof bossRequire==='function'&&!bossRequire())return;
