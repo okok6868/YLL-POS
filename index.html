@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-085-CHECKOUT-CART-RECEIVE-COST-20260809 -->
+<!-- YLL POS BUILD: SESSION-086-EMPTY-CART-RECEIVE-STAY-20260809 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -4803,7 +4803,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.bossReceiveCategoryChanged=fillBossReceiveProductList;
   window.bossReceiveProductChanged=function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),hint=$('bossReceiveHint'),previous=$('bossReceivePreviousCost'),qty=Number(($('bossReceiveQty')||{}).value)||0;if(!p){if(previous)previous.textContent=lang()==='zh'?'请先选择商品查看上次进货价。':'Choose a product to see its previous purchase cost.';return;}const oldCost=Math.max(0,Number(p.cost)||0),unit=normalizeText(p.inventoryGroup)?(lang()==='zh'?'每包':'per bag'):(lang()==='zh'?'每件':'per item');if(previous)previous.textContent=(lang()==='zh'?`上次进货价：${unit} RM ${oldCost.toFixed(2)}`:`Previous purchase cost: RM ${oldCost.toFixed(2)} ${unit}`)+(qty>0?` · ${lang()==='zh'?'按本次数量合计':'Total for this quantity'} RM ${(oldCost*qty).toFixed(2)}`:'');if(hint)hint.textContent=normalizeText(p.inventoryGroup)?(lang()==='zh'?`散卖系列 ${p.inventoryGroup}：本次填写包数；总进货价留空会沿用上次每包价格。`:`Loose series ${p.inventoryGroup}: enter bags; blank total keeps the previous bag cost.`):(lang()==='zh'?'普通商品：填写收到件数；总进货价留空会沿用上次每件价格。':'Ordinary product: enter quantity; blank total keeps the previous item cost.');};
   function receiveMainCategory(main){const labels={PROMOTION:'促销 PROMOTION',CHICKEN:'鸡 CHICKEN',DOG:'狗 DOG',CAT:'猫 CAT','CAT,DOG':'猫狗 CAT DOG',BIRD:'鸟 BIRD',FISH:'鱼 FISH',HAMSTER:'仓鼠 HAMSTER',BEVERAGE:'饮料 BEVERAGE',GENERAL:'未分类 UNCLASSIFIED'};return labels[main]||'未分类 UNCLASSIFIED';}
-  window.bossReceiveProductStock=async function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),qty=Number(($('bossReceiveQty')||{}).value),raw=String(($('bossReceiveCost')||{}).value||'').trim(),oldUnitCost=Math.max(0,Number((p||{}).cost)||0),total=raw===''?oldUnitCost*qty:Number(raw);if(!p||!(qty>0)||!Number.isFinite(total)||total<0){showAppAlert(lang()==='zh'?'请选择商品并填写收到数量／包数；本次总进货价可以留空沿用上次价格。':'Select a product and enter quantity/bags; total purchase cost may be blank to keep the previous cost.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在记录进货...':'Recording received stock...');try{let out;if(normalizeText(p.inventoryGroup)){const m=String(p.name||'').toUpperCase().match(/(\d+(?:\.\d+)?)\s*KG/),kg=m?Number(m[1]):0;if(!(kg>1))throw new Error('Bulk KG not found');out=await timeout(apiCall('receiveLooseStock',[{group:p.inventoryGroup,bags:qty,kgPerBag:kg,bagCost:total/qty}]),45000,'Receive loose stock');}else out=await timeout(apiCall('receiveProductStock',[{code:p.code,name:p.name,qty:qty,cost:total/qty}]),45000,'Receive product stock');['bossReceiveName','bossReceiveQty','bossReceiveCost'].forEach(id=>{if($(id))$(id).value='';});try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?'进货已记录，库存和平均成本已更新。':'Receiving recorded; stock and average cost updated.',tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}};
+  window.bossReceiveProductStock=async function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),qty=Number(($('bossReceiveQty')||{}).value),raw=String(($('bossReceiveCost')||{}).value||'').trim(),oldUnitCost=Math.max(0,Number((p||{}).cost)||0),total=raw===''?oldUnitCost*qty:Number(raw);if(!p||!(qty>0)||!Number.isFinite(total)||total<0){showAppAlert(lang()==='zh'?'请选择商品并填写收到数量／包数；本次总进货价可以留空沿用上次价格。':'Select a product and enter quantity/bags; total purchase cost may be blank to keep the previous cost.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在记录进货...':'Recording received stock...');try{let out;if(normalizeText(p.inventoryGroup)){const m=String(p.name||'').toUpperCase().match(/(\d+(?:\.\d+)?)\s*KG/),kg=m?Number(m[1]):0;if(!(kg>1))throw new Error('Bulk KG not found');out=await timeout(apiCall('receiveLooseStock',[{group:p.inventoryGroup,bags:qty,kgPerBag:kg,bagCost:total/qty}]),45000,'Receive loose stock');}else out=await timeout(apiCall('receiveProductStock',[{code:p.code,name:p.name,qty:qty,cost:total/qty}]),45000,'Receive product stock');['bossReceiveName','bossReceiveQty','bossReceiveCost'].forEach(id=>{if($(id))$(id).value='';});try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();bossChooseProductWork('receive',true);showAppAlert(lang()==='zh'?'进货已记录，库存和平均成本已更新。':'Receiving recorded; stock and average cost updated.',tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');bossChooseProductWork('receive',true);}};
 
   window.bossClassifyExistingProducts = async function(){
     if(typeof bossRequire==='function'&&!bossRequire())return;
@@ -5490,6 +5490,21 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(global && global.length)return global;
     return local || global || [];
   }
+  window.openPay = function(){
+    const rows=currentCart();
+    if(!rows.length){showAppAlert(cartEmptyMessage(),tr('payment'));return;}
+    if(window.isCheckingOut || (typeof isCheckingOut!=='undefined'&&isCheckingOut))return;
+    const status=checkoutStockStatus(),short=status.short;
+    if(status.blocked.length){
+      const lines=status.blocked.map(x=>`${x.name} — ${lang()==='zh'?'欠库存':'Stock debt'} ${Number(x.debt).toFixed(2)}${x.unit||''}`).join('\n');
+      showAppAlert(lang()==='zh'?`以下商品累计欠库存已经超过 10，系统已停止买单：\n\n${lines}\n\n请联系老板并先补库存。`:`Checkout is stopped because stock debt exceeded 10:\n\n${lines}\n\nContact the boss and replenish stock first.`,lang()==='zh'?'停止买单':'Checkout stopped');
+      return;
+    }
+    if(!short.length){openModal('payModal');return;}
+    const lines=short.map(x=>`${x.name} — ${lang()==='zh'?'系统库存':'System stock'} ${x.available} / ${lang()==='zh'?'本次要卖':'Selling'} ${x.wanted}`).join('\n');
+    const msg=lang()==='zh'?`以下商品的系统库存不足或已经是 0：\n\n${lines}\n\n请先查看店里确实有货。\n按「确认」继续买单，并通知老板补货；按「取消」返回购物车检查。`:`These products have insufficient or zero system stock:\n\n${lines}\n\nConfirm the physical stock is available.\nPress Confirm to continue and tell the boss to replenish it, or Cancel to check again.`;
+    appConfirm(msg,lang()==='zh'?'库存确认':'Stock confirmation').then(ok=>{if(ok)openModal('payModal');});
+  };
   function currentProducts(){
     return window.products || products || [];
   }
