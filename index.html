@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-081-PHONE-BOSS-SHOPEE-LAUNCHER-20260809 -->
+<!-- YLL POS BUILD: SESSION-082-IPAD-CHECKOUT-SCOPE-FIX-20260809 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2345,7 +2345,7 @@ function checkoutStockStatus(){
 }
 
 openPay = function(){
-  if(!checkoutActionAllowed())return;
+  if(typeof window.checkoutActionAllowed==='function'&&!window.checkoutActionAllowed())return;
   if(!cart.length){alert('No item in cart');return;}
   const status=checkoutStockStatus(),short=status.short;
   if(status.blocked.length){
@@ -3277,6 +3277,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(typeof showToast==='function')showToast(tr('processingCheckout'));
     return false;
   }
+  window.checkoutActionAllowed=checkoutActionAllowed;
 
   function setStatDetail(id, html){
     const b=$(id);
