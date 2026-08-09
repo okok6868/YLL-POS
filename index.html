@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-078-PRODUCT-FILTER-LAYOUT-20260809 -->
+<!-- YLL POS BUILD: SESSION-079-MOBILE-AND-PRODUCT-PICKER-20260809 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2922,6 +2922,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .boss-product-list button{width:100%!important;min-height:64px!important;text-align:left!important;margin:0 0 6px!important;padding:8px 10px!important;border-radius:10px!important;border:1px solid rgba(148,163,184,.22)!important;background:rgba(15,23,42,.45)!important;color:inherit!important;display:grid!important;grid-template-columns:52px 1fr!important;gap:10px!important;align-items:center!important}
       .boss-product-list button b{display:block!important;line-height:1.2!important}
       .boss-product-list button small{display:block!important;color:var(--muted)!important;margin-top:4px!important}
+      .boss-inactive-badge{display:inline-block!important;margin-left:7px!important;padding:2px 7px!important;border-radius:999px!important;background:#7f1d1d!important;color:#fecaca!important;font-size:11px!important;font-style:normal!important;vertical-align:middle!important}
+      .boss-product-list button:has(.boss-inactive-badge){opacity:.72!important;border-color:rgba(248,113,113,.45)!important}
       .boss-product-thumb{width:52px!important;height:52px!important;border-radius:10px!important;object-fit:cover!important;background:#020617!important;border:1px solid rgba(148,163,184,.24)!important;display:flex!important;align-items:center!important;justify-content:center!important;color:var(--muted)!important;font-size:11px!important;font-weight:800!important;overflow:hidden!important}
       .boss-product-thumb img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
       .boss-product-preview{margin-top:8px!important;min-height:94px!important;max-height:112px!important;overflow:hidden!important;border:1px solid rgba(148,163,184,.18)!important;border-radius:14px!important;padding:10px!important;background:rgba(15,23,42,.24)!important;display:none!important;grid-template-columns:72px 1fr!important;gap:10px!important;align-items:center!important}
@@ -2992,6 +2994,30 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         #bossDashboard .boss-tab-grid button{text-align:center!important;justify-content:center!important}
         #bossDashboard .boss-overview-grid,#bossDashboard .boss-money-cards{grid-template-columns:1fr!important}
         #bossProductBox .boss-product-tools,#bossLostBox .boss-product-tools{grid-template-columns:1fr!important}
+      }
+      @media (max-width:600px){
+        body{overflow:auto!important}
+        .header{height:auto!important;padding:10px!important}
+        .header-top{align-items:center!important;gap:8px!important}
+        .title{font-size:20px!important;line-height:1.15!important;white-space:normal!important}
+        .header-actions{gap:6px!important;flex:0 0 auto!important}
+        .iconbtn{width:46px!important;height:46px!important;min-width:46px!important;padding:0!important}
+        .stats{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+        .stat{min-height:84px!important;padding:10px!important}
+        .layout{display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important;overflow:visible!important}
+        .sidebar{display:flex!important;flex-direction:row!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow-x:auto!important;overflow-y:hidden!important;padding:7px 8px!important;gap:6px!important;border-right:0!important;border-bottom:1px solid var(--line)!important;scrollbar-width:thin!important}
+        .sidebar .cat-btn,.sidebar .subcat-btn{display:flex!important;width:auto!important;min-width:max-content!important;max-width:none!important;min-height:42px!important;height:42px!important;margin:0!important;padding:8px 12px!important;flex:0 0 auto!important;border-radius:11px!important}
+        .sidebar .subcat-heading{display:none!important}
+        .main{min-height:0!important;overflow:visible!important}
+        .topline{display:grid!important;grid-template-columns:auto 1fr auto!important;gap:7px!important;padding:8px!important;position:sticky!important;top:0!important;z-index:20!important}
+        .homebtn{grid-column:1!important;grid-row:1!important}
+        .pager{grid-column:2/4!important;grid-row:1!important;justify-content:flex-end!important;gap:5px!important}
+        .search-wrap{grid-column:1/3!important;grid-row:2!important;order:initial!important;width:auto!important;min-width:0!important}
+        .lowbtn{grid-column:3!important;grid-row:2!important;white-space:nowrap!important}
+        .products{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:8px!important;max-height:none!important;overflow:visible!important}
+        .product-card{min-width:0!important;min-height:176px!important}
+        .right{height:auto!important;min-height:440px!important;border-left:0!important;border-top:1px solid var(--line)!important;overflow:visible!important}
+        .cart-list{min-height:180px!important;max-height:none!important}
       }
       body.light,body.light #app,body.light .app,body.light .layout,body.light .main,body.light .products{background:#f3f4f6!important;background-color:#f3f4f6!important;color:#0f172a!important}
       body.light::after,body.light .modal::after{background:#f3f4f6!important}
@@ -4103,10 +4129,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         <div class="boss-product-tools">
           <div>
             <div class="boss-product-filter-row">
-              <label class="boss-field boss-filter-search"><span class="boss-field-label">${lang()==='zh'?'① 搜索商品（可不填）':'① Search product (optional)'}</span><input id="bossProductSearch" placeholder="${lang()==='zh'?'输入名字快速寻找':'Type a name to search'}" oninput="bossSearchProducts(this.value)"></label>
-              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'② 入口':'② Entrance'}</span><select id="bossProductMainFilter" onchange="bossProductFacetChanged('main')"></select></label>
-              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'③ 入口内分类':'③ Inner category'}</span><select id="bossProductTypeFilter" onchange="bossProductFacetChanged('type')"></select></label>
-              <label class="boss-field boss-filter-series"><span class="boss-field-label">${lang()==='zh'?'④ 商品系列':'④ Product series'}</span><select id="bossProductGroupFilter" onchange="bossFilterProducts()"></select></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'① 入口':'① Entrance'}</span><select id="bossProductMainFilter" onchange="bossProductFacetChanged('main')"></select></label>
+              <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'② 入口内分类':'② Inner category'}</span><select id="bossProductTypeFilter" onchange="bossProductFacetChanged('type')"></select></label>
+              <label class="boss-field boss-filter-series"><span class="boss-field-label">${lang()==='zh'?'③ 商品系列':'③ Product series'}</span><select id="bossProductGroupFilter" onchange="bossFilterProducts()"></select></label>
+              <label class="boss-field boss-filter-search"><span class="boss-field-label">${lang()==='zh'?'④ 商品（可输入名字缩小范围）':'④ Product (optional name search)'}</span><input id="bossProductSearch" placeholder="${lang()==='zh'?'不记得名字可留空，直接看下面商品':'Leave blank and choose below'}" oninput="bossSearchProducts(this.value)"></label>
              </div>
              <div id="bossProductList" class="boss-product-list"></div>
              <div id="bossProductPreview" class="boss-product-preview"></div>
@@ -4208,13 +4234,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     right.append(intro,editor,stockHub,createHub,ordinaryNew);
     [receive,series,loose,stocktake].forEach(x=>{if(!x)return;x.open=true;x.classList.add('boss-work-panel');right.appendChild(x);});
     if(receive)receive.id='bossWorkReceive';if(series)series.id='bossWorkLooseNew';if(loose)loose.id='bossWorkLooseStock';if(stocktake)stocktake.id='bossWorkNormalStock';
+    bossSetProductEditorVisible(false);
   }
 
   window.bossChooseProductWork=function(work,keepSelection){
     document.querySelectorAll('#bossProductBox .boss-work-menu button').forEach(x=>x.classList.toggle('active',x.dataset.work===work));
     document.querySelectorAll('#bossProductBox .boss-work-panel').forEach(x=>x.classList.remove('active'));
     const intro=$('bossWorkIntro'),selector=$('bossProductSelectorArea');if(intro)intro.style.display='none';if(selector)selector.style.display=work==='edit'?'block':'none';
-    if(work==='edit'){const box=$('bossWorkEdit');if(box)box.classList.add('active');if(!keepSelection&&$('bossProductRow')){$('bossProductRow').value='';const grid=box&&box.querySelector('.boss-product-grid'),hint=$('bossProductHint'),prompt=$('bossEditPrompt');if(grid)grid.style.display='none';if(hint)hint.style.display='none';if(prompt)prompt.style.display='block';}}
+    if(work==='edit'){const box=$('bossWorkEdit');if(box)box.classList.add('active');if(!keepSelection)bossSetProductEditorVisible(false);}
     if(work==='receive'){const box=$('bossWorkReceive');if(box)box.classList.add('active');const cat=$('bossReceiveFilterCategory');if(cat&&cat.value==='__NEW__'){cat.value='';fillBossReceiveProductList();}}
     if(work==='stocktake'){const box=$('bossWorkNormalStock');if(box)box.classList.add('active');}
     if(work==='create'){const box=$('bossWorkCreate');if(box)box.classList.add('active');}
@@ -4514,7 +4541,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const type=typeEl.value,typeRows=mainRows.filter(p=>!type||bossFacetType(p)===type),groups=[...new Set(typeRows.map(bossFacetGroup))].sort((a,b)=>a.localeCompare(b));
     bossFillSelect('bossProductGroupFilter',groups,oldGroup,lang()==='zh'?'全部商品系列':'All product series',v=>v);
   }
-  window.bossProductFacetChanged=function(level){if(level==='main'){if($('bossProductTypeFilter'))$('bossProductTypeFilter').value='';if($('bossProductGroupFilter'))$('bossProductGroupFilter').value='';}else if(level==='type'&&$('bossProductGroupFilter'))$('bossProductGroupFilter').value='';fillBossProductFacets();renderBossProductList(($('bossProductSearch')||{}).value||'');};
+  function bossSetProductEditorVisible(show){
+    const box=$('bossWorkEdit'),grid=box&&box.querySelector('.boss-product-grid'),hint=$('bossProductHint'),prompt=$('bossEditPrompt');
+    if(grid)grid.style.display=show?'grid':'none';
+    if(hint)hint.style.display=show?'block':'none';
+    if(prompt)prompt.style.display=show?'none':'block';
+    if(!show&&$('bossProductRow'))$('bossProductRow').value='';
+  }
+  window.bossProductFacetChanged=function(level){bossSetProductEditorVisible(false);if(level==='main'){if($('bossProductTypeFilter'))$('bossProductTypeFilter').value='';if($('bossProductGroupFilter'))$('bossProductGroupFilter').value='';}else if(level==='type'&&$('bossProductGroupFilter'))$('bossProductGroupFilter').value='';fillBossProductFacets();renderBossProductList(($('bossProductSearch')||{}).value||'');};
   function fillBossProductFilterCategories(){fillBossProductFacets();}
 
   function bossLocalProductRows(){
@@ -4657,7 +4691,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(filterGroup && bossFacetGroup(p)!==filterGroup)return false;
       if(!q)return true;
       return [p.code,p.name,p.category,p.type,p.productGroup].some(v=>String(v||'').toLowerCase().includes(q));
-    }).slice(0,40);
+    }).sort((a,b)=>Number(a.p.active===false)-Number(b.p.active===false)).slice(0,40);
     if(!rows.length){
       box.innerHTML=`<div class="empty">${esc(tr('noProducts'))}</div>`;
       renderBossProductPreview(null);
@@ -4666,7 +4700,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     box.innerHTML=rows.map(({p,i})=>`
       <button type="button" onclick="bossPickProduct(${i})">
         ${bossProductThumbHtml(p,i)}
-        <span><b>${esc(p.name||'')}</b>
+        <span><b>${esc(p.name||'')} ${p.active===false?`<em class="boss-inactive-badge">${lang()==='zh'?'已停用':'Inactive'}</em>`:''}</b>
         <small>${esc(p.code||'-')} | ${money(p.price)} | ${esc(tr('stock'))} ${esc(p.stock||0)} | ${esc(tr('currentCost'))}: ${money(p.cost||0)}</small></span>
       </button>`).join('');
   }
@@ -4722,8 +4756,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(btn)btn.onclick=()=>wrap.remove();
   };
 
-  window.bossSearchProducts = function(query){ renderBossProductList(query); };
-  window.bossFilterProducts = function(){ renderBossProductList(($('bossProductSearch')||{}).value||''); };
+  window.bossSearchProducts = function(query){ bossSetProductEditorVisible(false);renderBossProductList(query); };
+  window.bossFilterProducts = function(){ bossSetProductEditorVisible(false);renderBossProductList(($('bossProductSearch')||{}).value||''); };
   const bossEntranceOptions=()=>[['PROMOTION',lang()==='zh'?'促销':'Promotion'],['CHICKEN',lang()==='zh'?'鸡':'Chicken'],['DOG',lang()==='zh'?'狗':'Dog'],['CAT',lang()==='zh'?'猫':'Cat'],['BIRD',lang()==='zh'?'鸟':'Bird'],['FISH',lang()==='zh'?'鱼':'Fish'],['HAMSTER',lang()==='zh'?'仓鼠':'Hamster'],['BEVERAGE',lang()==='zh'?'饮料':'Beverage'],['GENERAL',lang()==='zh'?'未分类':'Unclassified']];
   function productInEntrance(p,key){return bossFacetMains(p).includes(key);}
   function isLooseBulkProduct(p){const group=normalizeText(p.inventoryGroup);if(!group)return true;const same=(bossProductsCache||[]).filter(x=>normalizeText(x.inventoryGroup)===group),kg=x=>{const m=String(x.name||'').toUpperCase().match(/(\d+(?:\.\d+)?)\s*KG/);return m?Number(m[1]):0;},max=Math.max(0,...same.map(kg));return kg(p)===max&&max>1;}
@@ -4901,7 +4935,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const p=(bossProductsCache||[])[Number(index)];
     if(!p)return;
     bossChooseProductWork('edit',true);
-    const editBox=$('bossWorkEdit'),editGrid=editBox&&editBox.querySelector('.boss-product-grid'),editHint=$('bossProductHint'),editPrompt=$('bossEditPrompt');if(editGrid)editGrid.style.display='grid';if(editHint)editHint.style.display='block';if(editPrompt)editPrompt.style.display='none';
+    bossSetProductEditorVisible(true);
     const picker=$('bossProductImageFile'); if(picker)picker.value='';
     const values={
       bossProductRow:p.row||'',
