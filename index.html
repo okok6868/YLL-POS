@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-088-SALES-REPORT-SHARED-STOCK-20260810 -->
+<!-- YLL POS BUILD: SESSION-089-REPORT-LANGUAGE-FIX-20260810 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2088,10 +2088,13 @@ function fileToBase64(inputId){
     reader.readAsDataURL(file);
   });
 }
+function salesReportLang(){
+  return localStorage.getItem('yllLang') || 'en';
+}
 function reportProductRows(r,showProfit){
   const rows=(r&&r.topProducts)||[];
-  if(!rows.length)return `<div class="sales-empty">${lang()==='zh'?'这段时间还没有销售记录。':'No sales in this period.'}</div>`;
-  return `<div class="sales-report-section"><h4>${lang()==='zh'?'售出商品':'Items sold'}</h4><div style="overflow:auto"><table class="sales-product-table"><thead><tr><th>${lang()==='zh'?'商品':'Product'}</th><th class="num">${lang()==='zh'?'数量':'Qty'}</th><th class="num">${lang()==='zh'?'销售额':'Sales'}</th>${showProfit?`<th class="num">${lang()==='zh'?'成本':'Cost'}</th><th class="num">${lang()==='zh'?'利润':'Profit'}</th>`:''}</tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x.name||'-')}</td><td class="num">${moneyNum(x.qty||0)}</td><td class="num">${fmt(x.total||0)}</td>${showProfit?`<td class="num">${fmt(x.cost||0)}</td><td class="num" style="color:${moneyNum(x.profit)>=0?'#22c55e':'#ef4444'}">${fmt(x.profit||0)}</td>`:''}</tr>`).join('')}</tbody></table></div></div>`;
+  if(!rows.length)return `<div class="sales-empty">${salesReportLang()==='zh'?'这段时间还没有销售记录。':'No sales in this period.'}</div>`;
+  return `<div class="sales-report-section"><h4>${salesReportLang()==='zh'?'售出商品':'Items sold'}</h4><div style="overflow:auto"><table class="sales-product-table"><thead><tr><th>${salesReportLang()==='zh'?'商品':'Product'}</th><th class="num">${salesReportLang()==='zh'?'数量':'Qty'}</th><th class="num">${salesReportLang()==='zh'?'销售额':'Sales'}</th>${showProfit?`<th class="num">${salesReportLang()==='zh'?'成本':'Cost'}</th><th class="num">${salesReportLang()==='zh'?'利润':'Profit'}</th>`:''}</tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x.name||'-')}</td><td class="num">${moneyNum(x.qty||0)}</td><td class="num">${fmt(x.total||0)}</td>${showProfit?`<td class="num">${fmt(x.cost||0)}</td><td class="num" style="color:${moneyNum(x.profit)>=0?'#22c55e':'#ef4444'}">${fmt(x.profit||0)}</td>`:''}</tr>`).join('')}</tbody></table></div></div>`;
 }
 function reportKpis(r,showProfit){
   const cards=[['订单',r.count||0],['售出件数',((r.topProducts||[]).reduce((n,x)=>n+moneyNum(x.qty||0),0))],['销售额',fmt(r.total||0)]];
