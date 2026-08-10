@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-090-REPORT-SCOPE-FIX-20260810 -->
+<!-- YLL POS BUILD: SESSION-091-REPORT-LOAD-TIME-20260810 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1131,8 +1131,14 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
               <button onclick="bossLoadReport('month')">本月</button>
               <button onclick="bossLoadReport('lastMonth')">上月</button>
               <button onclick="bossLoadReport('year')">今年</button>
-              <button onclick="bossOpenRangeReport()">自订日期</button>
+              <button onclick="bossOpenRangeReport()">自选日期</button>
             </div>
+            <div id="bossInlineRange" class="boss-inline" style="display:none;margin-top:12px">
+              <input id="bossInlineStartDate" type="date">
+              <input id="bossInlineEndDate" type="date">
+              <button class="green" onclick="bossLoadCustomReport()">查询</button>
+            </div>
+            <div id="bossReportInlineResult" style="margin-top:12px">请选择上面的日期范围。</div>
           </div>
 
           <div id="bossRangeBox" class="boss-panel">
@@ -1973,10 +1979,10 @@ function bossStartIdleTimer(){
 function bossRequire(){ if(Number(sessionStorage.getItem("bossSessionUntil")||0)<Date.now()){bossLogout(true);openBossLogin();return false} bossTouch(); return true }
 function bossLogout(auto=false){sessionStorage.removeItem("bossSessionUntil"); closeModal("bossDashboard"); if(auto)showToast("管理模式已自动退出"); else showToast("已退出管理模式")}
 function bossDates(type){let n=new Date(), y=n.getFullYear(), m=n.getMonth(), d=n.getDate(); let s,e; if(type==='today'){s=new Date(y,m,d);e=new Date(y,m,d);} else if(type==='yesterday'){s=new Date(y,m,d-1);e=new Date(y,m,d-1);} else if(type==='week'){let day=(n.getDay()+6)%7; s=new Date(y,m,d-day); e=new Date(y,m,d-day+6);} else if(type==='lastWeek'){let day=(n.getDay()+6)%7; s=new Date(y,m,d-day-7); e=new Date(y,m,d-day-1);} else if(type==='month'){s=new Date(y,m,1);e=new Date(y,m+1,0);} else if(type==='lastMonth'){s=new Date(y,m-1,1);e=new Date(y,m,0);} else {s=new Date(y,0,1);e=new Date(y,11,31);} let f=d=>d.toLocaleDateString('en-CA'); return [f(s),f(e)];}
-async function bossLoadReport(type){ if(!bossRequire())return; bossHideBossPanels(); let [s,e]=bossDates(type); return bossLoadReportRange(s,e,type);}
+async function bossLoadReport(type){ if(!bossRequire())return; let p=document.getElementById('bossReportsPanel'); if(p){p.style.display='block';p.classList.add('active');} let [s,e]=bossDates(type); return bossLoadReportRange(s,e,type);}
 async function bossLoadReportRange(s,e,label){ let box=document.getElementById("bossResult"); box.textContent="载入中..."; try{let r=await apiCall("getFullReport",[s,e]); box.innerHTML=`<b>${label||"报表"}：${s} 至 ${e}</b><br><br>订单：${r.count||0}<br>销售：RM ${moneyNum(r.total).toFixed(2)}<br>折扣：RM ${moneyNum(r.discount||0).toFixed(2)}<br>退货：RM ${moneyNum(r.refund||0).toFixed(2)}<br>净销售：RM ${moneyNum(r.netSales||r.total).toFixed(2)}<br>利润：RM ${moneyNum(r.profit).toFixed(2)}<br><br>Cash：RM ${moneyNum(r.Cash).toFixed(2)}<br>转账：RM ${moneyNum(r.Transfer).toFixed(2)}<br>QR：RM ${moneyNum(r.MBB_QR).toFixed(2)}`;}catch(err){box.textContent="失败："+(err.message||err)}}
-function bossOpenRangeReport(){ if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossRangeBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; let [s,e]=bossDates("today"); document.getElementById("bossStartDate").value=s; document.getElementById("bossEndDate").value=e; document.getElementById("bossResult").textContent="选择日期后查询。";}
-function bossLoadCustomReport(){ let s=document.getElementById("bossStartDate").value; let e=document.getElementById("bossEndDate").value; if(!s||!e){alert("请选择日期");return} return bossLoadReportRange(s,e,"自订");}
+function bossOpenRangeReport(){ if(!bossRequire())return; let row=document.getElementById('bossInlineRange'); if(!row)return; let [s,e]=bossDates('today'); document.getElementById('bossInlineStartDate').value=s; document.getElementById('bossInlineEndDate').value=e; row.style.display=row.style.display==='none'?'flex':'none';}
+function bossLoadCustomReport(){ let s=document.getElementById("bossInlineStartDate").value; let e=document.getElementById("bossInlineEndDate").value; if(!s||!e){alert("请选择日期");return} return bossLoadReportRange(s,e,"自订");}
 function bossHideBossPanels(){["bossOverviewPanel","bossReportsPanel","bossRangeBox","bossExportBox","bossCredentialBox","bossCashBox","bossParcelBox","bossOtherIncomeBox","bossLowStockBox"].forEach(id=>{let e=document.getElementById(id); if(e){e.style.display="none"; e.classList.remove("active");}});}
 function bossOpenExport(){ if(!bossRequire())return; bossHideBossPanels(); let y=new Date().getFullYear(); document.getElementById("exportYear").value=y; document.getElementById("exportMonth").value=""; let __p=document.getElementById("bossExportBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; document.getElementById("bossResult").textContent="选择年份/月，然后生成 Excel。";}
 function bossOpenCredentialBox(){ if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossCredentialBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; document.getElementById("bossResult").textContent="只填写要修改的项目。"; ["newBossId","newBossPassword","newRecoveryCode","newCashLimit","newFloatCash","newAutoLogout","newParcelRate","newParcelReturnRate"].forEach(id=>{let e=document.getElementById(id); if(e)e.value="";}); }
@@ -2108,8 +2114,9 @@ function reportKpis(r,showProfit){
 }
 async function openTodaySoldItems(){
   openModal('todaySoldBox');const box=document.getElementById('todaySoldResult');box.innerHTML='<div class="sales-empty">载入中...</div>';
-  try{const d=todayKey(),r=await apiCall('getFullReport',[d,d]);box.innerHTML=reportKpis(r,false)+reportProductRows(r,false);}catch(err){box.textContent='载入失败：'+(err.message||err);}
+  try{const d=todayKey(),r=await salesReportWithTimeout(apiCall('getFullReport',[d,d]),25000);box.innerHTML=reportKpis(r,false)+reportProductRows(r,false);}catch(err){box.innerHTML='<div class="sales-empty">载入超过 25 秒，请关闭后重试。<br>'+salesReportEscapeHtml(err.message||err)+'</div>';}
 }
+function salesReportWithTimeout(promise,ms){return new Promise(function(resolve,reject){const timer=setTimeout(function(){reject(new Error('载入超时'));},ms);Promise.resolve(promise).then(function(value){clearTimeout(timer);resolve(value);},function(err){clearTimeout(timer);reject(err);});});}
 function bossReportTitle(label){return ({today:"今日",yesterday:"昨天",week:"本周",lastWeek:"上周",month:"本月",lastMonth:"上月",year:"今年"})[label]||label||"报表"}
 function bossMiniCard(title,value,sub,warn){return `<div class="overview-card ${warn?'warn':''}"><small>${title}</small><b>${value}</b><span>${sub||''}</span></div>`}
 async function bossOpenOverview(){
@@ -2181,9 +2188,9 @@ async function bossConfirmOtherIncome(id){
   catch(e){alert("确认失败："+(e.message||e))}
 }
 async function bossLoadReportRange(s,e,label){
-  const box=document.getElementById("bossResult"); box.textContent="载入中...";
-  try{let r=await apiCall("getFullReport",[s,e]); box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)}营业报表</h3><span>${s} 至 ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>收款与调整</h4><table class="sales-product-table"><tr><td>现金</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>转账</td><td class="num">${fmt(r.Transfer||0)}</td><td>混合付款（旧记录）</td><td class="num">${fmt(r.Mixed||0)}</td></tr><tr><td>折扣</td><td class="num">${fmt(r.discount||0)}</td><td>退货</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>净销售</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
-  catch(err){box.textContent="失败："+(err.message||err)}
+  const box=document.getElementById("bossReportInlineResult")||document.getElementById("bossResult"); box.textContent="载入中...";
+  try{let r=await salesReportWithTimeout(apiCall("getFullReport",[s,e]),25000); box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)}营业报表</h3><span>${s} 至 ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>收款与调整</h4><table class="sales-product-table"><tr><td>现金</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>转账</td><td class="num">${fmt(r.Transfer||0)}</td><td>混合付款（旧记录）</td><td class="num">${fmt(r.Mixed||0)}</td></tr><tr><td>折扣</td><td class="num">${fmt(r.discount||0)}</td><td>退货</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>净销售</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
+  catch(err){box.textContent="载入超过 25 秒，请再按一次报表重试。"}
 }
 function calcMixed(){
   const data=calcCartData();
