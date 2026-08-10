@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-086-EMPTY-CART-RECEIVE-STAY-20260809 -->
+<!-- YLL POS BUILD: SESSION-088-SALES-REPORT-SHARED-STOCK-20260810 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -313,6 +313,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .discount-grid button{margin-top:0}
 .discount-preview{background:#020617;border:1px solid var(--line);padding:11px;border-radius:14px;line-height:1.8;margin:10px 0}
 .report-card{background:#111827;padding:12px;border-radius:14px;margin:9px 0;border:1px solid var(--line)}
+.sales-report-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}.sales-report-head h3{margin:0}.sales-kpis{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin-bottom:14px}.sales-kpi{padding:13px;border-radius:15px;background:linear-gradient(145deg,#172033,#0b1220);border:1px solid #334155}.sales-kpi small{display:block;color:#94a3b8;margin-bottom:5px}.sales-kpi b{font-size:20px}.sales-kpi.profit b{color:#22c55e}.sales-report-section{background:#0b1220;border:1px solid #263449;border-radius:16px;padding:13px;margin-top:12px}.sales-report-section h4{margin:0 0 10px}.sales-product-table{width:100%;border-collapse:collapse}.sales-product-table th,.sales-product-table td{padding:10px 8px;border-bottom:1px solid #233047;text-align:left}.sales-product-table th{color:#facc15;font-size:12px}.sales-product-table .num{text-align:right;white-space:nowrap}.sales-product-table tr:last-child td{border-bottom:0}.sales-empty{padding:24px;text-align:center;color:#94a3b8}.order-stat-click{cursor:pointer}.order-stat-click:hover{filter:brightness(1.12)}
+@media(max-width:900px){.sales-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.sales-product-table{font-size:12px}.sales-product-table th,.sales-product-table td{padding:8px 5px}}
 body.modal-open{overflow:hidden}
 /* ===== POS V4.1 FULL LIGHT MODE ===== */
 body.light{
@@ -867,7 +869,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <div class="stats">
     <div class="stat blue"><div class="icon">📊</div><div><small>今日 销售</small><b id="todaySales">RM 0.00</b></div></div>
     <div class="stat green"><div class="icon">💵</div><div><small>收银机 Cash</small><b id="todayCash">RM 0.00</b></div></div>
-    <div class="stat yellow"><div class="icon">🧾</div><div><small>订单数</small><b id="todayOrders">0</b></div></div>
+    <div class="stat yellow order-stat-click" role="button" tabindex="0" onclick="openTodaySoldItems()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTodaySoldItems()}"><div class="icon">🧾</div><div><small>订单数</small><b id="todayOrders">0</b><em style="display:block;color:#94a3b8;font-size:10px;font-style:normal;margin-top:2px">点击查看今日售出</em></div></div>
     <div class="stat purple"><div class="icon">📦</div><div><small>商品数</small><b id="todayItems">0</b></div></div>
   </div>
   <div id="cashDrawerAlert" class="money-alert"></div>
@@ -1063,6 +1065,13 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <button class="green search-btn" onclick="loadReport()">查询</button>
     <div id="reportResult"></div>
     <button onclick="closeReport()">关闭</button>
+  </div>
+</div>
+
+<div id="todaySoldBox" class="modal">
+  <div class="modal-content" style="max-width:900px">
+    <div class="sales-report-head"><h3>🧾 今日卖了什么</h3><button type="button" style="width:auto;margin:0" onclick="closeModal('todaySoldBox')">关闭</button></div>
+    <div id="todaySoldResult" class="sales-empty">载入中...</div>
   </div>
 </div>
 
@@ -2079,6 +2088,20 @@ function fileToBase64(inputId){
     reader.readAsDataURL(file);
   });
 }
+function reportProductRows(r,showProfit){
+  const rows=(r&&r.topProducts)||[];
+  if(!rows.length)return `<div class="sales-empty">${lang()==='zh'?'这段时间还没有销售记录。':'No sales in this period.'}</div>`;
+  return `<div class="sales-report-section"><h4>${lang()==='zh'?'售出商品':'Items sold'}</h4><div style="overflow:auto"><table class="sales-product-table"><thead><tr><th>${lang()==='zh'?'商品':'Product'}</th><th class="num">${lang()==='zh'?'数量':'Qty'}</th><th class="num">${lang()==='zh'?'销售额':'Sales'}</th>${showProfit?`<th class="num">${lang()==='zh'?'成本':'Cost'}</th><th class="num">${lang()==='zh'?'利润':'Profit'}</th>`:''}</tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x.name||'-')}</td><td class="num">${moneyNum(x.qty||0)}</td><td class="num">${fmt(x.total||0)}</td>${showProfit?`<td class="num">${fmt(x.cost||0)}</td><td class="num" style="color:${moneyNum(x.profit)>=0?'#22c55e':'#ef4444'}">${fmt(x.profit||0)}</td>`:''}</tr>`).join('')}</tbody></table></div></div>`;
+}
+function reportKpis(r,showProfit){
+  const cards=[['订单',r.count||0],['售出件数',((r.topProducts||[]).reduce((n,x)=>n+moneyNum(x.qty||0),0))],['销售额',fmt(r.total||0)]];
+  if(showProfit){cards.push(['成本',fmt(r.cost||0)],['利润',fmt(r.profit||0)]);}
+  return `<div class="sales-kpis">${cards.map((x,i)=>`<div class="sales-kpi ${showProfit&&i===cards.length-1?'profit':''}"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>`;
+}
+async function openTodaySoldItems(){
+  openModal('todaySoldBox');const box=document.getElementById('todaySoldResult');box.innerHTML='<div class="sales-empty">载入中...</div>';
+  try{const d=todayKey(),r=await apiCall('getFullReport',[d,d]);box.innerHTML=reportKpis(r,false)+reportProductRows(r,false);}catch(err){box.textContent='载入失败：'+(err.message||err);}
+}
 function bossReportTitle(label){return ({today:"今日",yesterday:"昨天",week:"本周",lastWeek:"上周",month:"本月",lastMonth:"上月",year:"今年"})[label]||label||"报表"}
 function bossMiniCard(title,value,sub,warn){return `<div class="overview-card ${warn?'warn':''}"><small>${title}</small><b>${value}</b><span>${sub||''}</span></div>`}
 async function bossOpenOverview(){
@@ -2151,7 +2174,7 @@ async function bossConfirmOtherIncome(id){
 }
 async function bossLoadReportRange(s,e,label){
   const box=document.getElementById("bossResult"); box.textContent="载入中...";
-  try{let r=await apiCall("getFullReport",[s,e]); box.innerHTML=`<b>${bossReportTitle(label)}：${s} 至 ${e}</b><br><br><table><tr><th>项目</th><th class="right">金额 / 数量</th></tr><tr><td>订单</td><td class="right">${r.count||0}</td></tr><tr><td>销售</td><td class="right">${fmt(r.total||0)}</td></tr><tr><td>折扣</td><td class="right">${fmt(r.discount||0)}</td></tr><tr><td>退货</td><td class="right">${fmt(r.refund||0)}</td></tr><tr><td>净销售</td><td class="right">${fmt(r.netSales||r.total||0)}</td></tr><tr><td>利润</td><td class="right">${fmt(r.profit||0)}</td></tr><tr><td>现金</td><td class="right">${fmt(r.Cash||0)}</td></tr><tr><td>转账</td><td class="right">${fmt(r.Transfer||0)}</td></tr><tr><td>QR</td><td class="right">${fmt(r.MBB_QR||0)}</td></tr><tr><td>混合付款</td><td class="right">${fmt(r.Mixed||0)}</td></tr></table>`;}
+  try{let r=await apiCall("getFullReport",[s,e]); box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)}营业报表</h3><span>${s} 至 ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>收款与调整</h4><table class="sales-product-table"><tr><td>现金</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>转账</td><td class="num">${fmt(r.Transfer||0)}</td><td>混合付款（旧记录）</td><td class="num">${fmt(r.Mixed||0)}</td></tr><tr><td>折扣</td><td class="num">${fmt(r.discount||0)}</td><td>退货</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>净销售</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
   catch(err){box.textContent="失败："+(err.message||err)}
 }
 function calcMixed(){
@@ -3748,6 +3771,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   function visibleVariant(p){const stored=normalizeText(p&&p.variant);if(stored&&stored.toUpperCase()!=='STANDARD')return stored;const name=String((p&&p.name)||'').toUpperCase(),size=name.match(/\(\s*(XXL|XL|S|M|L)\s*\)/),unit=name.match(/\(\s*(RM\s*0\.10|RM\s*1|\d+(?:\.\d+)?\s*(?:KG|G|L|ML)|\d+\s*PCS)\s*\)/);return size?size[1]:(unit?unit[1].replace(/\s+/g,''):(stored||'STANDARD'));}
 
+  function sharedVariantFactor(p){
+    let factor=Number(p&&p.stockFactor)||1;
+    const hasShared=normalizeText(p&&p.inventoryGroup)&&p&&p.sharedStock!==null&&p.sharedStock!==''&&Number.isFinite(Number(p.sharedStock));
+    if(hasShared&&factor<=1){
+      const text=String(visibleVariant(p)||p.name||'').toUpperCase().replace(/\s+/g,'');
+      const kg=text.match(/(\d+(?:\.\d+)?)KG(?![A-Z])/);
+      if(kg&&Number(kg[1])>1)factor=Number(kg[1]);
+    }
+    return Math.max(0.0001,factor);
+  }
+
+  function variantAvailableUnits(p){
+    const hasShared=normalizeText(p&&p.inventoryGroup)&&p&&p.sharedStock!==null&&p.sharedStock!==''&&Number.isFinite(Number(p.sharedStock));
+    if(!hasShared)return Math.max(0,Math.floor(Number(p&&p.stock)||0));
+    return Math.max(0,Math.floor((Number(p.sharedStock)+1e-9)/sharedVariantFactor(p)));
+  }
+
   window.openProductVariants = function(key){
     const group=productDisplayGroups(currentList).find(g=>g.key===String(key||''));
     if(!group)return;
@@ -3775,7 +3815,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     wrap.style.cssText='position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
     const oneKg=group.items.find(p=>String(visibleVariant(p)||'').toUpperCase()==='1KG'||/\(\s*1\s*KG\s*\)/i.test(p.name||''));
     const quickKg=oneKg?`<div style="display:flex;gap:12px;flex-wrap:wrap;margin:14px 0"><button type="button" style="background:#166534;color:#fff;border:1px solid #22c55e;padding:13px 22px;border-radius:12px;font-weight:800" onclick='addProductQty(${JSON.stringify(oneKg.name)},${Number(oneKg.price)||0},${JSON.stringify(oneKg.code||'')},10)'>＋10KG · ${money((Number(oneKg.price)||0)*10)}</button><button type="button" style="background:#166534;color:#fff;border:1px solid #22c55e;padding:13px 22px;border-radius:12px;font-weight:800" onclick='addProductQty(${JSON.stringify(oneKg.name)},${Number(oneKg.price)||0},${JSON.stringify(oneKg.code||'')},5)'>＋5KG · ${money((Number(oneKg.price)||0)*5)}</button></div>`:'';
-    const productButtons=group.items.map(p=>{const img=normalizeText(p.image),label=visibleVariant(p),soldOut=Number(p.stock||0)<=0;return `<button type="button" style="position:relative;text-align:left;padding:10px;border-radius:14px;background:#182338;color:#f8fafc;border:1px solid #475569;min-height:190px" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})'>${soldOut?`<span class="soldout-badge">${lang()==='zh'?'售罄':'SOLD OUT'}</span>`:''}<div style="height:105px;border-radius:10px;overflow:hidden;background:#091225;display:flex;align-items:center;justify-content:center;margin-bottom:10px">${img?`<img src="${esc(img)}" alt="${esc(p.name||'')}" style="width:100%;height:100%;object-fit:contain" onerror="this.parentNode.innerHTML='${lang()==='zh'?'没有图片':'No image'}'">`:(lang()==='zh'?'没有图片':'No image')}</div><b style="color:#fff;font-size:16px">${esc(label)}</b><br><span style="color:#22c55e;font-weight:700">${money(p.price)}</span><br><small style="color:#94a3b8">${lang()==='zh'?'库存':'Stock'} ${Number(p.stock||0)}</small></button>`;}).join('');
+    const productButtons=group.items.map(p=>{const img=normalizeText(p.image),label=visibleVariant(p),available=variantAvailableUnits(p),soldOut=available<=0;return `<button type="button" style="position:relative;text-align:left;padding:10px;border-radius:14px;background:#182338;color:#f8fafc;border:1px solid #475569;min-height:190px" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})'>${soldOut?`<span class="soldout-badge">${lang()==='zh'?'售罄':'SOLD OUT'}</span>`:''}<div style="height:105px;border-radius:10px;overflow:hidden;background:#091225;display:flex;align-items:center;justify-content:center;margin-bottom:10px">${img?`<img src="${esc(img)}" alt="${esc(p.name||'')}" style="width:100%;height:100%;object-fit:contain" onerror="this.parentNode.innerHTML='${lang()==='zh'?'没有图片':'No image'}'">`:(lang()==='zh'?'没有图片':'No image')}</div><b style="color:#fff;font-size:16px">${esc(label)}</b><br><span style="color:#22c55e;font-weight:700">${money(p.price)}</span><br><small style="color:#94a3b8">${lang()==='zh'?'库存':'Stock'} ${available}</small></button>`;}).join('');
     wrap.innerHTML=`<div style="width:min(820px,96vw);max-height:86vh;overflow:auto;background:#0f172a;color:#f8fafc;border:1px solid #334155;border-radius:20px;padding:20px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 style="margin:0;color:#fff">${esc(group.label)}</h2><button type="button" style="background:#24324a;color:#fff;border:1px solid #64748b;padding:10px 16px;border-radius:10px" onclick="document.getElementById('productVariantPicker').remove()">${lang()==='zh'?'完成 / 关闭':'Done / Close'}</button></div><div id="variantPickerSummary" style="margin:12px 0;padding:12px 14px;border-radius:12px;background:#091225;border:1px solid #334155;color:#cbd5e1"></div><p style="color:#cbd5e1">${lang()==='zh'?'可以连续点同一个或不同规格。':'Tap the same or different variants repeatedly.'}</p>${quickKg}<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:18px">${productButtons}</div></div>`;
     wrap.onclick=e=>{if(e.target===wrap)wrap.remove();};
     document.body.appendChild(wrap);
