@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success:false, error:"Method not allowed" });
   }
 
-  const gasUrl = "https://script.google.com/macros/s/AKfycbwU1ydbLBW0QrMde-_ecy4liE4oVBopuG5HAtZb6W23OjdV1LgRRl8ervlZNWuf3qPzcQ/exec";
+  const gasUrl = "https://script.google.com/macros/s/AKfycby1joExZ4U8BUdGJo8MYMvPGTg7YGYT0DDwu1Wt1aBRsJbsP19W1WUeW-q_WPWwVFxOvA/exec";
 
   try {
     const controller = new AbortController();
