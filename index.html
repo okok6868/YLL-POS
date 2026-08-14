@@ -3473,7 +3473,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.__popularRankByGroup=window.__popularRankByGroup||{};
   let popularLoadInFlight=null;
   function applyPopularGroups(rows){const map={};(rows||[]).forEach((r,i)=>{const key=normalizeText(r.group).toUpperCase();if(key)map[key]={rank:i+1,orders:Number(r.orderCount)||0};});window.__popularRankByGroup=map;if(!window.__posMainCategory&&!String(typeof searchText==='undefined'?'':searchText||'').trim()){currentPage=1;currentList=currentProducts();render(currentList);}}
-  function loadPopularHome(){if(popularLoadInFlight)return popularLoadInFlight;try{const cached=JSON.parse(localStorage.getItem('yllPopularGroupsV1')||'null');if(cached&&Array.isArray(cached.items))applyPopularGroups(cached.items);}catch(e){}popularLoadInFlight=timeout(apiCall('getPopularProductGroups',[60,100]),15000,'Popular products').then(rows=>{rows=Array.isArray(rows)?rows:[];applyPopularGroups(rows);try{localStorage.setItem('yllPopularGroupsV1',JSON.stringify({ts:Date.now(),items:rows}));}catch(e){}return rows;}).catch(()=>[]).finally(()=>{popularLoadInFlight=null;});return popularLoadInFlight;}
+  function loadPopularHome(){if(popularLoadInFlight)return popularLoadInFlight;try{const cached=JSON.parse(localStorage.getItem('yllPopularGroupsV1')||'null');if(cached&&Array.isArray(cached.items)&&Date.now()-Number(cached.ts||0)<30*60*1000)applyPopularGroups(cached.items);}catch(e){}popularLoadInFlight=timeout(apiCall('getPopularProductGroups',[30,100]),15000,'Popular products').then(rows=>{rows=Array.isArray(rows)?rows:[];applyPopularGroups(rows);try{localStorage.setItem('yllPopularGroupsV1',JSON.stringify({ts:Date.now(),items:rows}));}catch(e){}return rows;}).catch(()=>[]).finally(()=>{popularLoadInFlight=null;});return popularLoadInFlight;}
 
   let productLoadInFlight=null;
   window.load = function(force=false){
@@ -5723,6 +5723,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     optimisticTopStatsAfterOrder(window.lastCart, window.lastPayment, sendDiscount, window.lastPaid, window.lastChange);
     reduceLocalStock(window.lastCart);
     clearCartState();
+    try{localStorage.removeItem('yllPopularGroupsV1');}catch(e){}
+    try{if(typeof window.goHome==='function')window.goHome();else if(typeof goHome==='function')goHome();}catch(e){}
+    try{setTimeout(()=>loadPopularHome(),150); }catch(e){}
     if(checkoutKey && !currentCart().length)clearActiveCheckout(checkoutKey);
     setCheckoutBusy(false);
     const receiptReady=prepareSavedReceipt();
