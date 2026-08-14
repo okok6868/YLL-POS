@@ -1816,8 +1816,8 @@ function openParcelBox(){
 function updateParcelPreview(){
   let d=moneyNum((document.getElementById("parcelDelivered")||{}).value||0);
   let r=moneyNum((document.getElementById("parcelReturned")||{}).value||0);
-  let est=fromCents(cents(d*0.30)-cents(r*0.15));
-  let p=document.getElementById("parcelPreview"); if(p)p.textContent=`预计：${fmt(est)} （收到 ${d} ×0.30，退回扣 ${r} ×0.15）`;
+  let est=fromCents(cents(d*0.30)+cents(r*0.15));
+  let p=document.getElementById("parcelPreview"); if(p)p.textContent=`预计：${fmt(est)} （收到 ${d} ×0.30，退回 ${r} ×0.15）`;
 }
 async function saveParcelLog(){
   let trip=Number((document.getElementById("parcelTrip")||{}).value||1);
