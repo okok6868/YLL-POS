@@ -1208,9 +1208,9 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
           <div id="bossOtherIncomeBox" class="boss-panel">
             <h4>🚰 其它收入 / 水机</h4>
-            <p style="color:#94a3b8;font-size:13px;margin-top:-4px">水机先加入待确认；现金收到后再按确认已收款。</p>
-            <div class="boss-inline"><input id="otherIncomeType" type="text" placeholder="水机"><input id="otherIncomeAmount" type="number" placeholder="金额"><button class="green" onclick="bossAddOtherIncome()">加入待确认</button></div>
-            <div id="bossOtherIncomeResult" class="boss-result">待确认后，你确认收了才算收入。</div>
+            <p style="color:#94a3b8;font-size:13px;margin-top:-4px">输入的水机／其它现金会立即加入今日销售和收银机现金。</p>
+            <div class="boss-inline"><input id="otherIncomeType" type="text" placeholder="水机"><input id="otherIncomeAmount" type="number" placeholder="金额"><select id="otherIncomePayment"><option value="Cash">现金 Cash</option><option value="QR">QR／公司银行</option></select><button class="green" onclick="bossAddOtherIncome()">记录已收入</button></div>
+            <div id="bossOtherIncomeResult" class="boss-result">记录后会立即更新今日销售和收银机现金。</div>
           </div>
 
           <div id="bossLowStockBox" class="boss-panel">
@@ -1816,8 +1816,8 @@ function openParcelBox(){
 function updateParcelPreview(){
   let d=moneyNum((document.getElementById("parcelDelivered")||{}).value||0);
   let r=moneyNum((document.getElementById("parcelReturned")||{}).value||0);
-  let est=fromCents(cents(d*0.30)+cents(r*0.15));
-  let p=document.getElementById("parcelPreview"); if(p)p.textContent=`预计：${fmt(est)} （派件 ${d} ×0.30，退回 ${r} ×0.15）`;
+  let est=fromCents(cents(d*0.30)-cents(r*0.15));
+  let p=document.getElementById("parcelPreview"); if(p)p.textContent=`预计：${fmt(est)} （收到 ${d} ×0.30，退回扣 ${r} ×0.15）`;
 }
 async function saveParcelLog(){
   let trip=Number((document.getElementById("parcelTrip")||{}).value||1);
@@ -2192,10 +2192,11 @@ async function bossOpenOtherIncome(){
   }catch(e){box.textContent="失败："+(e.message||e)}
 }
 async function bossAddOtherIncome(){
-  let type=(document.getElementById("otherIncomeType")||{}).value||"水机", amount=Number((document.getElementById("otherIncomeAmount")||{}).value||0);
+  let type=(document.getElementById("otherIncomeType")||{}).value||"水机", amount=Number((document.getElementById("otherIncomeAmount")||{}).value||0), payment=(document.getElementById("otherIncomePayment")||{}).value||"";
   if(amount<=0){alert("请输入金额");return}
   const evidence=await fileToBase64("otherEvidence");
-  try{await apiCall("addOtherIncome",[{type,amount,status:"Pending",evidence}]); showToast("✅ 已加入待确认"); ["otherIncomeAmount"].forEach(id=>{let e=document.getElementById(id);if(e)e.value=""}); let f=document.getElementById("otherEvidence"); if(f)f.value=""; bossOpenOtherIncome();}
+  if(payment!=="Cash"&&payment!=="QR"){alert("请选择现金或 QR");return}
+  try{await apiCall("addOtherIncome",[{type,amount,payment,status:"Received",evidence}]); showToast(payment==="Cash"?"✅ 已加入今日销售和收银机现金":"✅ 已加入今日销售和今日 QR"); ["otherIncomeAmount"].forEach(id=>{let e=document.getElementById(id);if(e)e.value=""}); let f=document.getElementById("otherEvidence"); if(f)f.value=""; await Promise.all([bossOpenOtherIncome(),loadTodayStats()]);}
   catch(e){alert("加入失败："+(e.message||e))}
 }
 async function bossConfirmOtherIncome(id){
@@ -2207,7 +2208,7 @@ async function bossConfirmOtherIncome(id){
 }
 async function bossLoadReportRange(s,e,label){
   const box=document.getElementById("bossReportInlineResult")||document.getElementById("bossResult"); box.textContent="载入中...";
-  try{let r=await salesReportWithTimeout(apiCall("getFullReport",[s,e]),25000); box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)}营业报表</h3><span>${s} 至 ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>收款与调整</h4><table class="sales-product-table"><tr><td>现金</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>转账</td><td class="num">${fmt(r.Transfer||0)}</td><td>混合付款（旧记录）</td><td class="num">${fmt(r.Mixed||0)}</td></tr><tr><td>折扣</td><td class="num">${fmt(r.discount||0)}</td><td>退货</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>净销售</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
+  try{let r=await salesReportWithTimeout(apiCall("getFullReport",[s,e]),25000);const otherRow=(Number(r.otherIncomeCash||0)||Number(r.otherIncomeQR||0))?`<tr><td>其它收入 Cash</td><td class="num">${fmt(r.otherIncomeCash||0)}</td><td>其它收入 QR</td><td class="num">${fmt(r.otherIncomeQR||0)}</td></tr>`:'';box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)}营业报表</h3><span>${s} 至 ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>收款与调整</h4><table class="sales-product-table"><tr><td>现金</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>转账</td><td class="num">${fmt(r.Transfer||0)}</td><td>混合付款（旧记录）</td><td class="num">${fmt(r.Mixed||0)}</td></tr>${otherRow}<tr><td>折扣</td><td class="num">${fmt(r.discount||0)}</td><td>退货</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>净销售</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
   catch(err){box.textContent="载入超过 25 秒，请再按一次报表重试。"}
 }
 function calcMixed(){
@@ -2298,7 +2299,8 @@ bossOpenOverview = async function(){
     const otherPending=moneyNum(other.pending||0);
     const cards=[];
     cards.push(bossMiniCard('收银机可收现金',fmt(can),`收银机 ${fmt(cashDrawer)} / 找零本金 ${fmt(flt)} / 提醒 ${fmt(limit)}`, can>=limit));
-    cards.push(bossMiniCard('今日销售',fmt(today.total||0),`订单 ${today.orders||today.count||0} 笔 / Cash ${fmt(today.Cash||0)} / QR ${fmt(today.MBB_QR||0)}`, false));
+    const otherHint=(Number(today.otherIncomeCash||0)||Number(today.otherIncomeQR||0))?` / 其它收入 Cash ${fmt(today.otherIncomeCash||0)} · QR ${fmt(today.otherIncomeQR||0)}`:'';
+    cards.push(bossMiniCard('今日销售',fmt(today.total||0),`订单 ${today.orders||today.count||0} 笔 / Cash ${fmt(today.Cash||0)} / QR ${fmt(today.MBB_QR||0)}${otherHint}`, false));
     if(parcelPending>0) cards.push(bossMiniCard('Shopee 待对账',fmt(parcelPending),`已记录实际收到 ${fmt(parcel.actualPaid||0)} / 共 ${parcel.count||0} 笔`, true));
     if(otherPending>0) cards.push(bossMiniCard('其它收入待确认',fmt(otherPending),`已确认 ${fmt(other.received||0)} / 共 ${other.count||0} 笔`, true));
     if(low.length) cards.push(bossMiniCard('库存不足',low.length+' 项',low.slice(0,4).map(x=>x.name).join('、'),true));
