@@ -4831,7 +4831,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       </button>`).join('');
   }
 
-  function bossMarginDisplay(price,cost){price=Number(price)||0;cost=Number(cost)||0;if(!(price>0&&cost>0))return `<span style="color:#94a3b8">${lang()==='zh'?'毛利：未有成本，下次进货补':'Margin: no cost; fill on next receipt'}</span>`;const margin=(price-cost)/price,target=Math.ceil((cost/0.7-1e-9)*10)/10,color=margin<0.20?'#f87171':margin<0.30?'#facc15':'#4ade80',label=`${lang()==='zh'?'毛利':'Margin'} ${(margin*100).toFixed(1)}%`,suggestion=margin<0.30?` · ${lang()==='zh'?'30%参考':'30% guide'} ${money(target)}`:'';return `<span style="color:${color};font-weight:800">${label}${suggestion}</span>`;}
+  function bossMarginDisplay(price,cost){price=Number(price)||0;cost=Number(cost)||0;if(!(price>0&&cost>0))return `<span style="color:#94a3b8">${lang()==='zh'?'毛利：未有成本，下次进货补':'Margin: no cost; fill on next receipt'}</span>`;const margin=(price-cost)/price,target=Math.ceil((cost/0.7-1e-9)*10)/10,color=margin<0.20-1e-9?'#f87171':margin<0.30-1e-9?'#facc15':'#4ade80',label=`${lang()==='zh'?'毛利':'Margin'} ${(margin*100).toFixed(1)}%`,suggestion=margin<0.30-1e-9?` · ${lang()==='zh'?'30%参考':'30% guide'} ${money(target)}`:'';return `<span style="color:${color};font-weight:800">${label}${suggestion}</span>`;}
 
   function bossProductThumbHtml(p,index){
     const img=normalizeText(p&&p.image);
