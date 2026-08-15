@@ -342,6 +342,21 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #otherIncomeMonths input{width:17px;height:17px;accent-color:#22c55e}
 body.light #bossOtherIncomeBox .boss-inline input,body.light #bossOtherIncomeBox .boss-inline select{background:#fff!important;color:#172033!important;-webkit-text-fill-color:#172033;border-color:#94a3b8}body.light #otherIncomeMonths{background:#f8fafc;color:#334155}body.light #otherIncomeMonths .other-month-chip{background:#eef6ff;color:#172033}
 @media(max-width:1100px){#bossOtherIncomeBox .boss-inline{grid-template-columns:1fr 1fr}#bossOtherIncomeBox .boss-inline button{grid-column:1/-1}#otherIncomeMonths>div:last-child{grid-template-columns:repeat(4,minmax(100px,1fr))}}
+.income-btn{background:linear-gradient(135deg,#0f766e,#14b8a6)!important;color:#fff!important}
+.shopee-stock-btn{background:linear-gradient(135deg,#c2410c,#f97316)!important;color:#fff!important}
+#staffOtherIncomeBox .staff-income-modal{width:min(860px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;padding:20px;background:linear-gradient(145deg,#101b31,#091225);border:1px solid rgba(45,212,191,.3)}
+.staff-income-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:15px}.staff-income-head h3{margin:0 0 5px}.staff-income-head p{margin:0;color:#94a3b8;font-size:13px}.staff-income-head button{width:auto;margin:0;background:#25334a;color:#e5edf9}
+.staff-income-form{display:grid;grid-template-columns:130px 120px minmax(180px,1fr) 190px;gap:9px}.staff-income-form input,.staff-income-form select{width:100%;height:48px;margin:0;padding:0 12px;border:1px solid rgba(45,212,191,.35);border-radius:11px;background:#17263f!important;color:#edf7ff!important;-webkit-text-fill-color:#edf7ff;font-size:14px}.staff-income-form select option{background:#17263f;color:#edf7ff}
+.staff-income-months{margin:13px 0 9px;padding:12px;border:1px solid rgba(45,212,191,.2);border-radius:13px;background:rgba(4,15,30,.62)}.staff-income-month-grid{display:grid;grid-template-columns:repeat(6,minmax(98px,1fr));gap:8px}.staff-month-chip{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid rgba(45,212,191,.28);border-radius:10px;background:rgba(19,78,74,.22);cursor:pointer}.staff-month-chip:has(input:checked){border-color:#22c55e;background:rgba(22,163,74,.24)}.staff-month-chip.is-old{opacity:.38;cursor:not-allowed}.staff-month-chip.is-done{opacity:.72;color:#86efac;cursor:not-allowed}.staff-month-chip input{width:17px;height:17px;accent-color:#22c55e}.staff-income-note{color:#94a3b8;font-size:12px;margin:8px 0 12px}.staff-income-modal>#staffIncomeSave{width:100%;height:50px;margin:0;background:linear-gradient(135deg,#16a34a,#22c55e);color:#04120a;font-weight:900}.staff-income-recent{margin-top:12px;color:#cbd5e1;font-size:13px}
+body.light #staffOtherIncomeBox .staff-income-modal{background:#f8fafc;color:#172033}body.light .staff-income-form input,body.light .staff-income-form select{background:#fff!important;color:#172033!important;-webkit-text-fill-color:#172033}body.light .staff-income-months{background:#eef6ff}body.light .staff-month-chip{background:#e6fffb;color:#172033}
+@media(max-width:760px){.staff-income-form{grid-template-columns:1fr 1fr}.staff-income-month-grid{grid-template-columns:repeat(3,1fr)}}
+#shopeeStockOutBox .shopee-stock-modal{width:min(900px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;padding:20px;background:linear-gradient(145deg,#1d1720,#0b1220);border:1px solid rgba(249,115,22,.35)}
+.shopee-stock-modal>input{width:100%;height:47px;margin:0 0 9px;padding:0 13px;border:1px solid rgba(249,115,22,.35);border-radius:11px;background:#172033;color:#f8fafc}
+.shopee-stock-products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:270px;overflow:auto;padding:8px;border:1px solid rgba(249,115,22,.18);border-radius:12px;background:rgba(2,6,23,.45)}.shopee-stock-product{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:9px;border:1px solid #334155;border-radius:10px;background:#111c31;color:#e5edf9;text-align:left}.shopee-stock-product small{display:block;color:#94a3b8;margin-top:3px}.shopee-stock-product button{width:auto;margin:0;padding:7px 10px;background:#ea580c;color:white}
+.shopee-stock-selected{margin:10px 0;padding:11px;border:1px solid rgba(249,115,22,.25);border-radius:12px;background:rgba(124,45,18,.14)}.shopee-stock-line{display:grid;grid-template-columns:1fr 90px 42px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(148,163,184,.14)}.shopee-stock-line input{height:38px;margin:0;padding:0 8px;background:#172033;color:#fff;border:1px solid #475569;border-radius:8px}.shopee-stock-line button{width:38px;height:38px;margin:0;padding:0;background:#b91c1c;color:#fff}.shopee-stock-modal>#shopeeStockSubmit{width:100%;height:50px;margin-top:12px;background:linear-gradient(135deg,#ea580c,#fb923c);color:#1c0a02;font-weight:900}
+body.light #shopeeStockOutBox .shopee-stock-modal{background:#fff7ed;color:#172033}body.light .shopee-stock-modal>input,body.light .shopee-stock-line input{background:#fff;color:#172033}body.light .shopee-stock-product{background:#fff;color:#172033}
+@media(max-width:760px){.shopee-stock-products{grid-template-columns:1fr 1fr}}
+.shopee-stock-approvals{margin-top:14px}.shopee-stock-approvals h4{margin:0 0 10px}.shopee-approval-card{display:grid;grid-template-columns:1fr 210px;gap:12px;padding:12px;margin:8px 0;border:1px solid rgba(249,115,22,.3);border-radius:12px;background:rgba(124,45,18,.12)}.shopee-approval-card small{display:block;color:#94a3b8;margin:3px 0 7px}.shopee-approval-card button{width:100%;margin:0 0 7px;padding:9px}.shopee-approval-card .danger{background:#991b1b;color:#fff}@media(max-width:760px){.shopee-approval-card{grid-template-columns:1fr}}
 @media(max-width:900px){
   #todaySoldBox .today-sold-modal{width:calc(100vw - 28px);max-height:calc(100dvh - 28px);padding:18px}
   #todaySoldBox .sales-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -957,6 +972,8 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
   <button class="smallbtn print-btn" onclick="smartPrintLast()">🖨️ Print Receipt</button>
   <button class="smallbtn parcel-btn" onclick="openParcelBox()">📦 Shopee Parcel</button>
+  <button class="smallbtn income-btn" onclick="openStaffOtherIncome()">🚰 Other Income</button>
+  <button class="smallbtn shopee-stock-btn" onclick="openShopeeStockOut()">🛍️ Shopee卖货出库</button>
   <button class="smallbtn close-btn" onclick="openRefundBox()">↩️ Refund</button>
 
 </div>
@@ -1051,6 +1068,29 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <div id="parcelPreview" class="discount-preview">Estimated: RM 0.00</div>
     <button class="green" onclick="saveParcelLog()">✅ Save Parcel Record</button>
     <button onclick="closeModal('parcelBox')">Close</button>
+  </div>
+</div>
+
+<div id="staffOtherIncomeBox" class="modal">
+  <div class="modal-content staff-income-modal">
+    <div class="staff-income-head"><div><h3>🚰 其他收入／水机</h3><p>收到钱后直接登记；可一次选择多个月份。</p></div><button type="button" onclick="closeModal('staffOtherIncomeBox')">关闭</button></div>
+    <div class="staff-income-form"><select id="staffIncomeType"><option value="水机">水机</option></select><input id="staffIncomeYear" type="number" min="2026" value="2026" placeholder="年份"><input id="staffIncomeAmount" type="number" step="0.01" placeholder="实收总金额"><select id="staffIncomePayment"><option value="Cash">现金 Cash</option><option value="QR">QR／公司银行</option><option value="Transfer">Transfer／公司银行</option></select></div>
+    <div id="staffIncomeMonths" class="staff-income-months">载入月份...</div>
+    <div class="staff-income-note">1–4月为旧资料；5月可补回，6月以后未登记的月份都可以选择。</div>
+    <button id="staffIncomeSave" class="green" type="button" onclick="saveStaffOtherIncome()">确认已收到</button>
+    <div id="staffIncomeRecent" class="staff-income-recent"></div>
+  </div>
+</div>
+
+<div id="shopeeStockOutBox" class="modal">
+  <div class="modal-content shopee-stock-modal">
+    <div class="staff-income-head"><div><h3>🛍️ Shopee卖货出库</h3><p>只扣库存，不加入POS销售，也不影响Shopee包裹佣金。</p></div><button type="button" onclick="closeModal('shopeeStockOutBox')">关闭</button></div>
+    <input id="shopeeStockOrderId" type="text" placeholder="Shopee订单号（必填，防止重复扣库存）">
+    <input id="shopeeStockSearch" type="text" placeholder="搜索要包装的商品" oninput="renderShopeeStockProducts(this.value)">
+    <div id="shopeeStockProducts" class="shopee-stock-products"></div>
+    <div id="shopeeStockSelected" class="shopee-stock-selected">还没选择商品。</div>
+    <details class="refund-auth" id="shopeeStockBossAuth"><summary>🔐 老板直接批准（工人留空）</summary><input id="shopeeStockBossId" type="text" placeholder="Boss ID" autocomplete="off"><input id="shopeeStockBossPassword" type="password" placeholder="Boss Password" autocomplete="new-password"><div class="receipt-note">老板填帐号密码＝立即扣库存；工人留空＝提交给Boss Mode审核，审核前不会扣库存。</div></details>
+    <button id="shopeeStockSubmit" class="green" type="button" onclick="submitShopeeStockOut()">提交Shopee出库</button>
   </div>
 </div>
 
@@ -3156,7 +3196,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(labels[1])labels[1].textContent=tr('discount');
     if(labels[2])labels[2].textContent=tr('total');
     const more = $('moreMenu');
-    if(more)more.innerHTML=`<button class="smallbtn print-btn" onclick="smartPrintLast()">${esc(tr('print'))}</button><button class="smallbtn parcel-btn" onclick="openParcelBox()">${esc(tr('parcel'))}</button><button class="smallbtn close-btn" onclick="openRefundBox()">${esc(tr('refund'))}</button>`;
+    if(more)more.innerHTML=`<button class="smallbtn print-btn" onclick="smartPrintLast()">${esc(tr('print'))}</button><button class="smallbtn parcel-btn" onclick="openParcelBox()">${esc(tr('parcel'))}</button><button class="smallbtn income-btn" onclick="openStaffOtherIncome()">🚰 ${esc(tr('otherIncome'))}</button><button class="smallbtn shopee-stock-btn" onclick="openShopeeStockOut()">🛍️ ${lang()==='zh'?'Shopee卖货出库':'Shopee Stock Out'}</button><button class="smallbtn close-btn" onclick="openRefundBox()">${esc(tr('refund'))}</button>`;
     const bossTitle = document.querySelector('#bossLoginBox h3'); if(bossTitle)bossTitle.textContent=tr('bossAuth');
     const bossLoginBtn = $('bossLoginBtn'); if(bossLoginBtn && !bossLoginBtn.disabled)bossLoginBtn.textContent=tr('login');
     const bossLoginClose = document.querySelector('#bossLoginBox button[onclick*="closeModal"]'); if(bossLoginClose)bossLoginClose.textContent=tr('close');
@@ -6395,13 +6435,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const cash=overview.cash||{};
       const drawer=num(cash.cashDrawer||0), flt=num(cash.floatCash||0), collectable=drawer-flt;
       const t=overview.today || {};
-      if(box)box.innerHTML=[
+      const cards=[
         card(tr('todayCash'),money(t.Cash||0),`QR ${money(t.MBB_QR||0)} / ${tr('transfer')} ${money(t.Transfer||0)}`,false),
         card(tr('todayTotal'),money(t.total||0),`${tr('orders')} ${t.orders||t.count||0}`,false),
         card(tr('cashDrawer'),money(drawer),`${tr('collectable')} ${money(collectable)} / ${tr('collected')} ${money(cash.collected||0)}`,collectable>=num(cash.cashDrawerLimit||500)),
         card(tr('products'),String(currentProducts().length||localItems||'--'),tr('bossFastHint'),false),
-        card(tr('pendingRefunds'),money(overview.refundPendingAmount||0),`${overview.refundPending||0} ${tr('requests')}`,num(overview.refundPending)>0)
+        card(tr('pendingRefunds'),money(overview.refundPendingAmount||0),`${overview.refundPending||0} ${tr('requests')}`,num(overview.refundPending)>0),
+        card(lang()==='zh'?'待审Shopee出库':'Pending Shopee Stock Out',String(overview.shopeeStockOutPending||0),lang()==='zh'?'批准后才扣库存':'Stock deducts only after approval',num(overview.shopeeStockOutPending)>0)
       ].join('');
+      const pending=overview.pendingShopeeStockOuts||[],refunds=overview.pendingRefunds||[];
+      const refundHtml=refunds.map(function(x){return `<div class="shopee-approval-card refund-approval"><div><b>退货 · ${esc(x.orderId||'')}</b><small>${esc(x.date||'')} · ${money(x.amount||0)}</small><div>${esc(x.item||'').replace(/\n/g,'<br>')}</div><small>${esc(x.reason||'')}</small></div><div><button class="green" onclick="approveRefundFromBoss('${esc(x.refundId||'')}')">批准退货／恢复库存</button><button class="danger" onclick="rejectRefundFromBoss('${esc(x.refundId||'')}')">拒绝</button></div></div>`;}).join('');
+      const stockHtml=pending.map(function(x){const items=(x.items||[]).map(function(i){return `${esc(i.name||i.code)} × ${esc(i.qty)}`;}).join('<br>');return `<div class="shopee-approval-card"><div><b>Shopee出库 · ${esc(x.shopeeOrderId||'')}</b><small>${esc(x.date||'')} · ${esc(x.requestedBy||'Staff')}</small><div>${items}</div></div><div><button class="green" onclick="approveShopeeStockOut('${esc(x.requestId||'')}')">批准扣库存</button><button class="danger" onclick="rejectShopeeStockOut('${esc(x.requestId||'')}')">拒绝</button></div></div>`;}).join('');
+      const approvals=(refundHtml||stockHtml)?`<div class="boss-result shopee-stock-approvals"><h4>✅ ${lang()==='zh'?'待审核中心':'Approval Centre'}</h4>${refundHtml}${stockHtml}</div>`:'';
+      if(box)box.innerHTML=cards+approvals;
     };
     if(bossOverviewCache && Date.now()-bossOverviewCacheAt < 60000){
       renderOverview(bossOverviewCache);
@@ -6425,6 +6471,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const br=$('bossResult'); if(br)br.textContent=tr('dashboardSlow');
     }
   };
+
+  window.approveShopeeStockOut = async function(requestId){const ok=await appConfirm('批准后会立即扣库存，确认吗？','Shopee卖货出库');if(!ok)return;try{setSubmitBusy(true,'正在批准并扣库存...');await apiCall('approveShopeeStockOutFromBoss',[requestId]);bossOverviewCache=null;bossOverviewCacheAt=0;showToast('✅ 已批准并扣库存');await bossOpenOverview(true);setTimeout(function(){location.reload();},900);}catch(e){showAppAlert('批准失败：'+cleanMessage(e.message||e),'Shopee卖货出库');}finally{setSubmitBusy(false);}};
+  window.rejectShopeeStockOut = async function(requestId){const ok=await appConfirm('拒绝这项出库申请？库存不会改变。','Shopee卖货出库');if(!ok)return;try{setSubmitBusy(true,'正在拒绝...');await apiCall('rejectShopeeStockOutFromBoss',[requestId]);bossOverviewCache=null;bossOverviewCacheAt=0;showToast('已拒绝，库存没有改变');await bossOpenOverview(true);}catch(e){showAppAlert('拒绝失败：'+cleanMessage(e.message||e),'Shopee卖货出库');}finally{setSubmitBusy(false);}};
+  window.approveRefundFromBoss = async function(refundId){const ok=await appConfirm('批准退货后会恢复对应库存，确认吗？','退货审核');if(!ok)return;try{setSubmitBusy(true,'正在批准退货...');await apiCall('approvePendingRefundFromBoss',[refundId]);bossOverviewCache=null;bossOverviewCacheAt=0;showToast('✅ 退货已批准并恢复库存');await bossOpenOverview(true);setTimeout(function(){location.reload();},900);}catch(e){showAppAlert('批准失败：'+cleanMessage(e.message||e),'退货审核');}finally{setSubmitBusy(false);}};
+  window.rejectRefundFromBoss = async function(refundId){const ok=await appConfirm('拒绝这项退货申请？库存不会改变。','退货审核');if(!ok)return;try{setSubmitBusy(true,'正在拒绝退货...');await apiCall('rejectPendingRefund',[refundId,'Boss Mode rejected']);bossOverviewCache=null;bossOverviewCacheAt=0;showToast('退货申请已拒绝');await bossOpenOverview(true);}catch(e){showAppAlert('拒绝失败：'+cleanMessage(e.message||e),'退货审核');}finally{setSubmitBusy(false);}};
 
   function renderBossParcelSummary(r){
     r=r||{};
@@ -6540,6 +6591,56 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     for(let m=1;m<=12;m++){const key=year+'-'+String(m).padStart(2,'0'),old=key<String(start||'2026-05'),done=!!used[key],disabled=old||done;html+=`<label class="other-month-chip ${done?'is-done':old?'is-old':''}"><input class="other-income-month" type="checkbox" value="${key}" ${disabled?'disabled':''}><span>${m}月${done?' · 已收':old?' · 旧资料':''}</span></label>`;}
     box.innerHTML=html+'</div>';
     const y=$('otherIncomeYear');if(y&&!y.dataset.monthBound){y.dataset.monthBound='1';y.addEventListener('change',function(){renderOtherIncomeMonths(recorded,start);});}
+  };
+
+  window.renderStaffIncomeMonths = function(recorded,start){
+    const box=$('staffIncomeMonths'),year=Math.max(2026,Number(($('staffIncomeYear')||{}).value)||2026),used={};
+    (recorded||[]).forEach(function(x){used[String(x)]=1;});
+    if(!box)return;
+    let html='<div style="margin-bottom:8px;font-weight:800">选择水机账单月份（可多选）</div><div class="staff-income-month-grid">';
+    for(let m=1;m<=12;m++){const key=year+'-'+String(m).padStart(2,'0'),old=key<String(start||'2026-05'),done=!!used[key],disabled=old||done;html+=`<label class="staff-month-chip ${done?'is-done':old?'is-old':''}"><input class="staff-income-month" type="checkbox" value="${key}" ${disabled?'disabled':''}><span>${m}月${done?' · 已收':old?' · 旧':''}</span></label>`;}
+    box.innerHTML=html+'</div>';
+  };
+
+  window.openStaffOtherIncome = async function(){
+    const menu=$('moreMenu');if(menu)menu.classList.remove('active');
+    openModal('staffOtherIncomeBox');
+    const months=$('staffIncomeMonths'),recent=$('staffIncomeRecent');if(months)months.textContent='载入月份...';if(recent)recent.textContent='';
+    try{
+      const r=await apiCallTransient('getOtherIncomeSummary',[],16000,'Other income');
+      window.__staffIncomeState={recorded:r.recordedPeriods||[],start:r.trackingStart||'2026-05'};
+      renderStaffIncomeMonths(window.__staffIncomeState.recorded,window.__staffIncomeState.start);
+      const rows=(r.rows||[]).filter(function(x){return (x.periods||[]).length;}).slice(0,4);
+      if(recent)recent.innerHTML=rows.length?'<b>最近记录</b><br>'+rows.map(function(x){return `${esc((x.periods||[]).join(', '))} · ${money(x.amount||0)} · ${esc(x.payment||'Cash')}`;}).join('<br>'):'还没有新月份记录。';
+      const y=$('staffIncomeYear');if(y&&!y.dataset.staffBound){y.dataset.staffBound='1';y.addEventListener('change',function(){const s=window.__staffIncomeState||{};renderStaffIncomeMonths(s.recorded||[],s.start||'2026-05');});}
+    }catch(e){if(months)months.textContent='载入失败：'+cleanMessage(e.message||e);}
+  };
+
+  window.saveStaffOtherIncome = async function(){
+    const amount=num(($('staffIncomeAmount')||{}).value),payment=(($('staffIncomePayment')||{}).value||'').trim(),type=(($('staffIncomeType')||{}).value||'水机').trim(),periods=Array.from(document.querySelectorAll('.staff-income-month:checked')).map(function(x){return x.value;});
+    if(amount<=0){showAppAlert('请输入实收金额。','其他收入');return}if(!periods.length){showAppAlert('请选择至少一个水机账单月份。','其他收入');return}
+    const ok=await appConfirm(`确认已经收到 ${money(amount)}？\n月份：${periods.join(', ')}\n方式：${payment}`,'其他收入');if(!ok)return;
+    try{setSubmitBusy(true,'正在记录其他收入，请稍等...');await apiCall('addOtherIncome',[{type:type,amount:amount,payment:payment,periods:periods,status:'Received'}]);const a=$('staffIncomeAmount');if(a)a.value='';if(typeof showToast==='function')showToast('✅ 其他收入已记录');await openStaffOtherIncome();scheduleTopStatsRefresh(500);}catch(e){showAppAlert('保存失败：'+cleanMessage(e.message||e),'其他收入');}finally{setSubmitBusy(false);}
+  };
+
+  window.openShopeeStockOut = function(){
+    const menu=$('moreMenu');if(menu)menu.classList.remove('active');window.__shopeeStockSelected={};
+    ['shopeeStockOrderId','shopeeStockSearch','shopeeStockBossId','shopeeStockBossPassword'].forEach(function(id){const e=$(id);if(e)e.value='';});
+    openModal('shopeeStockOutBox');renderShopeeStockProducts('');renderShopeeStockSelected();
+  };
+  window.renderShopeeStockProducts = function(query){
+    const box=$('shopeeStockProducts');if(!box)return;const q=String(query||'').trim().toLowerCase(),rows=currentProducts().filter(function(p){return p&&p.active!==false&&(!q||String(p.name||'').toLowerCase().includes(q)||String(p.code||'').toLowerCase().includes(q));}).slice(0,36);
+    box.innerHTML=rows.length?rows.map(function(p){return `<div class="shopee-stock-product"><div><b>${esc(p.name||'-')}</b><small>${esc(p.code||'')} · 库存 ${esc(p.stock==null?'-':p.stock)}</small></div><button type="button" onclick='addShopeeStockProduct(${JSON.stringify(p.code||'')},${JSON.stringify(p.name||'')})'>＋</button></div>`;}).join(''):'找不到商品。';
+  };
+  window.addShopeeStockProduct = function(code,name){const key=String(code||name),map=window.__shopeeStockSelected||(window.__shopeeStockSelected={});if(!map[key])map[key]={code:code||'',name:name||'',qty:1};else map[key].qty+=1;renderShopeeStockSelected();};
+  window.setShopeeStockQty = function(key,value){const map=window.__shopeeStockSelected||{},row=map[key];if(!row)return;row.qty=Math.max(1,Number(value)||1);renderShopeeStockSelected();};
+  window.removeShopeeStockProduct = function(key){const map=window.__shopeeStockSelected||{};delete map[key];renderShopeeStockSelected();};
+  window.renderShopeeStockSelected = function(){const box=$('shopeeStockSelected'),map=window.__shopeeStockSelected||{},keys=Object.keys(map);if(!box)return;if(!keys.length){box.textContent='还没选择商品。';return;}box.innerHTML='<b>准备出库</b>'+keys.map(function(k){const x=map[k];return `<div class="shopee-stock-line"><span>${esc(x.name||x.code)}</span><input type="number" min="1" step="1" value="${esc(x.qty)}" onchange='setShopeeStockQty(${JSON.stringify(k)},this.value)'><button type="button" onclick='removeShopeeStockProduct(${JSON.stringify(k)})'>×</button></div>`;}).join('');};
+  window.submitShopeeStockOut = async function(){
+    const shopeeOrderId=(($('shopeeStockOrderId')||{}).value||'').trim(),bossId=(($('shopeeStockBossId')||{}).value||'').trim(),bossPassword=(($('shopeeStockBossPassword')||{}).value||''),items=Object.keys(window.__shopeeStockSelected||{}).map(function(k){return window.__shopeeStockSelected[k];});
+    if(!shopeeOrderId){showAppAlert('请输入Shopee订单号。','Shopee卖货出库');return}if(!items.length){showAppAlert('请选择要包装的商品。','Shopee卖货出库');return}if((bossId&&!bossPassword)||(!bossId&&bossPassword)){showAppAlert('Boss ID和密码要一起填写；工人提交就两个都留空。','Shopee卖货出库');return}
+    const direct=!!(bossId&&bossPassword),summary=items.map(function(x){return `${x.name} × ${x.qty}`;}).join('\n'),ok=await appConfirm(`${direct?'立即批准并扣库存':'提交给老板审核，暂时不扣库存'}？\n\nShopee订单：${shopeeOrderId}\n${summary}`,'Shopee卖货出库');if(!ok)return;
+    try{setSubmitBusy(true,direct?'正在审核并扣库存...':'正在提交审核...');const r=await apiCall('requestShopeeStockOut',[{shopeeOrderId:shopeeOrderId,items:items,bossId:bossId,bossPassword:bossPassword}]);closeModal('shopeeStockOutBox');showToast(direct?'✅ 已批准并扣库存':'✅ 已提交，等待老板审核');bossOverviewCache=null;bossOverviewCacheAt=0;if(direct)setTimeout(function(){location.reload();},900);}catch(e){showAppAlert('提交失败：'+cleanMessage(e.message||e),'Shopee卖货出库');}finally{setSubmitBusy(false);}
   };
 
   window.bossAddOtherIncome = async function(){
