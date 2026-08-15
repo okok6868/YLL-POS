@@ -323,6 +323,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #todaySoldBox .sales-product-table{width:100%;table-layout:fixed}
 #todaySoldBox .sales-product-table th:first-child,#todaySoldBox .sales-product-table td:first-child{width:auto;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 #todaySoldBox .sales-product-table .num{width:118px}
+#todaySoldBox .today-order-list{display:grid;gap:8px}
+#todaySoldBox .today-order-card{border:1px solid rgba(96,165,250,.22);border-left:4px solid #64748b;border-radius:11px;padding:9px 11px;background:rgba(15,23,42,.62)}
+#todaySoldBox .today-order-card.pay-cash{border-left-color:#22c55e}#todaySoldBox .today-order-card.pay-qr{border-left-color:#38bdf8}#todaySoldBox .today-order-card.pay-transfer{border-left-color:#a78bfa}
+#todaySoldBox .today-order-head{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;align-items:center;gap:8px;border-bottom:1px solid rgba(148,163,184,.2);padding-bottom:6px;margin-bottom:5px;font-size:13px}
+#todaySoldBox .today-pay-badge{padding:3px 8px;border-radius:999px;background:rgba(100,116,139,.2);font-weight:700}.today-order-card.pay-cash .today-pay-badge{color:#4ade80}.today-order-card.pay-qr .today-pay-badge{color:#38bdf8}.today-order-card.pay-transfer .today-pay-badge{color:#c4b5fd}
+#todaySoldBox .today-order-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:3px 0;font-size:13px}#todaySoldBox .today-order-total{border-top:1px solid rgba(148,163,184,.18);margin-top:5px;padding-top:5px;text-align:right;font-size:13px}
 @media(max-width:900px){
   #todaySoldBox .today-sold-modal{width:calc(100vw - 28px);max-height:calc(100dvh - 28px);padding:18px}
   #todaySoldBox .sales-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -1209,8 +1215,9 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
           <div id="bossOtherIncomeBox" class="boss-panel">
             <h4>🚰 其它收入 / 水机</h4>
-            <p style="color:#94a3b8;font-size:13px;margin-top:-4px">输入的水机／其它现金会立即加入今日销售和收银机现金。</p>
-            <div class="boss-inline"><input id="otherIncomeType" type="text" placeholder="水机"><input id="otherIncomeAmount" type="number" placeholder="金额"><select id="otherIncomePayment"><option value="Cash">现金 Cash</option><option value="QR">QR／公司银行</option></select><button class="green" onclick="bossAddOtherIncome()">记录已收入</button></div>
+            <p style="color:#94a3b8;font-size:13px;margin-top:-4px">新记录从 2026年7月开始。旧记录保留但不追算；这里只登记已经确认收到的钱。</p>
+            <div class="boss-inline"><select id="otherIncomeType"><option value="水机">水机</option></select><input id="otherIncomeYear" type="number" min="2026" value="2026" placeholder="年份"><input id="otherIncomeAmount" type="number" step="0.01" placeholder="实收总金额"><select id="otherIncomePayment"><option value="Cash">现金 Cash</option><option value="QR">QR／公司银行</option><option value="Transfer">Transfer／公司银行</option></select><button class="green" onclick="bossAddOtherIncome()">确认已收到</button></div>
+            <div id="otherIncomeMonths" class="boss-result" style="margin-top:10px">请选择水机账单月份。</div>
             <div id="bossOtherIncomeResult" class="boss-result">记录后会立即更新今日销售和收银机现金。</div>
           </div>
 
@@ -1908,11 +1915,6 @@ async function bossOpenParcelBoss(){if(!bossRequire())return; bossHideBossPanels
 实际已收: ${fmt(r.actualPaid||0)}
 记录数: ${r.count||0}`;}
 async function bossConfirmShopeePaid(){let amount=Number((document.getElementById("shopeePaidAmount")||{}).value||0), note=(document.getElementById("shopeePaidNote")||{}).value||""; if(amount<=0){alert("请输入实际金额");return} try{await apiCall("recordShopeePayout",[amount,note]); showToast("✅ Shopee 实收已记录"); bossOpenParcelBoss();}catch(e){alert("记录失败："+(e.message||e))}}
-async function bossOpenOtherIncome(){if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossOtherIncomeBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; let r=await apiCall("getOtherIncomeSummary",[]); document.getElementById("bossOtherIncomeResult").textContent=`待确认: ${fmt(r.pending||0)}
-Received: ${fmt(r.received||0)}
-记录数: ${r.count||0}`;}
-async function bossAddOtherIncome(){let type=(document.getElementById("otherIncomeType")||{}).value||"水机", amount=Number((document.getElementById("otherIncomeAmount")||{}).value||0); if(amount<=0){alert("请输入金额");return} try{await apiCall("addOtherIncome",[{type,amount,status:"待确认"}]); showToast("✅ 已加入待确认"); bossOpenOtherIncome();}catch(e){alert("加入失败："+(e.message||e))}}
-
 async function checkSystemStatus(showOk){
   try{
     const r = await apiCall("getSystemStatus",[]);
@@ -2133,7 +2135,7 @@ function reportKpis(r,showProfit){
 }
 async function openTodaySoldItems(){
   openModal('todaySoldBox');const box=document.getElementById('todaySoldResult');box.innerHTML='<div class="sales-empty">载入中...</div>';
-  try{const rows=await salesReportWithTimeout(apiCall('getTodayOrderTimeline',[]),25000);if(!rows.length){box.innerHTML='<div class="sales-empty">今天还没有买单记录。</div>';return;}box.innerHTML=`<div style="display:grid;gap:12px">${rows.map(o=>`<section style="border:1px solid rgba(148,163,184,.35);border-radius:14px;padding:14px;background:rgba(15,23,42,.55)"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid rgba(148,163,184,.25);padding-bottom:9px;margin-bottom:9px"><b>${salesReportEscapeHtml(o.orderId||'旧单')}</b><span>${salesReportEscapeHtml(o.date||'')} ${salesReportEscapeHtml(o.time||'')}</span><span>${salesReportEscapeHtml(o.payment||'Cash')}</span></div>${(o.items||[]).map(i=>`<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:5px 0"><span>${salesReportEscapeHtml(i.name||'-')}</span><span>× ${moneyNum(i.qty||0)}</span><b>${fmt(i.subtotal||0)}</b></div>`).join('')||'<div class="sales-empty">旧资料没有商品明细</div>'}<div style="border-top:1px solid rgba(148,163,184,.25);margin-top:8px;padding-top:8px;text-align:right">${Number(o.discount||0)>0?`折扣 ${fmt(o.discount)}　`:''}<b>总额 ${fmt(o.total||0)}</b>${String(o.payment).toLowerCase()==='cash'?`<br><small>收到 ${fmt(o.paid||0)}　找钱 ${fmt(o.change||0)}</small>`:''}</div></section>`).join('')}</div>`;}catch(err){box.innerHTML='<div class="sales-empty">载入超过 25 秒，请关闭后重试。<br>'+salesReportEscapeHtml(err.message||err)+'</div>';}
+  try{const rows=await salesReportWithTimeout(apiCall('getTodayOrderTimeline',[]),25000);if(!rows.length){box.innerHTML='<div class="sales-empty">今天还没有买单记录。</div>';return;}box.innerHTML=`<div class="today-order-list">${rows.map(o=>{const pay=String(o.payment||'Cash'),pc=/qr/i.test(pay)?'qr':/transfer/i.test(pay)?'transfer':'cash';return `<section class="today-order-card pay-${pc}"><div class="today-order-head"><b>${salesReportEscapeHtml(o.orderId||'旧单')}</b><span>${salesReportEscapeHtml(o.date||'')} ${salesReportEscapeHtml(o.time||'')}</span><span class="today-pay-badge">${salesReportEscapeHtml(pay)}</span></div>${(o.items||[]).map(i=>`<div class="today-order-item"><span>${salesReportEscapeHtml(i.name||'-')}</span><span>× ${moneyNum(i.qty||0)}</span><b>${fmt(i.subtotal||0)}</b></div>`).join('')||'<div class="sales-empty">旧资料没有商品明细</div>'}<div class="today-order-total">${Number(o.discount||0)>0?`折扣 ${fmt(o.discount)}　`:''}<b>总额 ${fmt(o.total||0)}</b>${pc==='cash'?`　<small>收到 ${fmt(o.paid||0)}／找钱 ${fmt(o.change||0)}</small>`:''}</div></section>`;}).join('')}</div>`;}catch(err){box.innerHTML='<div class="sales-empty">载入超过 25 秒，请关闭后重试。<br>'+salesReportEscapeHtml(err.message||err)+'</div>';}
 }
 function salesReportWithTimeout(promise,ms){return new Promise(function(resolve,reject){const timer=setTimeout(function(){reject(new Error('载入超时'));},ms);Promise.resolve(promise).then(function(value){clearTimeout(timer);resolve(value);},function(err){clearTimeout(timer);reject(err);});});}
 function bossReportTitle(label){return ({today:"今日",yesterday:"昨天",week:"本周",lastWeek:"上周",month:"本月",lastMonth:"上月",year:"今年"})[label]||label||"报表"}
@@ -2179,33 +2181,6 @@ async function bossConfirmShopeePaid(){
   const evidence=await fileToBase64("shopeeEvidence");
   try{await apiCall("recordShopeePayout",[amount,note,evidence]); showToast("✅ Shopee 实收已记录"); ["shopeePaidAmount","shopeePaidNote"].forEach(id=>{let e=document.getElementById(id);if(e)e.value=""}); let f=document.getElementById("shopeeEvidence"); if(f)f.value=""; bossOpenParcelBoss();}
   catch(e){alert("记录失败："+(e.message||e))}
-}
-async function bossOpenOtherIncome(){
-  if(!bossRequire())return; bossHideBossPanels();
-  const p=document.getElementById("bossOtherIncomeBox"); if(p){p.style.display="block";p.classList.add("active");}
-  const box=document.getElementById("bossOtherIncomeResult"); box.textContent="载入中...";
-  try{
-    const r=await apiCall("getOtherIncomeSummary",[]);
-    const pending=(r.rows||[]).filter(x=>x.status!=="Received");
-    let html=`待确认：<b>${fmt(r.pending||0)}</b><br>已确认：<b>${fmt(r.received||0)}</b><br>记录：${r.count||0} 笔<br><br>`;
-    if(pending.length){html += `<table><tr><th>日期</th><th>类型</th><th class="right">金额</th><th>操作</th></tr>` + pending.map(x=>`<tr><td>${x.date||''}</td><td>${x.type||''}</td><td class="right">${fmt(x.amount||0)}</td><td><button class="green" style="padding:6px 8px" onclick="bossConfirmOtherIncome('${x.id}')">确认已收款</button></td></tr>`).join('') + `</table>`;} else html += "没有待确认收入。";
-    box.innerHTML=html;
-  }catch(e){box.textContent="失败："+(e.message||e)}
-}
-async function bossAddOtherIncome(){
-  let type=(document.getElementById("otherIncomeType")||{}).value||"水机", amount=Number((document.getElementById("otherIncomeAmount")||{}).value||0), payment=(document.getElementById("otherIncomePayment")||{}).value||"";
-  if(amount<=0){alert("请输入金额");return}
-  const evidence=await fileToBase64("otherEvidence");
-  if(payment!=="Cash"&&payment!=="QR"){alert("请选择现金或 QR");return}
-  try{await apiCall("addOtherIncome",[{type,amount,payment,status:"Received",evidence}]); showToast(payment==="Cash"?"✅ 已加入今日销售和收银机现金":"✅ 已加入今日销售和今日 QR"); ["otherIncomeAmount"].forEach(id=>{let e=document.getElementById(id);if(e)e.value=""}); let f=document.getElementById("otherEvidence"); if(f)f.value=""; await Promise.all([bossOpenOtherIncome(),loadTodayStats()]);}
-  catch(e){alert("加入失败："+(e.message||e))}
-}
-async function bossConfirmOtherIncome(id){
-  if(!bossRequire())return;
-  if(!confirm("确认这笔已经收到钱？"))return;
-  const evidence=await fileToBase64("otherEvidence");
-  try{await apiCall("confirmOtherIncome",[id,evidence]); showToast("✅ 已确认收款"); bossOpenOtherIncome(); bossOpenOverview();}
-  catch(e){alert("确认失败："+(e.message||e))}
 }
 async function bossLoadReportRange(s,e,label){
   const box=document.getElementById("bossReportInlineResult")||document.getElementById("bossResult"); box.textContent="载入中...";
@@ -2347,35 +2322,6 @@ bossConfirmShopeePaid = async function(){
   try{await apiCall('recordShopeePayout',[amount,note,null]); showToast('✅ Shopee 实收已记录'); ['shopeePaidAmount','shopeePaidNote'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''}); bossOpenParcelBoss();}
   catch(e){alert('记录失败：'+(e.message||e))}
 };
-
-bossOpenOtherIncome = async function(){
-  if(!bossRequire())return; bossHideBossPanels(); bossSetNav('其它');
-  const p=document.getElementById('bossOtherIncomeBox'); if(p){p.style.display='block';p.classList.add('active');}
-  const box=document.getElementById('bossOtherIncomeResult'); box.textContent='载入中...';
-  try{
-    const r=await apiCall('getOtherIncomeSummary',[]);
-    const pending=(r.rows||[]).filter(x=>x.status!=='Received');
-    let html=`<div class="boss-overview-grid" style="margin-bottom:12px"><div class="overview-card ${(r.pending||0)>0?'warn':''}"><small>待确认</small><b>${fmt(r.pending||0)}</b><span>还没确认收到的钱</span></div><div class="overview-card"><small>已确认</small><b>${fmt(r.received||0)}</b><span>已收到的钱</span></div></div>`;
-    if(pending.length){html += `<table><tr><th>日期</th><th>类型</th><th class="right">金额</th><th>操作</th></tr>` + pending.map(x=>`<tr><td>${x.date||''}</td><td>${x.type||''}</td><td class="right">${fmt(x.amount||0)}</td><td><button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${x.id}')">确认已收款</button></td></tr>`).join('') + `</table>`;} else html += '没有待确认收入。';
-    box.innerHTML=html;
-  }catch(e){box.textContent='失败：'+(e.message||e)}
-};
-
-bossAddOtherIncome = async function(){
-  const type=(document.getElementById('otherIncomeType')||{}).value||'水机', amount=Number((document.getElementById('otherIncomeAmount')||{}).value||0);
-  if(amount<=0){alert('请输入金额');return}
-  try{await apiCall('addOtherIncome',[{type,amount,status:'Pending',evidence:null}]); showToast('✅ 已加入待确认'); ['otherIncomeAmount'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''}); bossOpenOtherIncome();}
-  catch(e){alert('加入失败：'+(e.message||e))}
-};
-
-bossConfirmOtherIncome = async function(id){
-  if(!bossRequire())return;
-  if(!confirm('确认这笔已经收到钱？'))return;
-  try{await apiCall('confirmOtherIncome',[id,null]); showToast('✅ 已确认收款'); bossOpenOtherIncome();}
-  catch(e){alert('确认失败：'+(e.message||e))}
-};
-
-
 
 /* ===== V4.6.1 operational hotfix ===== */
 (function(){
@@ -6553,13 +6499,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(box)box.textContent=tr('loading');
     try{
       const r=await apiCallTransient('getOtherIncomeSummary',[],16000,'Other income');
+      renderOtherIncomeMonths(r.recordedPeriods||[],r.trackingStart||'2026-07');
       const rows=(r.rows||[]).slice(0,30);
       let html=`<table><tr><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th></tr><tr><td>${esc(tr('pending'))}</td><td class="right">${money(r.pending||0)}</td></tr><tr><td>${esc(tr('received'))}</td><td class="right">${money(r.received||0)}</td></tr><tr><td>${esc(tr('records'))}</td><td class="right">${esc(r.count||0)}</td></tr></table>`;
       if(rows.length){
         html+=`<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('status'))}</th><th>${esc(tr('action'))}</th></tr>`+
           rows.map(x=>{
             const received=String(x.status||'Pending')==='Received';
-            return `<tr><td>${esc(x.date||'')}</td><td>${esc(x.type||'')}</td><td class="right">${money(x.amount||0)}</td><td>${esc(received?tr('received'):tr('pending'))}</td><td>${received?'':`<button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${esc(x.id||'')}')">${esc(tr('confirmReceived'))}</button>`}</td></tr>`;
+            const label=[x.type||'',(x.periods||[]).join(', '),x.payment||''].filter(Boolean).join(' · ');
+            return `<tr><td>${esc(x.date||'')}</td><td>${esc(label)}</td><td class="right">${money(x.amount||0)}</td><td>${esc(received?tr('received'):tr('pending'))}</td><td>${received?'':`<button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${esc(x.id||'')}')">${esc(tr('confirmReceived'))}</button>`}</td></tr>`;
           }).join('')+
           `</table>`;
       }else{
@@ -6571,15 +6519,28 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
   };
 
+  window.renderOtherIncomeMonths = function(recorded,start){
+    const box=$('otherIncomeMonths'),year=Math.max(2026,Number(($('otherIncomeYear')||{}).value)||2026),used={};
+    (recorded||[]).forEach(function(x){used[String(x)]=1;});
+    if(!box)return;
+    let html='<div style="margin-bottom:7px">水机账单月份（可多选；已记录月份不能再选）</div><div style="display:flex;flex-wrap:wrap;gap:7px">';
+    for(let m=1;m<=12;m++){const key=year+'-'+String(m).padStart(2,'0'),old=key<String(start||'2026-07'),done=!!used[key],disabled=old||done;html+=`<label style="padding:7px 9px;border:1px solid #334155;border-radius:9px;opacity:${disabled?'.45':'1'}"><input class="other-income-month" type="checkbox" value="${key}" ${disabled?'disabled':''}> ${m}月${done?'（已收）':old?'（旧资料）':''}</label>`;}
+    box.innerHTML=html+'</div>';
+    const y=$('otherIncomeYear');if(y&&!y.dataset.monthBound){y.dataset.monthBound='1';y.addEventListener('change',function(){renderOtherIncomeMonths(recorded,start);});}
+  };
+
   window.bossAddOtherIncome = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
     keepBossDashboardOpen('otherIncome');
     const type=(($('otherIncomeType')||{}).value||tr('waterMachine')).trim();
     const amount=num(($('otherIncomeAmount')||{}).value);
+    const payment=(($('otherIncomePayment')||{}).value||'').trim();
+    const periods=Array.from(document.querySelectorAll('.other-income-month:checked')).map(function(x){return x.value;});
     if(amount<=0){ showAppAlert(tr('amountRequired'), tr('otherIncome')); return; }
+    if(!periods.length){ showAppAlert(lang()==='zh'?'请选择至少一个水机账单月份。':'Select at least one water-machine month.', tr('otherIncome')); return; }
     try{
       setSubmitBusy(true,tr('saving'));
-      await apiCall('addOtherIncome',[{type,amount,status:'Pending'}]);
+      await apiCall('addOtherIncome',[{type,amount,payment,periods,status:'Received'}]);
       const amt=$('otherIncomeAmount'); if(amt)amt.value='';
       if(typeof showToast==='function')showToast(tr('saved'));
       await bossOpenOtherIncome();
