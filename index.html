@@ -1097,7 +1097,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <section class="packing-frequent"><div class="packing-section-title"><b>📌 常打包商品</b><small>根据出库记录自动更新</small></div><div id="shopeeFrequentProducts" class="packing-photo-grid">载入中...</div></section>
     <details id="shopeeAllProducts" class="packing-other"><summary>🔎 选择其他商品</summary><input id="shopeeStockSearch" type="text" placeholder="搜索商品名称／编号" oninput="renderShopeeStockProducts(this.value)"><div id="shopeeStockProducts" class="shopee-stock-products"></div></details>
     <div id="shopeeStockSelected" class="shopee-stock-selected">还没选择商品。</div>
-    <details class="refund-auth" id="shopeeStockBossAuth"><summary>🔐 老板直接批准（工人留空）</summary><input id="shopeeStockBossId" type="text" placeholder="Boss ID" autocomplete="off"><input id="shopeeStockBossPassword" type="password" placeholder="Boss Password" autocomplete="new-password"><div class="receipt-note">老板填帐号密码＝立即扣库存；工人留空＝提交给Boss Mode审核，审核前不会扣库存。</div></details>
+    <details class="refund-auth" id="shopeeStockBossAuth"><summary>🔐 老板直接批准（工人留空）</summary><input id="shopeeStockBossId" type="text" placeholder="Boss ID" autocomplete="off"><input id="shopeeStockBossPassword" type="password" placeholder="Boss Password" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();submitShopeeStockOut()}"><div class="receipt-note">老板填帐号密码＝立即扣库存；工人留空＝提交给Boss Mode审核，审核前不会扣库存。</div></details>
     <button id="shopeeStockSubmit" class="green" type="button" onclick="submitShopeeStockOut()">提交Shopee出库</button>
   </div>
 </div>
@@ -1113,7 +1113,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <details class="refund-auth" id="refundAuthDetails">
       <summary>🔐 打开授权验证</summary>
       <input id="refundBossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <input id="refundBossPassword" type="password" placeholder="密码" autocomplete="new-password">
+      <input id="refundBossPassword" type="password" placeholder="密码" autocomplete="new-password" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();submitRefund()}">
       <div class="receipt-note">退货一定要授权验证。提交中会锁住，避免重复上传。</div>
     </details>
     <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ 确认退货</button>
@@ -3162,6 +3162,25 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       #moreMenu .income-btn{background:linear-gradient(135deg,#155e75,#0e7490)!important;color:#ecfeff!important}
       #moreMenu .shopee-stock-btn{background:linear-gradient(135deg,#9a3412,#c2410c)!important;color:#fff7ed!important}
       #moreMenu .close-btn{background:linear-gradient(135deg,#7f1d1d,#b91c1c)!important;color:#fef2f2!important}
+      .receipt-breakdown{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin-top:2px}
+      .receipt-pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;background:rgba(51,65,85,.72);color:#cbd5e1;white-space:nowrap}
+      .receipt-pill.cash{border:1px solid rgba(34,197,94,.32)}.receipt-pill.qr{border:1px solid rgba(56,189,248,.35)}.receipt-pill.transfer{border:1px solid rgba(168,85,247,.34)}
+      .receipt-other{display:block;margin-top:4px;color:#fbbf24;white-space:normal}
+      .packing-variant-picker>div{width:min(820px,96vw)!important;padding:20px!important}
+      .packing-variant-picker header{position:sticky;top:-20px;z-index:2;margin:-20px -20px 14px;padding:16px 20px;background:#0f172a;border-bottom:1px solid #334155}
+      .packing-variant-picker header button{min-width:168px!important;min-height:48px!important;padding:10px 18px!important;border:1px solid #34d399!important;border-radius:13px!important;background:linear-gradient(135deg,#047857,#10b981)!important;color:#fff!important;font-size:15px!important;font-weight:900!important}
+      .packing-variant-card{position:relative!important;min-height:190px!important;transition:.12s ease!important}
+      .packing-variant-card.is-picked{border-color:#22c55e!important;box-shadow:inset 0 0 0 2px rgba(34,197,94,.22)!important;background:#163127!important}
+      .packing-picked-badge{position:absolute;right:8px;top:8px;min-width:31px;padding:5px 8px;border-radius:999px;background:#16a34a;color:#fff;text-align:center;font-weight:900;display:none}
+      .packing-picked-badge.active{display:block}.packing-variant-total{margin:0 0 14px;padding:10px 13px;border-radius:12px;background:#091225;border:1px solid #334155;color:#cbd5e1;font-weight:800}
+      .stockout-history{grid-column:1/-1!important;width:100%!important;min-width:0!important;max-height:none!important;overflow:hidden!important;box-sizing:border-box!important}
+      .stockout-history-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+      .stockout-history-card{min-width:0;padding:13px;border:1px solid rgba(96,165,250,.24);border-radius:15px;background:rgba(15,23,42,.78);overflow:hidden}
+      .stockout-history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-bottom:9px;border-bottom:1px solid rgba(148,163,184,.16)}
+      .stockout-history-head b{min-width:0;overflow-wrap:anywhere;color:#f8fafc}.stockout-status{flex:0 0 auto;padding:3px 8px;border-radius:999px;background:rgba(34,197,94,.16);color:#86efac;font-size:11px;font-weight:900}
+      .stockout-items{display:grid;gap:5px;margin:10px 0}.stockout-item{display:flex;justify-content:space-between;gap:8px;padding:7px 9px;border-radius:9px;background:rgba(30,41,59,.72)}.stockout-item span{min-width:0;overflow-wrap:anywhere}.stockout-item b{white-space:nowrap;color:#fbbf24}
+      .stockout-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;color:#94a3b8;font-size:11px;line-height:1.35}.stockout-meta span{min-width:0;overflow-wrap:anywhere}
+      @media(max-width:1050px){.stockout-history-grid{grid-template-columns:1fr}}
       /* SESSION-118: iPad landscape uses two real, independent scroll panes. */
       @media (min-width:700px) and (min-aspect-ratio:1/1){
         #bossDashboard>.modal-content{
@@ -3823,12 +3842,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
       if(sales)sales.textContent=money(num(today.total||0)+off.total);
       const syncNote=off.count?` | ${tr('offlinePending')}`:'';
+      const receiptParts=[];
+      if(num(today.Cash||0)+off.cash>0)receiptParts.push(`<span class="receipt-pill cash">${tr('cash')} ${money(num(today.Cash||0)+off.cash)}</span>`);
+      if(num(today.MBB_QR||0)>0)receiptParts.push(`<span class="receipt-pill qr">QR ${money(today.MBB_QR||0)}</span>`);
+      if(num(today.Transfer||0)>0)receiptParts.push(`<span class="receipt-pill transfer">${tr('transfer')} ${money(today.Transfer||0)}</span>`);
       const otherTotal=num(today.otherIncome||0),otherParts=[];
       if(num(today.otherIncomeCash||0))otherParts.push(`${tr('cash')} ${money(today.otherIncomeCash)}`);
       if(num(today.otherIncomeQR||0))otherParts.push(`QR ${money(today.otherIncomeQR)}`);
       if(num(today.otherIncomeTransfer||0))otherParts.push(`${tr('transfer')} ${money(today.otherIncomeTransfer)}`);
-      const otherLine=otherTotal>0?`<br>${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' | ')||money(otherTotal)}`:'';
-      setStatDetail('todaySales', `${tr('cash')} ${money(num(today.Cash||0)+off.cash)} | QR ${money(today.MBB_QR||0)} | ${tr('transfer')} ${money(today.Transfer||0)}${syncNote}${otherLine}`);
+      const otherLine=otherTotal>0?`<span class="receipt-other">${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' | ')||money(otherTotal)}</span>`:'';
+      setStatDetail('todaySales', `<span class="receipt-breakdown">${receiptParts.join('')}${syncNote?`<span>${syncNote.replace(/^\s*\|\s*/,'')}</span>`:''}</span>${otherLine}`);
       if(cash)cash.textContent=money(num(drawer.cashDrawer||0)+off.cash);
       setStatDetail('todayCash', `${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`);
       if(orders)orders.textContent=num(today.orders||today.count||0)+off.count;
@@ -6340,7 +6363,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       <details class="refund-auth" id="refundAuthDetails">
         <summary>${esc(tr('bossAuth'))}</summary>
         <label class="boss-field"><span class="boss-field-label">ID</span><input id="refundBossId" type="text" enterkeyhint="next" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-        <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" enterkeyhint="done" placeholder="Password" autocomplete="new-password"></label>
+        <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" enterkeyhint="done" placeholder="Password" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();submitRefund()}"></label>
         <div class="receipt-note">${esc(tr('refundDirectNote'))}</div>
       </details>
       <div id="refundStatusMsg" class="refund-status-msg" style="display:none"></div>
@@ -6582,7 +6605,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }
   };
 
-  window.renderShopeeStockOutHistoryRows=function(rows){return (rows||[]).map(function(x){const items=(x.items||[]).map(function(i){return `${esc(i.name||i.code)} × ${esc(i.qty)}`;}).join('、');return `<div class="stockout-history-row"><div><b>${esc(x.requestId||'')}</b>${x.shopeeOrderId?`<small>参考 ${esc(x.shopeeOrderId)}</small>`:''}<span>${items}</span><small>${esc(x.requestedBy||'')}</small></div><div><small>提交 ${esc(x.requestTime||'')}</small><small>${x.approvedAt?'批准 '+esc(x.approvedAt):esc(x.status||'')}</small>${x.approvedBy?`<small>审核人 ${esc(x.approvedBy)}</small>`:''}</div></div>`;}).join('')||'<div class="boss-notice">暂无出库记录</div>';};
+  window.renderShopeeStockOutHistoryRows=function(rows){if(!(rows||[]).length)return '<div class="boss-notice">暂无出库记录</div>';return `<div class="stockout-history-grid">${rows.map(function(x){const items=(x.items||[]).map(function(i){return `<div class="stockout-item"><span>${esc(i.name||i.code||'-')}</span><b>× ${esc(i.qty||0)}</b></div>`;}).join('')||'<div class="stockout-item"><span>没有商品明细</span></div>';const status=String(x.status||'Approved'),statusText=status==='Approved'?'已批准／已扣库存':status==='Pending'?'待审核':status==='Rejected'?'已拒绝':status;return `<article class="stockout-history-card"><div class="stockout-history-head"><b>${esc(x.requestId||'系统记录')}</b><span class="stockout-status">${esc(statusText)}</span></div>${x.shopeeOrderId?`<div style="margin-top:8px;color:#cbd5e1;font-size:12px">Shopee参考：${esc(x.shopeeOrderId)}</div>`:''}<div class="stockout-items">${items}</div><div class="stockout-meta"><span>提交：${esc(x.requestTime||'-')}</span><span>记录人：${esc(x.requestedBy||'-')}</span><span>批准：${esc(x.approvedAt||'-')}</span><span>审核人：${esc(x.approvedBy||'-')}</span></div></article>`;}).join('')}</div>`;};
   window.loadShopeeStockOutHistory=async function(page){
     const rows=$('shopeeStockOutHistoryRows'),pager=$('shopeeStockOutHistoryPager');if(!rows)return;
     rows.innerHTML='<div class="boss-notice">正在载入记录...</div>';
@@ -6755,7 +6778,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const groups={},cards=[];picked.forEach(function(x){const g=String(x.p.productGroup||'').trim(),key=g?'G:'+g:'P:'+(x.p.code||x.p.name);if(!groups[key])groups[key]={key:key,label:g||x.p.name,items:[],score:x.score};groups[key].items.push(x.p);groups[key].score=Math.max(groups[key].score,x.score);});Object.keys(groups).map(function(k){return groups[k];}).sort(function(a,b){return b.score-a.score;}).slice(0,12).forEach(function(g){const p=g.items[0],img=p.image?`style="background-image:url('${esc(p.image)}')"`:'';cards.push(`<div class="packing-photo-card ${g.items.length>1?'packing-group-card':''}" onclick='${g.items.length>1?`openPackingVariantGroup(${JSON.stringify(g.label)})`:`addShopeeStockProduct(${JSON.stringify(p.code||'')},${JSON.stringify(p.name||'')})`}'><div class="packing-img" ${img}>${p.image?'':'图片'}</div><div class="packing-info"><b>${esc(g.label||p.name)}</b><small>${g.items.length>1?g.items.length+' 个规格':'库存 '+esc(p.stock==null?'-':p.stock)}</small></div></div>`);});
     box.innerHTML=cards.length?cards.join(''):'还没有常打包记录。请打开“选择其他商品”搜索；以后会自动出现常打包商品。';
   };
-  window.openPackingVariantGroup = function(group){const products=currentProducts().filter(function(p){return p&&p.active!==false&&String(p.productGroup||'').trim()===String(group);});if(!products.length)return;let wrap=$('packingVariantPicker');if(wrap)wrap.remove();wrap=document.createElement('div');wrap.id='packingVariantPicker';wrap.className='packing-variant-picker';wrap.innerHTML=`<div><header><h3>${esc(group)}</h3><button onclick="document.getElementById('packingVariantPicker').remove()">完成</button></header><p>选择要打包的大小／规格</p><section>${products.map(function(p){const img=p.image?`style="background-image:url('${esc(p.image)}')"`:'';return `<button type="button" onclick='addShopeeStockProduct(${JSON.stringify(p.code||'')},${JSON.stringify(p.name||'')});document.getElementById("packingVariantPicker").remove()'><span class="packing-variant-img" ${img}></span><b>${esc(p.variant||p.name)}</b><small>${esc(p.name)} · 库存 ${esc(p.stock==null?'-':p.stock)}</small></button>`;}).join('')}</section></div>`;document.body.appendChild(wrap);};
+  function packingVariantRank(p){const v=String(p.variant||p.name||'').toUpperCase().replace(/\s+/g,''),m=v.match(/(\d+(?:\.\d+)?)(KG|G|ML|L)(?![A-Z])/);if(m){let n=Number(m[1]);if(m[2]==='KG'||m[2]==='L')n*=1000;return 100000+n;}const sizes={XXL:500,XL:400,L:300,M:200,S:100};return sizes[v]||0;}
+  window.openPackingVariantGroup = function(group){const products=currentProducts().filter(function(p){return p&&p.active!==false&&String(p.productGroup||'').trim()===String(group);}).sort(function(a,b){return packingVariantRank(b)-packingVariantRank(a)||String(a.name||'').localeCompare(String(b.name||''));});if(!products.length)return;window.__packingVariantKeys=products.map(function(p){return String(p.code||p.name);});let wrap=$('packingVariantPicker');if(wrap)wrap.remove();wrap=document.createElement('div');wrap.id='packingVariantPicker';wrap.className='packing-variant-picker';wrap.innerHTML=`<div><header><h3>${esc(group)}</h3><button id="packingVariantDone" type="button" onclick="finishPackingVariantPicker()">完成 · 共 0 件</button></header><div id="packingVariantTotal" class="packing-variant-total">点一下规格就是 1 件；可以连续点多次。</div><section>${products.map(function(p,index){const img=p.image?`style="background-image:url('${esc(p.image)}')"`:'';return `<button id="packingVariantCard${index}" class="packing-variant-card" type="button" onclick='addShopeeStockProduct(${JSON.stringify(p.code||'')},${JSON.stringify(p.name||'')});renderPackingVariantPickerState()'><span id="packingVariantBadge${index}" class="packing-picked-badge"></span><span class="packing-variant-img" ${img}></span><b>${esc(p.variant||p.name)}</b><small>${esc(p.name)} · 库存 ${esc(p.stock==null?'-':p.stock)}</small></button>`;}).join('')}</section></div>`;document.body.appendChild(wrap);renderPackingVariantPickerState();};
+  window.renderPackingVariantPickerState=function(){const keys=window.__packingVariantKeys||[],map=window.__shopeeStockSelected||{};let total=0;keys.forEach(function(key,index){const qty=Number((map[key]||{}).qty)||0;total+=qty;const badge=$('packingVariantBadge'+index),card=$('packingVariantCard'+index);if(badge){badge.textContent='× '+qty;badge.classList.toggle('active',qty>0);}if(card)card.classList.toggle('is-picked',qty>0);});const done=$('packingVariantDone'),summary=$('packingVariantTotal');if(done)done.textContent=`完成 · 共 ${total} 件`;if(summary)summary.textContent=total?`本组已选 ${total} 件；继续点规格可增加数量。`:'点一下规格就是 1 件；可以连续点多次。';};
+  window.finishPackingVariantPicker=function(){const wrap=$('packingVariantPicker');if(wrap)wrap.remove();window.__packingVariantKeys=[];renderShopeeStockSelected();};
   window.renderShopeeStockProducts = function(query){
     const box=$('shopeeStockProducts');if(!box)return;const q=String(query||'').trim().toLowerCase(),rows=currentProducts().filter(function(p){return p&&p.active!==false&&(!q||String(p.name||'').toLowerCase().includes(q)||String(p.code||'').toLowerCase().includes(q));}).slice(0,36);
     box.innerHTML=rows.length?rows.map(function(p){return `<div class="shopee-stock-product"><div><b>${esc(p.name||'-')}</b><small>${esc(p.code||'')} · 库存 ${esc(p.stock==null?'-':p.stock)}</small></div><button type="button" onclick='addShopeeStockProduct(${JSON.stringify(p.code||'')},${JSON.stringify(p.name||'')})'>＋</button></div>`;}).join(''):'找不到商品。';
