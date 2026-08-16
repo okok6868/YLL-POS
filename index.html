@@ -3135,6 +3135,40 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         #bossDashboard .boss-overview-grid,#bossDashboard .boss-money-cards{grid-template-columns:1fr!important}
         #bossProductBox .boss-product-tools,#bossLostBox .boss-product-tools{grid-template-columns:1fr!important}
       }
+      /* SESSION-118: iPad landscape uses two real, independent scroll panes. */
+      @media (min-width:700px) and (min-aspect-ratio:1/1){
+        #bossDashboard>.modal-content{
+          overflow:hidden!important;
+          touch-action:auto!important;
+        }
+        #bossDashboard .boss-dashboard-shell{
+          height:100%!important;
+          min-height:0!important;
+          display:flex!important;
+          flex-direction:column!important;
+          overflow:hidden!important;
+        }
+        #bossDashboard .boss-hero{flex:0 0 auto!important;position:static!important}
+        #bossDashboard .boss-layout{
+          flex:1 1 auto!important;
+          height:auto!important;
+          min-height:0!important;
+          overflow:hidden!important;
+          align-items:stretch!important;
+        }
+        #bossDashboard .boss-tab-grid,
+        #bossDashboard .boss-content{
+          height:100%!important;
+          min-height:0!important;
+          overflow-x:hidden!important;
+          overflow-y:auto!important;
+          -webkit-overflow-scrolling:touch!important;
+          overscroll-behavior-y:contain!important;
+          touch-action:pan-y!important;
+        }
+        #bossDashboard .boss-tab-grid{position:static!important;align-self:stretch!important}
+        #bossDashboard .boss-content{padding-right:4px!important}
+      }
       #bossWorkEdit:not(.has-product)>:not(#bossEditPrompt){display:none!important}
       #bossWorkEdit:not(.has-product) .boss-product-grid,#bossWorkEdit:not(.has-product) #bossProductHint{display:none!important}
       #bossWorkEdit.has-product>#bossEditPrompt{display:none!important}
