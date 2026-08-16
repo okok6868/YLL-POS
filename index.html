@@ -7071,7 +7071,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     finally{window.__fundExpenseSubmitting=false;setSubmitBusy(false);}
   };
 
-  window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,120),{passive:true});
+  const appleTouchDevice=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  // iPad screenshot/share UI can emit transient resize events without a real
+  // orientation change. Ignoring those prevents Boss Mode from being relaid out crooked.
+  if(!appleTouchDevice)window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,120),{passive:true});
   window.addEventListener('orientationchange',()=>setTimeout(recoverViewportAndInteraction,350),{passive:true});
   recoverViewportAndInteraction();
 })();
