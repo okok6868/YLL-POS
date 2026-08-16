@@ -346,8 +346,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #otherIncomeMonths input{width:17px;height:17px;accent-color:#22c55e}
 body.light #bossOtherIncomeBox .boss-inline input,body.light #bossOtherIncomeBox .boss-inline select{background:#fff!important;color:#172033!important;-webkit-text-fill-color:#172033;border-color:#94a3b8}body.light #otherIncomeMonths{background:#f8fafc;color:#334155}body.light #otherIncomeMonths .other-month-chip{background:#eef6ff;color:#172033}
 @media(max-width:1100px){#bossOtherIncomeBox .boss-inline{grid-template-columns:1fr 1fr}#bossOtherIncomeBox .boss-inline button{grid-column:1/-1}#otherIncomeMonths>div:last-child{grid-template-columns:repeat(4,minmax(100px,1fr))}}
-.income-btn{background:linear-gradient(135deg,#0f766e,#14b8a6)!important;color:#fff!important}
-.shopee-stock-btn{background:linear-gradient(135deg,#c2410c,#f97316)!important;color:#fff!important}
+.income-btn{background:linear-gradient(135deg,#155e75,#0e7490)!important;color:#fff!important}
+.shopee-stock-btn{background:linear-gradient(135deg,#9a3412,#c2410c)!important;color:#fff!important}
 #staffOtherIncomeBox .staff-income-modal{width:min(860px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;padding:20px;background:linear-gradient(145deg,#101b31,#091225);border:1px solid rgba(45,212,191,.3)}
 .staff-income-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:15px}.staff-income-head h3{margin:0 0 5px}.staff-income-head p{margin:0;color:#94a3b8;font-size:13px}.staff-income-head button{width:auto;margin:0;background:#25334a;color:#e5edf9}
 .staff-income-form{display:grid;grid-template-columns:130px 120px minmax(180px,1fr) 190px;gap:9px}.staff-income-form input,.staff-income-form select{width:100%;height:48px;margin:0;padding:0 12px;border:1px solid rgba(45,212,191,.35);border-radius:11px;background:#17263f!important;color:#edf7ff!important;-webkit-text-fill-color:#edf7ff;font-size:14px}.staff-income-form select option{background:#17263f;color:#edf7ff}
@@ -2319,6 +2319,19 @@ if("serviceWorker" in navigator){
 window.addEventListener('pageshow',function(e){if(e.persisted){setTimeout(function(){location.reload();},80);}});
 document.addEventListener('visibilitychange',function(){
   if(document.visibilityState!=='hidden')return;
+  // Release decoded photo memory on old iPads. Data and cart stay intact, and
+  // recoverViewportAndInteraction rebuilds the current product page on return.
+  try{
+    const list=document.getElementById('list');
+    if(list){
+      list.querySelectorAll('img').forEach(function(img){try{img.removeAttribute('src');}catch(e){}});
+      list.innerHTML='';
+      list.dataset.backgroundReleased='1';
+    }
+    ['productVariantPicker','packingVariantPicker'].forEach(function(id){const el=document.getElementById(id);if(el)el.remove();});
+    const more=document.getElementById('moreMenu');if(more)more.classList.remove('active');
+    document.querySelectorAll('.boss-image-viewer').forEach(function(el){el.remove();});
+  }catch(e){}
   const boss=document.getElementById('bossDashboard');
   if(boss&&boss.classList.contains('active')){try{closeModal('bossDashboard');}catch(e){boss.classList.remove('active');}}
   ['bossParcelResult','bossLowStockResult','bossOtherIncomeResult','bossLostResult','bossNetworkResult','bossCashInfo','todaySoldResult','bossProductList','bossLostProductList'].forEach(function(id){const el=document.getElementById(id);if(el)el.innerHTML='';});
@@ -3135,6 +3148,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         #bossDashboard .boss-overview-grid,#bossDashboard .boss-money-cards{grid-template-columns:1fr!important}
         #bossProductBox .boss-product-tools,#bossLostBox .boss-product-tools{grid-template-columns:1fr!important}
       }
+      /* SESSION-119: restrained, distinct normal-POS More menu colours. */
+      #moreMenu{
+        width:min(208px,calc(100% - 24px))!important;
+        gap:7px!important;
+        padding:9px!important;
+        -webkit-backdrop-filter:none!important;
+        backdrop-filter:none!important;
+      }
+      #moreMenu .smallbtn{min-height:44px!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:none!important}
+      #moreMenu .print-btn{background:linear-gradient(135deg,#243b6b,#315a9c)!important;color:#f8fafc!important}
+      #moreMenu .parcel-btn{background:linear-gradient(135deg,#6b4423,#93612d)!important;color:#fff7ed!important}
+      #moreMenu .income-btn{background:linear-gradient(135deg,#155e75,#0e7490)!important;color:#ecfeff!important}
+      #moreMenu .shopee-stock-btn{background:linear-gradient(135deg,#9a3412,#c2410c)!important;color:#fff7ed!important}
+      #moreMenu .close-btn{background:linear-gradient(135deg,#7f1d1d,#b91c1c)!important;color:#fef2f2!important}
       /* SESSION-118: iPad landscape uses two real, independent scroll panes. */
       @media (min-width:700px) and (min-aspect-ratio:1/1){
         #bossDashboard>.modal-content{
@@ -3796,7 +3823,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
       if(sales)sales.textContent=money(num(today.total||0)+off.total);
       const syncNote=off.count?` | ${tr('offlinePending')}`:'';
-      setStatDetail('todaySales', `${tr('cash')} ${money(num(today.Cash||0)+off.cash)} | QR ${money(today.MBB_QR||0)} | ${tr('transfer')} ${money(today.Transfer||0)}${syncNote}`);
+      const otherTotal=num(today.otherIncome||0),otherParts=[];
+      if(num(today.otherIncomeCash||0))otherParts.push(`${tr('cash')} ${money(today.otherIncomeCash)}`);
+      if(num(today.otherIncomeQR||0))otherParts.push(`QR ${money(today.otherIncomeQR)}`);
+      if(num(today.otherIncomeTransfer||0))otherParts.push(`${tr('transfer')} ${money(today.otherIncomeTransfer)}`);
+      const otherLine=otherTotal>0?`<br>${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' | ')||money(otherTotal)}`:'';
+      setStatDetail('todaySales', `${tr('cash')} ${money(num(today.Cash||0)+off.cash)} | QR ${money(today.MBB_QR||0)} | ${tr('transfer')} ${money(today.Transfer||0)}${syncNote}${otherLine}`);
       if(cash)cash.textContent=money(num(drawer.cashDrawer||0)+off.cash);
       setStatDetail('todayCash', `${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`);
       if(orders)orders.textContent=num(today.orders||today.count||0)+off.count;
@@ -3825,7 +3857,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const boxLabel=lang()==='zh'?'\u56fe\u7247':'Box';
       const stockLabel=lang()==='zh'?'\u5e93\u5b58':'Stock';
       const soldOut=group.items.every(x=>Number(x.stock||0)<=0),soldOutBadge=soldOut?`<span class="soldout-badge">${lang()==='zh'?'售罄':'SOLD OUT'}</span>`:'';
-      const img=p.image?`<img src="${esc(p.image)}" onerror="this.parentNode.innerHTML='<div class=\\'noimg\\'>${boxLabel}</div>'">`:`<div class="noimg">${boxLabel}</div>`;
+      const img=p.image?`<img src="${esc(p.image)}" loading="lazy" decoding="async" onerror="this.parentNode.innerHTML='<div class=\\'noimg\\'>${boxLabel}</div>'">`:`<div class="noimg">${boxLabel}</div>`;
       if(group.items.length>1){
         const prices=group.items.map(x=>Number(x.price)||0).filter(Boolean);
         const priceText=Math.min(...prices)===Math.max(...prices)?money(prices[0]):`${money(Math.min(...prices))} - ${money(Math.max(...prices))}`;
@@ -6689,13 +6721,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     box.innerHTML=html+'</div>';
   };
 
-  window.openStaffOtherIncome = async function(){
+  window.openStaffOtherIncome = async function(extraRecorded){
     const menu=$('moreMenu');if(menu)menu.classList.remove('active');
     openModal('staffOtherIncomeBox');
     const months=$('staffIncomeMonths'),recent=$('staffIncomeRecent');if(months)months.textContent='载入月份...';if(recent)recent.textContent='';
     try{
       const r=await apiCallTransient('getOtherIncomeSummary',[],16000,'Other income');
-      window.__staffIncomeState={recorded:r.recordedPeriods||[],start:r.trackingStart||'2026-05'};
+      const recorded=[...new Set((r.recordedPeriods||[]).concat(extraRecorded||[]))];
+      window.__staffIncomeState={recorded:recorded,start:r.trackingStart||'2026-05'};
       renderStaffIncomeMonths(window.__staffIncomeState.recorded,window.__staffIncomeState.start);
       const rows=(r.rows||[]).filter(function(x){return (x.periods||[]).length;}).slice(0,4);
       if(recent)recent.innerHTML=rows.length?'<b>最近记录</b><br>'+rows.map(function(x){return `${esc((x.periods||[]).join(', '))} · ${money(x.amount||0)} · ${esc(x.payment||'Cash')}`;}).join('<br>'):'还没有新月份记录。';
@@ -6707,7 +6740,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const amount=num(($('staffIncomeAmount')||{}).value),payment=(($('staffIncomePayment')||{}).value||'').trim(),type=(($('staffIncomeType')||{}).value||'水机').trim(),periods=Array.from(document.querySelectorAll('.staff-income-month:checked')).map(function(x){return x.value;});
     if(amount<=0){showAppAlert('请输入实收金额。','其他收入');return}if(!periods.length){showAppAlert('请选择至少一个水机账单月份。','其他收入');return}
     const ok=await appConfirm(`确认已经收到 ${money(amount)}？\n月份：${periods.join(', ')}\n方式：${payment}`,'其他收入');if(!ok)return;
-    try{setSubmitBusy(true,'正在记录其他收入，请稍等...');await apiCall('addOtherIncome',[{type:type,amount:amount,payment:payment,periods:periods,status:'Received'}]);const a=$('staffIncomeAmount');if(a)a.value='';if(typeof showToast==='function')showToast('✅ 其他收入已记录');await openStaffOtherIncome();scheduleTopStatsRefresh(500);}catch(e){showAppAlert('保存失败：'+cleanMessage(e.message||e),'其他收入');}finally{setSubmitBusy(false);}
+    try{setSubmitBusy(true,'正在记录其他收入，请稍等...');await apiCall('addOtherIncome',[{type:type,amount:amount,payment:payment,periods:periods,status:'Received'}]);const a=$('staffIncomeAmount');if(a)a.value='';if(typeof showToast==='function')showToast('✅ 其他收入已记录');await openStaffOtherIncome(periods);try{localStorage.removeItem('yllTopStatsCacheV1');}catch(e){}scheduleTopStatsRefresh(100);}catch(e){showAppAlert('保存失败：'+cleanMessage(e.message||e),'其他收入');}finally{setSubmitBusy(false);}
   };
 
   window.openShopeeStockOut = async function(){
