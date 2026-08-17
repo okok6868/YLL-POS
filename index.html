@@ -917,7 +917,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <h1>YLL FEEDS ENTERPRISE</h1>
     <p>Phone access is reserved for management and Shopee parcel records.</p>
     <button type="button" class="phone-admin-boss" onclick="openBossLogin()">⚙ Boss Mode</button>
-    <button type="button" class="phone-admin-shopee" onclick="openParcelBox()">📦 Shopee Parcel</button>
+    <button type="button" class="phone-admin-shopee" onclick="openParcelBox()">📦 SPX Parcel</button>
   </div>
 </div>
 
@@ -979,7 +979,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
       <div id="moreMenu" class="moreMenu">
 
   <button class="smallbtn print-btn" onclick="smartPrintLast()">🖨️ Print Receipt</button>
-  <button class="smallbtn parcel-btn" onclick="openParcelBox()">📦 Shopee Parcel</button>
+  <button class="smallbtn parcel-btn" onclick="openParcelBox()">📦 SPX Parcel</button>
   <button class="smallbtn income-btn" onclick="openStaffOtherIncome()">🚰 Other Income</button>
   <button class="smallbtn shopee-stock-btn" onclick="openShopeeStockOut()">🛍️ Shopee卖货出库</button>
   <button class="smallbtn close-btn" onclick="openRefundBox()">↩️ Refund</button>
@@ -1067,7 +1067,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
 <div id="parcelBox" class="modal">
   <div class="modal-content">
-    <h3>📦 Shopee Parcel</h3>
+    <h3>📦 SPX Parcel</h3>
     <p style="color:#94a3b8;font-size:13px">Record parcel count only. This is not POS sales.</p>
     <input id="parcelTrip" type="number" placeholder="Trip number, e.g. 1 / 2" value="1">
     <input id="parcelDelivered" type="number" placeholder="Delivered / Pick-up count">
@@ -1113,7 +1113,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <details class="refund-auth" id="refundAuthDetails">
       <summary>🔐 打开授权验证</summary>
       <input id="refundBossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <input id="refundBossPassword" type="password" placeholder="密码" autocomplete="new-password" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();submitRefund()}">
+      <input id="refundBossPassword" type="password" placeholder="密码" autocomplete="new-password" enterkeyhint="done">
       <div class="receipt-note">退货一定要授权验证。提交中会锁住，避免重复上传。</div>
     </details>
     <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ 确认退货</button>
@@ -1193,7 +1193,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
           <button onclick="bossOpenOverview(true)">✅ 审批中心</button>
           <button onclick="bossOpenCashCollect()">💰 财务中心</button>
           <button onclick="bossShowPanel('bossReportsPanel')">📊 报表中心</button>
-          <button onclick="bossOpenParcelBoss()">📦 Shopee 对账</button>
+          <button onclick="bossOpenParcelBoss()">📦 SPX 包裹</button>
           <button onclick="openBossShopeeStockOutHistory()">🛍️ Shopee 出货记录</button>
           <button onclick="bossOpenOtherIncome()">🚰 其它收入</button>
           <button onclick="bossLoadLowStock()">📦 库存提醒</button>
@@ -1278,7 +1278,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
           </div>
 
           <div id="bossParcelBox" class="boss-panel">
-            <h4>📦 Shopee 对账</h4>
+            <h4>📦 SPX 包裹</h4>
             <p style="color:#94a3b8;font-size:13px;margin-top:-4px">这里只记录实际收到的钱；你填写的金额就是对账依据，不上传证据。</p>
             <div class="boss-inline"><input id="shopeePaidAmount" type="number" placeholder="Shopee 实际给多少钱"><input id="shopeePaidNote" type="text" placeholder="备注 / payout 日期"><button class="green" onclick="bossConfirmShopeePaid()">记录实际收到</button></div>
             <div class="boss-inline" style="margin-top:10px"><input id="shopeeMonth" type="month"><button id="shopeeMonthBtn" type="button" onclick="bossLoadShopeeMonth()">查看月度汇总</button></div>
@@ -2418,7 +2418,7 @@ bossOpenParcelBoss = async function(){
     const logs=(r.logs||[]).slice(0,12);
     const diff=moneyNum((r.pendingEstimated||0)-(r.actualPaid||0));
     let html=`<div class="boss-overview-grid" style="margin-bottom:12px"><div class="overview-card ${diff>0?'warn':''}"><small>预计未对账</small><b>${fmt(r.pendingEstimated||0)}</b><span>系统按件数估算</span></div><div class="overview-card"><small>实际已记录</small><b>${fmt(r.actualPaid||0)}</b><span>以你填写的 payout 为准</span></div><div class="overview-card ${Math.abs(cents(diff))>0?'warn':''}"><small>差额</small><b>${fmt(diff)}</b><span>可能是包裹还未结算或下期再算</span></div><div class="overview-card"><small>记录数</small><b>${r.count||0} 笔</b><span>每页显示 12 笔</span></div></div>`;
-    if(logs.length){html += `<table><tr><th>日期</th><th>趟</th><th class="right">派件</th><th class="right">退回</th><th class="right">预计</th><th>状态</th></tr>` + logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.returned||0}</td><td class="right">${fmt(x.estimated||0)}</td><td><span class="boss-chip">${x.status||''}</span></td></tr>`).join('') + `</table>`;} else html += '还没有 Shopee 包裹记录。';
+    if(logs.length){html += `<table><tr><th>日期</th><th>趟</th><th class="right">派件</th><th class="right">退回</th><th class="right">预计</th><th>状态</th></tr>` + logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.returned||0}</td><td class="right">${fmt(x.estimated||0)}</td><td><span class="boss-chip">${x.status||''}</span></td></tr>`).join('') + `</table>`;} else html += '还没有 SPX 包裹记录。';
     box.innerHTML=html;
   }catch(e){box.textContent='失败：'+(e.message||e)}
 };
@@ -2716,7 +2716,7 @@ function installParcelUI(){
   const box=document.querySelector('#parcelBox .modal-content');
   if(!box || box.dataset.v462==='1') return;
   box.innerHTML=`
-    <h3>📦 Shopee Parcel</h3>
+    <h3>📦 SPX Parcel</h3>
     <p style="color:#94a3b8;font-size:13px">Fill today parcel count only. Trip number is auto counted by system.</p>
     <div class="parcel-auto-note" id="parcelTripNote">Today trip: Auto</div>
     <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="Arrived parcels">
@@ -2736,12 +2736,12 @@ saveParcelLog=async function(){
   const delivered=Number((document.getElementById('parcelDelivered')||{}).value||0);
   const returned=Number((document.getElementById('parcelReturned')||{}).value||0);
   const note=(document.getElementById('parcelNote')||{}).value||'';
-  if(delivered<0||returned<0||(!delivered&&!returned)){showAppAlert('Please fill arrived or returned parcels.','Shopee Parcel');return;}
+  if(delivered<0||returned<0||(!delivered&&!returned)){showAppAlert('Please fill arrived or returned parcels.','SPX Parcel');return;}
   try{
     const r=await apiCall('saveParcelLog',[{delivered,returned,note}]);
     closeModal('parcelBox');
     showToast(`✅ Shopee saved. Trip ${r.trip||''}`);
-  }catch(e){showAppAlert('Shopee save failed: '+(e.message||e),'Shopee Parcel')}
+  }catch(e){showAppAlert('SPX save failed: '+(e.message||e),'SPX Parcel')}
 };
 
 let selectedRefundOrder=null;
@@ -2908,13 +2908,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     en: {
       all:'All Products', home:'Home', search:'Search product / category / price', low:'Low Stock', prev:'Prev', next:'Next',
       cart:'Cart', empty:'Cart is empty', subtotal:'Subtotal', discount:'Discount', total:'Total', checkout:'CHECKOUT',
-      print:'Print Receipt', parcel:'Shopee Parcel', refund:'Refund', login:'Login', close:'Close', bossAuth:'Boss Authorization',
+      print:'Print Receipt', parcel:'SPX Parcel', refund:'Refund', login:'Login', close:'Close', bossAuth:'Boss Authorization',
       sales:'Sales', todayPayments:'Today Payments', cash:'Cash', cashDrawer:'Cash Drawer', orders:'Orders', products:'Products',
       bossMode:'Boss Mode', bossHint:'Authorized use only. Idle mode returns to POS screen.', logout:'Logout',
       enteredBoss:'Boss mode opened.', exitedBoss:'Boss mode closed.', autoExited:'Boss mode auto closed.',
       loggingIn:'Logging in...', missingLogin:'Please enter ID and password.', wrongLogin:'ID or password is wrong. Remaining ',
       loginFailed:'Login failed: ', choose:'Choose a function.', notice:'Notice', loading:'Loading...',
-      today:'Approval Centre', finance:'Finance', reports:'Reports', shopee:'Shopee', stockOutHistory:'Shopee Stock-out Records', otherIncome:'Other Income', lowStock:'Low Stock', exportExcel:'Export Excel', settings:'Settings',
+      today:'Approval Centre', finance:'Finance', reports:'Reports', shopee:'SPX Parcel', stockOutHistory:'Shopee Stock-out Records', otherIncome:'Other Income', lowStock:'Low Stock', exportExcel:'Export Excel', settings:'Settings',
       recordShopee:'Record actual payout received from Shopee.', shopeePaid:'Shopee paid amount', payoutNote:'Note / payout date', recordPaid:'Record Paid',
       pendingShopee:'Pending Shopee', actualPaid:'Actual Paid', difference:'Difference', trips:'Trips', noRecords:'No records', saved:'Saved',
       processingCheckout:'Processing checkout, please wait...', page:'Page', noProducts:'No products', transfer:'Transfer', collected:'Collected',
@@ -2955,13 +2955,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     zh: {
       all:'\u5168\u90e8\u5546\u54c1', home:'\u9996\u9875', search:'\u641c\u7d22\u5546\u54c1 / \u5206\u7c7b / \u4ef7\u94b1', low:'\u4f4e\u5e93\u5b58', prev:'\u4e0a\u4e00\u9875', next:'\u4e0b\u4e00\u9875',
       cart:'\u8d2d\u7269\u8f66', empty:'\u8d2d\u7269\u8f66\u662f\u7a7a\u7684', subtotal:'\u5c0f\u8ba1', discount:'\u6298\u6263', total:'\u603b\u6570', checkout:'\u4e70\u5355',
-      print:'\u6253\u5370\u6536\u636e', parcel:'Shopee \u5305\u88f9', refund:'\u9000\u8d27', login:'\u767b\u5165', close:'\u5173\u95ed', bossAuth:'\u8001\u677f\u6743\u9650',
+      print:'\u6253\u5370\u6536\u636e', parcel:'SPX \u5305\u88f9', refund:'\u9000\u8d27', login:'\u767b\u5165', close:'\u5173\u95ed', bossAuth:'\u8001\u677f\u6743\u9650',
       sales:'\u9500\u552e', todayPayments:'\u4eca\u65e5\u6536\u6b3e', cash:'\u73b0\u91d1', cashDrawer:'\u6536\u94f6\u673a\u73b0\u91d1', orders:'\u8ba2\u5355', products:'\u5546\u54c1',
       bossMode:'\u7ba1\u7406\u6a21\u5f0f', bossHint:'\u4ec5\u9650\u6388\u6743\u4f7f\u7528\uff0c\u95f2\u7f6e\u540e\u81ea\u52a8\u56de\u5230 POS\u3002', logout:'\u9000\u51fa',
       enteredBoss:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\u3002', exitedBoss:'\u5df2\u9000\u51fa\u7ba1\u7406\u6a21\u5f0f\u3002', autoExited:'\u7ba1\u7406\u6a21\u5f0f\u5df2\u81ea\u52a8\u9000\u51fa\u3002',
       loggingIn:'\u767b\u5165\u4e2d...', missingLogin:'\u8bf7\u8f93\u5165 ID \u548c\u5bc6\u7801\u3002', wrongLogin:'ID \u6216\u5bc6\u7801\u9519\u8bef\uff0c\u5269\u4f59 ',
       loginFailed:'\u767b\u5165\u5931\u8d25\uff1a', choose:'\u9009\u62e9\u529f\u80fd\u3002', notice:'\u63d0\u793a', loading:'\u8f7d\u5165\u4e2d...',
-      today:'\u5ba1\u6279\u4e2d\u5fc3', finance:'\u8d22\u52a1', reports:'\u62a5\u8868', shopee:'Shopee', stockOutHistory:'Shopee \u51fa\u8d27\u8bb0\u5f55', otherIncome:'\u5176\u5b83\u6536\u5165', lowStock:'\u4f4e\u5e93\u5b58', exportExcel:'\u6c47\u51fa Excel', settings:'\u7cfb\u7edf\u8bbe\u5b9a',
+      today:'\u5ba1\u6279\u4e2d\u5fc3', finance:'\u8d22\u52a1', reports:'\u62a5\u8868', shopee:'SPX \u5305\u88f9', stockOutHistory:'Shopee \u51fa\u8d27\u8bb0\u5f55', otherIncome:'\u5176\u5b83\u6536\u5165', lowStock:'\u4f4e\u5e93\u5b58', exportExcel:'\u6c47\u51fa Excel', settings:'\u7cfb\u7edf\u8bbe\u5b9a',
       recordShopee:'\u8bb0\u5f55 Shopee \u5b9e\u9645\u6536\u5230\u7684\u6b3e\u9879\u3002', shopeePaid:'Shopee \u5b9e\u6536\u91d1\u989d', payoutNote:'\u5907\u6ce8 / payout \u65e5\u671f', recordPaid:'\u8bb0\u5f55\u5b9e\u6536',
       pendingShopee:'Shopee \u672a\u6536', actualPaid:'\u5df2\u5b9e\u6536', difference:'\u5dee\u989d', trips:'\u8d9f\u6570', noRecords:'\u6ca1\u6709\u8bb0\u5f55', saved:'\u5df2\u8bb0\u5f55',
       processingCheckout:'\u6b63\u5728\u4e70\u5355\uff0c\u8bf7\u7a0d\u7b49...', page:'\u7b2c', noProducts:'\u6ca1\u6709\u5546\u54c1', transfer:'\u8f6c\u8d26', collected:'\u5df2\u6536\u8d70',
@@ -3172,7 +3172,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       #moreMenu .close-btn{background:linear-gradient(135deg,#7f1d1d,#b91c1c)!important;color:#fef2f2!important}
       .receipt-breakdown{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin-top:2px}
       .receipt-pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;background:rgba(51,65,85,.72);color:#cbd5e1;white-space:nowrap}
-      .receipt-pill.cash{border:1px solid rgba(34,197,94,.32)}.receipt-pill.qr{border:1px solid rgba(56,189,248,.35)}.receipt-pill.transfer{border:1px solid rgba(168,85,247,.34)}
+      .receipt-pill.cash{border:1px solid #22c55e;background:#14532d;color:#dcfce7;font-weight:800}.receipt-pill.qr{border:1px solid #38bdf8;background:#075985;color:#e0f2fe;font-weight:800}.receipt-pill.transfer{border:1px solid #a855f7;background:#581c87;color:#f3e8ff;font-weight:800}
       .receipt-other{display:block;margin-top:4px;color:#fbbf24;white-space:normal}
       .packing-variant-picker>div{width:min(820px,96vw)!important;padding:20px!important}
       .packing-variant-picker header{position:sticky;top:-20px;z-index:2;margin:-20px -20px 14px;padding:16px 20px;background:#0f172a;border-bottom:1px solid #334155}
@@ -3467,6 +3467,28 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         if(submit)submit.click();
       };
     });
+  }
+
+  function bindSingleEnterSubmit(input,button){
+    if(!input||!button)return;
+    input.enterKeyHint='done';
+    input.onkeydown=function(e){
+      const isEnter=e.key==='Enter'||e.code==='NumpadEnter'||e.keyCode===13;
+      if(!isEnter)return;
+      e.preventDefault();
+      e.stopPropagation();
+      if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+      if(e.repeat)return;
+      const now=Date.now(),last=Number(input.dataset.lastSubmitEnterAt||0);
+      if(now-last<1600)return;
+      input.dataset.lastSubmitEnterAt=String(now);
+      try{input.blur();}catch(err){}
+      if(!button.disabled)button.click();
+    };
+  }
+
+  function bindRefundEnterSubmit(){
+    bindSingleEnterSubmit($('refundBossPassword'),$('refundSubmitBtn'));
   }
 
   function releaseStaleInteractionLock(){
@@ -3850,6 +3872,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     else flushNetworkLogsSoon(2500);
     scheduleOfflineWarning();
   }
+  function stableTodayPayment(raw,key){
+    const now=Date.now(),day=new Date().toISOString().slice(0,10);
+    let state=window.__todayPaymentDisplayState;
+    if(!state||state.day!==day)state=window.__todayPaymentDisplayState={day:day,methods:{}};
+    const value=num(raw),old=state.methods[key]||{value:0,positiveAt:0};
+    if(value>0){state.methods[key]={value:value,positiveAt:now};return value;}
+    if(old.value>0&&now-old.positiveAt<8000)return old.value;
+    state.methods[key]={value:0,positiveAt:old.positiveAt||0};
+    return 0;
+  }
   function applyTopStats(snapshot){
     snapshot=snapshot||{};
     const today=snapshot.today||{}, drawer=snapshot.drawer||{};
@@ -3858,9 +3890,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(sales)sales.textContent=money(num(today.total||0)+off.total);
       const syncNote=off.count?` | ${tr('offlinePending')}`:'';
       const receiptParts=[];
-      if(num(today.Cash||0)+off.cash>0)receiptParts.push(`<span class="receipt-pill cash">${tr('cash')} ${money(num(today.Cash||0)+off.cash)}</span>`);
-      if(num(today.MBB_QR||0)>0)receiptParts.push(`<span class="receipt-pill qr">QR ${money(today.MBB_QR||0)}</span>`);
-      if(num(today.Transfer||0)>0)receiptParts.push(`<span class="receipt-pill transfer">${tr('transfer')} ${money(today.Transfer||0)}</span>`);
+      const displayCash=stableTodayPayment(num(today.Cash||0)+off.cash,'cash');
+      const displayQR=stableTodayPayment(today.MBB_QR||0,'qr');
+      const displayTransfer=stableTodayPayment(today.Transfer||0,'transfer');
+      if(displayCash>0)receiptParts.push(`<span class="receipt-pill cash">${tr('cash')} ${money(displayCash)}</span>`);
+      if(displayQR>0)receiptParts.push(`<span class="receipt-pill qr">QR ${money(displayQR)}</span>`);
+      if(displayTransfer>0)receiptParts.push(`<span class="receipt-pill transfer">${tr('transfer')} ${money(displayTransfer)}</span>`);
       const otherTotal=num(today.otherIncome||0),otherParts=[];
       if(num(today.otherIncomeCash||0))otherParts.push(`${tr('cash')} ${money(today.otherIncomeCash)}`);
       if(num(today.otherIncomeQR||0))otherParts.push(`QR ${money(today.otherIncomeQR)}`);
@@ -4718,7 +4753,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const rows=(bossProductsCache||[]).filter(p=>normalizeText(p.name));
     const inactive=rows.filter(p=>p.active===false).length,unlisted=rows.filter(p=>p.active!==false&&!(Number(p.price)>0)).length,listed=rows.filter(p=>p.active!==false&&Number(p.price)>0).length;
     const unclassified=rows.filter(p=>{if(bossNeedsClassification(p))return true;const entries=String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).filter(Boolean);return entries.length?entries.includes('GENERAL'):/UNCLASSIFIED|UNCATEGORIZED|未分类/.test(String(p.category||'').toUpperCase());}).length;
-    const cards=[[lang()==='zh'?'商品总数':'Total',rows.length,'#3b82f6'],[lang()==='zh'?'已上架':'Listed',listed,'#22c55e'],[lang()==='zh'?'未上架<br><span style="font-size:11px">价钱为 0</span>':'Unlisted<br><span style="font-size:11px">Price 0</span>',unlisted,'#a855f7'],[lang()==='zh'?'已停用':'Inactive',inactive,'#ef4444'],[lang()==='zh'?'未分类':'Unclassified',unclassified,'#f59e0b']];
+    const cards=[[lang()==='zh'?'商品总数':'Total',rows.length,'#3b82f6'],[lang()==='zh'?'已上架':'Listed',listed,'#22c55e'],[lang()==='zh'?'未上架<br><span style="font-size:11px">（价钱为 0）</span>':'Unlisted<br><span style="font-size:11px">(Price 0)</span>',unlisted,'#a855f7'],[lang()==='zh'?'已停用':'Inactive',inactive,'#ef4444'],[lang()==='zh'?'未分类':'Unclassified',unclassified,'#f59e0b']];
     box.innerHTML=cards.map(x=>`<div style="min-width:120px;flex:1;padding:12px 14px;border:1px solid #334155;border-left:4px solid ${x[2]};border-radius:12px;background:#111c31"><small style="color:#94a3b8">${x[0]}</small><div style="font-size:24px;font-weight:900;color:#fff">${x[1]}</div></div>`).join('')+(!bossProductsFullLoaded?`<div style="width:100%;color:#94a3b8;font-size:12px">${lang()==='zh'?'正在读取完整总数…':'Loading full count…'}</div>`:'');
   }
 
@@ -6378,13 +6413,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       <details class="refund-auth" id="refundAuthDetails">
         <summary>${esc(tr('bossAuth'))}</summary>
         <label class="boss-field"><span class="boss-field-label">ID</span><input id="refundBossId" type="text" enterkeyhint="next" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-        <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" enterkeyhint="done" placeholder="Password" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();submitRefund()}"></label>
+        <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" enterkeyhint="done" placeholder="Password" autocomplete="new-password"></label>
         <div class="receipt-note">${esc(tr('refundDirectNote'))}</div>
       </details>
       <div id="refundStatusMsg" class="refund-status-msg" style="display:none"></div>
       <button id="refundSubmitBtn" class="green" onclick="submitRefund()">${esc(tr('submitRefund'))}</button>
       <button onclick="closeModal('refundBox')">${esc(tr('close'))}</button>`;
     setupEnterNext('#refundBox');
+    bindRefundEnterSubmit();
   };
   window.openRefundBox = function(){
     releaseStaleInteractionLock();
@@ -6395,6 +6431,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setRefundBusy(false);
     openModal('refundBox');
     setupEnterNext('#refundBox');
+    bindRefundEnterSubmit();
     setTimeout(function(){ if($('refundBox')&&$('refundBox').classList.contains('active'))loadRecentRefundOrders(true); },180);
   };
   window.loadRecentRefundOrders = async function(force){
@@ -6418,6 +6455,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }finally{
       if(btn){btn.disabled=false; btn.textContent=btn.dataset.oldText||tr('loadRecentOrders');}
       setupEnterNext('#refundBox');
+      bindRefundEnterSubmit();
     }
   };
   window.selectRefundOrder = function(idx){
@@ -6437,12 +6475,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     </div>`).join('');
     updateRefundTotal();
     setupEnterNext('#refundBox');
+    bindRefundEnterSubmit();
   };
   window.toggleRefundItem = function(i){
     const chk=$('rfChk'+i), qty=$('rfQty'+i);
     if(qty)qty.disabled=!(chk&&chk.checked);
     updateRefundTotal();
     setupEnterNext('#refundBox');
+    bindRefundEnterSubmit();
   };
   window.getRefundSelection = function(){
     if(!window.selectedRefundOrder)return {items:[],amount:0};
@@ -6514,6 +6554,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       setSubmitBusy(false);
       setRefundBusy(false);
       setupEnterNext('#refundBox');
+      bindRefundEnterSubmit();
     }
   };
 
@@ -6594,8 +6635,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const pending=overview.pendingShopeeStockOuts||[],refunds=overview.pendingRefunds||[];
       const refundHtml=refunds.map(function(x){return `<div class="shopee-approval-card refund-approval"><div><b>退货 · ${esc(x.orderId||'')}</b><small>${esc(x.date||'')} · ${money(x.amount||0)}</small><div>${esc(x.item||'').replace(/\n/g,'<br>')}</div><small>${esc(x.reason||'')}</small></div><div><button class="green" onclick="approveRefundFromBoss('${esc(x.refundId||'')}')">批准退货／恢复库存</button><button class="danger" onclick="rejectRefundFromBoss('${esc(x.refundId||'')}')">拒绝</button></div></div>`;}).join('');
       const stockHtml=pending.map(function(x){const items=(x.items||[]).map(function(i){return `${esc(i.name||i.code)} × ${esc(i.qty)}`;}).join('<br>');return `<div class="shopee-approval-card"><div><b>Shopee出库 · ${esc(x.shopeeOrderId||'')}</b><small>${esc(x.date||'')} · ${esc(x.requestedBy||'Staff')}</small><div>${items}</div></div><div><button class="green" onclick="approveShopeeStockOut('${esc(x.requestId||'')}')">批准扣库存</button><button class="danger" onclick="rejectShopeeStockOut('${esc(x.requestId||'')}')">拒绝</button></div></div>`;}).join('');
-      const approvals=(refundHtml||stockHtml)?`<div class="boss-result shopee-stock-approvals"><h4>✅ ${lang()==='zh'?'待审核中心':'Approval Centre'}</h4>${refundHtml}${stockHtml}</div>`:'';
-      if(box)box.innerHTML=cards+approvals;
+      const approvals=(refundHtml||stockHtml)?`<div class="boss-result shopee-stock-approvals"><h4>⏳ ${lang()==='zh'?'待审批':'Pending approval'}</h4>${refundHtml}${stockHtml}</div>`:'';
+      const historyRows=overview.approvalHistory||[];
+      const historyHtml=historyRows.map(function(x){
+        const type=x.type==='Refund'?(lang()==='zh'?'退货':'Refund'):(lang()==='zh'?'Shopee 出货':'Shopee stock-out');
+        const result=x.status==='Approved'?(lang()==='zh'?'已批准':'Approved'):(lang()==='zh'?'已拒绝':'Rejected');
+        const time=x.decisionTime||x.requestTime||'-',legacy=x.legacyTime?(lang()==='zh'?' · 旧记录仅有申请时间':' · legacy request time'):'';
+        return `<div class="shopee-approval-card approval-history-card"><div><b>${esc(type)} · ${esc(x.reference||x.id||'-')}</b><small>${esc(time)}${esc(legacy)}</small><div>${esc(x.detail||'').replace(/\n/g,'<br>')}</div></div><div><span class="boss-chip">${esc(result)}</span><small>${lang()==='zh'?'处理人':'Reviewer'}：${esc(x.reviewer||'-')}</small>${num(x.amount)>0?`<b>${money(x.amount)}</b>`:''}</div></div>`;
+      }).join('');
+      const history=`<div class="boss-result shopee-stock-approvals approval-history"><h4>🕘 ${lang()==='zh'?'审批记录':'Approval history'}</h4>${historyHtml||`<div class="receipt-note">${lang()==='zh'?'还没有审批记录。':'No approval history yet.'}</div>`}</div>`;
+      if(box)box.innerHTML=cards+approvals+history;
     };
     if(bossOverviewCache && Date.now()-bossOverviewCacheAt < 60000){
       renderOverview(bossOverviewCache);
@@ -6791,7 +6840,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const menu=$('moreMenu');if(menu)menu.classList.remove('active');window.__shopeeStockSelected={};window.__shopeeStockClientToken='stockout-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
     ['shopeeStockOrderId','shopeeStockSearch','shopeeStockBossId','shopeeStockBossPassword'].forEach(function(id){const e=$(id);if(e)e.value='';});
     const all=$('shopeeAllProducts');if(all)all.open=false;openModal('shopeeStockOutBox');renderShopeeStockSelected();
-    const bossPassword=$('shopeeStockBossPassword');if(bossPassword&&!bossPassword.dataset.submitEnterBound){bossPassword.dataset.submitEnterBound='1';bossPassword.enterKeyHint='done';bossPassword.addEventListener('keydown',function(e){if(e.key==='Enter'||e.code==='NumpadEnter'||e.keyCode===13){e.preventDefault();e.stopPropagation();submitShopeeStockOut();}});}
+    bindSingleEnterSubmit($('shopeeStockBossPassword'),$('shopeeStockSubmit'));
     const freq=$('shopeeFrequentProducts');if(freq)freq.textContent='载入中...';
     try{const rows=await apiCallTransient('getShopeePackingSuggestions',[],12000,'Packing suggestions');renderShopeeFrequentProducts(rows||[]);}catch(e){renderShopeeFrequentProducts([]);}
   };
