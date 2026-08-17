@@ -1097,7 +1097,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <section class="packing-frequent"><div class="packing-section-title"><b>📌 常打包商品</b><small>根据出库记录自动更新</small></div><div id="shopeeFrequentProducts" class="packing-photo-grid">载入中...</div></section>
     <details id="shopeeAllProducts" class="packing-other"><summary>🔎 选择其他商品</summary><input id="shopeeStockSearch" type="text" placeholder="搜索商品名称／编号" oninput="renderShopeeStockProducts(this.value)"><div id="shopeeStockProducts" class="shopee-stock-products"></div></details>
     <div id="shopeeStockSelected" class="shopee-stock-selected">还没选择商品。</div>
-    <details class="refund-auth" id="shopeeStockBossAuth"><summary>🔐 老板直接批准（工人留空）</summary><input id="shopeeStockBossId" type="text" placeholder="Boss ID" autocomplete="off"><input id="shopeeStockBossPassword" type="password" placeholder="Boss Password" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();submitShopeeStockOut()}"><div class="receipt-note">老板填帐号密码＝立即扣库存；工人留空＝提交给Boss Mode审核，审核前不会扣库存。</div></details>
+    <details class="refund-auth" id="shopeeStockBossAuth"><summary>🔐 老板直接批准（工人留空）</summary><input id="shopeeStockBossId" type="text" placeholder="Boss ID" autocomplete="off"><input id="shopeeStockBossPassword" type="password" enterkeyhint="done" placeholder="Boss Password" autocomplete="new-password"><div class="receipt-note">老板填帐号密码＝立即扣库存；工人留空＝提交给Boss Mode审核，审核前不会扣库存。</div></details>
     <button id="shopeeStockSubmit" class="green" type="button" onclick="submitShopeeStockOut()">提交Shopee出库</button>
   </div>
 </div>
@@ -1190,10 +1190,11 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
       <div class="boss-layout">
         <div class="boss-tab-grid">
-          <button onclick="bossOpenOverview(true)">🔔 今日提醒</button>
+          <button onclick="bossOpenOverview(true)">✅ 审批中心</button>
           <button onclick="bossOpenCashCollect()">💰 财务中心</button>
           <button onclick="bossShowPanel('bossReportsPanel')">📊 报表中心</button>
           <button onclick="bossOpenParcelBoss()">📦 Shopee 对账</button>
+          <button onclick="openBossShopeeStockOutHistory()">🛍️ Shopee 出货记录</button>
           <button onclick="bossOpenOtherIncome()">🚰 其它收入</button>
           <button onclick="bossLoadLowStock()">📦 库存提醒</button>
           <button onclick="bossOpenExport()">📤 汇出 Excel</button>
@@ -1202,8 +1203,15 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 
         <div class="boss-content">
           <div id="bossOverviewPanel" class="boss-panel active">
-            <h4>🔔 今日提醒</h4>
+            <h4>✅ 审批中心</h4>
             <div id="bossOverviewResult" class="boss-overview-grid">载入中...</div>
+          </div>
+
+          <div id="bossStockOutHistoryPanel" class="boss-panel">
+            <h4>🛍️ Shopee 出货记录</h4>
+            <div class="receipt-note">只显示 Shopee 卖货扣库存记录，保留时间、商品、数量和审核人，方便核对 CCTV。</div>
+            <div id="shopeeStockOutHistoryRows" class="boss-result">请选择此功能后载入记录。</div>
+            <div id="shopeeStockOutHistoryPager" class="stockout-history-pager"></div>
           </div>
 
           <div id="bossReportsPanel" class="boss-panel">
@@ -2906,7 +2914,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       enteredBoss:'Boss mode opened.', exitedBoss:'Boss mode closed.', autoExited:'Boss mode auto closed.',
       loggingIn:'Logging in...', missingLogin:'Please enter ID and password.', wrongLogin:'ID or password is wrong. Remaining ',
       loginFailed:'Login failed: ', choose:'Choose a function.', notice:'Notice', loading:'Loading...',
-      today:'Today', finance:'Finance', reports:'Reports', shopee:'Shopee', otherIncome:'Other Income', lowStock:'Low Stock', exportExcel:'Export Excel', settings:'Settings',
+      today:'Approval Centre', finance:'Finance', reports:'Reports', shopee:'Shopee', stockOutHistory:'Shopee Stock-out Records', otherIncome:'Other Income', lowStock:'Low Stock', exportExcel:'Export Excel', settings:'Settings',
       recordShopee:'Record actual payout received from Shopee.', shopeePaid:'Shopee paid amount', payoutNote:'Note / payout date', recordPaid:'Record Paid',
       pendingShopee:'Pending Shopee', actualPaid:'Actual Paid', difference:'Difference', trips:'Trips', noRecords:'No records', saved:'Saved',
       processingCheckout:'Processing checkout, please wait...', page:'Page', noProducts:'No products', transfer:'Transfer', collected:'Collected',
@@ -2953,7 +2961,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       enteredBoss:'\u5df2\u8fdb\u5165\u7ba1\u7406\u6a21\u5f0f\u3002', exitedBoss:'\u5df2\u9000\u51fa\u7ba1\u7406\u6a21\u5f0f\u3002', autoExited:'\u7ba1\u7406\u6a21\u5f0f\u5df2\u81ea\u52a8\u9000\u51fa\u3002',
       loggingIn:'\u767b\u5165\u4e2d...', missingLogin:'\u8bf7\u8f93\u5165 ID \u548c\u5bc6\u7801\u3002', wrongLogin:'ID \u6216\u5bc6\u7801\u9519\u8bef\uff0c\u5269\u4f59 ',
       loginFailed:'\u767b\u5165\u5931\u8d25\uff1a', choose:'\u9009\u62e9\u529f\u80fd\u3002', notice:'\u63d0\u793a', loading:'\u8f7d\u5165\u4e2d...',
-      today:'\u4eca\u65e5', finance:'\u8d22\u52a1', reports:'\u62a5\u8868', shopee:'Shopee', otherIncome:'\u5176\u5b83\u6536\u5165', lowStock:'\u4f4e\u5e93\u5b58', exportExcel:'\u6c47\u51fa Excel', settings:'\u7cfb\u7edf\u8bbe\u5b9a',
+      today:'\u5ba1\u6279\u4e2d\u5fc3', finance:'\u8d22\u52a1', reports:'\u62a5\u8868', shopee:'Shopee', stockOutHistory:'Shopee \u51fa\u8d27\u8bb0\u5f55', otherIncome:'\u5176\u5b83\u6536\u5165', lowStock:'\u4f4e\u5e93\u5b58', exportExcel:'\u6c47\u51fa Excel', settings:'\u7cfb\u7edf\u8bbe\u5b9a',
       recordShopee:'\u8bb0\u5f55 Shopee \u5b9e\u9645\u6536\u5230\u7684\u6b3e\u9879\u3002', shopeePaid:'Shopee \u5b9e\u6536\u91d1\u989d', payoutNote:'\u5907\u6ce8 / payout \u65e5\u671f', recordPaid:'\u8bb0\u5f55\u5b9e\u6536',
       pendingShopee:'Shopee \u672a\u6536', actualPaid:'\u5df2\u5b9e\u6536', difference:'\u5dee\u989d', trips:'\u8d9f\u6570', noRecords:'\u6ca1\u6709\u8bb0\u5f55', saved:'\u5df2\u8bb0\u5f55',
       processingCheckout:'\u6b63\u5728\u4e70\u5355\uff0c\u8bf7\u7a0d\u7b49...', page:'\u7b2c', noProducts:'\u6ca1\u6709\u5546\u54c1', transfer:'\u8f6c\u8d26', collected:'\u5df2\u6536\u8d70',
@@ -3174,13 +3182,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       .packing-picked-badge{position:absolute;right:8px;top:8px;min-width:31px;padding:5px 8px;border-radius:999px;background:#16a34a;color:#fff;text-align:center;font-weight:900;display:none}
       .packing-picked-badge.active{display:block}.packing-variant-total{margin:0 0 14px;padding:10px 13px;border-radius:12px;background:#091225;border:1px solid #334155;color:#cbd5e1;font-weight:800}
       .stockout-history{grid-column:1/-1!important;width:100%!important;min-width:0!important;max-height:none!important;overflow:hidden!important;box-sizing:border-box!important}
+      #bossOverviewResult.approval-overview-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important}
+      #bossOverviewResult.approval-overview-grid>.overview-card{min-height:76px!important;padding:10px 12px!important;border-radius:14px!important}
+      #bossOverviewResult.approval-overview-grid>.overview-card small{font-size:11px!important}#bossOverviewResult.approval-overview-grid>.overview-card b{font-size:20px!important;margin:4px 0!important}#bossOverviewResult.approval-overview-grid>.overview-card span{font-size:10.5px!important;line-height:1.25!important}
+      #bossOverviewResult.approval-overview-grid>.shopee-stock-approvals{grid-column:1/-1!important;margin-top:3px!important}
+      #bossStockOutHistoryPanel .boss-result{max-height:none!important;overflow:visible!important;background:transparent!important;border:0!important;padding:0!important}
+      #refundRecentBox{min-height:112px;contain:layout paint}
       .stockout-history-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
       .stockout-history-card{min-width:0;padding:13px;border:1px solid rgba(96,165,250,.24);border-radius:15px;background:rgba(15,23,42,.78);overflow:hidden}
       .stockout-history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-bottom:9px;border-bottom:1px solid rgba(148,163,184,.16)}
       .stockout-history-head b{min-width:0;overflow-wrap:anywhere;color:#f8fafc}.stockout-status{flex:0 0 auto;padding:3px 8px;border-radius:999px;background:rgba(34,197,94,.16);color:#86efac;font-size:11px;font-weight:900}
       .stockout-items{display:grid;gap:5px;margin:10px 0}.stockout-item{display:flex;justify-content:space-between;gap:8px;padding:7px 9px;border-radius:9px;background:rgba(30,41,59,.72)}.stockout-item span{min-width:0;overflow-wrap:anywhere}.stockout-item b{white-space:nowrap;color:#fbbf24}
       .stockout-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;color:#94a3b8;font-size:11px;line-height:1.35}.stockout-meta span{min-width:0;overflow-wrap:anywhere}
-      @media(max-width:1050px){.stockout-history-grid{grid-template-columns:1fr}}
+      @media(max-width:1050px){.stockout-history-grid{grid-template-columns:1fr}#bossOverviewResult.approval-overview-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
       /* SESSION-118: iPad landscape uses two real, independent scroll panes. */
       @media (min-width:700px) and (min-aspect-ratio:1/1){
         #bossDashboard>.modal-content{
@@ -3320,11 +3334,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     ensureBossLostPanel();
     ensureBossNetworkPanel();
     const bossBtns = document.querySelectorAll('#bossDashboard .boss-tab-grid button');
-    const bossKeys = ['today','finance','reports','shopee','otherIncome','lowStock','exportExcel','settings','productManage','lostItem','networkLog'];
-    const bossIcons={today:'🔔',finance:'💰',reports:'📊',shopee:'📦',otherIncome:'🚰',lowStock:'📉',exportExcel:'📤',settings:'⚙️',productManage:'🧾',lostItem:'🧹',networkLog:'🌐'};
+    const bossKeys = ['today','finance','reports','shopee','stockOutHistory','otherIncome','lowStock','exportExcel','settings','productManage','lostItem','networkLog'];
+    const bossIcons={today:'✅',finance:'💰',reports:'📊',shopee:'📦',stockOutHistory:'🛍️',otherIncome:'🚰',lowStock:'📉',exportExcel:'📤',settings:'⚙️',productManage:'🧾',lostItem:'🧹',networkLog:'🌐'};
     bossBtns.forEach((b,i)=>{ if(bossKeys[i]){ b.dataset.navKey=bossKeys[i]; b.textContent=(bossIcons[bossKeys[i]]||'')+' '+tr(bossKeys[i]); } if(!b.dataset.navGuardBound){b.dataset.navGuardBound='1';b.addEventListener('click',()=>{window.__bossUserNavAway=b.dataset.navKey!=='today';window.__bossActiveKey=b.dataset.navKey||window.__bossActiveKey;},{capture:true});} });
     const refreshBtn=$('bossRefreshBtn');if(refreshBtn)refreshBtn.textContent=lang()==='zh'?'刷新当前页面':'Refresh current page';
     setText('#bossOverviewPanel h4', tr('today'));
+    setText('#bossStockOutHistoryPanel h4', '🛍️ '+tr('stockOutHistory'));
     setText('#bossReportsPanel h4', tr('reports'));
     setText('#bossRangeBox h4', tr('customReport'));
     setText('#bossExportBox h4', tr('exportExcel'));
@@ -4287,7 +4302,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function setBossNav(activeKey){
     if(activeKey)window.__bossActiveKey=activeKey;
     const buttons=document.querySelectorAll('#bossDashboard .boss-tab-grid button');
-    const icons={today:'🔔',finance:'💰',reports:'📊',shopee:'📦',otherIncome:'🚰',lowStock:'📉',exportExcel:'📤',settings:'⚙️',productManage:'🧾',lostItem:'🧹',networkLog:'🌐'};
+    const icons={today:'✅',finance:'💰',reports:'📊',shopee:'📦',stockOutHistory:'🛍️',otherIncome:'🚰',lowStock:'📉',exportExcel:'📤',settings:'⚙️',productManage:'🧾',lostItem:'🧹',networkLog:'🌐'};
     buttons.forEach(b=>{const key=b.dataset.navKey;if(key&&icons[key])b.textContent=icons[key]+' '+tr(key);b.classList.toggle('active',key===activeKey);});
   }
 
@@ -4333,7 +4348,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const key=window.__bossActiveKey||(active&&active.dataset.navKey)||'today';
     const actions={
       today:()=>window.bossOpenOverview(true),finance:()=>window.bossOpenCashCollect(),cash:()=>window.bossOpenCashCollect(),reports:()=>bossShowPanel('bossReportsPanel'),
-      shopee:()=>window.bossOpenParcelBoss(),otherIncome:()=>window.bossOpenOtherIncome(),lowStock:()=>bossLoadLowStock(),
+      shopee:()=>window.bossOpenParcelBoss(),stockOutHistory:()=>window.openBossShopeeStockOutHistory(),otherIncome:()=>window.bossOpenOtherIncome(),lowStock:()=>bossLoadLowStock(),
       exportExcel:()=>bossOpenExport(),settings:()=>bossOpenCredentialBox(),productManage:()=>window.bossOpenProducts(),
       lostItem:()=>window.bossOpenLostItems(),networkLog:()=>window.bossOpenNetworkLog()
     };
@@ -4703,7 +4718,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const rows=(bossProductsCache||[]).filter(p=>normalizeText(p.name));
     const inactive=rows.filter(p=>p.active===false).length,unlisted=rows.filter(p=>p.active!==false&&!(Number(p.price)>0)).length,listed=rows.filter(p=>p.active!==false&&Number(p.price)>0).length;
     const unclassified=rows.filter(p=>{if(bossNeedsClassification(p))return true;const entries=String(p.appliesTo||'').toUpperCase().split(/[,|/]+/).filter(Boolean);return entries.length?entries.includes('GENERAL'):/UNCLASSIFIED|UNCATEGORIZED|未分类/.test(String(p.category||'').toUpperCase());}).length;
-    const cards=[[lang()==='zh'?'商品总数':'Total',rows.length,'#3b82f6'],[lang()==='zh'?'已上架':'Listed',listed,'#22c55e'],[lang()==='zh'?'未上架（价钱为 0）':'Unlisted (price 0)',unlisted,'#a855f7'],[lang()==='zh'?'已停用':'Inactive',inactive,'#ef4444'],[lang()==='zh'?'未分类':'Unclassified',unclassified,'#f59e0b']];
+    const cards=[[lang()==='zh'?'商品总数':'Total',rows.length,'#3b82f6'],[lang()==='zh'?'已上架':'Listed',listed,'#22c55e'],[lang()==='zh'?'未上架<br><span style="font-size:11px">价钱为 0</span>':'Unlisted<br><span style="font-size:11px">Price 0</span>',unlisted,'#a855f7'],[lang()==='zh'?'已停用':'Inactive',inactive,'#ef4444'],[lang()==='zh'?'未分类':'Unclassified',unclassified,'#f59e0b']];
     box.innerHTML=cards.map(x=>`<div style="min-width:120px;flex:1;padding:12px 14px;border:1px solid #334155;border-left:4px solid ${x[2]};border-radius:12px;background:#111c31"><small style="color:#94a3b8">${x[0]}</small><div style="font-size:24px;font-weight:900;color:#fff">${x[1]}</div></div>`).join('')+(!bossProductsFullLoaded?`<div style="width:100%;color:#94a3b8;font-size:12px">${lang()==='zh'?'正在读取完整总数…':'Loading full count…'}</div>`:'');
   }
 
@@ -6380,7 +6395,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setRefundBusy(false);
     openModal('refundBox');
     setupEnterNext('#refundBox');
-    loadRecentRefundOrders(true);
+    setTimeout(function(){ if($('refundBox')&&$('refundBox').classList.contains('active'))loadRecentRefundOrders(true); },180);
   };
   window.loadRecentRefundOrders = async function(force){
     const btn=document.querySelector('#refundBox .load-refund-orders-btn');
@@ -6548,6 +6563,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const panel=$('bossOverviewPanel');
     if(panel){panel.style.display='block';panel.classList.add('active');}
     const box=$('bossOverviewResult');
+    if(box)box.classList.add('approval-overview-grid');
     const localItems=($('todayItems')||{}).textContent || (currentProducts().length || '--');
     const card=(title,value,sub,warn)=>`<div class="overview-card ${warn?'warn':''}"><small>${esc(title)}</small><b>${esc(value)}</b><span>${esc(sub||'')}</span></div>`;
     const renderFallback = (note) => {
@@ -6558,7 +6574,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         card(tr('todayTotal'),localToday?money(localToday):'--',`${tr('orders')} ${localOrders}`,false),
         card(tr('cashDrawer'),localCash?money(localCash):'--',note || tr('loading'),false),
         card(tr('products'),String(localItems),tr('bossFastHint'),false),
-        card(tr('pendingRefunds'),'--',tr('bossFastHint'),false)
+        card(tr('pendingRefunds'),'--',tr('bossFastHint'),false),
+        card(lang()==='zh'?'待审Shopee出库':'Pending Shopee Stock Out','--',tr('bossFastHint'),false),
+        card(lang()==='zh'?'系统状态':'System Status','--',note || tr('loading'),false)
       ].join('');
     };
     const renderOverview = (overview) => {
@@ -6577,10 +6595,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const refundHtml=refunds.map(function(x){return `<div class="shopee-approval-card refund-approval"><div><b>退货 · ${esc(x.orderId||'')}</b><small>${esc(x.date||'')} · ${money(x.amount||0)}</small><div>${esc(x.item||'').replace(/\n/g,'<br>')}</div><small>${esc(x.reason||'')}</small></div><div><button class="green" onclick="approveRefundFromBoss('${esc(x.refundId||'')}')">批准退货／恢复库存</button><button class="danger" onclick="rejectRefundFromBoss('${esc(x.refundId||'')}')">拒绝</button></div></div>`;}).join('');
       const stockHtml=pending.map(function(x){const items=(x.items||[]).map(function(i){return `${esc(i.name||i.code)} × ${esc(i.qty)}`;}).join('<br>');return `<div class="shopee-approval-card"><div><b>Shopee出库 · ${esc(x.shopeeOrderId||'')}</b><small>${esc(x.date||'')} · ${esc(x.requestedBy||'Staff')}</small><div>${items}</div></div><div><button class="green" onclick="approveShopeeStockOut('${esc(x.requestId||'')}')">批准扣库存</button><button class="danger" onclick="rejectShopeeStockOut('${esc(x.requestId||'')}')">拒绝</button></div></div>`;}).join('');
       const approvals=(refundHtml||stockHtml)?`<div class="boss-result shopee-stock-approvals"><h4>✅ ${lang()==='zh'?'待审核中心':'Approval Centre'}</h4>${refundHtml}${stockHtml}</div>`:'';
-      const recent=overview.recentShopeeStockOuts||[];
-      window.__initialShopeeHistory=recent;
-      const history=`<details class="boss-result stockout-history" ontoggle="if(this.open)loadShopeeStockOutHistory(1)"><summary>🕒 最近Shopee出库记录（CCTV核对，每页12笔）</summary><div id="shopeeStockOutHistoryRows">${renderShopeeStockOutHistoryRows(recent)}</div><div id="shopeeStockOutHistoryPager" class="stockout-history-pager"></div></details>`;
-      if(box)box.innerHTML=cards+approvals+history;
+      if(box)box.innerHTML=cards+approvals;
     };
     if(bossOverviewCache && Date.now()-bossOverviewCacheAt < 60000){
       renderOverview(bossOverviewCache);
@@ -6610,6 +6625,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const rows=$('shopeeStockOutHistoryRows'),pager=$('shopeeStockOutHistoryPager');if(!rows)return;
     rows.innerHTML='<div class="boss-notice">正在载入记录...</div>';
     try{const r=await apiCall('getShopeeStockOutHistory',[Number(page)||1,12]);rows.innerHTML=renderShopeeStockOutHistoryRows(r.items||[]);if(pager)pager.innerHTML=`<button ${r.page<=1?'disabled':''} onclick="loadShopeeStockOutHistory(${r.page-1})">‹ 上一页</button><span><b>第 ${r.page} / ${r.totalPages} 页</b><small>共 ${r.total} 笔记录</small></span><button ${r.page>=r.totalPages?'disabled':''} onclick="loadShopeeStockOutHistory(${r.page+1})">下一页 ›</button>`;}catch(e){rows.innerHTML=`<div class="boss-notice">载入失败：${esc(cleanMessage(e.message||e))}</div>`;}
+  };
+  window.openBossShopeeStockOutHistory=async function(){
+    if(typeof bossRequire==='function'&&!bossRequire())return;
+    showBossPanel('bossStockOutHistoryPanel','stockOutHistory');
+    keepBossDashboardOpen('stockOutHistory');
+    await loadShopeeStockOutHistory(1);
   };
 
   window.approveShopeeStockOut = async function(requestId){const ok=await appConfirm('批准后会立即扣库存，确认吗？','Shopee卖货出库');if(!ok)return;try{setSubmitBusy(true,'正在批准并扣库存...');await apiCall('approveShopeeStockOutFromBoss',[requestId]);bossOverviewCache=null;bossOverviewCacheAt=0;showToast('✅ 已批准并扣库存');await bossOpenOverview(true);setTimeout(function(){location.reload();},900);}catch(e){showAppAlert('批准失败：'+cleanMessage(e.message||e),'Shopee卖货出库');}finally{setSubmitBusy(false);}};
@@ -6769,7 +6790,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.openShopeeStockOut = async function(){
     const menu=$('moreMenu');if(menu)menu.classList.remove('active');window.__shopeeStockSelected={};window.__shopeeStockClientToken='stockout-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
     ['shopeeStockOrderId','shopeeStockSearch','shopeeStockBossId','shopeeStockBossPassword'].forEach(function(id){const e=$(id);if(e)e.value='';});
-    const all=$('shopeeAllProducts');if(all)all.open=false;openModal('shopeeStockOutBox');renderShopeeStockSelected();const freq=$('shopeeFrequentProducts');if(freq)freq.textContent='载入中...';
+    const all=$('shopeeAllProducts');if(all)all.open=false;openModal('shopeeStockOutBox');renderShopeeStockSelected();
+    const bossPassword=$('shopeeStockBossPassword');if(bossPassword&&!bossPassword.dataset.submitEnterBound){bossPassword.dataset.submitEnterBound='1';bossPassword.enterKeyHint='done';bossPassword.addEventListener('keydown',function(e){if(e.key==='Enter'||e.code==='NumpadEnter'||e.keyCode===13){e.preventDefault();e.stopPropagation();submitShopeeStockOut();}});}
+    const freq=$('shopeeFrequentProducts');if(freq)freq.textContent='载入中...';
     try{const rows=await apiCallTransient('getShopeePackingSuggestions',[],12000,'Packing suggestions');renderShopeeFrequentProducts(rows||[]);}catch(e){renderShopeeFrequentProducts([]);}
   };
   window.renderShopeeFrequentProducts = function(suggestions){
