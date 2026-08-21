@@ -2489,11 +2489,12 @@ confirmCash = function(){
 openMixedPayment = function(){
   if(!checkoutCartRows().length){alert(lang()==='zh'?'购物车是空的':'Cart is empty');return;}
   const data=calcCartData(); cashTotal=data.final; closePay();
-  const t=document.getElementById('mixedTotal'); if(t)t.textContent='Total '+fmt(data.final);
-  const h=document.querySelector('#mixedBox h3'); if(h)h.textContent='➗ Mixed Payment';
-  const map={mixedCash:'Cash amount',mixedQr:'QR amount','mixed转账':'Transfer amount'};
+  const zh=lang()==='zh';
+  const t=document.getElementById('mixedTotal'); if(t)t.textContent=(zh?'应付 ':'Total ')+fmt(data.final);
+  const h=document.querySelector('#mixedBox h3'); if(h)h.textContent=zh?'➗ 混合付款':'➗ Mixed Payment';
+  const map=zh?{mixedCash:'现金金额','mixedQr':'QR 金额','mixed转账':'转账金额'}:{mixedCash:'Cash amount',mixedQr:'QR amount','mixed转账':'Transfer amount'};
   Object.keys(map).forEach(id=>{let e=document.getElementById(id); if(e){e.value=''; e.placeholder=map[id];}});
-  const btn=document.querySelector('#mixedBox button.green'); if(btn)btn.textContent='✅ Confirm Mixed Payment';
+  const btn=document.querySelector('#mixedBox button.green'); if(btn)btn.textContent=zh?'✅ 确认混合付款':'✅ Confirm Mixed Payment';
   calcMixed(); openModal('mixedBox');
 };
 calcMixed = function(){
@@ -2504,7 +2505,7 @@ calcMixed = function(){
   const paid=fromCents(cents(cash)+cents(qr)+cents(tr));
   const remain=fromCents(cents(data.final)-cents(paid));
   const el=document.getElementById('mixedRemain');
-  if(el)el.textContent=(remain>0?'Remaining ':'Change ')+fmt(Math.abs(remain));
+  if(el)el.textContent=(lang()==='zh'?(remain>0?'剩余 ':'找钱 '):(remain>0?'Remaining ':'Change '))+fmt(Math.abs(remain));
 };
 confirmMixed = function(){
   const data=calcCartData();
@@ -2512,7 +2513,7 @@ confirmMixed = function(){
   const qr=moneyNum((document.getElementById('mixedQr')||{}).value||0);
   const tr=moneyNum((document.getElementById('mixed转账')||{}).value||0);
   const paid=fromCents(cents(cash)+cents(qr)+cents(tr));
-  if(cents(paid)<cents(data.final)){alert('Mixed payment is not enough.');return;}
+  if(cents(paid)<cents(data.final)){alert(lang()==='zh'?'混合付款金额不足。':'Mixed payment is not enough.');return;}
   const change=fromCents(Math.max(0,cents(paid)-cents(data.final)));
   checkout('mixed',paid,change);
 };
@@ -4484,6 +4485,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const packLabel=document.createElement('label');packLabel.id='bossReceivePackSizeLabel';packLabel.className='boss-field wide';packLabel.style.display='none';packLabel.innerHTML=`<span class="boss-field-label">${lang()==='zh'?'每箱／每盒有多少件':'Units in each carton / box'}</span><input id="bossReceivePackSize" type="number" min="1" step="1" oninput="bossReceiveProductChanged()">`;qtyLabel.parentNode.insertBefore(packLabel,qtyLabel.nextSibling);
       const sellingLabel=document.createElement('label');sellingLabel.className='boss-field';sellingLabel.innerHTML=`<span class="boss-field-label">${lang()==='zh'?'售卖价（可同时更改）':'Selling price (optional change)'}</span><input id="bossReceiveSellingPrice" type="number" min="0.01" step="0.01" oninput="bossReceiveProductChanged()">`;costLabel.parentNode.insertBefore(sellingLabel,costLabel.nextSibling);
       const marginBox=document.createElement('div');marginBox.id='bossReceiveMarginPreview';marginBox.className='wide boss-result';marginBox.textContent=lang()==='zh'?'选择商品后显示预计毛利率。':'Choose a product to preview margin.';sellingLabel.parentNode.insertBefore(marginBox,sellingLabel.nextSibling);
+      const saveReceiveBtn=receiveGrid.querySelector('button.green');
+      const rehearsalBtn=document.createElement('button');rehearsalBtn.type='button';rehearsalBtn.className='wide';rehearsalBtn.style.cssText='background:#334155;color:#fff';rehearsalBtn.textContent=lang()==='zh'?'🧪 进货演练（不写入）':'🧪 Receiving rehearsal (no write)';rehearsalBtn.onclick=()=>window.bossReceiveDryRun();receiveGrid.insertBefore(rehearsalBtn,saveReceiveBtn);
+      if(saveReceiveBtn)saveReceiveBtn.textContent=lang()==='zh'?'确认进货（会修改库存）':'Confirm receiving (changes stock)';
     }
     if(stocktake){
       stocktake.open=true;
@@ -5069,6 +5073,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function receiveMainCategory(main){const labels={PROMOTION:'促销 PROMOTION',CHICKEN:'鸡 CHICKEN',DOG:'狗 DOG',CAT:'猫 CAT','CAT,DOG':'猫狗 CAT DOG',BIRD:'鸟 BIRD',FISH:'鱼 FISH',HAMSTER:'仓鼠 HAMSTER',BEVERAGE:'饮料 BEVERAGE',GENERAL:'未分类 UNCLASSIFIED'};return labels[main]||'未分类 UNCLASSIFIED';}
   function bossMarginAdvice(price,cost){price=Number(price)||0;cost=Number(cost)||0;if(!(price>0&&cost>0))return '';const margin=(price-cost)/price;if(margin>=0.20-1e-9)return '';const minimum=cost/0.8,suggested=Math.ceil((minimum-1e-9)*10)/10;return lang()==='zh'?`\n\n⚠️ 售价提醒：当前平均成本 RM ${cost.toFixed(2)}，售价 RM ${price.toFixed(2)}，毛利率 ${(margin*100).toFixed(1)}%，低于 20%。达到 20% 至少 RM ${minimum.toFixed(2)}；实际可参考卖 RM ${suggested.toFixed(2)}，再比较附近价格后决定。`:`\n\n⚠️ Price reminder: average cost RM ${cost.toFixed(2)}, selling price RM ${price.toFixed(2)}, gross margin ${(margin*100).toFixed(1)}%, below 20%. Minimum for 20% is RM ${minimum.toFixed(2)}; consider RM ${suggested.toFixed(2)} after checking nearby prices.`;}
   function bossMarginSummary(price,cost){price=Number(price)||0;cost=Number(cost)||0;if(!(price>0&&cost>0))return lang()==='zh'?'成本或售价不足，暂时不能计算毛利率。':'Cost or selling price is missing.';const margin=(price-cost)/price,minimum20=cost/0.8,reference30=cost/0.7,color=margin<0.20?'#f87171':margin<0.30?'#fbbf24':'#4ade80';return `<b style="color:${color}">${lang()==='zh'?'预计毛利率':'Estimated gross margin'} ${(margin*100).toFixed(1)}%</b><br><small>${lang()==='zh'?`20% 最低售价 RM ${minimum20.toFixed(2)}；30% 参考售价 RM ${reference30.toFixed(2)}。系统保留真实成本，不会把成本四舍五入。`:`20% minimum RM ${minimum20.toFixed(2)}; 30% reference RM ${reference30.toFixed(2)}. Exact cost is retained.`}</small>`;}
+  window.bossReceiveDryRun=function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),qty=Number(($('bossReceiveQty')||{}).value),mode=normalizeText(($('bossReceiveMode')||{}).value)||'unit',raw=String(($('bossReceiveCost')||{}).value||'').trim();if(!p||!(qty>0)){showAppAlert(lang()==='zh'?'请选择商品并填写演练数量。':'Choose a product and enter a rehearsal quantity.',tr('productEditor'));return;}const carton=mode==='carton',packSize=carton?Number(($('bossReceivePackSize')||{}).value):1;if(carton&&!(packSize>0)){showAppAlert(lang()==='zh'?'请填写每箱／每盒数量。':'Enter units per carton / box.',tr('productEditor'));return;}const known=carton?Number(p.lastPackCost||0):Math.max(0,Number(p.lastPurchaseCost!=null?p.lastPurchaseCost:p.cost)||0),purchase=raw===''?known:Number(raw);if(!Number.isFinite(purchase)||purchase<0||(raw===''&&!(known>0))){showAppAlert(lang()==='zh'?'请填写本次进货价。':'Enter this purchase price.',tr('productEditor'));return;}const units=qty*packSize,unitCost=carton?purchase/packSize:purchase,before=Math.max(0,Number(p.stock)||0),oldCost=Math.max(0,Number(p.cost)||0),after=before+units,average=after>0?((before*oldCost)+(units*unitCost))/after:unitCost,sale=Number(($('bossReceiveSellingPrice')||{}).value)||Number(p.price)||0,margin=sale>0&&average>0?((sale-average)/sale)*100:null;const text=lang()==='zh'?`🧪 进货演练完成（没有写入）\n\n商品：${p.name}\n当前库存：${before}\n本次：${carton?qty+' 箱 × '+packSize+' 件':qty+' 件／包'}\n预计增加：${units}\n预计库存：${after}\n每件真实成本：RM ${unitCost.toFixed(5)}\n预计平均成本：RM ${average.toFixed(5)}\n售卖价：RM ${sale.toFixed(2)}\n预计毛利率：${margin===null?'无法计算':margin.toFixed(1)+'%'}\n20% 最低售价：RM ${(average/0.8).toFixed(2)}\n30% 参考售价：RM ${(average/0.7).toFixed(2)}\n\n库存、成本、售价和 Sheet 都没有改变。`:`🧪 Rehearsal complete (nothing written)\n\nProduct: ${p.name}\nCurrent stock: ${before}\nAdd: ${units}\nProjected stock: ${after}\nTrue unit cost: RM ${unitCost.toFixed(5)}\nProjected average: RM ${average.toFixed(5)}\nSelling price: RM ${sale.toFixed(2)}\nProjected margin: ${margin===null?'unavailable':margin.toFixed(1)+'%'}\n\nStock, cost, price and Sheet were not changed.`;showAppAlert(text,tr('productEditor'));};
   window.bossReceiveProductStock=async function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),qty=Number(($('bossReceiveQty')||{}).value),raw=String(($('bossReceiveCost')||{}).value||'').trim(),oldUnitCost=Math.max(0,Number((p||{}).lastPurchaseCost!=null?(p||{}).lastPurchaseCost:(p||{}).cost)||0),unitCost=raw===''?oldUnitCost:Number(raw);if(!p||!(qty>0)||!Number.isFinite(unitCost)||unitCost<0){showAppAlert(lang()==='zh'?'请选择商品并填写收到数量／包数；每包／每件进货价可以留空沿用上次价格。':'Select a product and enter quantity/bags; unit purchase price may be blank to keep the previous price.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在记录并核对库存...':'Recording and verifying stock...');try{let out;if(normalizeText(p.inventoryGroup)){const m=String(p.name||'').toUpperCase().match(/(\d+(?:\.\d+)?)\s*KG/),kg=m?Number(m[1]):0;if(!(kg>1))throw new Error('Bulk KG not found');const receiveId='RCV-'+makeClientOrderId();out=await apiCallTransient('receiveLooseStock',[{group:p.inventoryGroup,bags:qty,kgPerBag:kg,bagCost:unitCost,receiveId}],45000,'Receive loose stock');}else out=await timeout(apiCall('receiveProductStock',[{code:p.code,name:p.name,qty:qty,cost:unitCost}]),45000,'Receive product stock');let message=normalizeText(p.inventoryGroup)?(lang()==='zh'?`进货已核对：${Number(out.beforeBags||0).toFixed(2)} 包 + ${qty} 包 = ${Number(out.afterBags||0).toFixed(2)} 包；本次每包 RM ${unitCost.toFixed(2)}。`:`Verified: ${Number(out.beforeBags||0).toFixed(2)} + ${qty} = ${Number(out.afterBags||0).toFixed(2)} bags; RM ${unitCost.toFixed(2)} per bag.`):(lang()==='zh'?`进货已核对：${Number(out.beforeStock||0)} + ${qty} = ${Number(out.stock||0)}；本次每件 RM ${unitCost.toFixed(2)}。`:`Verified: ${Number(out.beforeStock||0)} + ${qty} = ${Number(out.stock||0)}; RM ${unitCost.toFixed(2)} each.`);if(!normalizeText(p.inventoryGroup))message+=bossMarginAdvice(p.price,Number(out&&out.averageCost)||0);if($('bossReceiveQty'))$('bossReceiveQty').value='';if($('bossReceiveCost'))$('bossReceiveCost').value='';try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();bossChooseProductWork('receive',true);showAppAlert(message,tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');bossChooseProductWork('receive',true);}};
   const bossReceiveProductChangedBase=window.bossReceiveProductChanged;
   window.bossReceiveProductChanged=function(){
@@ -6259,10 +6264,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const input=$('discountInput');
     let val = moneyNum(input ? input.value : 0);
     const subtotal = calcDue().subtotal;
+    const status=$('discountStatusMsg');
+    if(!(val>0)){if(status){status.style.display='block';status.textContent=lang()==='zh'?'请先输入折扣金额。':'Enter a discount amount first.';}if(input)input.focus();return;}
     if(val < 0 || val > subtotal){ showAppAlert(tr('discountTooHigh'),tr('discount')); return; }
     if(val > 10){
       const id=($('discountBossId')||{}).value||'', pw=($('discountBossPassword')||{}).value||'';
-      if(!id || !pw){ const auth=$('discountAuthDetails'); if(auth)auth.open=true;setTimeout(bindDiscountAuthEnter,0); showAppAlert(tr('discountNeedsBoss'),tr('discount')); return; }
+      if(!id || !pw){ const auth=$('discountAuthDetails'); if(auth)auth.open=true;if(status){status.style.display='block';status.textContent=tr('discountNeedsBoss');}setTimeout(()=>{bindDiscountAuthEnter();const missing=!id?$('discountBossId'):$('discountBossPassword');if(missing)missing.focus();},0);return; }
       try{ setSubmitBusy(true,tr('saving')); await apiCall('approveDiscount',[val,id,pw,subtotal,{clientId:'DISC-'+makeClientOrderId(),reference:'CurrentCart'}]); }
       catch(e){ const auth=$('discountAuthDetails'); if(auth)auth.open=true; showAppAlert(tr('discountRejected')+(e.message||e),tr('discount')); return; }
       finally{ setSubmitBusy(false); }
@@ -7229,10 +7236,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   const appleTouchDevice=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  // iPad screenshot/share UI can emit transient resize events without a real
-  // orientation change. Ignoring those prevents Boss Mode from being relaid out crooked.
-  if(!appleTouchDevice)window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,120),{passive:true});
-  window.addEventListener('orientationchange',()=>setTimeout(recoverViewportAndInteraction,350),{passive:true});
+  // Screenshot/share and app switching can temporarily report a smaller iPad
+  // viewport. Wait until two samples agree, then restore the finalized layout.
+  let stableViewportTimer=null,stableViewportLast='';
+  function scheduleStableViewportRecovery(delay){clearTimeout(stableViewportTimer);stableViewportTimer=setTimeout(function sample(){const vv=window.visualViewport,key=Math.round((vv&&vv.width)||window.innerWidth)+'x'+Math.round((vv&&vv.height)||window.innerHeight);if(key!==stableViewportLast){stableViewportLast=key;stableViewportTimer=setTimeout(sample,180);return;}recoverViewportAndInteraction();try{setStaticText();showCart();render(currentList||currentProducts());}catch(e){}},delay||180);}
+  window.addEventListener('resize',()=>scheduleStableViewportRecovery(220),{passive:true});
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>scheduleStableViewportRecovery(260),{passive:true});
+  window.addEventListener('orientationchange',()=>scheduleStableViewportRecovery(420),{passive:true});
+  window.addEventListener('focus',()=>scheduleStableViewportRecovery(220),{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleStableViewportRecovery(260);});
   recoverViewportAndInteraction();
 })();
 
