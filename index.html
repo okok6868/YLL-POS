@@ -3450,7 +3450,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   function bindRefundEnterSubmit(){
     bindSingleEnterSubmit($('refundBossPassword'),$('refundSubmitBtn'));
   }
-  function bindDiscountAuthEnter(){bindEnterFocusNext($('discountBossId'),$('discountBossPassword'));bindSingleEnterSubmit($('discountBossPassword'),document.querySelector('#discountBox button.green'));}
+  function bindDiscountAuthEnter(){
+    const id=$('discountBossId'),pw=$('discountBossPassword');
+    const apply=document.querySelector('#discountBox .modal-content > button.green');
+    bindEnterFocusNext(id,pw);
+    bindSingleEnterSubmit(pw,apply);
+  }
 
   function bindEnterFocusNext(input,next){
     if(!input||!next)return;
@@ -6240,7 +6245,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const plain=[...box.querySelectorAll('#discountBox .modal-content > button')].filter(b=>!b.classList.contains('green'));
     if(plain[0])plain[0].textContent=tr('clearDiscount');
     if(plain[1])plain[1].textContent=tr('close');
-    setupEnterNext('#discountBox');
+    // Discount has a deliberate flow: amount -> Boss ID -> password -> apply.
+    // Do not attach the generic modal Enter handler here; it used to send the
+    // password field back to the amount input on iPad.
   }
 
   window.open折扣 = function(){
@@ -6254,8 +6261,18 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const msg=$('discountStatusMsg'); if(msg){msg.style.display='none'; msg.textContent='';}
     update折扣Preview(num(input && input.value));
     bindDiscountModalButtons();
-    setupEnterNext('#discountBox');
     bindDiscountAuthEnter();
+    if(input){
+      input.enterKeyHint='next';
+      input.onkeydown=function(e){
+        if(!(e.key==='Enter'||e.code==='NumpadEnter'||e.keyCode===13))return;
+        e.preventDefault();e.stopPropagation();
+        const val=moneyNum(input.value||0),auth=$('discountAuthDetails');
+        if(!(val>0)){const status=$('discountStatusMsg');if(status){status.style.display='block';status.textContent=lang()==='zh'?'请先输入折扣金额。':'Enter a discount amount first.';}input.focus();return;}
+        if(val>10){if(auth)auth.open=true;const id=$('discountBossId');if(id)id.focus();return;}
+        window.apply折扣();
+      };
+    }
     openModal('discountBox');
   };
   window.close折扣 = function(){ closeModal('discountBox'); };
@@ -7236,15 +7253,26 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   const appleTouchDevice=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  // Screenshot/share and app switching can temporarily report a smaller iPad
-  // viewport. Wait until two samples agree, then restore the finalized layout.
-  let stableViewportTimer=null,stableViewportLast='';
-  function scheduleStableViewportRecovery(delay){clearTimeout(stableViewportTimer);stableViewportTimer=setTimeout(function sample(){const vv=window.visualViewport,key=Math.round((vv&&vv.width)||window.innerWidth)+'x'+Math.round((vv&&vv.height)||window.innerHeight);if(key!==stableViewportLast){stableViewportLast=key;stableViewportTimer=setTimeout(sample,180);return;}recoverViewportAndInteraction();try{setStaticText();showCart();render(currentList||currentProducts());}catch(e){}},delay||180);}
-  window.addEventListener('resize',()=>scheduleStableViewportRecovery(220),{passive:true});
-  if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>scheduleStableViewportRecovery(260),{passive:true});
-  window.addEventListener('orientationchange',()=>scheduleStableViewportRecovery(420),{passive:true});
-  window.addEventListener('focus',()=>scheduleStableViewportRecovery(220),{passive:true});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleStableViewportRecovery(260);});
+  // iPad briefly reports a false viewport size while taking/sharing a
+  // screenshot. Never rebuild products during that transient resize: doing so
+  // invoked an older renderer and visibly changed the finalized POS layout.
+  if(!appleTouchDevice)window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(recoverViewportAndInteraction,520),{passive:true});
+
+  // Inline HTML handlers must resolve through window on iPad/PWA as well.
+  window.openMixedPayment=function(){
+    if(!currentCart().length){showAppAlert(cartEmptyMessage(),lang()==='zh'?'混合付款':'Mixed Payment');return;}
+    const data=calcCartData();cashTotal=data.final;closePay();
+    const zh=lang()==='zh',box=$('mixedBox');
+    const title=box&&box.querySelector('h3');if(title)title.textContent=zh?'➗ 混合付款':'➗ Mixed Payment';
+    const total=$('mixedTotal');if(total)total.textContent=(zh?'应付 ':'Total ')+fmt(data.final);
+    const labels=zh?{mixedCash:'现金金额',mixedQr:'QR 金额','mixed转账':'转账金额'}:{mixedCash:'Cash amount',mixedQr:'QR amount','mixed转账':'Transfer amount'};
+    Object.keys(labels).forEach(id=>{const el=$(id);if(el){el.value='';el.placeholder=labels[id];}});
+    const btn=box&&box.querySelector('button.green');if(btn)btn.textContent=zh?'✅ 确认混合付款':'✅ Confirm Mixed Payment';
+    calcMixed();openModal('mixedBox');
+  };
+  window.calcMixed=calcMixed;
+  window.confirmMixed=confirmMixed;
   recoverViewportAndInteraction();
 })();
 
