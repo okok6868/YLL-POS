@@ -2105,8 +2105,8 @@ async function bossLoadLowStock(){
   try{let rows=await apiCall("getLowStock",[5]); box.textContent=(rows||[]).map(p=>`${p.name} | Stock: ${p.stock}`).join("\n")||"没有低库存";}catch(e){box.textContent="失败："+(e.message||e)}
 }
 
-function openModal(id){closeAllModal();let m=document.getElementById(id);if(m){m.classList.add("active");m.scrollTop=0}document.body.classList.add("modal-open")}
-function closeModal(id){let m=document.getElementById(id);if(m)m.classList.remove("active"); if(!document.querySelector(".modal.active"))document.body.classList.remove("modal-open")}
+function openModal(id){closeAllModal();let m=document.getElementById(id);if(m){m.classList.add("active");m.scrollTop=0}document.body.classList.add("modal-open");if(id==='parcelBox'){try{sessionStorage.setItem('yllResumeModal','parcelBox')}catch(e){}}}
+function closeModal(id){let m=document.getElementById(id);if(m)m.classList.remove("active");if(id==='parcelBox'){try{sessionStorage.removeItem('yllResumeModal')}catch(e){}} if(!document.querySelector(".modal.active"))document.body.classList.remove("modal-open")}
 function closeAllModal(){document.querySelectorAll(".modal").forEach(m=>m.classList.remove("active"));document.body.classList.remove("modal-open")}
 function showConfirm(text,callback){let e=document.getElementById("confirmText"); if(e)e.innerText=text; confirmCallback=callback; openModal("confirmModal")}
 function confirmYes(){closeModal("confirmModal"); unlockBusyOnConfirmCancel=false; if(confirmCallback){let cb=confirmCallback;confirmCallback=null;cb()}}
@@ -3259,7 +3259,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       /* Screenshot/share can make old iPad Safari report a temporary width
          below 900px.  The old phone media query must never replace the POS
          three-column composition on an actual iPad. */
-      html.ipad-pos body{overflow:hidden!important;min-width:0!important;width:100%!important}
+      /* Do not fix the whole body to Safari's transient visual viewport. During
+         a screenshot old iPad Safari can temporarily shrink that fixed layer,
+         leaving a black, non-touchable strip until the app is foregrounded. */
+      html.ipad-pos,html.ipad-pos body{width:100vw!important;max-width:100vw!important;min-width:0!important;height:100vh!important;max-height:100vh!important}
+      html.ipad-pos body{position:relative!important;inset:auto!important;overflow:hidden!important}
       html.ipad-pos body>.header{display:block!important;width:100%!important;min-width:0!important;box-sizing:border-box!important}
       html.ipad-pos body>.layout{display:grid!important;grid-template-columns:150px minmax(0,1fr) 310px!important;width:100%!important;min-width:0!important;height:calc(100dvh - 112px)!important;max-height:calc(100dvh - 112px)!important;overflow:hidden!important}
       html.ipad-pos body>.layout>.sidebar{display:block!important;width:auto!important;min-width:0!important;overflow-y:auto!important;border-right:1px solid var(--line)!important;border-bottom:0!important;padding:14px 10px 10px!important}
@@ -3270,6 +3274,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       html.ipad-pos body>.layout>.main .products{max-height:none!important;grid-template-columns:repeat(auto-fill,minmax(122px,1fr))!important}
       html.ipad-pos body>.layout>.right{height:auto!important;min-width:0!important;border-left:1px solid var(--line)!important;border-top:0!important}
       html.ipad-pos .stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+      html.ipad-pos .modal{width:100vw!important;max-width:100vw!important;height:100vh!important;max-height:100vh!important}
       html.ipad-pos #bossDashboard .boss-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
       html.ipad-pos #bossDashboard .boss-tab-grid{position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
       html.ipad-pos #bossDashboard .boss-tab-grid button{text-align:left!important;justify-content:flex-start!important}
@@ -3282,6 +3287,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       #parcelBackfillForms .parcel-backfill-no-pickup-label input[type="checkbox"]{appearance:auto!important;flex:0 0 24px!important;width:24px!important;min-width:24px!important;max-width:24px!important;height:24px!important;min-height:24px!important;margin:0!important;padding:0!important}
       #parcelBackfillForms .parcel-backfill-counts{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin:8px 0!important}
       #parcelBackfillForms .parcel-backfill-card input:not([type="checkbox"]){width:100%!important;min-width:0!important;margin:3px 0!important}
+      #parcelBox .parcel-no-pickup-today{margin-bottom:18px!important}
+      #parcelBox .parcel-no-pickup-today+label{margin-top:2px!important}
       @media(max-width:720px){#parcelBackfillForms{grid-template-columns:1fr!important}}
     `;
     document.head.appendChild(style);
@@ -6530,6 +6537,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     });
     if(!entries.length){showAppAlert(lang()==='zh'?'请填写今天或所选补录日期的资料。':'Fill today or a selected backfill date.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
     parcelSubmitting=true;
+    setSubmitBusy(true,lang()==='zh'?'正在保存包裹记录，请稍等...':'Saving parcel record, please wait...');
     const submitWatchdog=setTimeout(()=>{
       parcelSubmitting=false;
       releaseStaleInteractionLock();
@@ -6558,6 +6566,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     finally{
       clearTimeout(submitWatchdog);
       parcelSubmitting=false;
+      setSubmitBusy(false);
       fields.forEach(el=>{ el.disabled=false; });
       if(btn){btn.disabled=false; btn.textContent=tr('saveParcelRecord');}
       releaseStaleInteractionLock();
@@ -6568,7 +6577,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       parcelReminderCheckedAt=0;
       scheduleTopStatsRefresh(250);
       scheduleParcelClosingReminderCheck();
-      if(typeof showToast==='function')showToast(savedResult.duplicate?tr('alreadySaved'):tr('shopeeSaved'));
+      if(typeof showToast==='function')showToast(savedResult.duplicate?tr('alreadySaved'):(lang()==='zh'?'✅ 包裹记录已保存':'✅ Parcel record saved'));
     }
   };
 
@@ -7203,6 +7212,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
     setTimeout(()=>{ try{ resumePendingOrderChecks(); }catch(e){} }, 1600);
     setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
+    // Safari may reload the page after a screenshot or app switch. Restore the
+    // parcel workflow instead of silently dropping the user back at POS home.
+    let resumeModal='';try{resumeModal=sessionStorage.getItem('yllResumeModal')||'';}catch(e){}
+    if(resumeModal==='parcelBox')setTimeout(()=>{try{window.openParcelBox();}catch(e){}},900);
   });
   let foregroundWorkTimer=null;
   function scheduleForegroundWork(delay){
@@ -7225,11 +7238,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   function recoverViewportAndInteraction(){
     const boss=$('bossDashboard');
     const bossOpen=!!(boss&&boss.classList.contains('active'));
+    const activeModal=document.querySelector('.modal.active');
     let criticalBusy=!!parcelSubmitting||!!window.__submitBusy||!!window.__cashCollectSubmitting||!!window.__fundExpenseSubmitting;
     try{criticalBusy=criticalBusy||!!isCheckingOut||!!window.isCheckingOut||!!offlineSyncing;}catch(e){}
     if(!bossOpen && !criticalBusy){
-      document.body.classList.remove('modal-open','pos-busy');
-      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('pos-busy');
+      if(activeModal){document.body.classList.add('modal-open');document.documentElement.classList.add('modal-open');}
+      else{document.body.classList.remove('modal-open');document.documentElement.classList.remove('modal-open');}
       const busy=$('checkoutBusy');
       if(busy){busy.classList.remove('active');busy.style.zIndex='';}
       document.querySelectorAll('.boss-image-viewer').forEach(el=>el.remove());
@@ -7360,10 +7375,23 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   if(iPadDevice){
     document.documentElement.classList.add('ipad-pos');
   }
+  let appleViewportRecoveryTimer=null;
+  function scheduleAppleViewportRecovery(){
+    clearTimeout(appleViewportRecoveryTimer);
+    appleViewportRecoveryTimer=setTimeout(()=>{
+      const viewport=document.querySelector('meta[name="viewport"]');
+      if(viewport&&!/width=device-width/i.test(viewport.content||''))viewport.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+      try{void document.documentElement.offsetWidth;void document.body.offsetWidth;}catch(e){}
+      recoverViewportAndInteraction();
+    },180);
+  }
   // iPad briefly reports a false viewport size while taking/sharing a
   // screenshot. Never rebuild products during that transient resize: doing so
   // invoked an older renderer and visibly changed the finalized POS layout.
-  if(!appleTouchDevice)window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
+  if(appleTouchDevice){
+    window.addEventListener('resize',scheduleAppleViewportRecovery,{passive:true});
+    if(window.visualViewport)window.visualViewport.addEventListener('resize',scheduleAppleViewportRecovery,{passive:true});
+  }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
   window.addEventListener('orientationchange',()=>setTimeout(recoverViewportAndInteraction,520),{passive:true});
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
