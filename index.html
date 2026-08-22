@@ -1511,7 +1511,7 @@ function clearCart(){if(!cart.length)return; showConfirm("确定清空购物车�
 function calcCartData(){let subtotal=fromCents(cart.reduce((s,i)=>s+cents(i.price)*Number(i.qty||0),0)); discount=moneyNum(discount); if(discount>subtotal)discount=subtotal; if(discount<0)discount=0; let final=fromCents(Math.max(0,cents(subtotal)-cents(discount))); return {subtotal,discount,final}}
 function showCart(){
   let cartBox=document.getElementById("cart");
-  if(!cart.length){discount=0; if(cartBox)cartBox.innerHTML='<div class="empty">购物车为空</div>'; updateTotals({subtotal:0,discount:0,final:0}); update折扣UI(); return;}
+  if(!cart.length){discount=0; try{sessionStorage.removeItem('yllSafeReloadCartV1');}catch(e){} if(cartBox)cartBox.innerHTML='<div class="empty">购物车为空</div>'; updateTotals({subtotal:0,discount:0,final:0}); update折扣UI(); return;}
   let html="";
   cart.forEach((i,x)=>{
     let sub=i.qty*i.price;
@@ -1523,6 +1523,9 @@ function showCart(){
   });
   if(cartBox)cartBox.innerHTML=html;
   let data=calcCartData(); updateTotals(data); update折扣UI();
+  // Keep an in-progress cart recoverable if old iPad WebKit has to reload
+  // after its screenshot/share viewport bug corrupts the touch coordinates.
+  try{sessionStorage.setItem('yllSafeReloadCartV1',JSON.stringify({cart:cart,discount:discount,at:Date.now()}));}catch(e){}
 }
 function updateTotals(data){
   let s=document.getElementById("subTotal"),d=document.getElementById("discountVal"),f=document.getElementById("finalTotal"),r=document.getElementById("discountRow");
@@ -7190,6 +7193,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
 
   document.addEventListener('DOMContentLoaded', () => {
     appBootDate=todayKey();
+    // Restore only a recent unfinished cart. Completed checkouts call
+    // clearCartState(), which removes this snapshot through showCart().
+    try{
+      const saved=JSON.parse(sessionStorage.getItem('yllSafeReloadCartV1')||'null');
+      if(saved&&Array.isArray(saved.cart)&&saved.cart.length&&Date.now()-Number(saved.at||0)<12*60*60*1000){
+        cart=saved.cart.map(x=>({name:String(x.name||''),price:Number(x.price)||0,qty:Math.max(1,Number(x.qty)||1)}));
+        discount=Math.max(0,Number(saved.discount)||0);
+        setTimeout(()=>{try{showCart();}catch(e){}},0);
+      }
+    }catch(e){}
     try{ if(originalSyncOfflineOrdersFn)window.removeEventListener('online', originalSyncOfflineOrdersFn); }catch(e){}
     prunePendingOnlineOrders(45*60*1000);
     try{ if(allCategorySelected(currentCat))currentCat='ALL'; }catch(e){}
@@ -7388,6 +7401,33 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     window.__saveStableIpadCanvas=saveStableIpadCanvas;
   }
   let appleViewportRecoveryTimer=null;
+  let ipadHiddenAt=0,ipadSafeReloadTimer=null;
+  function ipadCriticalWorkActive(){
+    let busy=!!parcelSubmitting||!!window.__submitBusy||!!window.__cashCollectSubmitting||!!window.__fundExpenseSubmitting;
+    try{busy=busy||!!isCheckingOut||!!window.isCheckingOut||!!offlineSyncing;}catch(e){}
+    return busy;
+  }
+  function requestIpadSafeReload(reason,delay){
+    if(!iPadDevice)return;
+    clearTimeout(ipadSafeReloadTimer);
+    ipadSafeReloadTimer=setTimeout(()=>{
+      if(iPadCriticalWorkActive()){
+        requestIpadSafeReload(reason,900);
+        return;
+      }
+      let last=0;
+      try{last=Number(sessionStorage.getItem('yllIpadSafeReloadAt')||0);}catch(e){}
+      if(Date.now()-last<7000)return;
+      try{
+        const rows=currentCart();
+        if(rows.length)sessionStorage.setItem('yllSafeReloadCartV1',JSON.stringify({cart:rows,discount:Number(discount)||0,at:Date.now()}));
+        sessionStorage.setItem('yllIpadSafeReloadAt',String(Date.now()));
+        sessionStorage.setItem('yllIpadSafeReloadReason',String(reason||'viewport'));
+      }catch(e){}
+      window.location.reload();
+    },Math.max(120,Number(delay)||350));
+  }
+  window.__requestIpadSafeReload=requestIpadSafeReload;
   function scheduleAppleViewportRecovery(){
     clearTimeout(appleViewportRecoveryTimer);
     appleViewportRecoveryTimer=setTimeout(()=>{
@@ -7407,6 +7447,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
           document.body.style.transform='';
           try{void document.body.offsetWidth;}catch(e){}
         }));
+        const screenLong=Math.max(Number(screen.width)||0,Number(screen.height)||0);
+        const reportedWidth=Math.min(
+          Number(window.innerWidth)||screenLong,
+          Number(document.documentElement.clientWidth)||screenLong,
+          Number(window.visualViewport&&window.visualViewport.width)||screenLong
+        );
+        const active=document.activeElement;
+        const typing=!!(active&&/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName));
+        if(!typing&&screenLong>=900&&reportedWidth<screenLong*.86)requestIpadSafeReload('narrow-viewport',260);
       }
     },180);
   }
@@ -7417,6 +7466,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     window.addEventListener('resize',scheduleAppleViewportRecovery,{passive:true});
     if(window.visualViewport)window.visualViewport.addEventListener('resize',scheduleAppleViewportRecovery,{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
+  if(iPadDevice){
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden){ipadHiddenAt=Date.now();return;}
+      // Returning from Screenshot/Photos/WhatsApp is where old WebKit keeps a
+      // stale half-screen hit-test layer. A real reload is the only reliable
+      // way to rebuild it; the cart snapshot above makes that safe.
+      if(ipadHiddenAt&&Date.now()-ipadHiddenAt>450)requestIpadSafeReload('foreground-return',320);
+      ipadHiddenAt=0;
+    },{passive:true});
+  }
   window.addEventListener('orientationchange',()=>setTimeout(()=>{if(window.__saveStableIpadCanvas)window.__saveStableIpadCanvas();recoverViewportAndInteraction();},900),{passive:true});
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
