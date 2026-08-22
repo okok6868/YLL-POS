@@ -328,7 +328,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #todaySoldBox .today-order-card.pay-cash{border-left-color:#22c55e}#todaySoldBox .today-order-card.pay-qr{border-left-color:#38bdf8}#todaySoldBox .today-order-card.pay-transfer{border-left-color:#a78bfa}
 #todaySoldBox .today-order-head{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;align-items:center;gap:8px;border-bottom:1px solid rgba(148,163,184,.2);padding-bottom:6px;margin-bottom:5px;font-size:13px}
 #todaySoldBox .today-pay-badge{padding:3px 8px;border-radius:999px;background:rgba(100,116,139,.2);font-weight:700}.today-order-card.pay-cash .today-pay-badge{color:#4ade80}.today-order-card.pay-qr .today-pay-badge{color:#38bdf8}.today-order-card.pay-transfer .today-pay-badge{color:#c4b5fd}
-.parcel-closing-reminder{display:block;margin-top:4px;padding:3px 7px;border-radius:8px;background:#b45309;color:#fff7ed;font-size:10px;font-weight:900;animation:parcelPulse 1.6s ease-in-out infinite}.parcel-closing-reminder[hidden]{display:none}@keyframes parcelPulse{50%{background:#dc2626}}
+.parcel-closing-reminder{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:4px;padding:4px 7px;border-radius:8px;background:#b45309;color:#fff7ed;font-size:10px;font-weight:900;animation:parcelPulse 1.6s ease-in-out infinite}.parcel-closing-reminder[hidden]{display:none}.parcel-no-pickup{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:7px;background:rgba(15,23,42,.45);white-space:nowrap}.parcel-no-pickup input{width:14px;height:14px;margin:0;accent-color:#22c55e}@keyframes parcelPulse{50%{background:#dc2626}}
+.parcel-missing-date-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}.parcel-missing-date{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px}.parcel-missing-date button{min-height:36px;padding:7px 9px;border:1px solid #475569;border-radius:9px;background:#17233a;color:#f8fafc;font-weight:800}.parcel-missing-date .parcel-no-pickup-btn{background:#334155;color:#cbd5e1;font-size:11px}@media(max-width:700px){.parcel-missing-date-grid{grid-template-columns:1fr}}
 #todaySoldBox .today-order-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:3px 0;font-size:13px}#todaySoldBox .today-order-total{border-top:1px solid rgba(148,163,184,.18);margin-top:5px;padding-top:5px;text-align:right;font-size:13px}
 #bossOtherIncomeBox .boss-inline{display:grid;grid-template-columns:140px 140px minmax(180px,1fr) 190px 150px;gap:10px;align-items:stretch}
 #bossOtherIncomeBox .boss-income-form label{display:flex;flex-direction:column;gap:6px;min-width:0;color:#94a3b8;font-size:12px;font-weight:700}#bossOtherIncomeBox .boss-income-form label span{padding-left:2px}#bossOtherIncomeBox .boss-income-form>button{align-self:end}
@@ -3896,7 +3897,31 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
 
   let parcelReminderCheckedAt=0,parcelReminderInFlight=false;
   function parcelReminderElement(){let el=$('parcelClosingReminder');if(el)return el;const order=$('todayOrders'),host=order&&order.parentElement;if(!host)return null;el=document.createElement('span');el.id='parcelClosingReminder';el.className='parcel-closing-reminder';el.hidden=true;host.appendChild(el);return el;}
-  async function checkParcelClosingReminder(){const el=parcelReminderElement();if(!el)return;const now=new Date(),hour=now.getHours();if(hour<19||hour>=21){el.hidden=true;return;}if(parcelReminderInFlight||Date.now()-parcelReminderCheckedAt<120000)return;parcelReminderInFlight=true;parcelReminderCheckedAt=Date.now();try{const r=await apiCallTransient('getParcelSummary',[1,1,'SPX'],10000,'Parcel reminder');const hasToday=num(r&&r.today&&r.today.count)>0;el.hidden=hasToday;el.textContent=lang()==='zh'?'⚠️ 今晚还没填 SPX 包裹':'⚠️ SPX parcel not recorded';}catch(e){el.hidden=true;}finally{parcelReminderInFlight=false;}}
+  function parcelNoPickupKey(date){return 'yll-spx-no-pickup-'+date.toLocaleDateString('en-CA');}
+  window.markParcelNoPickupToday=function(checked){
+    const key=parcelNoPickupKey(new Date());
+    if(checked)localStorage.setItem(key,'1');else localStorage.removeItem(key);
+    const el=parcelReminderElement();if(el&&checked)el.hidden=true;
+  };
+  async function checkParcelClosingReminder(){
+    const el=parcelReminderElement();if(!el)return;
+    const now=new Date(),hour=now.getHours();
+    // Thursday is the shop's fixed rest day. On other days the owner can
+    // explicitly acknowledge that SPX did not collect any parcel today.
+    if(now.getDay()===4||hour<18||hour>=21||localStorage.getItem(parcelNoPickupKey(now))==='1'){el.hidden=true;return;}
+    if(parcelReminderInFlight||Date.now()-parcelReminderCheckedAt<120000)return;
+    parcelReminderInFlight=true;parcelReminderCheckedAt=Date.now();
+    try{
+      const r=await apiCallTransient('getParcelSummary',[1,1,'SPX'],10000,'Parcel reminder');
+      const hasToday=num(r&&r.today&&r.today.count)>0;
+      el.hidden=hasToday;
+      if(!hasToday){
+        const message=lang()==='zh'?'⚠️ 今晚还没填 SPX 包裹':'⚠️ SPX parcel not recorded';
+        const noPickup=lang()==='zh'?'今天没有送货':'No pickup today';
+        el.innerHTML=`<span>${esc(message)}</span><label class="parcel-no-pickup"><input type="checkbox" onchange="markParcelNoPickupToday(this.checked)"> ${esc(noPickup)}</label>`;
+      }
+    }catch(e){el.hidden=true;}finally{parcelReminderInFlight=false;}
+  }
   function scheduleParcelClosingReminderCheck(){setTimeout(checkParcelClosingReminder,300);}
 
   let topStatsRefreshTimer=null;
@@ -6332,6 +6357,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       <div class="boss-inline"><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'包裹公司':'Provider'}</span><select id="parcelProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'实际业务日期':'Business date'}</span><input id="parcelBusinessDate" type="date" value="${esc(localDate)}"></label></div>
       <div class="parcel-auto-note" id="parcelTripNote">${esc(tr('todayTrip'))}</div>
       <div id="parcelTodayStatus" class="discount-preview">${esc(tr('loading'))}</div>
+      <div id="parcelMissingDates" class="discount-preview">${esc(lang()==='zh'?'正在检查待补日期...':'Checking missing dates...')}</div>
       <label class="boss-field"><span class="boss-field-label">${esc(tr('actualReceived'))}</span><input id="parcelDelivered" type="number" inputmode="numeric" min="0" placeholder="${esc(tr('actualReceived'))}"></label>
       <label class="boss-field"><span class="boss-field-label">${esc(tr('shortParcels'))}</span><input id="parcelMissing" type="number" inputmode="numeric" min="0" placeholder="0"></label>
       <label class="boss-field"><span class="boss-field-label">${esc(tr('returnedParcels'))}</span><input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}"></label>
@@ -6352,8 +6378,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{
       let providers=[];try{providers=await timeout(apiCall('getParcelProviders',[]),10000,'Parcel providers');}catch(ignore){}
       const providerSelect=$('parcelProvider');if(providerSelect&&providers.length)providerSelect.innerHTML=providers.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · RM ${num(p.deliveredRate).toFixed(2)}/${num(p.returnRate).toFixed(2)}</option>`).join('');
-      const r=await timeout(apiCall('getParcelSummary',[1,12,(providerSelect||{}).value||'SPX']),12000,'Parcel summary');
+      const r=await timeout(apiCall('getParcelSummary',[1,60,(providerSelect||{}).value||'SPX']),12000,'Parcel summary');
       renderParcelTodayStatus(r.today || {});
+      window.__parcelLatestLogs=r.logs||[];
+      window.__parcelLatestProvider=(providerSelect||{}).value||'SPX';
+      renderParcelMissingDates(window.__parcelLatestLogs,window.__parcelLatestProvider);
       const rows=(r.outstandingShortages||[]).filter(x=>num(x.outstanding)>0);
       const wrap=$('parcelRecoveryWrap'), list=$('parcelRecoveryList');
       if(wrap && list && rows.length){
@@ -6392,6 +6421,27 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       `${esc(tr('missing'))}: ${num(today.missing)}<br>`+
       `${esc(tr('recovered'))}: ${num(today.recovered)}`;
   }
+  function parcelDateLabel(dateText){
+    const d=new Date(String(dateText)+'T12:00:00');
+    if(isNaN(d))return String(dateText||'');
+    return d.toLocaleDateString(lang()==='zh'?'zh-CN':'en-MY',{month:'short',day:'numeric',weekday:'short'});
+  }
+  function renderParcelMissingDates(logs,provider){
+    const box=$('parcelMissingDates');if(!box)return;
+    const recorded=new Set((logs||[]).map(x=>String(x.businessDate||'').slice(0,10)).filter(Boolean));
+    const missing=[],now=new Date();
+    for(let offset=0;offset<14;offset++){
+      const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-offset);
+      if(d.getDay()===4)continue;
+      const key=d.toLocaleDateString('en-CA');
+      if(recorded.has(key)||localStorage.getItem('yll-'+String(provider||'SPX').toLowerCase()+'-no-pickup-'+key)==='1')continue;
+      missing.push(key);
+    }
+    if(!missing.length){box.innerHTML=`<b>${esc(lang()==='zh'?'最近 14 天已齐全':'Last 14 days complete')}</b>`;return;}
+    box.innerHTML=`<b>${esc(lang()==='zh'?'最近 14 天待补日期（星期四已排除）':'Missing dates in last 14 days (Thursdays excluded)')}</b><div class="parcel-missing-date-grid">${missing.map(date=>`<div class="parcel-missing-date"><button type="button" onclick="chooseParcelMissingDate('${date}')">${esc(parcelDateLabel(date))}</button><button type="button" class="parcel-no-pickup-btn" onclick="markParcelDateNoPickup('${date}','${esc(String(provider||'SPX'))}')">${esc(lang()==='zh'?'没有送货':'No pickup')}</button></div>`).join('')}</div>`;
+  }
+  window.chooseParcelMissingDate=function(date){const input=$('parcelBusinessDate');if(input){input.value=String(date||'');input.scrollIntoView({block:'center',behavior:'smooth'});}const delivered=$('parcelDelivered');if(delivered)setTimeout(()=>delivered.focus(),220);};
+  window.markParcelDateNoPickup=function(date,provider){localStorage.setItem('yll-'+String(provider||'SPX').toLowerCase()+'-no-pickup-'+String(date),'1');const summary=$('parcelMissingDates');if(summary){const logs=window.__parcelLatestLogs||[];renderParcelMissingDates(logs,provider);}if(String(date)===new Date().toLocaleDateString('en-CA'))markParcelNoPickupToday(true);};
   window.updateParcelPreview = function(){
     const recovered=num(($('parcelRecovered')||{}).value);
     const max=num(window.__parcelRecoveryOutstanding||0);
@@ -6428,27 +6478,24 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(!/^20\d{2}-\d{2}-\d{2}$/.test(businessDate)){showAppAlert(lang()==='zh'?'请选择实际业务日期。':'Choose the actual business date.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
     const parcelPayload={clientId,provider,businessDate,expected,delivered,missing,returned,recovered,recoveryForDate,note};
     parcelSubmitting=true;
-    setSubmitBusy(true,tr('submittingParcel'));
     const submitWatchdog=setTimeout(()=>{
       parcelSubmitting=false;
-      setSubmitBusy(false);
       releaseStaleInteractionLock();
     },45000);
     const btn=$('parcelSubmitBtn');
     const fields=[...document.querySelectorAll('#parcelBox input,#parcelBox button')];
     fields.forEach(el=>{ el.disabled=true; });
     if(btn){btn.disabled=true; btn.textContent=tr('submittingParcel');}
+    let savedResult=null;
     try{
       const r=await apiCallTransient('saveParcelLog',[parcelPayload],45000,'Parcel save');
-      closeModal('parcelBox');
-      if(typeof showToast==='function')showToast(r.duplicate?tr('alreadySaved'):tr('shopeeSaved'));
+      savedResult={duplicate:!!(r&&r.duplicate)};
     }
     catch(e){
       let saved=null;
       try{saved=await timeout(apiCall('getParcelSaveStatus',[clientId]),10000,'Check parcel save');}catch(checkError){}
       if(saved&&saved.found){
-        closeModal('parcelBox');
-        if(typeof showToast==='function')showToast(tr('shopeeSaved'));
+        savedResult={duplicate:false};
       }else{
         showAppAlert(tr('shopeeSaveFailed')+(e.message||e)+`\nClientId: ${clientId}`,tr('shopee'));
       }
@@ -6456,10 +6503,17 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     finally{
       clearTimeout(submitWatchdog);
       parcelSubmitting=false;
-      setSubmitBusy(false);
       fields.forEach(el=>{ el.disabled=false; });
       if(btn){btn.disabled=false; btn.textContent=tr('saveParcelRecord');}
       releaseStaleInteractionLock();
+    }
+    if(savedResult){
+      closeModal('parcelBox');
+      releaseStaleInteractionLock();
+      parcelReminderCheckedAt=0;
+      scheduleTopStatsRefresh(250);
+      scheduleParcelClosingReminderCheck();
+      if(typeof showToast==='function')showToast(savedResult.duplicate?tr('alreadySaved'):tr('shopeeSaved'));
     }
   };
 
@@ -7126,15 +7180,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(busy){busy.classList.remove('active');busy.style.zIndex='';}
       document.querySelectorAll('.boss-image-viewer').forEach(el=>el.remove());
     }
-    document.documentElement.style.setProperty('--app-height',`${window.innerHeight}px`);
-    document.body.style.minHeight=`${window.innerHeight}px`;
-    requestAnimationFrame(()=>{
-      try{
-        const grid=document.querySelector('.products,.product-grid,#products,#productList');
-        const hasCards=!!(grid && grid.querySelector('.product-card,.card'));
-        if(!hasCards)render(currentList||currentProducts());
-      }catch(e){}
-    });
+    // Never rebuild product HTML from a focus/resize/pageshow recovery. iPad
+    // reports transient viewport and visibility states while taking/sharing a
+    // screenshot; rendering here used to revive an obsolete product layout.
   }
   let pageTapLocked=false;
   function changePage(step){
@@ -7260,9 +7308,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.addEventListener('orientationchange',()=>setTimeout(recoverViewportAndInteraction,520),{passive:true});
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
-  window.openMixedPayment=function(){
+  function openMixedPaymentFinal(){
     if(!currentCart().length){showAppAlert(cartEmptyMessage(),lang()==='zh'?'混合付款':'Mixed Payment');return;}
-    const data=calcCartData();cashTotal=data.final;closePay();
+    releaseStaleInteractionLock();
+    const data=calcCartData();cashTotal=data.final;
     const zh=lang()==='zh',box=$('mixedBox');
     const title=box&&box.querySelector('h3');if(title)title.textContent=zh?'➗ 混合付款':'➗ Mixed Payment';
     const total=$('mixedTotal');if(total)total.textContent=(zh?'应付 ':'Total ')+fmt(data.final);
@@ -7270,7 +7319,33 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     Object.keys(labels).forEach(id=>{const el=$(id);if(el){el.value='';el.placeholder=labels[id];}});
     const btn=box&&box.querySelector('button.green');if(btn)btn.textContent=zh?'✅ 确认混合付款':'✅ Confirm Mixed Payment';
     calcMixed();openModal('mixedBox');
-  };
+  }
+  window.openMixedPayment=openMixedPaymentFinal;
+  // Capture phase prevents older inline/backdrop handlers from closing the
+  // payment chooser before the Mixed modal can open on iPad.
+  document.addEventListener('click',function(e){
+    const btn=e.target&&e.target.closest?e.target.closest('#payModal .pay-mixed-btn'):null;
+    if(!btn)return;
+    e.preventDefault();e.stopImmediatePropagation();
+    openMixedPaymentFinal();
+  },true);
+  // The discount modal has several legacy Enter handlers. Intercept its final
+  // intended flow before any old handler can move focus back to the amount.
+  document.addEventListener('keydown',function(e){
+    if(!(e.key==='Enter'||e.code==='NumpadEnter'||e.keyCode===13))return;
+    const box=$('discountBox'),target=e.target;
+    if(!box||!box.classList.contains('active')||!box.contains(target))return;
+    if(!['discountInput','discountBossId','discountBossPassword'].includes(target.id))return;
+    e.preventDefault();e.stopImmediatePropagation();
+    const input=$('discountInput'),val=moneyNum((input||{}).value||0),auth=$('discountAuthDetails'),status=$('discountStatusMsg');
+    if(target.id==='discountInput'){
+      if(!(val>0)){if(status){status.style.display='block';status.textContent=lang()==='zh'?'请先输入折扣金额。':'Enter a discount amount first.';}target.focus();return;}
+      if(val>10){if(auth)auth.open=true;const id=$('discountBossId');if(id)id.focus();return;}
+      window.apply折扣();return;
+    }
+    if(target.id==='discountBossId'){const pw=$('discountBossPassword');if(pw)pw.focus();return;}
+    window.apply折扣();
+  },true);
   window.calcMixed=calcMixed;
   window.confirmMixed=confirmMixed;
   recoverViewportAndInteraction();
