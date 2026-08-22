@@ -910,6 +910,14 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .setting-field .setting-label-row label{font-size:12px;font-weight:800;color:#e5e7eb;line-height:1.2}
 .setting-field .setting-current{font-size:12px;color:#fbbf24;white-space:nowrap;line-height:1.2;text-align:right}
 .setting-field input{width:100%!important;margin:0!important}
+.parcel-no-pickup-today{display:flex;align-items:center;gap:10px;padding:12px 14px;margin:10px 0;border:1px solid #334155;border-radius:12px;background:#111827}
+.parcel-backfill-card{margin:12px 0;padding:14px;border:1px solid #334155;border-radius:14px;background:#0f172a}
+.parcel-backfill-card h4{margin:0 0 10px;color:#fbbf24}
+.parcel-backfill-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0}
+.parcel-backfill-card label{display:flex;flex-direction:column;gap:6px;color:#cbd5e1}
+.parcel-backfill-card label:has(.parcel-backfill-no-pickup){flex-direction:row;align-items:center}
+.parcel-missing-date{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 10px;border:1px solid #334155;border-radius:10px;background:#172033}
+@media(max-width:760px){.parcel-backfill-counts{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1012,7 +1020,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
       <small style="color:#94a3b8">员工折扣每单最多 RM10；超过 RM10 必须老板批准。</small>
     </details>
     <div id="discountStatusMsg" class="boss-result" style="display:none"></div>
-    <button class="green" onclick="apply折扣()">✅ 应用折扣</button>
+    <button id="discountApplyBtn" class="green" type="button">✅ 应用折扣</button>
     <button onclick="reset折扣()">清除折扣</button>
     <button onclick="close折扣()">关闭</button>
   </div>
@@ -1021,10 +1029,10 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div id="payModal" class="modal">
   <div class="modal-content pay-choice-box">
     <h3>Select Payment</h3>
-    <button class="pay-cash-btn" onclick="openCash()">💵 Cash</button>
-    <button class="pay-transfer-btn" onclick="confirmDirectCheckout('transfer','Transfer')">🏦 Transfer</button>
-    <button class="pay-qr-btn" onclick="confirmDirectCheckout('mbb_qr','QR')">📱 QR</button>
-    <button class="pay-mixed-btn" onclick="openMixedPayment()">➗ Mixed</button>
+    <button id="payCashBtn" class="pay-cash-btn" type="button">💵 Cash</button>
+    <button id="payTransferBtn" class="pay-transfer-btn" type="button">🏦 Transfer</button>
+    <button id="payQrBtn" class="pay-qr-btn" type="button">📱 QR</button>
+    <button id="payMixedBtn" class="pay-mixed-btn" type="button">➗ Mixed</button>
     <button class="cancel-pay-btn" onclick="closePay()">✕ Cancel</button>
   </div>
 </div>
@@ -1057,11 +1065,11 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <div class="modal-content">
     <h3>➗ Mixed Payment</h3>
     <div id="mixedTotal" style="font-size:20px;font-weight:900;margin-bottom:8px">应付 RM 0.00</div>
-    <input id="mixedCash" type="number" placeholder="现金 Cash" oninput="calcMixed()">
-    <input id="mixedQr" type="number" placeholder="QR 金额" oninput="calcMixed()">
-    <input id="mixed转账" type="number" placeholder="转账金额" oninput="calcMixed()">
+    <input id="mixedCash" type="number" placeholder="现金 Cash">
+    <input id="mixedQr" type="number" placeholder="QR 金额">
+    <input id="mixed转账" type="number" placeholder="转账金额">
     <div id="mixedRemain" style="margin:10px 0;color:#cbd5e1">剩余 RM 0.00</div>
-    <button class="green" onclick="confirmMixed()">✅ 确认混合付款</button>
+    <button id="mixedConfirmBtn" class="green" type="button">✅ 确认混合付款</button>
     <button class="cancel-pay-btn" onclick="closeModal('mixedBox')">✕ 取消</button>
   </div>
 </div>
@@ -1100,7 +1108,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <details id="shopeeAllProducts" class="packing-other"><summary>🔎 选择其他商品</summary><input id="shopeeStockSearch" type="text" placeholder="搜索商品名称／编号" oninput="renderShopeeStockProducts(this.value)"><div id="shopeeStockProducts" class="shopee-stock-products"></div></details>
     <div id="shopeeStockSelected" class="shopee-stock-selected">还没选择商品。</div>
     <details class="refund-auth" id="shopeeStockBossAuth"><summary>🔐 老板直接批准（工人留空）</summary><input id="shopeeStockBossId" type="text" placeholder="Boss ID" autocomplete="off"><input id="shopeeStockBossPassword" type="password" enterkeyhint="done" placeholder="Boss Password" autocomplete="new-password"><div class="receipt-note">老板填帐号密码＝立即扣库存；工人留空＝提交给Boss Mode审核，审核前不会扣库存。</div></details>
-    <button id="shopeeStockSubmit" class="green" type="button" onclick="submitShopeeStockOut()">提交Shopee出库</button>
+    <button id="shopeeStockSubmit" class="green" type="button">提交Shopee出库</button>
   </div>
 </div>
 
@@ -1118,7 +1126,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
       <input id="refundBossPassword" type="password" placeholder="密码" autocomplete="new-password" enterkeyhint="done">
       <div class="receipt-note">退货一定要授权验证。提交中会锁住，避免重复上传。</div>
     </details>
-    <button id="refundSubmitBtn" class="green" onclick="submitRefund()">✅ 确认退货</button>
+    <button id="refundSubmitBtn" class="green" type="button">✅ 确认退货</button>
     <button onclick="closeModal('refundBox')">关闭</button>
   </div>
 </div>
@@ -1174,9 +1182,9 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div id="bossLoginBox" class="modal">
   <div class="modal-content access-card">
     <h3>🔐 权限验证</h3>
-    <input id="bossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('bossPassword').focus()">
-    <input id="bossPassword" type="password" placeholder="密码" autocomplete="new-password" onkeydown="if(event.key==='Enter')bossLogin()">
-    <button id="bossLoginBtn" class="green" onclick="bossLogin()">登入</button>
+    <input id="bossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input id="bossPassword" type="password" placeholder="密码" autocomplete="new-password">
+    <button id="bossLoginBtn" class="green" type="button">登入</button>
     <button onclick="closeModal('bossLoginBox')">关闭</button>
     <div id="bossLoginMsg" class="boss-result" style="display:none"></div>
   </div>
@@ -2141,7 +2149,7 @@ function fileToBase64(inputId){
   });
 }
 function salesReportLang(){
-  return localStorage.getItem('yllLang') || 'en';
+  return localStorage.getItem('yllLang') || 'zh';
 }
 function salesReportEscapeHtml(value){
   return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
@@ -2293,16 +2301,9 @@ if("serviceWorker" in navigator){
 // a different cached generation of the POS.
 document.addEventListener('visibilitychange',function(){
   if(document.visibilityState!=='hidden')return;
-  // Keep the finalized POS DOM intact while the screenshot/share sheet or
-  // WhatsApp briefly hides the app. Destructively emptying the product list
-  // and panels here caused the English/frozen/old-layout resume state.
-  try{
-    ['productVariantPicker','packingVariantPicker'].forEach(function(id){const el=document.getElementById(id);if(el)el.remove();});
-    const more=document.getElementById('moreMenu');if(more)more.classList.remove('active');
-    document.querySelectorAll('.boss-image-viewer').forEach(function(el){el.remove();});
-  }catch(e){}
-  // Boss Mode still closes on background for security. Normal POS state,
-  // language, cart, products and records remain available for restoration.
+  // A screenshot/share sheet briefly hides Safari/PWA. Preserve the entire
+  // POS DOM so returning cannot expose an older renderer or frozen layout.
+  // Boss Mode alone closes on background for security.
   const boss=document.getElementById('bossDashboard');
   if(boss&&boss.classList.contains('active')){try{closeModal('bossDashboard');}catch(e){boss.classList.remove('active');}}
 });
@@ -2960,7 +2961,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       ,lostItem:'\u635f\u8017/\u4e22\u5931', lostItemEditor:'\u635f\u8017/\u4e22\u5931', lossType:'\u7c7b\u578b', expired:'\u8fc7\u671f', damaged:'\u635f\u574f', stolen:'\u88ab\u5077', missingStock:'\u4e0d\u89c1', other:'\u5176\u5b83', qty:'\u6570\u91cf', reason:'\u539f\u56e0', recordLost:'\u8bb0\u5f55\u635f\u8017', recordingLost:'\u6b63\u5728\u8bb0\u5f55\u635f\u8017\uff0c\u8bf7\u7a0d\u7b49...', lostSaved:'\u635f\u8017\u5df2\u8bb0\u5f55', lostSavedToday:'\u4eca\u65e5\u5df2\u8bb0\u5f55\u635f\u8017', recentLost:'\u6700\u8fd1\u635f\u8017', lossAmount:'\u635f\u8017\u91d1\u989d', productRequired:'\u8bf7\u9009\u62e9\u5546\u54c1\u3002'
     }
   };
-  const lang = () => localStorage.getItem('yllLang') || 'en';
+  const lang = () => localStorage.getItem('yllLang') || 'zh';
   const tr = key => (I18N[lang()] && I18N[lang()][key]) || I18N.en[key] || key;
   const trf = (key, vars={}) => Object.keys(vars).reduce((s,k)=>s.replaceAll('{'+k+'}', vars[k]), tr(key));
   const looksGarbledText = s => /[\u00c0-\u00ff]/.test(String(s||''));
@@ -3428,45 +3429,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         if(submit)submit.click();
       };
     });
-  }
-
-  function bindSingleEnterSubmit(input,button){
-    if(!input||!button)return;
-    input.enterKeyHint='done';
-    input.onkeydown=function(e){
-      const isEnter=e.key==='Enter'||e.code==='NumpadEnter'||e.keyCode===13;
-      if(!isEnter)return;
-      e.preventDefault();
-      e.stopPropagation();
-      if(e.stopImmediatePropagation)e.stopImmediatePropagation();
-      if(e.repeat)return;
-      const now=Date.now(),last=Number(input.dataset.lastSubmitEnterAt||0);
-      if(now-last<1600)return;
-      input.dataset.lastSubmitEnterAt=String(now);
-      try{input.blur();}catch(err){}
-      if(!button.disabled)button.click();
-    };
-  }
-
-  function bindRefundEnterSubmit(){
-    bindSingleEnterSubmit($('refundBossPassword'),$('refundSubmitBtn'));
-  }
-  function bindDiscountAuthEnter(){
-    const id=$('discountBossId'),pw=$('discountBossPassword');
-    const apply=document.querySelector('#discountBox .modal-content > button.green');
-    bindEnterFocusNext(id,pw);
-    bindSingleEnterSubmit(pw,apply);
-  }
-
-  function bindEnterFocusNext(input,next){
-    if(!input||!next)return;
-    input.enterKeyHint='next';
-    input.onkeydown=function(e){
-      if(!(e.key==='Enter'||e.code==='NumpadEnter'||e.keyCode===13))return;
-      e.preventDefault();e.stopPropagation();
-      if(e.repeat)return;
-      next.focus();try{next.select&&next.select();}catch(err){}
-    };
   }
 
   function releaseStaleInteractionLock(){
@@ -6286,7 +6248,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const msg=$('discountStatusMsg'); if(msg){msg.style.display='none'; msg.textContent='';}
     update折扣Preview(num(input && input.value));
     bindDiscountModalButtons();
-    bindDiscountAuthEnter();
+    // V2BossAuth is the only keyboard owner for authorization fields.
     if(input){
       input.enterKeyHint='next';
       input.onkeydown=function(e){
@@ -6311,7 +6273,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(val < 0 || val > subtotal){ showAppAlert(tr('discountTooHigh'),tr('discount')); return; }
     if(val > 10){
       const id=($('discountBossId')||{}).value||'', pw=($('discountBossPassword')||{}).value||'';
-      if(!id || !pw){ const auth=$('discountAuthDetails'); if(auth)auth.open=true;if(status){status.style.display='block';status.textContent=tr('discountNeedsBoss');}setTimeout(()=>{bindDiscountAuthEnter();const missing=!id?$('discountBossId'):$('discountBossPassword');if(missing)missing.focus();},0);return; }
+      if(!id || !pw){ const auth=$('discountAuthDetails'); if(auth)auth.open=true;if(status){status.style.display='block';status.textContent=tr('discountNeedsBoss');}setTimeout(()=>{const missing=!id?$('discountBossId'):$('discountBossPassword');if(missing)missing.focus();},0);return; }
       try{ setSubmitBusy(true,tr('saving')); await apiCall('approveDiscount',[val,id,pw,subtotal,{clientId:'DISC-'+makeClientOrderId(),reference:'CurrentCart'}]); }
       catch(e){ const auth=$('discountAuthDetails'); if(auth)auth.open=true; showAppAlert(tr('discountRejected')+(e.message||e),tr('discount')); return; }
       finally{ setSubmitBusy(false); }
@@ -6354,10 +6316,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const localDate=new Date().toLocaleDateString('en-CA');
     if(box)box.innerHTML=`<h3>📦 ${lang()==='zh'?'包裹记录':'Parcel Records'}</h3>
       <p style="color:#94a3b8;font-size:13px">${esc(tr('normalParcel'))}</p>
-      <div class="boss-inline"><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'包裹公司':'Provider'}</span><select id="parcelProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'实际业务日期':'Business date'}</span><input id="parcelBusinessDate" type="date" value="${esc(localDate)}"></label></div>
+      <div class="boss-inline"><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'包裹公司':'Provider'}</span><select id="parcelProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'系统记录日期':'System date'}</span><input id="parcelBusinessDate" type="date" value="${esc(localDate)}" readonly tabindex="-1" style="pointer-events:none;opacity:.9"></label></div>
       <div class="parcel-auto-note" id="parcelTripNote">${esc(tr('todayTrip'))}</div>
       <div id="parcelTodayStatus" class="discount-preview">${esc(tr('loading'))}</div>
       <div id="parcelMissingDates" class="discount-preview">${esc(lang()==='zh'?'正在检查待补日期...':'Checking missing dates...')}</div>
+      <div id="parcelBackfillForms"></div>
+      <label class="parcel-no-pickup-today"><input id="parcelNoPickup" type="checkbox"> ${esc(lang()==='zh'?'今天没有送货':'No pickup today')}</label>
       <label class="boss-field"><span class="boss-field-label">${esc(tr('actualReceived'))}</span><input id="parcelDelivered" type="number" inputmode="numeric" min="0" placeholder="${esc(tr('actualReceived'))}"></label>
       <label class="boss-field"><span class="boss-field-label">${esc(tr('shortParcels'))}</span><input id="parcelMissing" type="number" inputmode="numeric" min="0" placeholder="0"></label>
       <label class="boss-field"><span class="boss-field-label">${esc(tr('returnedParcels'))}</span><input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}"></label>
@@ -6377,9 +6341,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     openModal('parcelBox');
     try{
       let providers=[];try{providers=await timeout(apiCall('getParcelProviders',[]),10000,'Parcel providers');}catch(ignore){}
-      const providerSelect=$('parcelProvider');if(providerSelect&&providers.length)providerSelect.innerHTML=providers.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · RM ${num(p.deliveredRate).toFixed(2)}/${num(p.returnRate).toFixed(2)}</option>`).join('');
-      const r=await timeout(apiCall('getParcelSummary',[1,60,(providerSelect||{}).value||'SPX']),12000,'Parcel summary');
+      const providerSelect=$('parcelProvider');if(providerSelect&&providers.length)providerSelect.innerHTML=providers.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+      if(providerSelect)providerSelect.onchange=()=>window.openParcelBox();
+      let r;
+      try{r=await timeout(apiCall('getParcelSummary',[1,60,(providerSelect||{}).value||'SPX']),25000,'Parcel summary');}
+      catch(firstError){await new Promise(resolve=>setTimeout(resolve,700));r=await timeout(apiCall('getParcelSummary',[1,60,(providerSelect||{}).value||'SPX']),25000,'Parcel summary retry');}
       renderParcelTodayStatus(r.today || {});
+      window.__parcelTodayRecorded=!!num((r.today||{}).count);
+      const noPickupToday=$('parcelNoPickup');if(noPickupToday)noPickupToday.closest('label').style.display=window.__parcelTodayRecorded?'none':'flex';
       window.__parcelLatestLogs=r.logs||[];
       window.__parcelLatestProvider=(providerSelect||{}).value||'SPX';
       renderParcelMissingDates(window.__parcelLatestLogs,window.__parcelLatestProvider);
@@ -6405,7 +6374,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       }
     }catch(e){
       const el=$('parcelTodayStatus');
-      if(el)el.innerHTML=`<b>${esc(tr('todayParcelStatus'))}</b><br>${esc(tr('loadFailed')+(e.message||e))}`;
+      if(el)el.innerHTML=`<b>${esc(tr('todayParcelStatus'))}</b><br>${esc(lang()==='zh'?'资料回应较慢；可以稍后再开，不能代表网络断线。':'Data response is slow. Try again later; this does not necessarily mean the network is offline.')}`;
     }
   };
   function renderParcelTodayStatus(today){
@@ -6434,14 +6403,22 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-offset);
       if(d.getDay()===4)continue;
       const key=d.toLocaleDateString('en-CA');
-      if(recorded.has(key)||localStorage.getItem('yll-'+String(provider||'SPX').toLowerCase()+'-no-pickup-'+key)==='1')continue;
+      if(recorded.has(key))continue;
       missing.push(key);
     }
     if(!missing.length){box.innerHTML=`<b>${esc(lang()==='zh'?'最近 14 天已齐全':'Last 14 days complete')}</b>`;return;}
-    box.innerHTML=`<b>${esc(lang()==='zh'?'最近 14 天待补日期（星期四已排除）':'Missing dates in last 14 days (Thursdays excluded)')}</b><div class="parcel-missing-date-grid">${missing.map(date=>`<div class="parcel-missing-date"><button type="button" onclick="chooseParcelMissingDate('${date}')">${esc(parcelDateLabel(date))}</button><button type="button" class="parcel-no-pickup-btn" onclick="markParcelDateNoPickup('${date}','${esc(String(provider||'SPX'))}')">${esc(lang()==='zh'?'没有送货':'No pickup')}</button></div>`).join('')}</div>`;
+    window.__parcelMissingDates=missing;
+    window.__parcelSelectedDates=new Set();
+    box.innerHTML=`<b>${esc(lang()==='zh'?'系统发现待补日期（星期四已排除）':'System-detected missing dates (Thursdays excluded)')}</b><div class="parcel-missing-date-grid">${missing.map(date=>`<label class="parcel-missing-date"><input type="checkbox" data-parcel-date="${esc(date)}"> <span>${esc(parcelDateLabel(date))}</span></label>`).join('')}</div>`;
+    box.onchange=e=>{const input=e.target&&e.target.matches&&e.target.matches('input[data-parcel-date]')?e.target:null;if(!input)return;chooseParcelMissingDate(input.dataset.parcelDate,input.checked);};
   }
-  window.chooseParcelMissingDate=function(date){const input=$('parcelBusinessDate');if(input){input.value=String(date||'');input.scrollIntoView({block:'center',behavior:'smooth'});}const delivered=$('parcelDelivered');if(delivered)setTimeout(()=>delivered.focus(),220);};
-  window.markParcelDateNoPickup=function(date,provider){localStorage.setItem('yll-'+String(provider||'SPX').toLowerCase()+'-no-pickup-'+String(date),'1');const summary=$('parcelMissingDates');if(summary){const logs=window.__parcelLatestLogs||[];renderParcelMissingDates(logs,provider);}if(String(date)===new Date().toLocaleDateString('en-CA'))markParcelNoPickupToday(true);};
+  window.chooseParcelMissingDate=function(date,checked){
+    if(!window.__parcelSelectedDates)window.__parcelSelectedDates=new Set();
+    if(checked===false)window.__parcelSelectedDates.delete(String(date));else window.__parcelSelectedDates.add(String(date));
+    const wrap=$('parcelBackfillForms');if(!wrap)return;
+    wrap.innerHTML=[...window.__parcelSelectedDates].sort().map(d=>`<section class="parcel-backfill-card" data-date="${esc(d)}"><h4>${esc(parcelDateLabel(d))}</h4><label><input class="parcel-backfill-no-pickup" type="checkbox"> ${esc(lang()==='zh'?'当天没有送货':'No pickup that day')}</label><div class="parcel-backfill-counts"><label>${esc(tr('actualReceived'))}<input class="parcel-backfill-delivered" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('shortParcels'))}<input class="parcel-backfill-missing" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('returnedParcels'))}<input class="parcel-backfill-returned" type="number" inputmode="numeric" min="0" value="0"></label></div><label>${esc(tr('noteOptional'))}<input class="parcel-backfill-note" type="text"></label></section>`).join('');
+    wrap.querySelectorAll('.parcel-backfill-no-pickup').forEach(input=>input.onchange=()=>{const card=input.closest('.parcel-backfill-card');card.querySelectorAll('input:not(.parcel-backfill-no-pickup)').forEach(x=>x.disabled=input.checked);});
+  };
   window.updateParcelPreview = function(){
     const recovered=num(($('parcelRecovered')||{}).value);
     const max=num(window.__parcelRecoveryOutstanding||0);
@@ -6468,7 +6445,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const expected=delivered+missing;
     const recoveryForDate=String((($('parcelRecoveryDate')||{}).value)||window.__parcelRecoveryDate||'');
     let note=($('parcelNote')||{}).value||'';
-    if(!delivered && !missing && !returned && !recovered){ showAppAlert(tr('parcelRequired'),tr('shopee')); return; }
+    const todayNoPickup=!!(($('parcelNoPickup')||{}).checked);
+    const backfillCards=[...document.querySelectorAll('#parcelBackfillForms .parcel-backfill-card')];
+    if(!window.__parcelTodayRecorded && !todayNoPickup && !delivered && !missing && !returned && !recovered && !backfillCards.length){ showAppAlert(tr('parcelRequired'),tr('shopee')); return; }
     if(recovered>0 && !recoveryForDate){ showAppAlert(tr('recoveryDateRequired'),tr('shopee')); return; }
     if(recovered>num(window.__parcelRecoveryOutstanding||0)){ showAppAlert(`${tr('stillMissing')}: ${num(window.__parcelRecoveryOutstanding||0)}`,tr('shopee')); return; }
     if(missing>0) note = note ? `${note} | Received ${delivered}, missing ${missing}` : `Received ${delivered}, missing ${missing}`;
@@ -6476,7 +6455,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const clientId='PCL-'+makeClientOrderId();
     const provider=String((($('parcelProvider')||{}).value)||'SPX'),businessDate=String((($('parcelBusinessDate')||{}).value)||'');
     if(!/^20\d{2}-\d{2}-\d{2}$/.test(businessDate)){showAppAlert(lang()==='zh'?'请选择实际业务日期。':'Choose the actual business date.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
-    const parcelPayload={clientId,provider,businessDate,expected,delivered,missing,returned,recovered,recoveryForDate,note};
+    const entries=[];
+    if(!window.__parcelTodayRecorded && (todayNoPickup||delivered||missing||returned||recovered))entries.push({clientId,provider,businessDate,expected,delivered,missing,returned,recovered,recoveryForDate,note,noPickup:todayNoPickup});
+    backfillCards.forEach((card,index)=>{
+      const date=String(card.dataset.date||''),noPickup=!!(card.querySelector('.parcel-backfill-no-pickup')||{}).checked;
+      const d=num((card.querySelector('.parcel-backfill-delivered')||{}).value),m=num((card.querySelector('.parcel-backfill-missing')||{}).value),ret=num((card.querySelector('.parcel-backfill-returned')||{}).value),n=String((card.querySelector('.parcel-backfill-note')||{}).value||'');
+      if(noPickup||d||m||ret)entries.push({clientId:clientId+'-'+index,provider,businessDate:date,expected:d+m,delivered:d,missing:m,returned:ret,recovered:0,recoveryForDate:'',note:n,noPickup:noPickup});
+    });
+    if(!entries.length){showAppAlert(lang()==='zh'?'请填写今天或所选补录日期的资料。':'Fill today or a selected backfill date.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
     parcelSubmitting=true;
     const submitWatchdog=setTimeout(()=>{
       parcelSubmitting=false;
@@ -6488,13 +6474,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(btn){btn.disabled=true; btn.textContent=tr('submittingParcel');}
     let savedResult=null;
     try{
-      const r=await apiCallTransient('saveParcelLog',[parcelPayload],45000,'Parcel save');
+      const r=await apiCallTransient('saveParcelEntries',[entries],55000,'Parcel batch save');
       savedResult={duplicate:!!(r&&r.duplicate)};
     }
     catch(e){
-      let saved=null;
-      try{saved=await timeout(apiCall('getParcelSaveStatus',[clientId]),10000,'Check parcel save');}catch(checkError){}
-      if(saved&&saved.found){
+      let allSaved=false;
+      try{
+        const checks=[];for(const entry of entries)checks.push(await timeout(apiCall('getParcelSaveStatus',[entry.clientId]),10000,'Check parcel save'));
+        allSaved=checks.length===entries.length&&checks.every(x=>x&&x.found);
+      }catch(checkError){}
+      if(allSaved){
         savedResult={duplicate:false};
       }else{
         showAppAlert(tr('shopeeSaveFailed')+(e.message||e)+`\nClientId: ${clientId}`,tr('shopee'));
@@ -6545,7 +6534,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       <button id="refundSubmitBtn" class="green" onclick="submitRefund()">${esc(tr('submitRefund'))}</button>
       <button onclick="closeModal('refundBox')">${esc(tr('close'))}</button>`;
     setupEnterNext('#refundBox');
-    bindRefundEnterSubmit();
+    // V2BossAuth owns refund authorization Enter handling.
   };
   window.openRefundBox = function(){
     releaseStaleInteractionLock();
@@ -6556,7 +6545,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     setRefundBusy(false);
     openModal('refundBox');
     setupEnterNext('#refundBox');
-    bindRefundEnterSubmit();
+    // V2BossAuth owns refund authorization Enter handling.
     setTimeout(function(){ if($('refundBox')&&$('refundBox').classList.contains('active'))loadRecentRefundOrders(true); },180);
   };
   window.loadRecentRefundOrders = async function(force){
@@ -6580,7 +6569,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     }finally{
       if(btn){btn.disabled=false; btn.textContent=btn.dataset.oldText||tr('loadRecentOrders');}
       setupEnterNext('#refundBox');
-      bindRefundEnterSubmit();
+      // V2BossAuth owns refund authorization Enter handling.
     }
   };
   window.selectRefundOrder = function(idx){
@@ -6600,14 +6589,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     </div>`).join('');
     updateRefundTotal();
     setupEnterNext('#refundBox');
-    bindRefundEnterSubmit();
+    // V2BossAuth owns refund authorization Enter handling.
   };
   window.toggleRefundItem = function(i){
     const chk=$('rfChk'+i), qty=$('rfQty'+i);
     if(qty)qty.disabled=!(chk&&chk.checked);
     updateRefundTotal();
     setupEnterNext('#refundBox');
-    bindRefundEnterSubmit();
+    // V2BossAuth owns refund authorization Enter handling.
   };
   window.getRefundSelection = function(){
     if(!window.selectedRefundOrder)return {items:[],amount:0};
@@ -6679,7 +6668,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       setSubmitBusy(false);
       setRefundBusy(false);
       setupEnterNext('#refundBox');
-      bindRefundEnterSubmit();
+      // V2BossAuth owns refund authorization Enter handling.
     }
   };
 
@@ -6976,8 +6965,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     const menu=$('moreMenu');if(menu)menu.classList.remove('active');window.__shopeeStockSelected={};window.__shopeeStockClientToken='stockout-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
     ['shopeeStockOrderId','shopeeStockSearch','shopeeStockBossId','shopeeStockBossPassword'].forEach(function(id){const e=$(id);if(e)e.value='';});
     const all=$('shopeeAllProducts');if(all)all.open=false;openModal('shopeeStockOutBox');renderShopeeStockSelected();
-    bindEnterFocusNext($('shopeeStockBossId'),$('shopeeStockBossPassword'));
-    bindSingleEnterSubmit($('shopeeStockBossPassword'),$('shopeeStockSubmit'));
+    // V2BossAuth is the only keyboard owner for authorization fields.
     const freq=$('shopeeFrequentProducts');if(freq)freq.textContent='载入中...';
     try{const rows=await apiCallTransient('getShopeePackingSuggestions',[],12000,'Packing suggestions');renderShopeeFrequentProducts(rows||[]);}catch(e){renderShopeeFrequentProducts([]);}
   };
@@ -7321,30 +7309,94 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     calcMixed();openModal('mixedBox');
   }
   window.openMixedPayment=openMixedPaymentFinal;
-  // Capture phase prevents older inline/backdrop handlers from closing the
-  // payment chooser before the Mixed modal can open on iPad.
+  // V2 has one payment controller. Static buttons no longer carry inline
+  // actions, so a tap can never fall through from Mixed to QR on iPad.
+  let v2ActionLockUntil=0;
+  function runV2Action(action){
+    const now=Date.now();
+    if(now<v2ActionLockUntil)return;
+    v2ActionLockUntil=now+700;
+    try{action();}catch(err){v2ActionLockUntil=0;showAppAlert(cleanMessage(err&&err.message||err),'POS');}
+  }
   document.addEventListener('click',function(e){
-    const btn=e.target&&e.target.closest?e.target.closest('#payModal .pay-mixed-btn'):null;
-    if(!btn)return;
-    e.preventDefault();e.stopImmediatePropagation();
-    openMixedPaymentFinal();
-  },true);
-  // The discount modal has several legacy Enter handlers. Intercept its final
-  // intended flow before any old handler can move focus back to the amount.
-  document.addEventListener('keydown',function(e){
-    if(!(e.key==='Enter'||e.code==='NumpadEnter'||e.keyCode===13))return;
-    const box=$('discountBox'),target=e.target;
-    if(!box||!box.classList.contains('active')||!box.contains(target))return;
-    if(!['discountInput','discountBossId','discountBossPassword'].includes(target.id))return;
-    e.preventDefault();e.stopImmediatePropagation();
-    const input=$('discountInput'),val=moneyNum((input||{}).value||0),auth=$('discountAuthDetails'),status=$('discountStatusMsg');
-    if(target.id==='discountInput'){
-      if(!(val>0)){if(status){status.style.display='block';status.textContent=lang()==='zh'?'请先输入折扣金额。':'Enter a discount amount first.';}target.focus();return;}
-      if(val>10){if(auth)auth.open=true;const id=$('discountBossId');if(id)id.focus();return;}
-      window.apply折扣();return;
+    const button=e.target&&e.target.closest?e.target.closest('button'):null;
+    if(!button)return;
+    const paymentActions={
+      payCashBtn:()=>openCash(),
+      payTransferBtn:()=>confirmDirectCheckout('transfer','Transfer'),
+      payQrBtn:()=>confirmDirectCheckout('mbb_qr','QR'),
+      payMixedBtn:()=>openMixedPaymentFinal(),
+      mixedConfirmBtn:()=>confirmMixed()
+    };
+    if(paymentActions[button.id]){
+      e.preventDefault();e.stopImmediatePropagation();
+      runV2Action(paymentActions[button.id]);
+      return;
     }
-    if(target.id==='discountBossId'){const pw=$('discountBossPassword');if(pw)pw.focus();return;}
-    window.apply折扣();
+    const submitActions={
+      bossLoginBtn:()=>bossLogin(),
+      discountApplyBtn:()=>window.apply折扣(),
+      refundSubmitBtn:()=>window.submitRefund(),
+      shopeeStockSubmit:()=>window.submitShopeeStockOut()
+    };
+    if(submitActions[button.id]){
+      e.preventDefault();e.stopImmediatePropagation();
+      runV2Action(submitActions[button.id]);
+    }
+  },true);
+  ['mixedCash','mixedQr','mixed转账'].forEach(function(id){
+    const input=$(id);if(input)input.addEventListener('input',calcMixed,{passive:true});
+  });
+
+  // The only Boss authorization keyboard controller in V2.
+  const V2BossAuth={
+    flows:[
+      {id:'bossId',password:'bossPassword',submit:'bossLoginBtn'},
+      {id:'discountBossId',password:'discountBossPassword',submit:'discountApplyBtn',details:'discountAuthDetails'},
+      {id:'refundBossId',password:'refundBossPassword',submit:'refundSubmitBtn',details:'refundAuthDetails'},
+      {id:'shopeeStockBossId',password:'shopeeStockBossPassword',submit:'shopeeStockSubmit',details:'shopeeStockBossAuth'}
+    ],
+    find(target){return this.flows.find(flow=>target&&[flow.id,flow.password].includes(target.id));},
+    focus(id){const el=$(id);if(el){el.focus();try{el.select();}catch(err){}}},
+    missing(flow,message){
+      const details=flow.details&&$(flow.details);if(details)details.open=true;
+      const id=$(flow.id),password=$(flow.password),missing=!(id&&id.value.trim())?flow.id:flow.password;
+      showAppAlert(message||(lang()==='zh'?'请输入老板帐号和密码。':'Enter Boss ID and password.'),lang()==='zh'?'老板权限':'Boss authorization');
+      setTimeout(()=>this.focus(missing),80);
+    },
+    enter(event){
+      if(!(event.key==='Enter'||event.code==='NumpadEnter'||event.keyCode===13))return;
+      const flow=this.find(event.target);if(!flow)return;
+      event.preventDefault();event.stopImmediatePropagation();
+      if(event.repeat)return;
+      const id=$(flow.id),password=$(flow.password);
+      if(event.target.id===flow.id){
+        if(!(id&&id.value.trim())){this.missing(flow,lang()==='zh'?'请先输入老板帐号。':'Enter Boss ID first.');return;}
+        this.focus(flow.password);return;
+      }
+      if(!(id&&id.value.trim())||!(password&&password.value)){
+        this.missing(flow);return;
+      }
+      const button=$(flow.submit);if(!button||button.disabled)return;
+      const actions={
+        bossLoginBtn:()=>bossLogin(),
+        discountApplyBtn:()=>window.apply折扣(),
+        refundSubmitBtn:()=>window.submitRefund(),
+        shopeeStockSubmit:()=>window.submitShopeeStockOut()
+      };
+      if(actions[flow.submit])runV2Action(actions[flow.submit]);
+    }
+  };
+  document.addEventListener('keydown',event=>V2BossAuth.enter(event),true);
+
+  // Discount amount itself is not part of credential navigation.
+  document.addEventListener('keydown',function(e){
+    if(!(e.key==='Enter'||e.code==='NumpadEnter'||e.keyCode===13)||e.target.id!=='discountInput')return;
+    e.preventDefault();e.stopImmediatePropagation();
+    const val=moneyNum(e.target.value||0),status=$('discountStatusMsg');
+    if(!(val>0)){if(status){status.style.display='block';status.textContent=lang()==='zh'?'请先输入折扣金额。':'Enter a discount amount first.';}return;}
+    if(val>10){const auth=$('discountAuthDetails');if(auth)auth.open=true;V2BossAuth.focus('discountBossId');return;}
+    runV2Action(()=>window.apply折扣());
   },true);
   window.calcMixed=calcMixed;
   window.confirmMixed=confirmMixed;
