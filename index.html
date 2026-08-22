@@ -3262,7 +3262,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       /* Do not fix the whole body to Safari's transient visual viewport. During
          a screenshot old iPad Safari can temporarily shrink that fixed layer,
          leaving a black, non-touchable strip until the app is foregrounded. */
-      html.ipad-pos,html.ipad-pos body{width:100vw!important;max-width:100vw!important;min-width:0!important;height:100vh!important;max-height:100vh!important}
+      html.ipad-pos,html.ipad-pos body{width:var(--ipad-stable-width,100vw)!important;max-width:var(--ipad-stable-width,100vw)!important;min-width:var(--ipad-stable-width,0px)!important;height:var(--ipad-stable-height,100vh)!important;max-height:var(--ipad-stable-height,100vh)!important}
       html.ipad-pos body{position:relative!important;inset:auto!important;overflow:hidden!important}
       html.ipad-pos body>.header{display:block!important;width:100%!important;min-width:0!important;box-sizing:border-box!important}
       html.ipad-pos body>.layout{display:grid!important;grid-template-columns:150px minmax(0,1fr) 310px!important;width:100%!important;min-width:0!important;height:calc(100dvh - 112px)!important;max-height:calc(100dvh - 112px)!important;overflow:hidden!important}
@@ -3274,7 +3274,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       html.ipad-pos body>.layout>.main .products{max-height:none!important;grid-template-columns:repeat(auto-fill,minmax(122px,1fr))!important}
       html.ipad-pos body>.layout>.right{height:auto!important;min-width:0!important;border-left:1px solid var(--line)!important;border-top:0!important}
       html.ipad-pos .stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-      html.ipad-pos .modal{width:100vw!important;max-width:100vw!important;height:100vh!important;max-height:100vh!important}
+      html.ipad-pos .modal{width:var(--ipad-stable-width,100vw)!important;max-width:var(--ipad-stable-width,100vw)!important;height:var(--ipad-stable-height,100vh)!important;max-height:var(--ipad-stable-height,100vh)!important}
       html.ipad-pos #bossDashboard .boss-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
       html.ipad-pos #bossDashboard .boss-tab-grid{position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
       html.ipad-pos #bossDashboard .boss-tab-grid button{text-align:left!important;justify-content:flex-start!important}
@@ -6472,7 +6472,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     const box=$('parcelMissingDates');if(!box)return;
     const recorded=new Set((recordedDates||[]).map(x=>{const s=String(x||'').trim(),m=s.match(/(20\d{2})[-\/]([01]?\d)[-\/]([0-3]?\d)/);return m?`${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`:s.slice(0,10);}).filter(Boolean));
     const missing=[],now=new Date();
-    for(let offset=0;offset<14;offset++){
+    // Today has its own dedicated form above. Backfill starts from yesterday.
+    for(let offset=1;offset<=14;offset++){
       const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-offset);
       if(d.getDay()===4)continue;
       const key=d.toLocaleDateString('en-CA');
@@ -7224,7 +7225,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       try{ window.syncOfflineOrders(); }catch(e){}
       try{ resumePendingOrderChecks(); }catch(e){}
       scheduleTopStatsRefresh(300);
-      try{ recoverViewportAndInteraction(); }catch(e){}
+      try{ if(appleTouchDevice)scheduleAppleViewportRecovery();else recoverViewportAndInteraction(); }catch(e){}
     },delay||120);
   }
   window.addEventListener('online', () => { try{ markNetworkOnline('browser online'); }catch(e){} scheduleForegroundWork(120); });
@@ -7374,6 +7375,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   if(appleTouchDevice)document.documentElement.classList.add('apple-pos');
   if(iPadDevice){
     document.documentElement.classList.add('ipad-pos');
+    const saveStableIpadCanvas=()=>{
+      const w=Math.max(Number(window.innerWidth)||0,Number(document.documentElement.clientWidth)||0);
+      const h=Math.max(Number(window.innerHeight)||0,Number(document.documentElement.clientHeight)||0);
+      if(w>0)document.documentElement.style.setProperty('--ipad-stable-width',w+'px');
+      if(h>0)document.documentElement.style.setProperty('--ipad-stable-height',h+'px');
+    };
+    saveStableIpadCanvas();
+    window.__saveStableIpadCanvas=saveStableIpadCanvas;
   }
   let appleViewportRecoveryTimer=null;
   function scheduleAppleViewportRecovery(){
@@ -7383,6 +7392,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       if(viewport&&!/width=device-width/i.test(viewport.content||''))viewport.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
       try{void document.documentElement.offsetWidth;void document.body.offsetWidth;}catch(e){}
       recoverViewportAndInteraction();
+      // Rebuild WebKit's touch hit-test layer as well as the visible canvas.
+      // Old iPad Safari can paint the full page again while retaining the
+      // half-width touch coordinates from the screenshot/share transition.
+      if(iPadDevice){
+        try{window.scrollTo(0,0);}catch(e){}
+        document.documentElement.classList.add('ipad-hit-reset');
+        document.body.style.transform='translateZ(0)';
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          document.documentElement.classList.remove('ipad-hit-reset');
+          document.body.style.transform='';
+          try{void document.body.offsetWidth;}catch(e){}
+        }));
+      }
     },180);
   }
   // iPad briefly reports a false viewport size while taking/sharing a
@@ -7392,7 +7414,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     window.addEventListener('resize',scheduleAppleViewportRecovery,{passive:true});
     if(window.visualViewport)window.visualViewport.addEventListener('resize',scheduleAppleViewportRecovery,{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
-  window.addEventListener('orientationchange',()=>setTimeout(recoverViewportAndInteraction,520),{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(()=>{if(window.__saveStableIpadCanvas)window.__saveStableIpadCanvas();recoverViewportAndInteraction();},900),{passive:true});
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
   const finalLang=()=>{try{return localStorage.getItem('yllLang')||'zh';}catch(e){return 'zh';}};
