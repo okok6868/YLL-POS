@@ -7401,7 +7401,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     window.__saveStableIpadCanvas=saveStableIpadCanvas;
   }
   let appleViewportRecoveryTimer=null;
-  let ipadHiddenAt=0,ipadSafeReloadTimer=null;
+  let ipadHiddenAt=0,ipadBlurAt=0,ipadSafeReloadTimer=null;
+  const ipadRecoveryBootAt=Date.now();
   function ipadCriticalWorkActive(){
     let busy=!!parcelSubmitting||!!window.__submitBusy||!!window.__cashCollectSubmitting||!!window.__fundExpenseSubmitting;
     try{busy=busy||!!isCheckingOut||!!window.isCheckingOut||!!offlineSyncing;}catch(e){}
@@ -7424,7 +7425,24 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
         sessionStorage.setItem('yllIpadSafeReloadAt',String(Date.now()));
         sessionStorage.setItem('yllIpadSafeReloadReason',String(reason||'viewport'));
       }catch(e){}
-      window.location.reload();
+      // A plain reload may be satisfied by the installed PWA/Service Worker
+      // with the same damaged document. Navigate to a one-time URL so WebKit
+      // must construct a new page and touch layer.
+      try{
+        const busy=$('checkoutBusy');
+        if(busy){
+          busy.textContent=finalLang()==='zh'?'正在恢复 iPad 画面，购物车会保留...':'Restoring iPad screen; cart will be kept...';
+          busy.classList.add('active');
+          busy.style.zIndex='9999';
+        }
+      }catch(e){}
+      setTimeout(()=>{
+        try{
+          const url=new URL(window.location.href);
+          url.searchParams.set('ipadRecover',String(Date.now()));
+          window.location.replace(url.toString());
+        }catch(e){window.location.reload();}
+      },180);
     },Math.max(120,Number(delay)||350));
   }
   window.__requestIpadSafeReload=requestIpadSafeReload;
@@ -7463,10 +7481,28 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   // screenshot. Never rebuild products during that transient resize: doing so
   // invoked an older renderer and visibly changed the finalized POS layout.
   if(appleTouchDevice){
-    window.addEventListener('resize',scheduleAppleViewportRecovery,{passive:true});
-    if(window.visualViewport)window.visualViewport.addEventListener('resize',scheduleAppleViewportRecovery,{passive:true});
+    const handleAppleResize=()=>{
+      scheduleAppleViewportRecovery();
+      if(!iPadDevice||Date.now()-ipadRecoveryBootAt<2200)return;
+      const active=document.activeElement;
+      const typing=!!(active&&/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName));
+      // Screenshot on this iPad does not always report a narrower width, but
+      // it does emit a resize and leaves WebKit's modal/Boss hit-test layer
+      // stale. Reload on every non-keyboard resize instead of guessing width.
+      if(!typing)requestIpadSafeReload('ipad-non-keyboard-resize',520);
+    };
+    window.addEventListener('resize',handleAppleResize,{passive:true});
+    if(window.visualViewport)window.visualViewport.addEventListener('resize',handleAppleResize,{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
   if(iPadDevice){
+    window.addEventListener('blur',()=>{ipadBlurAt=Date.now();},{passive:true});
+    window.addEventListener('focus',()=>{
+      if(ipadBlurAt&&Date.now()-ipadBlurAt>250)requestIpadSafeReload('focus-return',260);
+      ipadBlurAt=0;
+    },{passive:true});
+    window.addEventListener('pageshow',event=>{
+      if(event.persisted&&Date.now()-ipadRecoveryBootAt>2200)requestIpadSafeReload('pageshow-return',220);
+    },{passive:true});
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden){ipadHiddenAt=Date.now();return;}
       // Returning from Screenshot/Photos/WhatsApp is where old WebKit keeps a
