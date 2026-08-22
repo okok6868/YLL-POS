@@ -918,6 +918,33 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .parcel-backfill-card label:has(.parcel-backfill-no-pickup){flex-direction:row;align-items:center}
 .parcel-missing-date{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 10px;border:1px solid #334155;border-radius:10px;background:#172033}
 @media(max-width:760px){.parcel-backfill-counts{grid-template-columns:1fr}}
+/* Session 130: one stable parcel layout for desktop and old iPad Safari. */
+#parcelBox{padding:18px!important;align-items:flex-start!important;overflow:auto!important}
+#parcelBox .modal-content{width:min(920px,calc(100vw - 36px))!important;max-width:920px!important;max-height:calc(100vh - 36px)!important;overflow-y:auto!important;overflow-x:hidden!important;padding:22px!important}
+.parcel-head-grid,.parcel-today-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.parcel-today-section,.parcel-backfill-section,.parcel-recovery-section{margin-top:14px;padding:14px;border:1px solid #334155;border-radius:14px;background:#0b1222}
+.parcel-section-title{margin:0 0 10px;color:#f8fafc;font-size:16px;font-weight:900}
+.parcel-section-help{margin:-5px 0 10px;color:#94a3b8;font-size:12px;line-height:1.45}
+.parcel-no-pickup-today{margin:0;min-height:48px;justify-content:flex-start!important;text-align:left!important}
+.parcel-no-pickup-today input{flex:0 0 20px!important;width:20px!important;height:20px!important;margin:0!important}
+#parcelProvider{width:100%!important;min-height:48px!important;margin:0!important;border:1px solid #334155!important;border-radius:12px!important;background:#17233a!important;color:#f8fafc!important;padding:0 13px!important;font:inherit!important;font-weight:800!important}
+.parcel-missing-date-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.parcel-missing-date{display:flex!important;flex-direction:row!important;justify-content:flex-start!important;min-width:0!important;white-space:normal!important}
+.parcel-missing-date input{flex:0 0 20px!important;width:20px!important;height:20px!important;margin:0!important}
+.parcel-missing-date span{min-width:0!important;line-height:1.25!important;word-break:keep-all!important}
+.parcel-backfill-card label.parcel-backfill-no-pickup-label{display:flex!important;flex-direction:row!important;align-items:center!important}
+.parcel-action-row{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:14px}
+.parcel-action-row button{margin:0!important}
+.boss-auth-inline-error{margin:7px 0 0;padding:9px 11px;border:1px solid rgba(248,113,113,.55);border-radius:10px;background:rgba(127,29,29,.35);color:#fecaca;font-size:13px;font-weight:800;line-height:1.35}
+.boss-auth-inline-error[hidden]{display:none!important}
+html.apple-pos,html.apple-pos body{min-width:1024px!important;width:100%!important}
+html.apple-pos body>.header,html.apple-pos body>.layout{min-width:1024px!important}
+@media(max-width:900px){.parcel-missing-date-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media (max-width:700px) and (hover:none) and (pointer:coarse){
+  html.apple-pos body>.header{display:block!important}
+  html.apple-pos body>.layout{display:flex!important}
+  html.apple-pos .phone-admin-launcher{display:none!important}
+}
 </style>
 </head>
 <body>
@@ -1501,7 +1528,7 @@ function updateTotals(data){
   if(s)s.innerText=fmt(data.subtotal); if(d)d.innerText="- "+fmt(data.discount); if(f)f.innerText=fmt(data.final); if(r)r.classList.toggle("active",data.discount>0);
 }
 
-function open折扣(){if(!bossRequire())return; if(!cart.length){alert("🛒 购物车为空");return} update折扣Preview(discount); openModal("discountBox"); let input=document.getElementById("discountInput"); if(input){input.value=discount||""; setTimeout(()=>{input.focus();input.select()},50); input.oninput=function(){let val=Number(input.value)||0;let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(val>sub){val=sub;input.value=sub} update折扣Preview(val)}; input.onkeydown=function(e){if(e.key==="Enter")apply折扣()}}}
+function open折扣(){if(!bossRequire())return; if(!cart.length){alert("🛒 购物车为空");return} update折扣Preview(discount); openModal("discountBox"); let input=document.getElementById("discountInput"); if(input){input.value=discount||""; setTimeout(()=>{input.focus();input.select()},50); input.oninput=function(){let val=Number(input.value)||0;let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(val>sub){val=sub;input.value=sub} update折扣Preview(val)}}}
 function close折扣(){closeModal("discountBox"); let i=document.getElementById("discountInput"); if(i)i.blur()}
 function add折扣(v){let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); discount=Number(discount)||0; discount+=Number(v)||0; if(discount>sub)discount=sub; if(discount<0)discount=0; discount=Number(discount.toFixed(2)); close折扣(); showCart()}
 function apply折扣(){let input=document.getElementById("discountInput"); let val=Number(input.value); let sub=cart.reduce((a,b)=>a+b.qty*b.price,0); if(isNaN(val)){alert("请输入折扣");return} if(val>sub){alert("❗折扣不能超过总金额");return} if(val>sub*.5 && !confirm("⚠️ 折扣超过50%，确认？"))return; discount=Number(val.toFixed(2)); close折扣(); showCart()}
@@ -2597,13 +2624,10 @@ bossLogin = async function(){
   }catch(e){ if(msg){msg.textContent='登入失败：'+(e.message||e);} }
 };
 
-function installEnterHandlers(){
-  const id=document.getElementById('bossId'), pw=document.getElementById('bossPassword');
-  if(id&&!id.dataset.enterFix){id.dataset.enterFix='1';id.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault(); if(pw)pw.focus();}});}
-  if(pw&&!pw.dataset.enterFix){pw.dataset.enterFix='1';pw.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault(); bossLogin();}});}
-}
-document.addEventListener('DOMContentLoaded',()=>{installEnterHandlers(); installRefundUI();});
-setTimeout(installEnterHandlers,500);
+// Removed obsolete Boss Enter listeners. All Boss credential dialogs are
+// controlled by the single V2BossAuth handler at the end of this file.
+function installEnterHandlers(){}
+document.addEventListener('DOMContentLoaded',()=>{installRefundUI();});
 
 printReceipt = function(auto=false){
   let now=new Date(), date=now.toLocaleDateString('en-GB'), time=now.toLocaleTimeString();
@@ -2818,13 +2842,11 @@ printReceipt=function(auto=false){
   if(auto)runAutoPrint();
 };
 
-function installBossEnterHandlersFinal(){
-  const id=document.getElementById('bossId'), pw=document.getElementById('bossPassword');
-  if(id){id.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault(); if(pw)pw.focus();}};}
-  if(pw){pw.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault(); bossLogin();}};}
-}
-document.addEventListener('DOMContentLoaded',()=>{installParcelUI(); installRefundUI(); installSettingLabels(); installBossEnterHandlersFinal();});
-setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); installBossEnterHandlersFinal();},500);
+// Obsolete per-dialog Boss Enter logic intentionally removed. Keeping one
+// shared handler prevents Enter from closing or jumping to an older field.
+function installBossEnterHandlersFinal(){}
+document.addEventListener('DOMContentLoaded',()=>{installParcelUI(); installRefundUI(); installSettingLabels();});
+setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},500);
 
 
 ;
@@ -3230,6 +3252,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       body.light .boss-work-menu button.active{background:linear-gradient(135deg,#2563eb,#0891b2)!important;color:#fff!important}
       body.light .boss-work-panel{background:#eef6ff!important;border-color:#93c5fd!important}
       body.light .boss-work-panel input:not([type=checkbox]):not([type=radio]),body.light .boss-work-panel select{background:#dbeafe!important;border-color:#3b82f6!important;color:#0f172a!important}
+      /* Old iPad Safari briefly reports a phone/portrait viewport during a
+         screenshot or app switch. Keep the finished tablet composition. */
+      html.ipad-pos #parcelBox .modal-content{width:920px!important;max-width:calc(100% - 32px)!important}
+      html.ipad-pos #bossDashboard .boss-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
+      html.ipad-pos #bossDashboard .boss-tab-grid{position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
+      html.ipad-pos #bossDashboard .boss-tab-grid button{text-align:left!important;justify-content:flex-start!important}
+      html.ipad-pos #bossDashboard .boss-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      html.ipad-pos #bossDashboard .boss-money-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+      html.ipad-pos #bossProductBox .boss-product-tools,html.ipad-pos #bossLostBox .boss-product-tools{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
     `;
     document.head.appendChild(style);
   }
@@ -6314,27 +6345,24 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     releaseStaleInteractionLock();
     const box=document.querySelector('#parcelBox .modal-content');
     const localDate=new Date().toLocaleDateString('en-CA');
+    const initialProvider=String(window.__parcelEntryProvider||'SPX');
     if(box)box.innerHTML=`<h3>📦 ${lang()==='zh'?'包裹记录':'Parcel Records'}</h3>
       <p style="color:#94a3b8;font-size:13px">${esc(tr('normalParcel'))}</p>
-      <div class="boss-inline"><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'包裹公司':'Provider'}</span><select id="parcelProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'系统记录日期':'System date'}</span><input id="parcelBusinessDate" type="date" value="${esc(localDate)}" readonly tabindex="-1" style="pointer-events:none;opacity:.9"></label></div>
+      <div class="parcel-head-grid"><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'包裹公司':'Provider'}</span><select id="parcelProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'系统记录日期':'System date'}</span><input id="parcelBusinessDate" type="date" value="${esc(localDate)}" readonly tabindex="-1" style="pointer-events:none;opacity:.9"></label></div>
       <div class="parcel-auto-note" id="parcelTripNote">${esc(tr('todayTrip'))}</div>
       <div id="parcelTodayStatus" class="discount-preview">${esc(tr('loading'))}</div>
-      <div id="parcelMissingDates" class="discount-preview">${esc(lang()==='zh'?'正在检查待补日期...':'Checking missing dates...')}</div>
-      <div id="parcelBackfillForms"></div>
-      <label class="parcel-no-pickup-today"><input id="parcelNoPickup" type="checkbox"> ${esc(lang()==='zh'?'今天没有送货':'No pickup today')}</label>
-      <label class="boss-field"><span class="boss-field-label">${esc(tr('actualReceived'))}</span><input id="parcelDelivered" type="number" inputmode="numeric" min="0" placeholder="${esc(tr('actualReceived'))}"></label>
-      <label class="boss-field"><span class="boss-field-label">${esc(tr('shortParcels'))}</span><input id="parcelMissing" type="number" inputmode="numeric" min="0" placeholder="0"></label>
-      <label class="boss-field"><span class="boss-field-label">${esc(tr('returnedParcels'))}</span><input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}"></label>
-      <div id="parcelRecoveryWrap" style="display:none">
+      <section class="parcel-today-section"><h4 class="parcel-section-title">${esc(lang()==='zh'?'今天的包裹':'Today')}</h4>
+        <label class="parcel-no-pickup-today"><input id="parcelNoPickup" type="checkbox"> ${esc(lang()==='zh'?'今天没有送货':'No pickup today')}</label>
+        <div class="parcel-today-grid"><label class="boss-field"><span class="boss-field-label">${esc(tr('actualReceived'))}</span><input id="parcelDelivered" type="number" inputmode="numeric" min="0" placeholder="${esc(tr('actualReceived'))}"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('shortParcels'))}</span><input id="parcelMissing" type="number" inputmode="numeric" min="0" placeholder="0"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('returnedParcels'))}</span><input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('noteOptional'))}</span><input id="parcelNote" type="text" placeholder="${esc(tr('noteOptional'))}"></label></div>
+      </section>
+      <section class="parcel-backfill-section"><h4 class="parcel-section-title">${esc(lang()==='zh'?'漏填日期补录':'Missing daily records')}</h4><p class="parcel-section-help">${esc(lang()==='zh'?'这里只显示系统确认没有记录的营业日；星期四自动排除。':'Only dates without a record appear here; Thursdays are excluded.')}</p><div id="parcelMissingDates">${esc(lang()==='zh'?'正在检查待补日期...':'Checking missing dates...')}</div><div id="parcelBackfillForms"></div></section>
+      <section id="parcelRecoveryWrap" class="parcel-recovery-section" style="display:none"><h4 class="parcel-section-title">${esc(lang()==='zh'?'历史少包裹补回':'Recover historical shortage')}</h4><p class="parcel-section-help">${esc(lang()==='zh'?'这一区只处理以前少掉、今天补回的包裹。':'This section is only for parcels recovered today.')}</p>
         <input id="parcelRecoveryDate" type="hidden" value="">
-        <div class="discount-preview">${esc(tr('previousMissing'))}<br><small>${esc(tr('chooseRecoveryDate'))}</small></div>
         <div id="parcelRecoveryList"></div>
         <div id="parcelRecoverySelected" class="discount-preview" style="display:none"></div>
         <label class="boss-field"><span class="boss-field-label">${esc(tr('recoveredToday'))}</span><input id="parcelRecovered" type="number" inputmode="numeric" placeholder="${esc(tr('recoveredToday'))}"></label>
-      </div>
-      <label class="boss-field"><span class="boss-field-label">${esc(tr('noteOptional'))}</span><input id="parcelNote" type="text" placeholder="${esc(tr('noteOptional'))}"></label>
-      <button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">${esc(tr('saveParcelRecord'))}</button>
-      <button onclick="closeModal('parcelBox')">${esc(tr('close'))}</button>`;
+      </section>
+      <div class="parcel-action-row"><button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">${esc(tr('saveParcelRecord'))}</button><button onclick="closeModal('parcelBox')">${esc(tr('close'))}</button></div>`;
     ['parcelMissing','parcelReturned','parcelDelivered','parcelRecovered'].forEach(id=>{ const e=$(id); if(e)e.oninput=updateParcelPreview; });
     updateParcelPreview();
     setupEnterNext('#parcelBox');
@@ -6342,7 +6370,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     try{
       let providers=[];try{providers=await timeout(apiCall('getParcelProviders',[]),10000,'Parcel providers');}catch(ignore){}
       const providerSelect=$('parcelProvider');if(providerSelect&&providers.length)providerSelect.innerHTML=providers.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
-      if(providerSelect)providerSelect.onchange=()=>window.openParcelBox();
+      if(providerSelect){providerSelect.value=initialProvider;window.__parcelEntryProvider=providerSelect.value||'SPX';providerSelect.onchange=()=>{window.__parcelEntryProvider=providerSelect.value||'SPX';window.openParcelBox();};}
       let r;
       try{r=await timeout(apiCall('getParcelSummary',[1,60,(providerSelect||{}).value||'SPX']),25000,'Parcel summary');}
       catch(firstError){await new Promise(resolve=>setTimeout(resolve,700));r=await timeout(apiCall('getParcelSummary',[1,60,(providerSelect||{}).value||'SPX']),25000,'Parcel summary retry');}
@@ -6351,7 +6379,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       const noPickupToday=$('parcelNoPickup');if(noPickupToday)noPickupToday.closest('label').style.display=window.__parcelTodayRecorded?'none':'flex';
       window.__parcelLatestLogs=r.logs||[];
       window.__parcelLatestProvider=(providerSelect||{}).value||'SPX';
-      renderParcelMissingDates(window.__parcelLatestLogs,window.__parcelLatestProvider);
+      const recordedDates=[...(r.recordedDates||[]),...(r.logs||[]).map(x=>x.businessDate||x.date)];
+      renderParcelMissingDates(recordedDates,window.__parcelLatestProvider);
       const rows=(r.outstandingShortages||[]).filter(x=>num(x.outstanding)>0);
       const wrap=$('parcelRecoveryWrap'), list=$('parcelRecoveryList');
       if(wrap && list && rows.length){
@@ -6395,9 +6424,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     if(isNaN(d))return String(dateText||'');
     return d.toLocaleDateString(lang()==='zh'?'zh-CN':'en-MY',{month:'short',day:'numeric',weekday:'short'});
   }
-  function renderParcelMissingDates(logs,provider){
+  function renderParcelMissingDates(recordedDates,provider){
     const box=$('parcelMissingDates');if(!box)return;
-    const recorded=new Set((logs||[]).map(x=>String(x.businessDate||'').slice(0,10)).filter(Boolean));
+    const recorded=new Set((recordedDates||[]).map(x=>{const s=String(x||'').trim(),m=s.match(/(20\d{2})[-\/]([01]?\d)[-\/]([0-3]?\d)/);return m?`${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`:s.slice(0,10);}).filter(Boolean));
     const missing=[],now=new Date();
     for(let offset=0;offset<14;offset++){
       const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-offset);
@@ -6406,17 +6435,17 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(recorded.has(key))continue;
       missing.push(key);
     }
-    if(!missing.length){box.innerHTML=`<b>${esc(lang()==='zh'?'最近 14 天已齐全':'Last 14 days complete')}</b>`;return;}
+    if(!missing.length){box.innerHTML=`<div class="discount-preview"><b>${esc(lang()==='zh'?'最近 14 天已齐全':'Last 14 days complete')}</b></div>`;return;}
     window.__parcelMissingDates=missing;
     window.__parcelSelectedDates=new Set();
-    box.innerHTML=`<b>${esc(lang()==='zh'?'系统发现待补日期（星期四已排除）':'System-detected missing dates (Thursdays excluded)')}</b><div class="parcel-missing-date-grid">${missing.map(date=>`<label class="parcel-missing-date"><input type="checkbox" data-parcel-date="${esc(date)}"> <span>${esc(parcelDateLabel(date))}</span></label>`).join('')}</div>`;
+    box.innerHTML=`<div class="parcel-missing-date-grid">${missing.map(date=>`<label class="parcel-missing-date"><input type="checkbox" data-parcel-date="${esc(date)}"> <span>${esc(parcelDateLabel(date))}</span></label>`).join('')}</div>`;
     box.onchange=e=>{const input=e.target&&e.target.matches&&e.target.matches('input[data-parcel-date]')?e.target:null;if(!input)return;chooseParcelMissingDate(input.dataset.parcelDate,input.checked);};
   }
   window.chooseParcelMissingDate=function(date,checked){
     if(!window.__parcelSelectedDates)window.__parcelSelectedDates=new Set();
     if(checked===false)window.__parcelSelectedDates.delete(String(date));else window.__parcelSelectedDates.add(String(date));
     const wrap=$('parcelBackfillForms');if(!wrap)return;
-    wrap.innerHTML=[...window.__parcelSelectedDates].sort().map(d=>`<section class="parcel-backfill-card" data-date="${esc(d)}"><h4>${esc(parcelDateLabel(d))}</h4><label><input class="parcel-backfill-no-pickup" type="checkbox"> ${esc(lang()==='zh'?'当天没有送货':'No pickup that day')}</label><div class="parcel-backfill-counts"><label>${esc(tr('actualReceived'))}<input class="parcel-backfill-delivered" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('shortParcels'))}<input class="parcel-backfill-missing" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('returnedParcels'))}<input class="parcel-backfill-returned" type="number" inputmode="numeric" min="0" value="0"></label></div><label>${esc(tr('noteOptional'))}<input class="parcel-backfill-note" type="text"></label></section>`).join('');
+    wrap.innerHTML=[...window.__parcelSelectedDates].sort().map(d=>`<section class="parcel-backfill-card" data-date="${esc(d)}"><h4>${esc(parcelDateLabel(d))}</h4><label class="parcel-backfill-no-pickup-label"><input class="parcel-backfill-no-pickup" type="checkbox"> ${esc(lang()==='zh'?'当天没有送货':'No pickup that day')}</label><div class="parcel-backfill-counts"><label>${esc(tr('actualReceived'))}<input class="parcel-backfill-delivered" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('shortParcels'))}<input class="parcel-backfill-missing" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('returnedParcels'))}<input class="parcel-backfill-returned" type="number" inputmode="numeric" min="0" value="0"></label></div><label>${esc(tr('noteOptional'))}<input class="parcel-backfill-note" type="text"></label></section>`).join('');
     wrap.querySelectorAll('.parcel-backfill-no-pickup').forEach(input=>input.onchange=()=>{const card=input.closest('.parcel-backfill-card');card.querySelectorAll('input:not(.parcel-backfill-no-pickup)').forEach(x=>x.disabled=input.checked);});
   };
   window.updateParcelPreview = function(){
@@ -7289,6 +7318,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   };
 
   const appleTouchDevice=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const iPadDevice=/iPad/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(appleTouchDevice)document.documentElement.classList.add('apple-pos');
+  if(iPadDevice){
+    document.documentElement.classList.add('ipad-pos');
+    const viewport=document.querySelector('meta[name="viewport"]');
+    if(viewport)viewport.setAttribute('content','width=1024, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+  }
   // iPad briefly reports a false viewport size while taking/sharing a
   // screenshot. Never rebuild products during that transient resize: doing so
   // invoked an older renderer and visibly changed the finalized POS layout.
@@ -7296,11 +7332,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
   window.addEventListener('orientationchange',()=>setTimeout(recoverViewportAndInteraction,520),{passive:true});
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
+  const finalLang=()=>{try{return localStorage.getItem('yllLang')||'zh';}catch(e){return 'zh';}};
   function openMixedPaymentFinal(){
-    if(!currentCart().length){showAppAlert(cartEmptyMessage(),lang()==='zh'?'混合付款':'Mixed Payment');return;}
+    if(!currentCart().length){showAppAlert(cartEmptyMessage(),finalLang()==='zh'?'混合付款':'Mixed Payment');return;}
     releaseStaleInteractionLock();
     const data=calcCartData();cashTotal=data.final;
-    const zh=lang()==='zh',box=$('mixedBox');
+    const zh=finalLang()==='zh',box=$('mixedBox');
     const title=box&&box.querySelector('h3');if(title)title.textContent=zh?'➗ 混合付款':'➗ Mixed Payment';
     const total=$('mixedTotal');if(total)total.textContent=(zh?'应付 ':'Total ')+fmt(data.final);
     const labels=zh?{mixedCash:'现金金额',mixedQr:'QR 金额','mixed转账':'转账金额'}:{mixedCash:'Cash amount',mixedQr:'QR amount','mixed转账':'Transfer amount'};
@@ -7341,6 +7378,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     };
     if(submitActions[button.id]){
       e.preventDefault();e.stopImmediatePropagation();
+      if(!V2BossAuth.validateSubmit(button.id))return;
       runV2Action(submitActions[button.id]);
     }
   },true);
@@ -7358,11 +7396,27 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
     ],
     find(target){return this.flows.find(flow=>target&&[flow.id,flow.password].includes(target.id));},
     focus(id){const el=$(id);if(el){el.focus();try{el.select();}catch(err){}}},
+    status(flow){
+      const password=$(flow.password);if(!password)return null;
+      let status=$(flow.password+'InlineError');
+      if(!status){status=document.createElement('div');status.id=flow.password+'InlineError';status.className='boss-auth-inline-error';status.setAttribute('role','alert');password.insertAdjacentElement('afterend',status);}
+      return status;
+    },
+    clear(flow){const status=this.status(flow);if(status){status.textContent='';status.hidden=true;}},
     missing(flow,message){
       const details=flow.details&&$(flow.details);if(details)details.open=true;
       const id=$(flow.id),password=$(flow.password),missing=!(id&&id.value.trim())?flow.id:flow.password;
-      showAppAlert(message||(lang()==='zh'?'请输入老板帐号和密码。':'Enter Boss ID and password.'),lang()==='zh'?'老板权限':'Boss authorization');
-      setTimeout(()=>this.focus(missing),80);
+      const status=this.status(flow);if(status){status.hidden=false;status.textContent=message||(finalLang()==='zh'?'请输入老板帐号和密码。':'Enter Boss ID and password.');}
+      setTimeout(()=>this.focus(missing),30);
+      return false;
+    },
+    flowBySubmit(submit){return this.flows.find(flow=>flow.submit===submit);},
+    validateSubmit(submit){
+      const flow=this.flowBySubmit(submit);if(!flow)return true;
+      const id=$(flow.id),password=$(flow.password);
+      if(!(id&&id.value.trim()))return this.missing(flow,finalLang()==='zh'?'请先输入老板帐号。':'Enter Boss ID first.');
+      if(!(password&&password.value))return this.missing(flow,finalLang()==='zh'?'请输入老板密码。':'Enter Boss password.');
+      this.clear(flow);return true;
     },
     enter(event){
       if(!(event.key==='Enter'||event.code==='NumpadEnter'||event.keyCode===13))return;
@@ -7371,12 +7425,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
       if(event.repeat)return;
       const id=$(flow.id),password=$(flow.password);
       if(event.target.id===flow.id){
-        if(!(id&&id.value.trim())){this.missing(flow,lang()==='zh'?'请先输入老板帐号。':'Enter Boss ID first.');return;}
+        if(!(id&&id.value.trim())){this.missing(flow,finalLang()==='zh'?'请先输入老板帐号。':'Enter Boss ID first.');return;}
+        this.clear(flow);
         this.focus(flow.password);return;
       }
-      if(!(id&&id.value.trim())||!(password&&password.value)){
-        this.missing(flow);return;
-      }
+      if(!(id&&id.value.trim())){this.missing(flow,finalLang()==='zh'?'请先输入老板帐号。':'Enter Boss ID first.');return;}
+      if(!(password&&password.value)){this.missing(flow,finalLang()==='zh'?'请输入老板密码。':'Enter Boss password.');return;}
       const button=$(flow.submit);if(!button||button.disabled)return;
       const actions={
         bossLoginBtn:()=>bossLogin(),
@@ -7384,10 +7438,11 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels(); in
         refundSubmitBtn:()=>window.submitRefund(),
         shopeeStockSubmit:()=>window.submitShopeeStockOut()
       };
-      if(actions[flow.submit])runV2Action(actions[flow.submit]);
+      if(actions[flow.submit]&&this.validateSubmit(flow.submit))runV2Action(actions[flow.submit]);
     }
   };
   document.addEventListener('keydown',event=>V2BossAuth.enter(event),true);
+  document.addEventListener('input',event=>{const flow=V2BossAuth.find(event.target);if(flow)V2BossAuth.clear(flow);},true);
 
   // Discount amount itself is not part of credential navigation.
   document.addEventListener('keydown',function(e){
