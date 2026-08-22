@@ -6380,7 +6380,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   }
 
   window.openParcelBox = async function(){
-    parcelSubmitting=false;
+    if(parcelSubmitting){
+      if(typeof showToast==='function')showToast(lang()==='zh'?'包裹记录正在后台保存，请勿重复提交。':'Parcel record is saving in the background.');
+      return;
+    }
     window.__parcelRecoveryDate='';
     window.__parcelRecoveryOutstanding=0;
     setSubmitBusy(false);
@@ -6538,15 +6541,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     });
     if(!entries.length){showAppAlert(lang()==='zh'?'请填写今天或所选补录日期的资料。':'Fill today or a selected backfill date.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
     parcelSubmitting=true;
-    setSubmitBusy(true,lang()==='zh'?'正在保存包裹记录，请稍等...':'Saving parcel record, please wait...');
-    const submitWatchdog=setTimeout(()=>{
-      parcelSubmitting=false;
-      releaseStaleInteractionLock();
-    },45000);
-    const btn=$('parcelSubmitBtn');
-    const fields=[...document.querySelectorAll('#parcelBox input,#parcelBox button')];
-    fields.forEach(el=>{ el.disabled=true; });
-    if(btn){btn.disabled=true; btn.textContent=tr('submittingParcel');}
+    // Parcel logging must never block a customer checkout. The payload and
+    // idempotent client IDs are already captured, so close the form and let
+    // Apps Script finish in the background.
+    closeModal('parcelBox');
+    releaseStaleInteractionLock();
+    if(typeof showToast==='function')showToast(lang()==='zh'?'正在后台保存包裹记录，可以继续买单。':'Saving parcel record in background; checkout remains available.');
     let savedResult=null;
     try{
       const r=await apiCallTransient('saveParcelEntries',[entries],55000,'Parcel batch save');
@@ -6561,19 +6561,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       if(allSaved){
         savedResult={duplicate:false};
       }else{
-        showAppAlert(tr('shopeeSaveFailed')+(e.message||e)+`\nClientId: ${clientId}`,tr('shopee'));
+        if(typeof showToast==='function')showToast((lang()==='zh'?'包裹记录回传较慢，请先不要重复提交。编号：':'Parcel response is slow; do not resubmit yet. ID: ')+clientId);
       }
     }
     finally{
-      clearTimeout(submitWatchdog);
       parcelSubmitting=false;
-      setSubmitBusy(false);
-      fields.forEach(el=>{ el.disabled=false; });
-      if(btn){btn.disabled=false; btn.textContent=tr('saveParcelRecord');}
       releaseStaleInteractionLock();
     }
     if(savedResult){
-      closeModal('parcelBox');
       releaseStaleInteractionLock();
       parcelReminderCheckedAt=0;
       scheduleTopStatsRefresh(250);
@@ -7376,8 +7371,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   if(iPadDevice){
     document.documentElement.classList.add('ipad-pos');
     const saveStableIpadCanvas=()=>{
-      const w=Math.max(Number(window.innerWidth)||0,Number(document.documentElement.clientWidth)||0);
-      const h=Math.max(Number(window.innerHeight)||0,Number(document.documentElement.clientHeight)||0);
+      const innerW=Math.max(Number(window.innerWidth)||0,Number(document.documentElement.clientWidth)||0);
+      const innerH=Math.max(Number(window.innerHeight)||0,Number(document.documentElement.clientHeight)||0);
+      const screenLong=Math.max(Number(screen.width)||0,Number(screen.height)||0);
+      const screenShort=Math.min(Number(screen.width)||0,Number(screen.height)||0);
+      const landscape=innerW>=innerH;
+      // Old iPad PWA may initially expose the portrait width (768) while the
+      // device is already landscape (1024). Screen long/short sides are stable
+      // during screenshots, unlike visualViewport and sometimes innerWidth.
+      const w=landscape?Math.max(innerW,screenLong):Math.max(innerW,screenShort);
+      const h=landscape?Math.max(innerH,screenShort):Math.max(innerH,screenLong);
       if(w>0)document.documentElement.style.setProperty('--ipad-stable-width',w+'px');
       if(h>0)document.documentElement.style.setProperty('--ipad-stable-height',h+'px');
     };
