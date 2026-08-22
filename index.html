@@ -928,6 +928,9 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .parcel-no-pickup-today{margin:0;min-height:48px;justify-content:flex-start!important;text-align:left!important}
 .parcel-no-pickup-today input{flex:0 0 20px!important;width:20px!important;height:20px!important;margin:0!important}
 #parcelProvider{width:100%!important;min-height:48px!important;margin:0!important;border:1px solid #334155!important;border-radius:12px!important;background:#17233a!important;color:#f8fafc!important;padding:0 13px!important;font:inherit!important;font-weight:800!important}
+.parcel-readonly-date{display:flex!important;align-items:center!important;width:100%!important;height:48px!important;min-height:48px!important;box-sizing:border-box!important;margin:0!important;padding:0 13px!important;border:1px solid #334155!important;border-radius:12px!important;background:#0b1325!important;color:#e5edf9!important;font-weight:800!important;line-height:1!important;user-select:none!important}
+.parcel-head-grid>.boss-field{display:grid!important;grid-template-rows:auto 48px!important;align-content:start!important;gap:6px!important;margin:0!important}
+.parcel-head-grid>.boss-field>select{height:48px!important;min-height:48px!important;box-sizing:border-box!important}
 .parcel-missing-date-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 .parcel-missing-date{display:flex!important;flex-direction:row!important;justify-content:flex-start!important;min-width:0!important;white-space:normal!important}
 .parcel-missing-date input{flex:0 0 20px!important;width:20px!important;height:20px!important;margin:0!important}
@@ -3255,6 +3258,20 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       /* Old iPad Safari briefly reports a phone/portrait viewport during a
          screenshot or app switch. Keep the finished tablet composition. */
       html.ipad-pos #parcelBox .modal-content{width:920px!important;max-width:calc(100% - 32px)!important}
+      /* Screenshot/share can make old iPad Safari report a temporary width
+         below 900px.  The old phone media query must never replace the POS
+         three-column composition on an actual iPad. */
+      html.ipad-pos body{overflow:hidden!important;min-width:0!important;width:100%!important}
+      html.ipad-pos body>.header{display:block!important;width:100%!important;min-width:0!important;box-sizing:border-box!important}
+      html.ipad-pos body>.layout{display:grid!important;grid-template-columns:150px minmax(0,1fr) 310px!important;width:100%!important;min-width:0!important;height:calc(100dvh - 112px)!important;max-height:calc(100dvh - 112px)!important;overflow:hidden!important}
+      html.ipad-pos body>.layout>.sidebar{display:block!important;width:auto!important;min-width:0!important;overflow-y:auto!important;border-right:1px solid var(--line)!important;border-bottom:0!important;padding:14px 10px 10px!important}
+      html.ipad-pos body>.layout>.sidebar .cat-btn{width:100%!important;min-width:0!important;margin:0 0 8px!important}
+      html.ipad-pos body>.layout>.main{min-height:0!important;height:auto!important;overflow:hidden!important}
+      html.ipad-pos body>.layout>.main .topline{flex-wrap:nowrap!important}
+      html.ipad-pos body>.layout>.main .search-wrap{order:initial!important;width:auto!important;min-width:0!important}
+      html.ipad-pos body>.layout>.main .products{max-height:none!important;grid-template-columns:repeat(auto-fill,minmax(122px,1fr))!important}
+      html.ipad-pos body>.layout>.right{height:auto!important;min-width:0!important;border-left:1px solid var(--line)!important;border-top:0!important}
+      html.ipad-pos .stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
       html.ipad-pos #bossDashboard .boss-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
       html.ipad-pos #bossDashboard .boss-tab-grid{position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
       html.ipad-pos #bossDashboard .boss-tab-grid button{text-align:left!important;justify-content:flex-start!important}
@@ -6348,7 +6365,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     const initialProvider=String(window.__parcelEntryProvider||'SPX');
     if(box)box.innerHTML=`<h3>📦 ${lang()==='zh'?'包裹记录':'Parcel Records'}</h3>
       <p style="color:#94a3b8;font-size:13px">${esc(tr('normalParcel'))}</p>
-      <div class="parcel-head-grid"><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'包裹公司':'Provider'}</span><select id="parcelProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'系统记录日期':'System date'}</span><input id="parcelBusinessDate" type="date" value="${esc(localDate)}" readonly tabindex="-1" style="pointer-events:none;opacity:.9"></label></div>
+      <div class="parcel-head-grid"><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'包裹公司':'Provider'}</span><select id="parcelProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select></label><div class="boss-field"><span class="boss-field-label">${lang()==='zh'?'系统记录日期':'System date'}</span><div id="parcelBusinessDateText" class="parcel-readonly-date">${esc(localDate)}</div><input id="parcelBusinessDate" type="hidden" value="${esc(localDate)}"></div></div>
       <div class="parcel-auto-note" id="parcelTripNote">${esc(tr('todayTrip'))}</div>
       <div id="parcelTodayStatus" class="discount-preview">${esc(tr('loading'))}</div>
       <section class="parcel-today-section"><h4 class="parcel-section-title">${esc(lang()==='zh'?'今天的包裹':'Today')}</h4>
@@ -6381,7 +6398,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       window.__parcelLatestProvider=(providerSelect||{}).value||'SPX';
       const recordedDates=[...(r.recordedDates||[]),...(r.logs||[]).map(x=>x.businessDate||x.date)];
       renderParcelMissingDates(recordedDates,window.__parcelLatestProvider);
-      const rows=(r.outstandingShortages||[]).filter(x=>num(x.outstanding)>0);
+       /* Only DIRECT_V2 shortages are precise shortages.  Legacy rows used
+          the former expected-total workflow and must never ask for recovery. */
+       const rows=(r.outstandingShortages||[]).filter(x=>num(x.outstanding)>0&&x.precise!==false);
       const wrap=$('parcelRecoveryWrap'), list=$('parcelRecoveryList');
       if(wrap && list && rows.length){
         wrap.style.display='block';
@@ -7333,6 +7352,24 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
   const finalLang=()=>{try{return localStorage.getItem('yllLang')||'zh';}catch(e){return 'zh';}};
+  /* Keep one globally resolvable language helper for any surviving inline
+     handler while V2 cleanup continues. */
+  window.lang=finalLang;
+  function calcMixedFinal(){
+    const data=calcCartData();
+    const cash=moneyNum(($('mixedCash')||{}).value||0),qr=moneyNum(($('mixedQr')||{}).value||0),transfer=moneyNum(($('mixed转账')||{}).value||0);
+    const paid=fromCents(cents(cash)+cents(qr)+cents(transfer)),remain=fromCents(cents(data.final)-cents(paid)),el=$('mixedRemain');
+    if(el)el.textContent=(finalLang()==='zh'?(remain>0?'剩余 ':'找钱 '):(remain>0?'Remaining ':'Change '))+fmt(Math.abs(remain));
+  }
+  function confirmMixedFinal(){
+    const data=calcCartData();
+    const cash=moneyNum(($('mixedCash')||{}).value||0),qr=moneyNum(($('mixedQr')||{}).value||0),transfer=moneyNum(($('mixed转账')||{}).value||0);
+    const paid=fromCents(cents(cash)+cents(qr)+cents(transfer));
+    if(cents(paid)<cents(data.final)){showAppAlert(finalLang()==='zh'?'混合付款金额不足。':'Mixed payment is not enough.',finalLang()==='zh'?'混合付款':'Mixed Payment');return;}
+    const change=fromCents(Math.max(0,cents(paid)-cents(data.final)));
+    lastMixedBreakdown={cash:cash,qr:qr,transfer:transfer};
+    closeModal('mixedBox');checkout('mixed',paid,change);
+  }
   function openMixedPaymentFinal(){
     if(!currentCart().length){showAppAlert(cartEmptyMessage(),finalLang()==='zh'?'混合付款':'Mixed Payment');return;}
     releaseStaleInteractionLock();
@@ -7343,7 +7380,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     const labels=zh?{mixedCash:'现金金额',mixedQr:'QR 金额','mixed转账':'转账金额'}:{mixedCash:'Cash amount',mixedQr:'QR amount','mixed转账':'Transfer amount'};
     Object.keys(labels).forEach(id=>{const el=$(id);if(el){el.value='';el.placeholder=labels[id];}});
     const btn=box&&box.querySelector('button.green');if(btn)btn.textContent=zh?'✅ 确认混合付款':'✅ Confirm Mixed Payment';
-    calcMixed();openModal('mixedBox');
+    calcMixedFinal();openModal('mixedBox');
   }
   window.openMixedPayment=openMixedPaymentFinal;
   // V2 has one payment controller. Static buttons no longer carry inline
@@ -7363,7 +7400,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       payTransferBtn:()=>confirmDirectCheckout('transfer','Transfer'),
       payQrBtn:()=>confirmDirectCheckout('mbb_qr','QR'),
       payMixedBtn:()=>openMixedPaymentFinal(),
-      mixedConfirmBtn:()=>confirmMixed()
+      mixedConfirmBtn:()=>confirmMixedFinal()
     };
     if(paymentActions[button.id]){
       e.preventDefault();e.stopImmediatePropagation();
@@ -7383,7 +7420,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     }
   },true);
   ['mixedCash','mixedQr','mixed转账'].forEach(function(id){
-    const input=$(id);if(input)input.addEventListener('input',calcMixed,{passive:true});
+    const input=$(id);if(input)input.addEventListener('input',calcMixedFinal,{passive:true});
   });
 
   // The only Boss authorization keyboard controller in V2.
@@ -7453,8 +7490,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     if(val>10){const auth=$('discountAuthDetails');if(auth)auth.open=true;V2BossAuth.focus('discountBossId');return;}
     runV2Action(()=>window.apply折扣());
   },true);
-  window.calcMixed=calcMixed;
-  window.confirmMixed=confirmMixed;
+  window.calcMixed=calcMixedFinal;
+  window.confirmMixed=confirmMixedFinal;
   recoverViewportAndInteraction();
 })();
 
