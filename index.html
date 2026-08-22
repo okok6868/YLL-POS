@@ -940,8 +940,6 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .parcel-action-row button{margin:0!important}
 .boss-auth-inline-error{margin:7px 0 0;padding:9px 11px;border:1px solid rgba(248,113,113,.55);border-radius:10px;background:rgba(127,29,29,.35);color:#fecaca;font-size:13px;font-weight:800;line-height:1.35}
 .boss-auth-inline-error[hidden]{display:none!important}
-html.apple-pos,html.apple-pos body{min-width:1024px!important;width:100%!important}
-html.apple-pos body>.header,html.apple-pos body>.layout{min-width:1024px!important}
 @media(max-width:900px){.parcel-missing-date-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media (max-width:700px) and (hover:none) and (pointer:coarse){
   html.apple-pos body>.header{display:block!important}
@@ -3278,6 +3276,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       html.ipad-pos #bossDashboard .boss-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
       html.ipad-pos #bossDashboard .boss-money-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important}
       html.ipad-pos #bossProductBox .boss-product-tools,html.ipad-pos #bossLostBox .boss-product-tools{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+      #parcelBackfillForms{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;margin-top:12px!important}
+      #parcelBackfillForms .parcel-backfill-card{min-width:0!important;margin:0!important;padding:13px!important;height:auto!important;min-height:0!important;align-self:start!important}
+      #parcelBackfillForms .parcel-backfill-no-pickup-label{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:9px!important;width:100%!important;min-height:38px!important;white-space:nowrap!important}
+      #parcelBackfillForms .parcel-backfill-no-pickup-label input[type="checkbox"]{appearance:auto!important;flex:0 0 24px!important;width:24px!important;min-width:24px!important;max-width:24px!important;height:24px!important;min-height:24px!important;margin:0!important;padding:0!important}
+      #parcelBackfillForms .parcel-backfill-counts{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin:8px 0!important}
+      #parcelBackfillForms .parcel-backfill-card input:not([type="checkbox"]){width:100%!important;min-width:0!important;margin:3px 0!important}
+      @media(max-width:720px){#parcelBackfillForms{grid-template-columns:1fr!important}}
     `;
     document.head.appendChild(style);
   }
@@ -5810,9 +5815,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   }
   function finishSlowOrder(clientId, sendDiscount, pendingPayload){
     if(pendingPayload)pendingPayload.slow=true;
-    setCheckoutBusy(true);
-    const busy=$('checkoutBusy'),number=Number((pendingPayload&&pendingPayload.expectedNumber)||0)||'?';
-    if(busy)busy.textContent=trf('quietlyConfirming',{number:number});
+    // A slow Apps Script response must not lock the whole counter for minutes.
+    // Keep the cart and idempotency key, release the UI, and verify quietly.
+    setCheckoutBusy(false);
+    const number=Number((pendingPayload&&pendingPayload.expectedNumber)||0)||'?';
+    showAppAlert(lang()==='zh'
+      ?`第 ${number} 张买单暂时没有确认写入。购物车已经保留，系统会在后台继续检查；请先不要重复建立另一张相同订单。`
+      :`Order ${number} has not been confirmed yet. The cart was kept and the POS will continue checking in the background; do not create a second copy of the same order yet.`,tr('payment'));
   }
   function confirmPendingInBackground(clientId,pendingPayload){
     if(!clientId || !navigator.onLine)return;
@@ -6087,6 +6096,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       finishSavedOrder(res.orderId, sendDiscount, checkoutKey);
     }catch(err){
       {
+        // Validation and programming errors will never become successful by
+        // waiting. Show the real reason immediately and leave the cart intact.
+        if(!isTransientApiError(err)){
+          removePendingOnlineOrder(clientId);
+          clearActiveCheckout(checkoutKey);
+          setCheckoutBusy(false);
+          showAppAlert((lang()==='zh'?'买单没有写入：':'Order was not saved: ')+cleanMessage((err&&err.message)||err),tr('payment'));
+          return;
+        }
         for(const waitMs of [500,1200,2400]){
           try{
             await sleep(waitMs);
@@ -7341,8 +7359,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   if(appleTouchDevice)document.documentElement.classList.add('apple-pos');
   if(iPadDevice){
     document.documentElement.classList.add('ipad-pos');
-    const viewport=document.querySelector('meta[name="viewport"]');
-    if(viewport)viewport.setAttribute('content','width=1024, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
   }
   // iPad briefly reports a false viewport size while taking/sharing a
   // screenshot. Never rebuild products during that transient resize: doing so
