@@ -2135,7 +2135,7 @@ async function bossLoadLowStock(){
   try{let rows=await apiCall("getLowStock",[5]); box.textContent=(rows||[]).map(p=>`${p.name} | Stock: ${p.stock}`).join("\n")||"没有低库存";}catch(e){box.textContent="失败："+(e.message||e)}
 }
 
-function openModal(id){closeAllModal();let m=document.getElementById(id);if(m){m.classList.add("active");m.scrollTop=0}document.body.classList.add("modal-open");if(id==='parcelBox'){try{sessionStorage.setItem('yllResumeModal','parcelBox')}catch(e){}}}
+function openModal(id){closeAllModal();let m=document.getElementById(id);if(m){m.classList.add("active");m.scrollTop=0}document.body.classList.add("modal-open");if(id==='parcelBox'){try{sessionStorage.removeItem('yllResumeModal')}catch(e){}}}
 function closeModal(id){let m=document.getElementById(id);if(m)m.classList.remove("active");if(id==='parcelBox'){try{sessionStorage.removeItem('yllResumeModal')}catch(e){}} if(!document.querySelector(".modal.active"))document.body.classList.remove("modal-open")}
 function closeAllModal(){document.querySelectorAll(".modal").forEach(m=>m.classList.remove("active"));document.body.classList.remove("modal-open")}
 function showConfirm(text,callback){let e=document.getElementById("confirmText"); if(e)e.innerText=text; confirmCallback=callback; openModal("confirmModal")}
@@ -6432,12 +6432,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
         <div class="parcel-today-grid"><label class="boss-field"><span class="boss-field-label">${esc(tr('actualReceived'))}</span><input id="parcelDelivered" type="number" inputmode="numeric" min="0" placeholder="${esc(tr('actualReceived'))}"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('shortParcels'))}</span><input id="parcelMissing" type="number" inputmode="numeric" min="0" placeholder="0"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('returnedParcels'))}</span><input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('noteOptional'))}</span><input id="parcelNote" type="text" placeholder="${esc(tr('noteOptional'))}"></label></div>
       </section>
       <section class="parcel-backfill-section"><h4 class="parcel-section-title">${esc(lang()==='zh'?'漏填日期补录':'Missing daily records')}</h4><p class="parcel-section-help">${esc(lang()==='zh'?'这里只显示系统确认没有记录的营业日；星期四自动排除。':'Only dates without a record appear here; Thursdays are excluded.')}</p><div id="parcelMissingDates">${esc(lang()==='zh'?'正在检查待补日期...':'Checking missing dates...')}</div><div id="parcelBackfillForms"></div></section>
-      <section id="parcelRecoveryWrap" class="parcel-recovery-section" style="display:none"><h4 class="parcel-section-title">${esc(lang()==='zh'?'历史少包裹补回':'Recover historical shortage')}</h4><p class="parcel-section-help">${esc(lang()==='zh'?'这一区只处理以前少掉、今天补回的包裹。':'This section is only for parcels recovered today.')}</p>
-        <input id="parcelRecoveryDate" type="hidden" value="">
-        <div id="parcelRecoveryList"></div>
-        <div id="parcelRecoverySelected" class="discount-preview" style="display:none"></div>
-        <label class="boss-field"><span class="boss-field-label">${esc(tr('recoveredToday'))}</span><input id="parcelRecovered" type="number" inputmode="numeric" placeholder="${esc(tr('recoveredToday'))}"></label>
-      </section>
       <div class="parcel-action-row"><button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">${esc(tr('saveParcelRecord'))}</button><button onclick="closeModal('parcelBox')">${esc(tr('close'))}</button></div>`;
     ['parcelMissing','parcelReturned','parcelDelivered','parcelRecovered'].forEach(id=>{ const e=$(id); if(e)e.oninput=updateParcelPreview; });
     updateParcelPreview();
@@ -6459,37 +6453,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       window.__parcelLatestProvider=(providerSelect||{}).value||'SPX';
       const recordedDates=[...(r.recordedDates||[]),...(r.logs||[]).map(x=>x.businessDate||x.date)];
       renderParcelMissingDates(recordedDates,window.__parcelLatestProvider);
-       /* Only DIRECT_V2 shortages are precise shortages.  Legacy rows used
-          the former expected-total workflow and must never ask for recovery. */
-       const rows=(r.outstandingShortages||[]).filter(x=>num(x.outstanding)>0&&x.precise!==false);
-      const wrap=$('parcelRecoveryWrap'), list=$('parcelRecoveryList');
-      if(wrap && list && rows.length){
-        wrap.style.display='block';
-        list.className='parcel-short-list';
-        list.innerHTML=rows.map(x=>`<button type="button" class="parcel-short-card" data-recovery-date="${esc(x.date)}" data-recovery-outstanding="${num(x.outstanding)}">
-          <div class="parcel-short-date">${esc(x.date)}</div>
-          <div class="parcel-short-grid">
-            <span>${esc(tr('missing'))}<b>${num(x.missing)}</b></span>
-            <span>${esc(tr('recovered'))}<b>${num(x.recovered)}</b></span>
-            <span>${esc(tr('stillMissing'))}<b>${num(x.outstanding)}</b></span>
-          </div>
-        </button>`).join('');
-        list.onclick=e=>{
-          const card=e.target&&e.target.closest?e.target.closest('.parcel-short-card'):null;
-          if(!card||!list.contains(card))return;
-          e.preventDefault();e.stopPropagation();
-          selectParcelRecoveryDate(card.dataset.recoveryDate,num(card.dataset.recoveryOutstanding),card);
-        };
-      }
     }catch(e){
       const el=$('parcelTodayStatus');
       if(el)el.innerHTML=`<b>${esc(tr('todayParcelStatus'))}</b><br>${esc(lang()==='zh'?'资料回应较慢；可以稍后再开，不能代表网络断线。':'Data response is slow. Try again later; this does not necessarily mean the network is offline.')}`;
     }
   };
-  /* Compact daily entry: every provider is visible at once.  The proven
-     detailed screen remains available only for backfill/recovery work. */
-  const openParcelBoxDetailed=window.openParcelBox;
-  window.openParcelBoxDetailed=openParcelBoxDetailed;
+  /* Compact daily entry: every provider is visible at once. */
   window.openParcelBox=async function(){
     if(parcelSubmitting){showToast(lang()==='zh'?'包裹记录正在后台保存，请勿重复提交。':'Parcel record is saving.');return;}
     releaseStaleInteractionLock();
@@ -6499,7 +6468,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       <p style="color:#94a3b8;font-size:13px;margin-bottom:8px">${esc(lang()==='zh'?'所有公司直接显示；收到哪一家，就在那张卡片记录。':'All providers are shown. Record directly in the matching card.')}</p>
       <div class="parcel-readonly-date" style="height:42px!important;min-height:42px!important">${esc(lang()==='zh'?`系统日期：${localDate}`:`System date: ${localDate}`)}</div>
       <div id="parcelProviderCards" class="parcel-provider-grid"><div class="discount-preview">${esc(tr('loading'))}</div></div>
-      <details class="parcel-secondary-tools"><summary>🗓️ ${esc(lang()==='zh'?'漏填日期 / 历史少包裹补回':'Backfill / historical recovery')}</summary><div><p class="parcel-section-help">${esc(lang()==='zh'?'只有需要补以前记录时才打开。':'Open only when an earlier record needs attention.')}</p><button type="button" onclick="closeModal('parcelBox');setTimeout(()=>openParcelBoxDetailed(),80)">${esc(lang()==='zh'?'打开补录画面':'Open backfill')}</button></div></details>
+      <details class="parcel-secondary-tools"><summary>🗓️ ${esc(lang()==='zh'?'漏填记录补录':'Missing-day entry')}</summary><div><p class="parcel-section-help">${esc(lang()==='zh'?'系统只列出最近14天完全没有记录的营业日；没有漏填就不会出现输入框。':'Only business days with no record in the last 14 days are listed.')}</p><button type="button" onclick="openParcelBackfill()">${esc(lang()==='zh'?'检查漏填日期':'Check missing dates')}</button></div></details>
       <div class="parcel-action-row" style="grid-template-columns:1fr"><button onclick="closeModal('parcelBox')">${esc(tr('close'))}</button></div>`;
     openModal('parcelBox');
     let providers=[];
@@ -6518,6 +6487,26 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
         updateParcelProviderCard(p.id,(r&&r.today)||{},(r&&r.outstandingShortages)||[]);
       }catch(e){updateParcelProviderCard(p.id,null,[]);}
     }));
+  };
+  window.openParcelBackfill=async function(){
+    const box=document.querySelector('#parcelBox .modal-content');if(!box)return;
+    box.innerHTML=`<h3>🗓️ ${esc(lang()==='zh'?'漏填记录补录':'Missing-day entry')}</h3><p class="parcel-section-help">${esc(lang()==='zh'?'选择公司后，系统只显示最近14天完全没有记录的营业日；星期四自动排除。':'Only missing business days in the last 14 days are shown; Thursdays are excluded.')}</p><label class="boss-field"><span class="boss-field-label">${esc(lang()==='zh'?'包裹公司':'Provider')}</span><select id="parcelBackfillProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select></label><section class="parcel-backfill-section"><div id="parcelMissingDates">${esc(lang()==='zh'?'正在检查漏填日期…':'Checking missing dates…')}</div><div id="parcelBackfillForms"></div></section><div class="parcel-action-row"><button id="parcelBackfillSave" class="green" onclick="saveParcelBackfill()" style="display:none">${esc(lang()==='zh'?'保存补录':'Save backfill')}</button><button onclick="openParcelBox()">${esc(lang()==='zh'?'返回包裹记录':'Back')}</button></div>`;
+    let providers=[];try{providers=await timeout(apiCall('getParcelProviders',[]),10000,'Parcel providers');}catch(ignore){}
+    const select=$('parcelBackfillProvider');if(providers.length)select.innerHTML=providers.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    const load=async()=>{const dates=$('parcelMissingDates'),forms=$('parcelBackfillForms'),save=$('parcelBackfillSave');if(forms)forms.innerHTML='';if(save)save.style.display='none';if(dates)dates.textContent=lang()==='zh'?'正在检查漏填日期…':'Checking missing dates…';try{const r=await timeout(apiCall('getParcelSummary',[1,60,select.value||'SPX']),25000,'Parcel summary');window.__parcelLatestProvider=select.value||'SPX';renderParcelMissingDates([...(r.recordedDates||[]),...(r.logs||[]).map(x=>x.businessDate||x.date)],window.__parcelLatestProvider);const missing=window.__parcelMissingDates||[];if(save)save.style.display=missing.length?'block':'none';}catch(e){if(dates)dates.innerHTML=`<div class="discount-preview">${esc(lang()==='zh'?'资料回应较慢，请稍后再检查。':'Response is slow. Try again later.')}</div>`;}};
+    select.onchange=load;await load();
+  };
+  window.saveParcelBackfill=async function(){
+    if(parcelSubmitting)return;
+    const provider=String((($('parcelBackfillProvider')||{}).value)||'SPX'),cards=[...document.querySelectorAll('#parcelBackfillForms .parcel-backfill-card')];
+    if(!cards.length){showAppAlert(lang()==='zh'?'请先勾选一个漏填日期。':'Select a missing date first.',lang()==='zh'?'漏填记录补录':'Missing-day entry');return;}
+    const base='PCL-'+makeClientOrderId(),entries=[];
+    cards.forEach((card,index)=>{const businessDate=String(card.dataset.date||''),noPickup=!!(card.querySelector('.parcel-backfill-no-pickup')||{}).checked,delivered=num((card.querySelector('.parcel-backfill-delivered')||{}).value),missing=num((card.querySelector('.parcel-backfill-missing')||{}).value),returned=num((card.querySelector('.parcel-backfill-returned')||{}).value),note=String((card.querySelector('.parcel-backfill-note')||{}).value||'');if(noPickup||delivered||missing||returned)entries.push({clientId:base+'-'+index,provider,businessDate,expected:delivered+missing,delivered,missing,returned,recovered:0,recoveryForDate:'',note,noPickup});});
+    if(!entries.length){showAppAlert(lang()==='zh'?'所选日期请填写数量，或勾选当天没有送货。':'Enter counts or choose no pickup.',lang()==='zh'?'漏填记录补录':'Missing-day entry');return;}
+    parcelSubmitting=true;closeModal('parcelBox');releaseStaleInteractionLock();showToast(lang()==='zh'?'正在后台保存漏填记录，可以继续买单。':'Saving backfill in background.');
+    try{await apiCallTransient('saveParcelEntries',[entries],55000,'Parcel backfill');showToast(lang()==='zh'?'✅ 漏填记录已保存':'✅ Backfill saved');}
+    catch(e){showToast(lang()==='zh'?'回传较慢，请先不要重复提交。':'Response is slow; do not resubmit.');}
+    finally{parcelSubmitting=false;releaseStaleInteractionLock();}
   };
   function parcelProviderCardHtml(provider,date){
     const id=String(provider.id||provider.name||'').trim(),name=String(provider.name||id);
@@ -6597,7 +6586,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       if(recorded.has(key))continue;
       missing.push(key);
     }
-    if(!missing.length){box.innerHTML=`<div class="discount-preview"><b>${esc(lang()==='zh'?'最近 14 天已齐全':'Last 14 days complete')}</b></div>`;return;}
+    if(!missing.length){window.__parcelMissingDates=[];window.__parcelSelectedDates=new Set();box.innerHTML=`<div class="discount-preview"><b>${esc(lang()==='zh'?'最近 14 天记录完整':'Last 14 days complete')}</b></div>`;return;}
     window.__parcelMissingDates=missing;
     window.__parcelSelectedDates=new Set();
     box.innerHTML=`<div class="parcel-missing-date-grid">${missing.map(date=>`<label class="parcel-missing-date"><input type="checkbox" data-parcel-date="${esc(date)}"> <span>${esc(parcelDateLabel(date))}</span></label>`).join('')}</div>`;
@@ -7337,8 +7326,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
     // Safari may reload the page after a screenshot or app switch. Restore the
     // parcel workflow instead of silently dropping the user back at POS home.
-    let resumeModal='';try{resumeModal=sessionStorage.getItem('yllResumeModal')||'';}catch(e){}
-    if(resumeModal==='parcelBox')setTimeout(()=>{try{window.openParcelBox();}catch(e){}},900);
+    /* A deploy/manual refresh always returns to the POS home.  Reopening a
+       parcel modal after reload can trap the old iPad in a slow data screen. */
+    try{sessionStorage.removeItem('yllResumeModal');}catch(e){}
   });
   let foregroundWorkTimer=null;
   function scheduleForegroundWork(delay){
