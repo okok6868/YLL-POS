@@ -953,6 +953,14 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .parcel-provider-no-pickup{grid-column:1/-1;display:flex!important;flex-direction:row!important;align-items:center!important;min-height:42px;padding:8px 10px;border:1px solid #334155;border-radius:10px;background:#111827}
 .parcel-provider-no-pickup input{width:20px!important;height:20px!important;flex:0 0 20px}
 .parcel-provider-save{width:100%;margin:10px 0 0!important;min-height:46px}
+.parcel-card-recovery{display:none;margin-top:10px;padding:10px;border:1px solid rgba(251,191,36,.38);border-radius:12px;background:rgba(120,53,15,.14)}
+.parcel-card-recovery-title{color:#fbbf24;font-size:13px;font-weight:900;margin-bottom:7px}
+.parcel-card-recovery-dates{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.parcel-card-recovery-date{flex:0 0 auto!important;width:auto!important;min-height:38px!important;margin:0!important;padding:7px 10px!important;background:#17233a!important;color:#fde68a!important;border:1px solid #475569!important}
+.parcel-card-recovery-date.active{background:#b45309!important;color:#fff!important;border-color:#f59e0b!important}
+.parcel-card-recovery-entry{display:none;grid-template-columns:1fr 1fr;gap:8px;align-items:end;margin-top:8px}
+.parcel-card-recovery-entry label{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-size:12px;font-weight:800}
+.parcel-card-recovery-entry input{width:100%;margin:0!important}
 .parcel-secondary-tools{margin-top:14px;border:1px solid #334155;border-radius:14px;background:#0b1222;overflow:hidden}
 .parcel-secondary-tools>summary{padding:13px 14px;cursor:pointer;color:#cbd5e1;font-weight:900}
 .parcel-secondary-tools>div{padding:0 14px 14px}
@@ -1339,7 +1347,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
             <p style="color:#94a3b8;font-size:13px;margin-top:-4px">SPX、TikTok 和以后新增公司共用账本，但分开计算与显示。</p>
             <div class="boss-inline"><select id="parcelBossProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select><input id="shopeePaidAmount" type="number" placeholder="实际收到金额"><input id="shopeePaidNote" type="text" placeholder="备注"><button class="green" onclick="bossConfirmShopeePaid()">记录实际收到</button></div>
             <div class="boss-inline" style="margin-top:10px"><input id="shopeeMonth" type="month"><button id="shopeeMonthBtn" type="button" onclick="bossLoadShopeeMonth()">查看月度汇总</button></div>
-            <details style="margin-top:10px"><summary>⚙️ 管理包裹公司与当前单价</summary><div class="boss-inline" style="margin-top:10px"><input id="parcelProviderName" type="text" placeholder="公司名称（SPX / TikTok / 新公司）"><input id="parcelDeliveredRate" type="number" step="0.01" placeholder="派件单价"><input id="parcelReturnRate" type="number" step="0.01" placeholder="退回单价"><button class="green" onclick="bossSaveParcelProvider()">保存公司单价</button></div><small style="color:#94a3b8">新单价只用于之后的新记录；旧记录保存原本金额，不会被重算。</small></details>
+            <details style="margin-top:10px"><summary>⚙️ 新增／更新包裹公司名称与单价</summary><div class="boss-inline" style="margin-top:10px"><input id="parcelProviderName" type="text" placeholder="公司名称（SPX / TikTok / 新公司）"><input id="parcelDeliveredRate" type="number" step="0.01" placeholder="派件单价"><input id="parcelReturnRate" type="number" step="0.01" placeholder="退回单价"><button class="green" onclick="bossSaveParcelProvider()">保存公司资料</button></div><small style="color:#94a3b8">入口位置：Boss Mode → 包裹记录 → 新增／更新包裹公司名称与单价。输入相同名称会更新资料；新单价只用于之后的新记录。</small></details>
             <div id="bossParcelMonthResult" class="boss-result" style="display:none"></div>
             <div id="bossParcelResult" class="boss-result">点查看后显示。</div>
           </div>
@@ -6507,8 +6515,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       try{
         let r;try{r=await timeout(apiCall('getParcelSummary',[1,60,p.id]),18000,'Parcel summary');}
         catch(first){await new Promise(resolve=>setTimeout(resolve,500));r=await timeout(apiCall('getParcelSummary',[1,60,p.id]),18000,'Parcel summary retry');}
-        updateParcelProviderCard(p.id,(r&&r.today)||{});
-      }catch(e){updateParcelProviderCard(p.id,null);}
+        updateParcelProviderCard(p.id,(r&&r.today)||{},(r&&r.outstandingShortages)||[]);
+      }catch(e){updateParcelProviderCard(p.id,null,[]);}
     }));
   };
   function parcelProviderCardHtml(provider,date){
@@ -6517,27 +6525,39 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       <div class="parcel-provider-top"><div><div class="parcel-provider-name">${esc(name)}</div><div class="parcel-provider-trip">${esc(lang()==='zh'?'正在读取今天记录…':'Loading today…')}</div></div><span>📦</span></div>
       <div class="parcel-provider-summary"><span>${esc(lang()==='zh'?'趟数':'Trips')}<b data-stat="count">—</b></span><span>${esc(lang()==='zh'?'收到':'Received')}<b data-stat="delivered">—</b></span><span>${esc(lang()==='zh'?'缺少':'Missing')}<b data-stat="missing">—</b></span><span>${esc(lang()==='zh'?'退回':'Returned')}<b data-stat="returned">—</b></span></div>
       <div class="parcel-provider-fields"><label class="parcel-provider-no-pickup"><input class="parcel-no-pickup" type="checkbox"> ${esc(lang()==='zh'?'今天没有送货':'No pickup today')}</label><label>${esc(tr('actualReceived'))}<input class="parcel-count-input parcel-delivered" type="number" inputmode="numeric" min="0" placeholder="0"></label><label>${esc(tr('shortParcels'))}<input class="parcel-count-input parcel-missing" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('returnedParcels'))}<input class="parcel-count-input parcel-returned" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('noteOptional'))}<input class="parcel-note" type="text" placeholder="${esc(tr('noteOptional'))}"></label></div>
+      <div class="parcel-card-recovery"><div class="parcel-card-recovery-title">${esc(lang()==='zh'?'补回少包裹':'Recover missing parcels')}</div><div class="parcel-card-recovery-dates"></div><div class="parcel-card-recovery-entry"><label>${esc(lang()==='zh'?'这次补回数量':'Recovered now')}<input class="parcel-recovered" type="number" inputmode="numeric" min="0" placeholder="0"></label><div class="parcel-section-help parcel-recovery-hint" style="margin:0"></div></div></div>
       <button type="button" class="green parcel-provider-save" onclick="saveParcelProviderCard(this)">${esc(lang()==='zh'?`保存 ${name} 记录`:`Save ${name}`)}</button>
     </section>`;
   }
-  function updateParcelProviderCard(provider,today){
+  function updateParcelProviderCard(provider,today,outstandingRows){
     const card=[...document.querySelectorAll('#parcelProviderCards .parcel-provider-card')].find(x=>x.dataset.provider===String(provider));if(!card)return;
     if(today===null){card.querySelector('.parcel-provider-trip').textContent=lang()==='zh'?'回应较慢，仍可填写保存':'Slow response; entry is still available';return;}
     const count=num(today.count);card.dataset.todayCount=String(count);
     card.querySelector('.parcel-provider-trip').textContent=lang()==='zh'?`今天下一笔：第 ${count+1} 趟`:`Next: trip ${count+1}`;
     ['count','delivered','missing','returned'].forEach(k=>{const e=card.querySelector(`[data-stat="${k}"]`);if(e)e.textContent=String(num(today[k]));});
     const noPickup=card.querySelector('.parcel-provider-no-pickup');if(noPickup)noPickup.style.display=count?'none':'flex';
+    const precise=(outstandingRows||[]).filter(x=>num(x.outstanding)>0&&x.precise!==false);
+    const recovery=card.querySelector('.parcel-card-recovery'),dates=card.querySelector('.parcel-card-recovery-dates');
+    if(recovery&&dates&&precise.length){
+      recovery.style.display='block';
+      dates.innerHTML=precise.map(x=>`<button type="button" class="parcel-card-recovery-date" data-date="${esc(x.date)}" data-outstanding="${num(x.outstanding)}">${esc(x.date)} · ${esc(lang()==='zh'?'还欠':'Due')} ${num(x.outstanding)}</button>`).join('');
+      dates.onclick=e=>{const btn=e.target&&e.target.closest?e.target.closest('.parcel-card-recovery-date'):null;if(!btn)return;dates.querySelectorAll('button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');card.dataset.recoveryDate=String(btn.dataset.date||'');card.dataset.recoveryOutstanding=String(num(btn.dataset.outstanding));const entry=card.querySelector('.parcel-card-recovery-entry'),hint=card.querySelector('.parcel-recovery-hint'),input=card.querySelector('.parcel-recovered');if(entry)entry.style.display='grid';if(hint)hint.textContent=lang()==='zh'?`${btn.dataset.date} 最多补回 ${num(btn.dataset.outstanding)}`:`${btn.dataset.date}: up to ${num(btn.dataset.outstanding)}`;if(input){input.max=String(num(btn.dataset.outstanding));input.value='';input.focus();}};
+    }else if(recovery)recovery.style.display='none';
   }
   window.saveParcelProviderCard=async function(button){
     if(parcelSubmitting)return;
     const card=button&&button.closest?button.closest('.parcel-provider-card'):null;if(!card)return;
     const provider=String(card.dataset.provider||'SPX'),businessDate=String(card.dataset.date||new Date().toLocaleDateString('en-CA'));
-    const delivered=num((card.querySelector('.parcel-delivered')||{}).value),missing=num((card.querySelector('.parcel-missing')||{}).value),returned=num((card.querySelector('.parcel-returned')||{}).value);
+    const delivered=num((card.querySelector('.parcel-delivered')||{}).value),missing=num((card.querySelector('.parcel-missing')||{}).value),returned=num((card.querySelector('.parcel-returned')||{}).value),recovered=num((card.querySelector('.parcel-recovered')||{}).value);
     const noPickup=!!(card.querySelector('.parcel-no-pickup')||{}).checked;let note=String((card.querySelector('.parcel-note')||{}).value||'');
-    if(!noPickup&&!delivered&&!missing&&!returned){showAppAlert(lang()==='zh'?'请填写收到数量，或勾选今天没有送货。':'Enter received parcels or choose no pickup.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
+    const recoveryForDate=String(card.dataset.recoveryDate||''),recoveryOutstanding=num(card.dataset.recoveryOutstanding||0);
+    if(!noPickup&&!delivered&&!missing&&!returned&&!recovered){showAppAlert(lang()==='zh'?'请填写收到数量、补回数量，或勾选今天没有送货。':'Enter received/recovered parcels or choose no pickup.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
+    if(recovered&&!recoveryForDate){showAppAlert(lang()==='zh'?'请先选择补回对应的日期。':'Select the shortage date first.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
+    if(recovered>recoveryOutstanding){showAppAlert((lang()==='zh'?'最多只能补回 ':'Maximum recovery: ')+recoveryOutstanding,lang()==='zh'?'包裹记录':'Parcel Records');return;}
     if(missing>0)note=note?`${note} | Received ${delivered}, missing ${missing}`:`Received ${delivered}, missing ${missing}`;
+    if(recovered>0)note=note?`${note} | Recovered ${recovered} for ${recoveryForDate}`:`Recovered ${recovered} for ${recoveryForDate}`;
     const clientId='PCL-'+makeClientOrderId();
-    const entry={clientId,provider,businessDate,expected:delivered+missing,delivered,missing,returned,recovered:0,recoveryForDate:'',note,noPickup};
+    const entry={clientId,provider,businessDate,expected:delivered+missing,delivered,missing,returned,recovered,recoveryForDate,note,noPickup};
     parcelSubmitting=true;button.disabled=true;button.textContent=lang()==='zh'?'正在后台保存…':'Saving…';
     closeModal('parcelBox');releaseStaleInteractionLock();showToast(lang()==='zh'?'正在后台保存包裹记录，可以继续买单。':'Saving in background; checkout remains available.');
     let saved=false;
