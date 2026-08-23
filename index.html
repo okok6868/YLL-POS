@@ -939,6 +939,24 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .parcel-backfill-card label.parcel-backfill-no-pickup-label{display:flex!important;flex-direction:row!important;align-items:center!important}
 .parcel-action-row{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:14px}
 .parcel-action-row button{margin:0!important}
+.parcel-provider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.parcel-provider-card{min-width:0;padding:14px;border:1px solid #334155;border-radius:16px;background:linear-gradient(145deg,#101a2e,#0b1222)}
+.parcel-provider-card.active{border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.22) inset}
+.parcel-provider-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.parcel-provider-name{font-size:18px;font-weight:900;color:#f8fafc}.parcel-provider-trip{font-size:12px;color:#7dd3fc;margin-top:3px}
+.parcel-provider-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:9px 0}
+.parcel-provider-summary span{padding:8px;border-radius:10px;background:#17233a;color:#94a3b8;font-size:11px;line-height:1.25}
+.parcel-provider-summary b{display:block;margin-top:2px;color:#f8fafc;font-size:16px}
+.parcel-provider-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.parcel-provider-fields label{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-size:12px;font-weight:800}
+.parcel-provider-fields input{width:100%;min-width:0;margin:0!important}
+.parcel-provider-no-pickup{grid-column:1/-1;display:flex!important;flex-direction:row!important;align-items:center!important;min-height:42px;padding:8px 10px;border:1px solid #334155;border-radius:10px;background:#111827}
+.parcel-provider-no-pickup input{width:20px!important;height:20px!important;flex:0 0 20px}
+.parcel-provider-save{width:100%;margin:10px 0 0!important;min-height:46px}
+.parcel-secondary-tools{margin-top:14px;border:1px solid #334155;border-radius:14px;background:#0b1222;overflow:hidden}
+.parcel-secondary-tools>summary{padding:13px 14px;cursor:pointer;color:#cbd5e1;font-weight:900}
+.parcel-secondary-tools>div{padding:0 14px 14px}
+@media(max-width:760px){.parcel-provider-grid{grid-template-columns:1fr}.parcel-provider-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .boss-auth-inline-error{margin:7px 0 0;padding:9px 11px;border:1px solid rgba(248,113,113,.55);border-radius:10px;background:rgba(127,29,29,.35);color:#fecaca;font-size:13px;font-weight:800;line-height:1.35}
 .boss-auth-inline-error[hidden]{display:none!important}
 @media(max-width:900px){.parcel-missing-date-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
@@ -6459,6 +6477,75 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       const el=$('parcelTodayStatus');
       if(el)el.innerHTML=`<b>${esc(tr('todayParcelStatus'))}</b><br>${esc(lang()==='zh'?'资料回应较慢；可以稍后再开，不能代表网络断线。':'Data response is slow. Try again later; this does not necessarily mean the network is offline.')}`;
     }
+  };
+  /* Compact daily entry: every provider is visible at once.  The proven
+     detailed screen remains available only for backfill/recovery work. */
+  const openParcelBoxDetailed=window.openParcelBox;
+  window.openParcelBoxDetailed=openParcelBoxDetailed;
+  window.openParcelBox=async function(){
+    if(parcelSubmitting){showToast(lang()==='zh'?'包裹记录正在后台保存，请勿重复提交。':'Parcel record is saving.');return;}
+    releaseStaleInteractionLock();
+    const box=document.querySelector('#parcelBox .modal-content');
+    const localDate=new Date().toLocaleDateString('en-CA');
+    if(box)box.innerHTML=`<h3>📦 ${lang()==='zh'?'包裹记录':'Parcel Records'}</h3>
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:8px">${esc(lang()==='zh'?'所有公司直接显示；收到哪一家，就在那张卡片记录。':'All providers are shown. Record directly in the matching card.')}</p>
+      <div class="parcel-readonly-date" style="height:42px!important;min-height:42px!important">${esc(lang()==='zh'?`系统日期：${localDate}`:`System date: ${localDate}`)}</div>
+      <div id="parcelProviderCards" class="parcel-provider-grid"><div class="discount-preview">${esc(tr('loading'))}</div></div>
+      <details class="parcel-secondary-tools"><summary>🗓️ ${esc(lang()==='zh'?'漏填日期 / 历史少包裹补回':'Backfill / historical recovery')}</summary><div><p class="parcel-section-help">${esc(lang()==='zh'?'只有需要补以前记录时才打开。':'Open only when an earlier record needs attention.')}</p><button type="button" onclick="closeModal('parcelBox');setTimeout(()=>openParcelBoxDetailed(),80)">${esc(lang()==='zh'?'打开补录画面':'Open backfill')}</button></div></details>
+      <div class="parcel-action-row" style="grid-template-columns:1fr"><button onclick="closeModal('parcelBox')">${esc(tr('close'))}</button></div>`;
+    openModal('parcelBox');
+    let providers=[];
+    try{providers=await timeout(apiCall('getParcelProviders',[]),10000,'Parcel providers');}catch(ignore){}
+    if(!providers.length)providers=[{id:'SPX',name:'SPX'},{id:'TIKTOK',name:'TikTok Self Collect'}];
+    const cards=$('parcelProviderCards');if(!cards)return;
+    cards.innerHTML=providers.map(p=>parcelProviderCardHtml(p,localDate)).join('');
+    cards.querySelectorAll('.parcel-provider-no-pickup input').forEach(input=>input.onchange=()=>{
+      const card=input.closest('.parcel-provider-card');
+      card.querySelectorAll('.parcel-count-input').forEach(x=>x.disabled=input.checked);
+    });
+    await Promise.all(providers.map(async p=>{
+      try{
+        let r;try{r=await timeout(apiCall('getParcelSummary',[1,60,p.id]),18000,'Parcel summary');}
+        catch(first){await new Promise(resolve=>setTimeout(resolve,500));r=await timeout(apiCall('getParcelSummary',[1,60,p.id]),18000,'Parcel summary retry');}
+        updateParcelProviderCard(p.id,(r&&r.today)||{});
+      }catch(e){updateParcelProviderCard(p.id,null);}
+    }));
+  };
+  function parcelProviderCardHtml(provider,date){
+    const id=String(provider.id||provider.name||'').trim(),name=String(provider.name||id);
+    return `<section class="parcel-provider-card" data-provider="${esc(id)}" data-date="${esc(date)}">
+      <div class="parcel-provider-top"><div><div class="parcel-provider-name">${esc(name)}</div><div class="parcel-provider-trip">${esc(lang()==='zh'?'正在读取今天记录…':'Loading today…')}</div></div><span>📦</span></div>
+      <div class="parcel-provider-summary"><span>${esc(lang()==='zh'?'趟数':'Trips')}<b data-stat="count">—</b></span><span>${esc(lang()==='zh'?'收到':'Received')}<b data-stat="delivered">—</b></span><span>${esc(lang()==='zh'?'缺少':'Missing')}<b data-stat="missing">—</b></span><span>${esc(lang()==='zh'?'退回':'Returned')}<b data-stat="returned">—</b></span></div>
+      <div class="parcel-provider-fields"><label class="parcel-provider-no-pickup"><input class="parcel-no-pickup" type="checkbox"> ${esc(lang()==='zh'?'今天没有送货':'No pickup today')}</label><label>${esc(tr('actualReceived'))}<input class="parcel-count-input parcel-delivered" type="number" inputmode="numeric" min="0" placeholder="0"></label><label>${esc(tr('shortParcels'))}<input class="parcel-count-input parcel-missing" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('returnedParcels'))}<input class="parcel-count-input parcel-returned" type="number" inputmode="numeric" min="0" value="0"></label><label>${esc(tr('noteOptional'))}<input class="parcel-note" type="text" placeholder="${esc(tr('noteOptional'))}"></label></div>
+      <button type="button" class="green parcel-provider-save" onclick="saveParcelProviderCard(this)">${esc(lang()==='zh'?`保存 ${name} 记录`:`Save ${name}`)}</button>
+    </section>`;
+  }
+  function updateParcelProviderCard(provider,today){
+    const card=[...document.querySelectorAll('#parcelProviderCards .parcel-provider-card')].find(x=>x.dataset.provider===String(provider));if(!card)return;
+    if(today===null){card.querySelector('.parcel-provider-trip').textContent=lang()==='zh'?'回应较慢，仍可填写保存':'Slow response; entry is still available';return;}
+    const count=num(today.count);card.dataset.todayCount=String(count);
+    card.querySelector('.parcel-provider-trip').textContent=lang()==='zh'?`今天下一笔：第 ${count+1} 趟`:`Next: trip ${count+1}`;
+    ['count','delivered','missing','returned'].forEach(k=>{const e=card.querySelector(`[data-stat="${k}"]`);if(e)e.textContent=String(num(today[k]));});
+    const noPickup=card.querySelector('.parcel-provider-no-pickup');if(noPickup)noPickup.style.display=count?'none':'flex';
+  }
+  window.saveParcelProviderCard=async function(button){
+    if(parcelSubmitting)return;
+    const card=button&&button.closest?button.closest('.parcel-provider-card'):null;if(!card)return;
+    const provider=String(card.dataset.provider||'SPX'),businessDate=String(card.dataset.date||new Date().toLocaleDateString('en-CA'));
+    const delivered=num((card.querySelector('.parcel-delivered')||{}).value),missing=num((card.querySelector('.parcel-missing')||{}).value),returned=num((card.querySelector('.parcel-returned')||{}).value);
+    const noPickup=!!(card.querySelector('.parcel-no-pickup')||{}).checked;let note=String((card.querySelector('.parcel-note')||{}).value||'');
+    if(!noPickup&&!delivered&&!missing&&!returned){showAppAlert(lang()==='zh'?'请填写收到数量，或勾选今天没有送货。':'Enter received parcels or choose no pickup.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
+    if(missing>0)note=note?`${note} | Received ${delivered}, missing ${missing}`:`Received ${delivered}, missing ${missing}`;
+    const clientId='PCL-'+makeClientOrderId();
+    const entry={clientId,provider,businessDate,expected:delivered+missing,delivered,missing,returned,recovered:0,recoveryForDate:'',note,noPickup};
+    parcelSubmitting=true;button.disabled=true;button.textContent=lang()==='zh'?'正在后台保存…':'Saving…';
+    closeModal('parcelBox');releaseStaleInteractionLock();showToast(lang()==='zh'?'正在后台保存包裹记录，可以继续买单。':'Saving in background; checkout remains available.');
+    let saved=false;
+    try{await apiCallTransient('saveParcelEntries',[[entry]],55000,'Parcel save');saved=true;}
+    catch(e){try{const check=await timeout(apiCall('getParcelSaveStatus',[clientId]),10000,'Check parcel save');saved=!!(check&&check.found);}catch(ignore){}}
+    finally{parcelSubmitting=false;releaseStaleInteractionLock();}
+    if(saved){parcelReminderCheckedAt=0;scheduleTopStatsRefresh(250);scheduleParcelClosingReminderCheck();showToast(lang()==='zh'?'✅ 包裹记录已保存':'✅ Parcel record saved');}
+    else showToast((lang()==='zh'?'包裹记录回传较慢，请勿重复提交。编号：':'Response is slow; do not resubmit. ID: ')+clientId);
   };
   function renderParcelTodayStatus(today){
     const el=$('parcelTodayStatus');
