@@ -115,8 +115,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .topline{display:flex;justify-content:space-between;align-items:center;padding:10px;gap:10px;border-bottom:1px solid rgba(255,255,255,.04)}
 .topline button{background:#111827;border:1px solid var(--line);border-radius:12px;padding:9px 13px;color:#fff}
 .topline button:hover{background:#243044}
-.ipad-manual-recovery{display:none!important;border-color:#38bdf8!important;background:linear-gradient(135deg,#075985,#0369a1)!important;color:#f0f9ff!important;font-weight:900!important;white-space:nowrap!important}
-html.ipad-pos .ipad-manual-recovery{display:inline-flex!important;align-items:center!important;justify-content:center!important}
+.pos-manual-refresh{display:inline-flex!important;align-items:center!important;justify-content:center!important;border-color:#38bdf8!important;background:linear-gradient(135deg,#075985,#0369a1)!important;color:#f0f9ff!important;font-weight:900!important;white-space:nowrap!important}
 #pageInfo{color:var(--muted);font-size:14px}
 .products{
   flex:1;
@@ -984,7 +983,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <div class="main">
     <div class="topline">
       <button onclick="goHome()">🏠 首页</button>
-      <button id="ipadManualRecovery" type="button" class="ipad-manual-recovery" onclick="manualIpadRecovery()" title="截图后画面或触控异常时使用">↻ 修复画面 V138.1</button>
+      <button id="posManualRefresh" type="button" class="pos-manual-refresh" onclick="manualPosRefresh()" title="画面卡住或按钮点不到时使用；购物车会保留">↻ 刷新</button>
       <div class="search-wrap">
         <input id="searchInput" class="search-input" placeholder="🔍 搜索商品 / 分类 / 价格" oninput="searchProducts(this.value)">
         <button class="quick-chip" onclick="showLowStock()">⚠️ 低库存</button>
@@ -6078,7 +6077,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       clearCartState();
       clearActiveCheckout(checkoutKey);
       setCheckoutBusy(false);
-      showAppAlert(lang()==='zh'?'这笔刚刚已经买单，购物车已清空。':'This checkout was already saved. Cart cleared.', tr('payment'));
+      try{scheduleTopStatsRefresh(200);}catch(e){}
+      if(typeof showToast==='function')showToast(lang()==='zh'?'✅ 订单已经成功保存，正在刷新今日收款。':'✅ Order was saved successfully. Refreshing today totals.');
       return;
     }
     const clientId = getActiveCheckoutClientId(checkoutKey);
@@ -6427,6 +6427,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       catch(firstError){await new Promise(resolve=>setTimeout(resolve,700));r=await timeout(apiCall('getParcelSummary',[1,60,(providerSelect||{}).value||'SPX']),25000,'Parcel summary retry');}
       renderParcelTodayStatus(r.today || {});
       window.__parcelTodayRecorded=!!num((r.today||{}).count);
+      window.__parcelTodayTripCount=num((r.today||{}).count);
+      const tripNote=$('parcelTripNote');if(tripNote)tripNote.textContent=lang()==='zh'?`今天下一笔：第 ${window.__parcelTodayTripCount+1} 趟`:`Next today: trip ${window.__parcelTodayTripCount+1}`;
       const noPickupToday=$('parcelNoPickup');if(noPickupToday)noPickupToday.closest('label').style.display=window.__parcelTodayRecorded?'none':'flex';
       window.__parcelLatestLogs=r.logs||[];
       window.__parcelLatestProvider=(providerSelect||{}).value||'SPX';
@@ -6530,7 +6532,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     let note=($('parcelNote')||{}).value||'';
     const todayNoPickup=!!(($('parcelNoPickup')||{}).checked);
     const backfillCards=[...document.querySelectorAll('#parcelBackfillForms .parcel-backfill-card')];
-    if(!window.__parcelTodayRecorded && !todayNoPickup && !delivered && !missing && !returned && !recovered && !backfillCards.length){ showAppAlert(tr('parcelRequired'),tr('shopee')); return; }
+    if(!todayNoPickup && !delivered && !missing && !returned && !recovered && !backfillCards.length){ showAppAlert(lang()==='zh'?'请填写这一趟收到的包裹数量，或选择漏填日期补录。':'Enter parcels received for this trip, or select a missing date.',lang()==='zh'?'包裹记录':'Parcel Records'); return; }
     if(recovered>0 && !recoveryForDate){ showAppAlert(tr('recoveryDateRequired'),tr('shopee')); return; }
     if(recovered>num(window.__parcelRecoveryOutstanding||0)){ showAppAlert(`${tr('stillMissing')}: ${num(window.__parcelRecoveryOutstanding||0)}`,tr('shopee')); return; }
     if(missing>0) note = note ? `${note} | Received ${delivered}, missing ${missing}` : `Received ${delivered}, missing ${missing}`;
@@ -6539,7 +6541,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     const provider=String((($('parcelProvider')||{}).value)||'SPX'),businessDate=String((($('parcelBusinessDate')||{}).value)||'');
     if(!/^20\d{2}-\d{2}-\d{2}$/.test(businessDate)){showAppAlert(lang()==='zh'?'请选择实际业务日期。':'Choose the actual business date.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
     const entries=[];
-    if(!window.__parcelTodayRecorded && (todayNoPickup||delivered||missing||returned||recovered))entries.push({clientId,provider,businessDate,expected,delivered,missing,returned,recovered,recoveryForDate,note,noPickup:todayNoPickup});
+    // A provider may arrive more than once on the same day. Every submission
+    // with parcel counts is a new trip; an existing record must never lock today.
+    // "No pickup" remains a once-per-day marker and is hidden after trip 1.
+    if(delivered||missing||returned||recovered||(!window.__parcelTodayRecorded&&todayNoPickup))entries.push({clientId,provider,businessDate,expected,delivered,missing,returned,recovered,recoveryForDate,note,noPickup:(!window.__parcelTodayRecorded&&todayNoPickup)});
     backfillCards.forEach((card,index)=>{
       const date=String(card.dataset.date||''),noPickup=!!(card.querySelector('.parcel-backfill-no-pickup')||{}).checked;
       const d=num((card.querySelector('.parcel-backfill-delivered')||{}).value),m=num((card.querySelector('.parcel-backfill-missing')||{}).value),ret=num((card.querySelector('.parcel-backfill-returned')||{}).value),n=String((card.querySelector('.parcel-backfill-note')||{}).value||'');
@@ -7449,11 +7454,30 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     },Math.max(120,Number(delay)||350));
   }
   window.__requestIpadSafeReload=requestIpadSafeReload;
-  window.manualIpadRecovery=function(){
-    // Screenshot/share does not emit viewport or focus events on this old iPad,
-    // so provide one reliable recovery action in the still-tappable POS toolbar.
-    try{sessionStorage.removeItem('yllIpadSafeReloadAt');}catch(e){}
-    requestIpadSafeReload('manual-button',120);
+  window.manualPosRefresh=function(){
+    // Always available: old iPad screenshot/share sometimes emits no reliable
+    // browser event, so device detection cannot be required for manual recovery.
+    try{
+      const rows=currentCart();
+      if(rows.length)sessionStorage.setItem('yllSafeReloadCartV1',JSON.stringify({cart:rows,discount:Number(discount)||0,at:Date.now()}));
+      sessionStorage.removeItem('yllIpadSafeReloadAt');
+      sessionStorage.setItem('yllIpadSafeReloadReason','manual-pos-refresh');
+    }catch(e){}
+    try{
+      const busy=$('checkoutBusy');
+      if(busy){
+        busy.textContent=finalLang()==='zh'?'正在刷新 POS，购物车会保留...':'Refreshing POS; cart will be kept...';
+        busy.classList.add('active');
+        busy.style.zIndex='9999';
+      }
+    }catch(e){}
+    setTimeout(()=>{
+      try{
+        const url=new URL(window.location.href);
+        url.searchParams.set('posRefresh',String(Date.now()));
+        window.location.replace(url.toString());
+      }catch(e){window.location.reload();}
+    },120);
   };
   function scheduleAppleViewportRecovery(){
     clearTimeout(appleViewportRecoveryTimer);
