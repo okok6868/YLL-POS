@@ -115,7 +115,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .topline{display:flex;justify-content:space-between;align-items:center;padding:10px;gap:10px;border-bottom:1px solid rgba(255,255,255,.04)}
 .topline button{background:#111827;border:1px solid var(--line);border-radius:12px;padding:9px 13px;color:#fff}
 .topline button:hover{background:#243044}
-.pos-manual-refresh{display:inline-flex!important;align-items:center!important;justify-content:center!important;border-color:#38bdf8!important;background:linear-gradient(135deg,#075985,#0369a1)!important;color:#f0f9ff!important;font-weight:900!important;white-space:nowrap!important}
+.pos-manual-refresh{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:88px!important;border:1px solid #38bdf8!important;border-radius:14px!important;background:linear-gradient(135deg,#0284c7,#2563eb)!important;color:#fff!important;font-weight:900!important;white-space:nowrap!important;box-shadow:0 6px 18px rgba(2,132,199,.28)!important}
 #pageInfo{color:var(--muted);font-size:14px}
 .products{
   flex:1;
@@ -963,7 +963,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div class="header">
   <div class="header-top">
     <div class="title">YLL FEEDS ENTERPRISE</div>
-    <div class="tools"><span id="clock"></span><button class="plain-gear" title="" aria-label="系统" onclick="openBossLogin()">⚙️</button><button id="themeBtn" type="button" onclick="toggleMode()">☀</button><button id="langBtn" type="button" onclick="toggleLanguage(event)">中</button></div>
+    <div class="tools"><span id="clock"></span><button id="posManualRefresh" type="button" class="pos-manual-refresh" onclick="manualPosRefresh()" title="画面卡住或按钮点不到时使用；购物车会保留">↻ 刷新</button><button class="plain-gear" title="" aria-label="系统" onclick="openBossLogin()">⚙️</button><button id="themeBtn" type="button" onclick="toggleMode()">☀</button><button id="langBtn" type="button" onclick="toggleLanguage(event)">中</button></div>
   </div>
   <div class="stats">
     <div class="stat blue"><div class="icon">📊</div><div><small>今日 销售</small><b id="todaySales">RM 0.00</b></div></div>
@@ -983,7 +983,6 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <div class="main">
     <div class="topline">
       <button onclick="goHome()">🏠 首页</button>
-      <button id="posManualRefresh" type="button" class="pos-manual-refresh" onclick="manualPosRefresh()" title="画面卡住或按钮点不到时使用；购物车会保留">↻ 刷新</button>
       <div class="search-wrap">
         <input id="searchInput" class="search-input" placeholder="🔍 搜索商品 / 分类 / 价格" oninput="searchProducts(this.value)">
         <button class="quick-chip" onclick="showLowStock()">⚠️ 低库存</button>
