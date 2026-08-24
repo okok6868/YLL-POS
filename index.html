@@ -4104,7 +4104,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     wrap.id='productVariantPicker';
     wrap.style.cssText='position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
     const oneKg=group.items.find(p=>String(visibleVariant(p)||'').toUpperCase()==='1KG'||/\(\s*1\s*KG\s*\)/i.test(p.name||''));
-    const quickKg=oneKg?`<div style="display:flex;gap:12px;flex-wrap:wrap;margin:14px 0"><button type="button" style="background:#166534;color:#fff;border:1px solid #22c55e;padding:13px 22px;border-radius:12px;font-weight:800" onclick='addProductQty(${JSON.stringify(oneKg.name)},${Number(oneKg.price)||0},${JSON.stringify(oneKg.code||'')},10)'>＋10KG · ${money((Number(oneKg.price)||0)*10)}</button><button type="button" style="background:#166534;color:#fff;border:1px solid #22c55e;padding:13px 22px;border-radius:12px;font-weight:800" onclick='addProductQty(${JSON.stringify(oneKg.name)},${Number(oneKg.price)||0},${JSON.stringify(oneKg.code||'')},5)'>＋5KG · ${money((Number(oneKg.price)||0)*5)}</button></div>`:'';
+    const quickKg=oneKg?`<div style="display:flex;gap:12px;flex-wrap:wrap;margin:14px 0"><button type="button" style="background:#166534;color:#fff;border:1px solid #22c55e;padding:13px 22px;border-radius:12px;font-weight:800" onclick='setProductQty(${JSON.stringify(oneKg.name)},${Number(oneKg.price)||0},${JSON.stringify(oneKg.code||'')},10)'>10KG · ${money((Number(oneKg.price)||0)*10)}</button><button type="button" style="background:#166534;color:#fff;border:1px solid #22c55e;padding:13px 22px;border-radius:12px;font-weight:800" onclick='setProductQty(${JSON.stringify(oneKg.name)},${Number(oneKg.price)||0},${JSON.stringify(oneKg.code||'')},5)'>5KG · ${money((Number(oneKg.price)||0)*5)}</button></div>`:'';
     const sharedMember=group.items.find(p=>normalizeText(p.inventoryGroup)&&p.sharedStock!==null&&p.sharedStock!==''&&Number.isFinite(Number(p.sharedStock)));
     const sharedSummary=sharedMember?`<div style="margin:12px 0 4px;padding:10px 14px;border-radius:12px;background:#10233a;border:1px solid #2563eb;color:#dbeafe;font-weight:800">${lang()==='zh'?'系列共享总库存':'Shared series stock'}：${Number(sharedMember.sharedStock)} KG</div>`:'';
     const productButtons=group.items.map(p=>{const img=normalizeText(p.image),label=visibleVariant(p),available=variantAvailableUnits(p,group.items),soldOut=available<=0;return `<button type="button" style="position:relative;text-align:left;padding:10px;border-radius:14px;background:#182338;color:#f8fafc;border:1px solid #475569;min-height:190px" onclick='add(${JSON.stringify(p.name)},${Number(p.price)||0},${JSON.stringify(p.code||'')})'>${soldOut?`<span class="soldout-badge">${lang()==='zh'?'售罄':'SOLD OUT'}</span>`:''}<div style="height:105px;border-radius:10px;overflow:hidden;background:#091225;display:flex;align-items:center;justify-content:center;margin-bottom:10px">${img?`<img src="${esc(img)}" alt="${esc(p.name||'')}" style="width:100%;height:100%;object-fit:contain" onerror="this.parentNode.innerHTML='${lang()==='zh'?'没有图片':'No image'}'">`:(lang()==='zh'?'没有图片':'No image')}</div><b style="color:#fff;font-size:16px">${esc(label)}</b><br><span style="color:#22c55e;font-weight:700">${money(p.price)}</span><br><small style="color:#94a3b8">${lang()==='zh'?'可售次数':'Available'} ${available}</small></button>`;}).join('');
@@ -4253,13 +4253,17 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     renderVariantPickerSummary();
   };
 
-  // Quick KG buttons are intentionally the exact same operation as tapping
-  // the 1KG variant repeatedly. Do not maintain a second quantity shortcut:
-  // it previously bypassed parts of the normal stock/cart path.
-  window.addProductQty=function(name,price,code,qty){
-    qty=Math.max(1,Math.floor(Number(qty)||1));
-    for(let n=0;n<qty;n++)window.add(name,price,code);
+  // KG shortcuts mean the exact total quantity for this 1KG variant.
+  // If 1KG was already selected, choosing 10KG must result in 10, not 11.
+  window.setProductQty=function(name,price,code,qty){
+    const target=Math.max(1,Math.floor(Number(qty)||1));
+    const c=currentCart();
+    for(let i=c.length-1;i>=0;i--){
+      if((code && String(c[i].code)===String(code)) || (!code && String(c[i].name)===String(name)))c.splice(i,1);
+    }
+    for(let n=0;n<target;n++)window.add(name,price,code);
   };
+  window.addProductQty=window.setProductQty;
 
   window.startProductTap = function(ev,name,price,code=''){
     if(!ev || (ev.isPrimary===false) || (ev.button!==undefined && ev.button!==0))return;
@@ -5491,6 +5495,10 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
         fillBossCategoryList();
         fillBossProductFilterCategories();
       }
+      // The saved response updates the selected row immediately, then a forced
+      // read synchronizes every affected variant, POS card, price and stock.
+      // The boss must not need to exit and reopen the app to see the result.
+      try{ await window.load(true); }catch(refreshErr){ console.warn('Post-save product refresh failed',refreshErr); }
       const savedName=(out&&out.product&&out.product.name) || payload.name || '';
       const changedText=(out&&out.isNew ? tr('productAdded') : tr('productChanged')) + (savedName ? `: ${savedName}` : '');
       const variantText=(out && out.variantUpdated) ? `<small>${esc(tr('variantsUpdated'))}: ${esc(out.variantUpdated)}</small>` : '';
@@ -5527,6 +5535,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
           const rowNo=Number(confirmed.row),idx=(bossProductsCache||[]).findIndex(p=>Number(p.row)===rowNo);
           if(idx>=0)bossProductsCache[idx]=confirmed;
           renderBossProductCounts();fillBossProductFilterCategories();renderBossProductList(listQuery);
+          try{ await window.load(true); }catch(refreshErr){ console.warn('Confirmed product refresh failed',refreshErr); }
           if(res)res.innerHTML=`<div class="boss-notice">${lang()==='zh'?'已检查Sheet：商品确定保存成功。':'Sheet checked: product was saved successfully.'}<small>${esc(confirmed.name||payload.name)}</small></div>`;
         }else if(res)res.innerHTML=`<div class="boss-notice">${esc(tr('productSaveSlow'))}<small>${lang()==='zh'?'画面会停留在这里，不会自动跳页。请稍后再按保存或刷新商品资料。':'This page will stay open. Wait, then save again or refresh products.'}</small></div>`;
       }else{
