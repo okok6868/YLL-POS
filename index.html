@@ -1625,47 +1625,6 @@ function confirmDirectCheckout(payment,label){
   checkout(payment, data.final, 0);
 }
 
-function checkout(payment,paid=0,change=0){
-  if(isCheckingOut)return;
-  if(!cart.length){alert("没商品");return}
-
-  // V4.3：付款按钮一按，立刻锁住 POS 并直接保存；不再等待第二个确认弹窗。
-  setCheckoutBusy(true);
-  closePay();
-  closeCash();
-  closeModal("mixedBox");
-
-  const data=calcCartData();
-  lastPayment=payment;
-  lastPaid=moneyNum(paid||data.final);
-  lastChange=moneyNum(change||0);
-
-  let send=cart.map(i=>{let p=products.find(x=>x.name===i.name)||{}; return {name:i.name,price:moneyNum(i.price),qty:i.qty,cost:p.cost||0}});
-  let send折扣=moneyNum(discount);
-
-  if(!navigator.onLine){
-    let offline=JSON.parse(localStorage.getItem("offlineOrders")||"[]");
-    offline.push({id:Date.now(),cart:send,payment,discount:send折扣,paid:lastPaid,change:lastChange,date:new Date().toISOString()});
-    localStorage.setItem("offlineOrders",JSON.stringify(offline));
-    lastCart=JSON.parse(JSON.stringify(cart)); last折扣=send折扣;
-    showToast("⚠️ 离线模式，订单已保存");
-    cart=[];discount=0;showCart();setCheckoutBusy(false);return
-  }
-
-  apiCall("saveOrder",[send,payment,send折扣,lastPaid,lastChange])
-    .then(function(res){
-      let orderId=res&&res.orderId;
-      if(!orderId){alert("❌ 没有拿到订单号");return}
-      cart.forEach(i=>i.orderId=orderId);
-      lastCart=JSON.parse(JSON.stringify(cart));
-      last折扣=send折扣;
-      printReceipt(false);
-      cart=[];discount=0;showCart();loadTodayStats();load();
-    })
-    .catch(function(err){alert("❌ 保存失败："+(err.message||err));})
-    .finally(function(){setCheckoutBusy(false)});
-}
-
 function openMixedPayment(){
   if(!cart.length){alert("没商品");return}
   const data=calcCartData();
@@ -3665,17 +3624,21 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   function loadPopularHome(){if(popularLoadInFlight)return popularLoadInFlight;try{const cached=JSON.parse(localStorage.getItem('yllPopularGroupsV1')||'null');if(cached&&Array.isArray(cached.items)&&Date.now()-Number(cached.ts||0)<30*60*1000)applyPopularGroups(cached.items);}catch(e){}popularLoadInFlight=timeout(apiCall('getPopularProductGroups',[30,100]),15000,'Popular products').then(rows=>{rows=Array.isArray(rows)?rows:[];applyPopularGroups(rows);try{localStorage.setItem('yllPopularGroupsV1',JSON.stringify({ts:Date.now(),items:rows}));}catch(e){}return rows;}).catch(()=>[]).finally(()=>{popularLoadInFlight=null;});return popularLoadInFlight;}
 
   let productLoadInFlight=null;
+  let productLoadSequence=0;
   window.load = function(force=false){
     if(productLoadInFlight && !force)return productLoadInFlight;
-    const hadCache=loadProductsCache();
+    // A forced refresh must not put the pre-sale cache back on screen while
+    // the authoritative Products request is still running.
+    const hadCache=force ? currentProducts().length>0 : loadProductsCache();
+    const requestSequence=++productLoadSequence;
     loadPopularHome();
     if(!hadCache){
       const box=$('list');
       if(box)box.innerHTML='<div class="empty">'+(lang()==='zh'?'\u6b63\u5728\u8f7d\u5165\u5546\u54c1...':'Loading products...')+'</div>';
     }
-    productLoadInFlight=timeout(apiCall('getProducts',[]), hadCache?9000:14000, 'Product load')
+    const request=timeout(apiCall('getProducts',[]), hadCache?9000:14000, 'Product load')
       .then(data=>{
-        applyProducts(data||[],false);
+        if(requestSequence===productLoadSequence)applyProducts(data||[],false);
         return data;
       })
       .catch(err=>{
@@ -3686,8 +3649,9 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
         }else if(typeof showToast==='function')showToast(lang()==='zh'?'\u5546\u54c1\u5df2\u7528\u672c\u673a\u7f13\u5b58':'Using cached products');
         return [];
       })
-      .finally(()=>{ productLoadInFlight=null; });
-    return productLoadInFlight;
+      .finally(()=>{ if(productLoadInFlight===request)productLoadInFlight=null; });
+    productLoadInFlight=request;
+    return request;
   };
 
   let topStatsFailureStreak=0;
@@ -6055,8 +6019,18 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     try{
       const list=currentProducts();
       (savedCart||[]).forEach(it=>{
-        const p=list.find(x=>String(x.name)===String(it.name));
-        if(p)p.stock=Number(p.stock||0)-Number(it.qty||0);
+        const p=list.find(x=>(it.code&&String(x.code)===String(it.code))||String(x.name)===String(it.name));
+        if(!p)return;
+        const group=normalizeText(p.inventoryGroup);
+        const hasShared=group&&p.sharedStock!==null&&p.sharedStock!==''&&Number.isFinite(Number(p.sharedStock));
+        if(hasShared){
+          const used=Number(it.qty||0)*Math.max(.0001,Number(p.stockFactor)||1);
+          const remaining=Math.max(0,Math.round((Number(p.sharedStock)-used)*100)/100);
+          list.filter(x=>normalizeText(x.inventoryGroup)===group).forEach(member=>{
+            member.sharedStock=remaining;
+            member.stock=Math.max(0,Math.floor((remaining+1e-9)/Math.max(.0001,Number(member.stockFactor)||1)));
+          });
+        }else p.stock=Math.max(0,Number(p.stock||0)-Number(it.qty||0));
       });
       applyProducts(list,false);
     }catch(e){ console.warn('local stock update failed', e); }
@@ -6089,6 +6063,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     if(typeof showToast === 'function')showToast(receiptReady?(lang()==='zh'?'订单已保存，收据已准备好；需要时按“打印收据”。':'Order saved. Receipt is ready; press Print Receipt when needed.'):tr('receiptFailed'));
     if(stockWarnings.length)setTimeout(()=>showAppAlert((lang()==='zh'?'买单成功。以下商品库存不足，请通知老板补货：\n\n':'Order saved. Please tell the boss to replenish:\n\n')+stockWarnings.join('\n'),lang()==='zh'?'补货提醒':'Replenishment reminder'),180);
     if(typeof loadTodayStats === 'function')setTimeout(()=>loadTodayStats(), 100);
+    // Reconcile the optimistic display with the authoritative Products rows.
+    // This updates name/category/price/cost as well as Stock/SharedStock for
+    // every member of a loose-KG family without requiring an app restart.
+    setTimeout(()=>{
+      Promise.resolve(window.load(true)).catch(e=>console.warn('post-order product refresh failed',e));
+    },700);
   }
 
   window.checkout = async function(payment, paid=0, change=0){
