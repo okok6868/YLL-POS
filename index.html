@@ -4253,7 +4253,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     renderVariantPickerSummary();
   };
 
-  window.addProductQty=function(name,price,code,qty){qty=Math.max(1,Math.floor(Number(qty)||1));window.add(name,price,code);const c=currentCart(),found=c.find(i=>(code&&String(i.code)===String(code))||String(i.name)===String(name));if(found&&qty>1){found.qty=Number(found.qty||0)+qty-1;showCart();renderVariantPickerSummary();}};
+  // Quick KG buttons are intentionally the exact same operation as tapping
+  // the 1KG variant repeatedly. Do not maintain a second quantity shortcut:
+  // it previously bypassed parts of the normal stock/cart path.
+  window.addProductQty=function(name,price,code,qty){
+    qty=Math.max(1,Math.floor(Number(qty)||1));
+    for(let n=0;n<qty;n++)window.add(name,price,code);
+  };
 
   window.startProductTap = function(ev,name,price,code=''){
     if(!ev || (ev.isPrimary===false) || (ev.button!==undefined && ev.button!==0))return;
