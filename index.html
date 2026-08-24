@@ -329,7 +329,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #todaySoldBox .today-order-card.pay-cash{border-left-color:#22c55e}#todaySoldBox .today-order-card.pay-qr{border-left-color:#38bdf8}#todaySoldBox .today-order-card.pay-transfer{border-left-color:#a78bfa}
 #todaySoldBox .today-order-head{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;align-items:center;gap:8px;border-bottom:1px solid rgba(148,163,184,.2);padding-bottom:6px;margin-bottom:5px;font-size:13px}
 #todaySoldBox .today-pay-badge{padding:3px 8px;border-radius:999px;background:rgba(100,116,139,.2);font-weight:700}.today-order-card.pay-cash .today-pay-badge{color:#4ade80}.today-order-card.pay-qr .today-pay-badge{color:#38bdf8}.today-order-card.pay-transfer .today-pay-badge{color:#c4b5fd}
-.parcel-closing-reminder{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:4px;padding:4px 7px;border-radius:8px;background:#b45309;color:#fff7ed;font-size:10px;font-weight:900;animation:parcelPulse 1.6s ease-in-out infinite}.parcel-closing-reminder[hidden]{display:none}.parcel-no-pickup{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:7px;background:rgba(15,23,42,.45);white-space:nowrap}.parcel-no-pickup input{width:14px;height:14px;margin:0;accent-color:#22c55e}@keyframes parcelPulse{50%{background:#dc2626}}
+.parcel-closing-reminder{display:flex;align-items:center;justify-content:center;width:100%;margin-top:5px;padding:6px 10px;border:1px solid rgba(254,215,170,.72);border-radius:9px;background:#b45309;color:#fff7ed;font:inherit;font-size:10px;font-weight:900;cursor:pointer;animation:parcelPulse 1.6s ease-in-out infinite}.parcel-closing-reminder[hidden]{display:none}@keyframes parcelPulse{50%{background:#dc2626}}
 .parcel-missing-date-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}.parcel-missing-date{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px}.parcel-missing-date button{min-height:36px;padding:7px 9px;border:1px solid #475569;border-radius:9px;background:#17233a;color:#f8fafc;font-weight:800}.parcel-missing-date .parcel-no-pickup-btn{background:#334155;color:#cbd5e1;font-size:11px}@media(max-width:700px){.parcel-missing-date-grid{grid-template-columns:1fr}}
 #todaySoldBox .today-order-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:3px 0;font-size:13px}#todaySoldBox .today-order-total{border-top:1px solid rgba(148,163,184,.18);margin-top:5px;padding-top:5px;text-align:right;font-size:13px}
 #bossOtherIncomeBox .boss-inline{display:grid;grid-template-columns:140px 140px minmax(180px,1fr) 190px 150px;gap:10px;align-items:stretch}
@@ -947,6 +947,17 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .parcel-provider-editor .boss-field{display:grid!important;grid-template-rows:auto 48px!important;gap:6px!important;align-content:end!important;min-width:0!important;margin:0!important}
 .parcel-provider-editor .boss-field input,.parcel-provider-editor .boss-field select{width:100%!important;height:48px!important;min-height:48px!important;box-sizing:border-box!important;margin:0!important}
 .parcel-provider-editor button{min-height:48px!important;margin:0!important}
+.boss-parcel-payout-row{display:grid!important;grid-template-columns:minmax(190px,.82fr) minmax(190px,1fr) minmax(250px,1.32fr) 132px!important;gap:10px!important;align-items:stretch!important}
+.boss-parcel-payout-row>*{width:100%!important;height:48px!important;min-height:48px!important;min-width:0!important;margin:0!important;box-sizing:border-box!important}
+.boss-parcel-month-row{display:grid!important;grid-template-columns:minmax(0,1fr) 145px!important;gap:10px!important;align-items:stretch!important;margin-top:10px}
+.boss-parcel-month-row>*{width:100%!important;height:48px!important;min-height:48px!important;margin:0!important;box-sizing:border-box!important}
+.parcel-provider-editor{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.parcel-provider-picker,.parcel-provider-new-name{grid-column:1/-1!important}
+.parcel-provider-new-name[hidden],#bossParcelResult[hidden]{display:none!important}
+.modal:not(.active),.checkout-busy:not(.active){pointer-events:none!important;visibility:hidden!important}
+.modal.active,.checkout-busy.active{pointer-events:auto!important;visibility:visible!important}
+html.ipad-hit-reset body,html.ipad-hit-reset body *{pointer-events:none!important}
+@media(max-width:1050px){.boss-parcel-payout-row{grid-template-columns:1fr 1fr!important}.boss-parcel-payout-row button{grid-column:2}.parcel-provider-editor{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 .parcel-provider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
 .parcel-provider-card{min-width:0;padding:14px;border:1px solid #334155;border-radius:16px;background:linear-gradient(145deg,#101a2e,#0b1222)}
 .parcel-provider-card.active{border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.22) inset}
@@ -1353,11 +1364,11 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
           <div id="bossParcelBox" class="boss-panel">
             <h4>📦 包裹记录 / Parcel Records</h4>
             <p style="color:#94a3b8;font-size:13px;margin-top:-4px">SPX、TikTok 和以后新增公司共用账本，但分开计算与显示。</p>
-            <div class="boss-inline"><select id="parcelBossProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select><input id="shopeePaidAmount" type="number" placeholder="实际收到金额"><input id="shopeePaidNote" type="text" placeholder="备注"><button class="green" onclick="bossConfirmShopeePaid()">记录实际收到</button></div>
-            <div class="boss-inline" style="margin-top:10px"><input id="shopeeMonth" type="month"><button id="shopeeMonthBtn" type="button" onclick="bossLoadShopeeMonth()">查看月度汇总</button></div>
-            <details style="margin-top:10px"><summary>⚙️ 管理包裹公司、名称与单价</summary><div class="boss-product-grid parcel-provider-editor" style="margin-top:10px"><label class="boss-field wide"><span class="boss-field-label">选择公司／新增公司</span><select id="parcelProviderEditSelect" onchange="bossParcelProviderEditChanged()"><option value="">＋ 新增公司</option></select></label><label class="boss-field"><span class="boss-field-label">公司名称</span><input id="parcelProviderName" type="text" placeholder="例如 SPX"></label><label class="boss-field"><span class="boss-field-label">使用状态</span><select id="parcelProviderEnabled"><option value="true">启用</option><option value="false">停用</option></select></label><label class="boss-field"><span class="boss-field-label">派件单价</span><input id="parcelDeliveredRate" type="number" step="0.01" placeholder="RM 0.30"></label><label class="boss-field"><span class="boss-field-label">退回单价</span><input id="parcelReturnRate" type="number" step="0.01" placeholder="RM 0.15"></label><button class="green wide" onclick="bossSaveParcelProvider()">保存公司资料</button></div><small style="color:#94a3b8">停用后不会出现在日常填写、漏填日期或提醒中；旧记录仍会保留。新单价只用于之后的新记录。</small></details>
+            <div class="boss-parcel-payout-row"><select id="parcelBossProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select><input id="shopeePaidAmount" type="number" placeholder="实际收到金额"><input id="shopeePaidNote" type="text" placeholder="备注"><button class="green" onclick="bossConfirmShopeePaid()">记录实际收到</button></div>
+            <div class="boss-parcel-month-row"><input id="shopeeMonth" type="month"><button id="shopeeMonthBtn" type="button" onclick="bossLoadShopeeMonth()">查看月度汇总</button></div>
+            <details style="margin-top:10px"><summary>⚙️ 管理包裹公司、名称与单价</summary><div class="boss-product-grid parcel-provider-editor" style="margin-top:10px"><label class="boss-field parcel-provider-picker"><span class="boss-field-label">选择公司／新增公司</span><select id="parcelProviderEditSelect" onchange="bossParcelProviderEditChanged()"><option value="">＋ 新增公司</option></select></label><label id="parcelProviderNewNameField" class="boss-field parcel-provider-new-name" hidden><span class="boss-field-label">新公司名称</span><input id="parcelProviderName" type="text" placeholder="例如 SPX"></label><label class="boss-field"><span class="boss-field-label">使用状态</span><select id="parcelProviderEnabled"><option value="true">启用</option><option value="false">停用</option></select></label><label class="boss-field"><span class="boss-field-label">派件单价</span><input id="parcelDeliveredRate" type="number" step="0.01" placeholder="RM 0.30"></label><label class="boss-field"><span class="boss-field-label">退回单价</span><input id="parcelReturnRate" type="number" step="0.01" placeholder="RM 0.15"></label><button class="green wide" onclick="bossSaveParcelProvider()">保存公司资料</button></div><small style="color:#94a3b8">停用后不会出现在日常填写、漏填日期或提醒中；旧记录仍会保留。新单价只用于之后的新记录。</small></details>
             <div id="bossParcelMonthResult" class="boss-result" style="display:none"></div>
-            <div id="bossParcelResult" class="boss-result">点查看后显示。</div>
+            <div id="bossParcelResult" class="boss-result" hidden></div>
           </div>
 
           <div id="bossOtherIncomeBox" class="boss-panel">
@@ -1542,11 +1553,11 @@ function prevPage(){if(currentPage>1){currentPage--;render(currentList)}}
 function add(name,price){if(isCheckingOut)return; let found=cart.find(i=>i.name===name); if(found)found.qty++; else cart.push({name,price:Number(price)||0,qty:1}); showCart()}
 function minus(i){if(isCheckingOut)return; if(!cart[i])return; if(cart[i].qty>1)cart[i].qty--; else cart.splice(i,1); showCart()}
 function removeItem(i){if(isCheckingOut)return; cart.splice(i,1); showCart()}
-function clearCart(){if(!cart.length)return; showConfirm("确定清空购物车？",function(){cart=[];discount=0;showCart()})}
+function clearCart(){if(!cart.length)return; showConfirm("确定清空购物车？",function(){cart=[];window.cart=cart;discount=0;try{sessionStorage.removeItem('yllSafeReloadCartV1');sessionStorage.setItem('yllCartClearedAt',String(Date.now()));}catch(e){}showCart()})}
 function calcCartData(){let subtotal=fromCents(cart.reduce((s,i)=>s+cents(i.price)*Number(i.qty||0),0)); discount=moneyNum(discount); if(discount>subtotal)discount=subtotal; if(discount<0)discount=0; let final=fromCents(Math.max(0,cents(subtotal)-cents(discount))); return {subtotal,discount,final}}
 function showCart(){
   let cartBox=document.getElementById("cart");
-  if(!cart.length){discount=0; try{sessionStorage.removeItem('yllSafeReloadCartV1');}catch(e){} if(cartBox)cartBox.innerHTML='<div class="empty">购物车为空</div>'; updateTotals({subtotal:0,discount:0,final:0}); update折扣UI(); return;}
+  if(!cart.length){discount=0; try{sessionStorage.removeItem('yllSafeReloadCartV1');sessionStorage.setItem('yllCartClearedAt',String(Date.now()));}catch(e){} if(cartBox)cartBox.innerHTML='<div class="empty">购物车为空</div>'; updateTotals({subtotal:0,discount:0,final:0}); update折扣UI(); return;}
   let html="";
   cart.forEach((i,x)=>{
     let sub=i.qty*i.price;
@@ -3921,19 +3932,13 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   }
 
   let parcelReminderCheckedAt=0,parcelReminderInFlight=false;
-  function parcelReminderElement(){let el=$('parcelClosingReminder');if(el)return el;const order=$('todayOrders'),host=order&&order.parentElement;if(!host)return null;el=document.createElement('span');el.id='parcelClosingReminder';el.className='parcel-closing-reminder';el.hidden=true;host.appendChild(el);return el;}
-  function parcelNoPickupKey(date){return 'yll-spx-no-pickup-'+date.toLocaleDateString('en-CA');}
-  window.markParcelNoPickupToday=function(checked){
-    const key=parcelNoPickupKey(new Date());
-    if(checked)localStorage.setItem(key,'1');else localStorage.removeItem(key);
-    const el=parcelReminderElement();if(el&&checked)el.hidden=true;
-  };
+  function parcelReminderElement(){let el=$('parcelClosingReminder');if(el)return el;const order=$('todayOrders'),host=order&&order.parentElement;if(!host)return null;el=document.createElement('button');el.type='button';el.id='parcelClosingReminder';el.className='parcel-closing-reminder';el.hidden=true;el.addEventListener('click',()=>{try{openParcelBox();}catch(e){}});host.appendChild(el);return el;}
   async function checkParcelClosingReminder(){
     const el=parcelReminderElement();if(!el)return;
     const now=new Date(),hour=now.getHours();
-    // Thursday is the shop's fixed rest day. On other days the owner can
-    // explicitly acknowledge that SPX did not collect any parcel today.
-    if(now.getDay()===4||hour<18||hour>=21||localStorage.getItem(parcelNoPickupKey(now))==='1'){el.hidden=true;return;}
+    // Thursday is the shop's fixed rest day. On other days the reminder stays
+    // visible until a real parcel/no-pickup record has been saved.
+    if(now.getDay()===4||hour<18||hour>=21){el.hidden=true;return;}
     if(parcelReminderInFlight||Date.now()-parcelReminderCheckedAt<120000)return;
     parcelReminderInFlight=true;parcelReminderCheckedAt=Date.now();
     try{
@@ -3942,8 +3947,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       el.hidden=hasToday;
       if(!hasToday){
         const message=lang()==='zh'?'⚠️ 今晚还没填 SPX 包裹':'⚠️ SPX parcel not recorded';
-        const noPickup=lang()==='zh'?'今天没有送货':'No pickup today';
-        el.innerHTML=`<span>${esc(message)}</span><label class="parcel-no-pickup"><input type="checkbox" onchange="markParcelNoPickupToday(this.checked)"> ${esc(noPickup)}</label>`;
+        el.textContent=message;
       }
     }catch(e){el.hidden=true;}finally{parcelReminderInFlight=false;}
   }
@@ -6991,7 +6995,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     return html;
   }
 
-  window.bossLoadParcelPage=async function(page){const box=$('bossParcelResult'),provider=(($('parcelBossProvider')||{}).value)||'SPX';if(box)box.textContent=tr('loading');try{const r=await apiCallTransient('getParcelSummary',[Number(page)||1,12,provider],16000,'Parcel summary');if(box)box.innerHTML=renderBossParcelSummary(r);}catch(e){if(box)box.textContent=tr('loadFailed')+cleanMessage(e.message||e);}};
+  window.bossLoadParcelPage=async function(page){const box=$('bossParcelResult'),provider=(($('parcelBossProvider')||{}).value)||'SPX';if(box){box.hidden=true;box.textContent='';}try{const r=await apiCallTransient('getParcelSummary',[Number(page)||1,12,provider],16000,'Parcel summary');if(box){box.innerHTML=renderBossParcelSummary(r);box.hidden=false;}}catch(e){if(box){box.textContent=tr('loadFailed')+cleanMessage(e.message||e);box.hidden=false;}}};
 
   window.bossOpenParcelBoss = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
@@ -7000,14 +7004,14 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     const monthInput=$('shopeeMonth');if(monthInput&&!monthInput.value)monthInput.value=new Date().toLocaleDateString('en-CA').slice(0,7);
     const providerSelect=$('parcelBossProvider');if(providerSelect){providerSelect.onchange=()=>{window.__parcelBossProvider=providerSelect.value;bossOpenParcelBoss();};try{const providers=await apiCallTransient('getParcelProviders',[true],12000,'Parcel providers');window.__bossParcelProviders=providers||[];providerSelect.innerHTML=(providers||[]).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.enabled===false?' · 已停用':''} · RM ${num(p.deliveredRate).toFixed(2)}/${num(p.returnRate).toFixed(2)}</option>`).join('');if(window.__parcelBossProvider&&[...providerSelect.options].some(o=>o.value===window.__parcelBossProvider))providerSelect.value=window.__parcelBossProvider;const edit=$('parcelProviderEditSelect');if(edit){const previous=edit.value;edit.innerHTML='<option value="">＋ 新增公司</option>'+window.__bossParcelProviders.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.enabled===false?'（已停用）':''}</option>`).join('');const target=[previous,window.__parcelBossProvider,providerSelect.value,(window.__bossParcelProviders[0]||{}).id].find(v=>v&&[...edit.options].some(o=>o.value===String(v)));if(target)edit.value=String(target);bossParcelProviderEditChanged();}}catch(ignore){}window.__parcelBossProvider=providerSelect.value;}
     const box=$('bossParcelResult');
-    if(bossOverviewCache && bossOverviewCache.parcel && box)box.innerHTML=renderBossParcelSummary(bossOverviewCache.parcel);
-    else if(box)box.textContent=tr('loading');
+    if(bossOverviewCache && bossOverviewCache.parcel && box){box.innerHTML=renderBossParcelSummary(bossOverviewCache.parcel);box.hidden=false;}
+    else if(box){box.textContent='';box.hidden=true;}
     try{
       const r=await apiCallTransient('getParcelSummary',[1,12,(providerSelect||{}).value||'SPX'],16000,'Parcel summary');
       if(bossOverviewCache)bossOverviewCache.parcel=r;
-      if(box)box.innerHTML=renderBossParcelSummary(r);
+      if(box){box.innerHTML=renderBossParcelSummary(r);box.hidden=false;}
     }catch(e){
-      if(box && !(bossOverviewCache && bossOverviewCache.parcel))box.textContent=tr('loadFailed')+cleanMessage(e.message||e);
+      if(box && !(bossOverviewCache && bossOverviewCache.parcel)){box.textContent=tr('loadFailed')+cleanMessage(e.message||e);box.hidden=false;}
       const br=$('bossResult'); if(br)br.textContent=tr('dashboardSlow');
     }
   };
@@ -7034,12 +7038,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
 
   window.bossSaveParcelProvider=async function(){
     if(typeof bossRequire==='function'&&!bossRequire())return;
-    const id=String((($('parcelProviderEditSelect')||{}).value)||'').trim(),name=String((($('parcelProviderName')||{}).value)||'').trim(),deliveredRate=num(($('parcelDeliveredRate')||{}).value),returnRate=num(($('parcelReturnRate')||{}).value),enabled=String((($('parcelProviderEnabled')||{}).value)||'true')==='true';
+    const id=String((($('parcelProviderEditSelect')||{}).value)||'').trim(),existing=(window.__bossParcelProviders||[]).find(p=>String(p.id)===id),name=existing?String(existing.name||'').trim():String((($('parcelProviderName')||{}).value)||'').trim(),deliveredRate=num(($('parcelDeliveredRate')||{}).value),returnRate=num(($('parcelReturnRate')||{}).value),enabled=String((($('parcelProviderEnabled')||{}).value)||'true')==='true';
     if(!name||deliveredRate<0||returnRate<0){showAppAlert(lang()==='zh'?'请填写公司名称、派件单价和退回单价。':'Enter provider name and both rates.',lang()==='zh'?'包裹记录':'Parcel Records');return;}
     try{setSubmitBusy(true,tr('saving'));const out=await apiCallTransient('saveParcelProvider',[{id,name,deliveredRate,returnRate,enabled}],25000,'Save parcel provider');window.__parcelBossProvider=((out.providers||[]).find(p=>String(p.id)===id)||{}).id||((out.providers||[]).find(p=>String(p.name).toUpperCase()===name.toUpperCase())||{}).id||window.__parcelBossProvider||'SPX';showToast(enabled?(lang()==='zh'?'✅ 公司资料已保存':'✅ Provider saved'):(lang()==='zh'?'✅ 公司已停用，日常记录不会再出现':'✅ Provider disabled'));await bossOpenParcelBoss();const edit=$('parcelProviderEditSelect');if(edit){edit.value=window.__parcelBossProvider;bossParcelProviderEditChanged();}}catch(e){showAppAlert(tr('saveFailed')+cleanMessage(e.message||e),lang()==='zh'?'包裹记录':'Parcel Records');}finally{setSubmitBusy(false);keepBossDashboardOpen('shopee');}
   };
 
-  window.bossParcelProviderEditChanged=function(){const id=String((($('parcelProviderEditSelect')||{}).value)||''),p=(window.__bossParcelProviders||[]).find(x=>String(x.id)===id);if($('parcelProviderName'))$('parcelProviderName').value=p?p.name:'';if($('parcelDeliveredRate'))$('parcelDeliveredRate').value=p?num(p.deliveredRate).toFixed(2):'';if($('parcelReturnRate'))$('parcelReturnRate').value=p?num(p.returnRate).toFixed(2):'';if($('parcelProviderEnabled'))$('parcelProviderEnabled').value=p&&p.enabled===false?'false':'true';};
+  window.bossParcelProviderEditChanged=function(){const id=String((($('parcelProviderEditSelect')||{}).value)||''),p=(window.__bossParcelProviders||[]).find(x=>String(x.id)===id),nameField=$('parcelProviderNewNameField');if(nameField)nameField.hidden=!!p;if($('parcelProviderName'))$('parcelProviderName').value='';if($('parcelDeliveredRate'))$('parcelDeliveredRate').value=p?num(p.deliveredRate).toFixed(2):'';if($('parcelReturnRate'))$('parcelReturnRate').value=p?num(p.returnRate).toFixed(2):'';if($('parcelProviderEnabled'))$('parcelProviderEnabled').value=p&&p.enabled===false?'false':'true';};
 
   window.bossLoadShopeeMonth = async function(){
     if(typeof bossRequire==='function'&&!bossRequire())return;
@@ -7356,6 +7360,16 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       if(busy){busy.classList.remove('active');busy.style.zIndex='';}
       document.querySelectorAll('.boss-image-viewer').forEach(el=>el.remove());
     }
+    document.querySelectorAll('.modal,.checkout-busy').forEach(el=>{
+      if(el.classList.contains('active')){
+        el.style.removeProperty('pointer-events');
+        el.style.removeProperty('visibility');
+      }else{
+        el.style.pointerEvents='none';
+        el.style.visibility='hidden';
+      }
+    });
+    if(!criticalBusy)document.body.style.removeProperty('pointer-events');
     // Never rebuild product HTML from a focus/resize/pageshow recovery. iPad
     // reports transient viewport and visibility states while taking/sharing a
     // screenshot; rendering here used to revive an obsolete product layout.
@@ -7521,6 +7535,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       try{
         const rows=currentCart();
         if(rows.length)sessionStorage.setItem('yllSafeReloadCartV1',JSON.stringify({cart:rows,discount:Number(discount)||0,at:Date.now()}));
+        else{sessionStorage.removeItem('yllSafeReloadCartV1');sessionStorage.setItem('yllCartClearedAt',String(Date.now()));}
         sessionStorage.setItem('yllIpadSafeReloadAt',String(Date.now()));
         sessionStorage.setItem('yllIpadSafeReloadReason',String(reason||'viewport'));
       }catch(e){}
@@ -7551,7 +7566,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     try{
       const rows=currentCart();
       if(rows.length)sessionStorage.setItem('yllSafeReloadCartV1',JSON.stringify({cart:rows,discount:Number(discount)||0,at:Date.now()}));
-      else sessionStorage.removeItem('yllSafeReloadCartV1');
+      else{sessionStorage.removeItem('yllSafeReloadCartV1');sessionStorage.setItem('yllCartClearedAt',String(Date.now()));}
       sessionStorage.removeItem('yllIpadSafeReloadAt');
       sessionStorage.setItem('yllIpadSafeReloadReason','manual-pos-refresh');
     }catch(e){}
@@ -7594,9 +7609,26 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     },180);
   }
   let ipadForegroundRecoveryTimers=[];
+  function ipadTouchLayerHealthy(){
+    if(!iPadDevice||document.hidden||document.querySelector('.modal.active'))return true;
+    const target=document.querySelector('.plain-gear');
+    if(!target)return true;
+    const r=target.getBoundingClientRect();
+    if(r.width<2||r.height<2)return true;
+    const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+    return !!hit&&(hit===target||target.contains(hit));
+  }
+  function maybeReloadBrokenIpadTouchLayer(){
+    if(!iPadDevice||document.hidden||ipadCriticalWorkActive()||ipadTouchLayerHealthy())return;
+    let last=0;try{last=Number(sessionStorage.getItem('yllIpadHitReloadAt')||0);}catch(e){}
+    if(Date.now()-last<15000)return;
+    try{sessionStorage.setItem('yllIpadHitReloadAt',String(Date.now()));}catch(e){}
+    requestIpadSafeReload('broken-hit-layer',120,true);
+  }
   function runIpadForegroundRecovery(){
     ipadForegroundRecoveryTimers.forEach(clearTimeout);
-    ipadForegroundRecoveryTimers=[0,120,420,900,1600].map(delay=>setTimeout(()=>{
+    const passes=[0,120,420,900,1600,2400];
+    ipadForegroundRecoveryTimers=passes.map(delay=>setTimeout(()=>{
       if(document.hidden)return;
       try{
         document.documentElement.style.removeProperty('width');
@@ -7611,6 +7643,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
         void document.documentElement.offsetWidth;
         requestAnimationFrame(()=>document.documentElement.classList.remove('ipad-hit-reset'));
       }catch(e){}
+      if(delay===passes[passes.length-1])setTimeout(maybeReloadBrokenIpadTouchLayer,180);
     },delay));
   }
   // iPad briefly reports a false viewport size while taking/sharing a
