@@ -4608,8 +4608,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     const msg=lang()==='zh'?'确认放弃全部旧分类？所有商品会进入“未分类”，但库存、售价、进货价、照片、编号和启用状态都会保留。此操作只需要执行一次。':'Discard all old classifications? Every product will move to Unclassified while stock, prices, costs, photos, codes and active status remain.';
     showConfirm(msg,bossResetClassificationNow);
   };
-  window.bossConfirmConsolidateLegacyData=function(){showConfirm(lang()==='zh'?'确认执行一次性旧资料整理？系统会保留已有的多商品Group，清空单独商品Group；使用目前Products成本重算旧销售利润；旧空白付款归Cash。Shopee旧记录不会改变。':'Run the one-time legacy consolidation? Existing multi-product groups are retained, singleton groups cleared, old profit recalculated from current product cost, and blank payments assigned to Cash. Shopee history is unchanged.',bossConsolidateLegacyDataNow);};
-  async function bossConsolidateLegacyDataNow(){setSubmitBusy(true,lang()==='zh'?'正在整理旧资料，请勿关闭...':'Consolidating legacy data...');try{const out=await timeout(apiCall('consolidateLegacyData',[]),120000,'Legacy consolidation'),missing=(out.unmatchedNames||[]).map(x=>`${x.name} × ${x.count}`).join('\n');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert((lang()==='zh'?`整理完成：独立商品Group清空 ${out.groupsCleared||0}；销售明细重算 ${out.itemsRecalculated||0}；无法匹配 ${out.itemsUnmatched||0}；买单利润更新 ${out.ordersProfitUpdated||0}；付款名称整理 ${out.paymentsNormalized||0}。旧利润属于按目前成本计算的估算。`:`Complete. Singleton groups cleared ${out.groupsCleared||0}; item profits recalculated ${out.itemsRecalculated||0}; unmatched ${out.itemsUnmatched||0}; order profits updated ${out.ordersProfitUpdated||0}.`)+(missing?`\n\n${lang()==='zh'?'无法匹配：':'Unmatched:'}\n${missing}`:''),tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
   async function bossResetClassificationNow(){
     setSubmitBusy(true,lang()==='zh'?'正在把全部商品改为未分类...':'Moving all products to Unclassified...');
     try{const out=await timeout(apiCall('resetProductsForNewClassification',[]),60000,'Reset product classification');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?`完成：${Number(out&&out.updated)||0} 个商品已进入未分类。现在可以逐个重新分类。`:`Complete: ${Number(out&&out.updated)||0} products moved to Unclassified.`,tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}
@@ -5186,21 +5184,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     const receivePayload={code:p.code,name:p.name,qty:units,cost:unitCost,price:salePrice,packSize,packCost,receiveId:'RCV-'+makeClientOrderId()};
     setSubmitBusy(true,lang()==='zh'?'正在换算整箱数量并记录...':'Converting cartons and recording stock...');
     try{const out=await apiCallTransient('receiveProductStock',[receivePayload],45000,'Receive cartons');if($('bossReceiveQty'))$('bossReceiveQty').value='';if($('bossReceiveCost'))$('bossReceiveCost').value='';try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();bossChooseProductWork('receive',true);const message=(lang()==='zh'?`进货完成：${cartons} 箱 × ${packSize} 件 = 增加 ${units} 件；每件真实成本 RM ${unitCost.toFixed(5)}；库存 ${Number(out.beforeStock||0)} → ${Number(out.stock||0)}；平均成本 RM ${Number(out.averageCost||0).toFixed(5)}。`:`Received ${cartons} × ${packSize} = ${units} units; unit cost RM ${unitCost.toFixed(5)}; stock ${Number(out.beforeStock||0)} → ${Number(out.stock||0)}; average cost RM ${Number(out.averageCost||0).toFixed(5)}.`)+bossMarginAdvice(p.price,Number(out&&out.averageCost)||0);showAppAlert(message,tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');bossChooseProductWork('receive',true);}
-  };
-
-  window.bossClassifyExistingProducts = async function(){
-    if(typeof bossRequire==='function'&&!bossRequire())return;
-    const res=$('bossProductResult');
-    setSubmitBusy(true,lang()==='zh'?'正在整理商品...':'Classifying products...');
-    try{
-      const out=await timeout(apiCall('classifyProductsForBoss',[]),60000,'Product classification');
-      const review=(out&&out.review)||[];
-      if(res)res.innerHTML=`<div class="boss-notice"><b>${lang()==='zh'?'安全补全完成':'Safe completion finished'}：${Number(out&&out.updated)||0} ${lang()==='zh'?'件商品':'products'}</b><br>${lang()==='zh'?'新商品编号':'New product codes'}：${Number(out&&out.codeAssigned)||0}<br>${review.length?(lang()==='zh'?'以下资料仍不确定，已保留给你手动分类：':'Still needs manual classification:')+'<br>'+review.map(x=>`${esc(x.name)} <small>(${esc(x.category||'-')})</small>`).join('<br>'):(lang()==='zh'?'没有发现待确认资料。':'No uncertain records found.')}</div>`;
-      await window.bossOpenProducts();
-    }catch(e){
-      if(res)res.textContent=(e&&e.message)||e;
-      showAppAlert((e&&e.message)||e,tr('productEditor'));
-    }finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}
   };
 
   window.bossCreateLooseSeries = async function(){
