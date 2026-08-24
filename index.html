@@ -943,8 +943,10 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .parcel-backfill-actions button{width:100%!important;min-height:48px!important}
 #parcelBox select,#bossParcelBox select{appearance:auto!important;background:#17233a!important;color:#f8fafc!important;border:1px solid #475569!important;color-scheme:dark!important}
 #parcelBox select option,#bossParcelBox select option{background:#17233a!important;color:#f8fafc!important}
-.parcel-provider-editor{align-items:start!important}
-.parcel-provider-editor .boss-field{margin:0!important}
+.parcel-provider-editor{align-items:end!important}
+.parcel-provider-editor .boss-field{display:grid!important;grid-template-rows:auto 48px!important;gap:6px!important;align-content:end!important;min-width:0!important;margin:0!important}
+.parcel-provider-editor .boss-field input,.parcel-provider-editor .boss-field select{width:100%!important;height:48px!important;min-height:48px!important;box-sizing:border-box!important;margin:0!important}
+.parcel-provider-editor button{min-height:48px!important;margin:0!important}
 .parcel-provider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
 .parcel-provider-card{min-width:0;padding:14px;border:1px solid #334155;border-radius:16px;background:linear-gradient(145deg,#101a2e,#0b1222)}
 .parcel-provider-card.active{border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.22) inset}
@@ -3258,7 +3260,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       /* Do not fix the whole body to Safari's transient visual viewport. During
          a screenshot old iPad Safari can temporarily shrink that fixed layer,
          leaving a black, non-touchable strip until the app is foregrounded. */
-      html.ipad-pos,html.ipad-pos body{width:var(--ipad-stable-width,100vw)!important;max-width:var(--ipad-stable-width,100vw)!important;min-width:var(--ipad-stable-width,100vw)!important;height:var(--ipad-stable-height,100vh)!important;max-height:var(--ipad-stable-height,100vh)!important}
+      html.ipad-pos,html.ipad-pos body{width:100%!important;max-width:none!important;min-width:0!important;height:100%!important;min-height:100%!important;max-height:none!important}
       html.ipad-pos body{position:relative!important;inset:auto!important;overflow:hidden!important}
       html.ipad-pos body>.header{display:block!important;width:100%!important;min-width:0!important;box-sizing:border-box!important}
       html.ipad-pos body>.layout{display:grid!important;grid-template-columns:150px minmax(0,1fr) 310px!important;width:100%!important;min-width:0!important;height:calc(100dvh - 112px)!important;max-height:calc(100dvh - 112px)!important;overflow:hidden!important}
@@ -3270,7 +3272,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       html.ipad-pos body>.layout>.main .products{max-height:none!important;grid-template-columns:repeat(auto-fill,minmax(122px,1fr))!important}
       html.ipad-pos body>.layout>.right{height:auto!important;min-width:0!important;border-left:1px solid var(--line)!important;border-top:0!important}
       html.ipad-pos .stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-      html.ipad-pos .modal{width:var(--ipad-stable-width,100vw)!important;max-width:var(--ipad-stable-width,100vw)!important;height:var(--ipad-stable-height,100vh)!important;max-height:var(--ipad-stable-height,100vh)!important}
+      html.ipad-pos .modal{width:100%!important;max-width:100%!important;height:100%!important;max-height:100%!important}
       html.ipad-pos #bossDashboard .boss-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
       html.ipad-pos #bossDashboard .boss-tab-grid{position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
       html.ipad-pos #bossDashboard .boss-tab-grid button{text-align:left!important;justify-content:flex-start!important}
@@ -4294,6 +4296,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     const c=currentCart();
     if(!c.length){
       try{ discount=0; }catch(e){}
+      try{ sessionStorage.removeItem('yllSafeReloadCartV1'); }catch(e){}
       if(cartBox)cartBox.innerHTML=`<div class="empty">${esc(cartEmptyMessage())}</div>`;
       updateTotals({subtotal:0,discount:0,final:0});
       updateDiscountButton();
@@ -5739,6 +5742,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     try{
       ['cart','posCart','yllCart','yllPosCart','currentCart','pendingCart'].forEach(k=>localStorage.removeItem(k));
     }catch(e){}
+    // An intentional clear must also invalidate the refresh-recovery snapshot.
+    // Otherwise the next manual refresh resurrects the user's old cart.
+    try{
+      sessionStorage.removeItem('yllSafeReloadCartV1');
+      sessionStorage.setItem('yllCartClearedAt',String(Date.now()));
+    }catch(e){}
     try{ discount=0; }catch(e){}
     try{ window.discount=0; }catch(e){}
     try{ showCart(); }catch(e){}
@@ -6989,7 +6998,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     showBossPanel('bossParcelBox','shopee');
     setStaticText();
     const monthInput=$('shopeeMonth');if(monthInput&&!monthInput.value)monthInput.value=new Date().toLocaleDateString('en-CA').slice(0,7);
-    const providerSelect=$('parcelBossProvider');if(providerSelect){providerSelect.onchange=()=>{window.__parcelBossProvider=providerSelect.value;bossOpenParcelBoss();};try{const providers=await apiCallTransient('getParcelProviders',[true],12000,'Parcel providers');window.__bossParcelProviders=providers||[];providerSelect.innerHTML=(providers||[]).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.enabled===false?' · 已停用':''} · RM ${num(p.deliveredRate).toFixed(2)}/${num(p.returnRate).toFixed(2)}</option>`).join('');if(window.__parcelBossProvider&&[...providerSelect.options].some(o=>o.value===window.__parcelBossProvider))providerSelect.value=window.__parcelBossProvider;const edit=$('parcelProviderEditSelect');if(edit){const selected=edit.value;edit.innerHTML='<option value="">＋ 新增公司</option>'+window.__bossParcelProviders.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.enabled===false?'（已停用）':''}</option>`).join('');if(selected&&[...edit.options].some(o=>o.value===selected))edit.value=selected;}}catch(ignore){}window.__parcelBossProvider=providerSelect.value;}
+    const providerSelect=$('parcelBossProvider');if(providerSelect){providerSelect.onchange=()=>{window.__parcelBossProvider=providerSelect.value;bossOpenParcelBoss();};try{const providers=await apiCallTransient('getParcelProviders',[true],12000,'Parcel providers');window.__bossParcelProviders=providers||[];providerSelect.innerHTML=(providers||[]).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.enabled===false?' · 已停用':''} · RM ${num(p.deliveredRate).toFixed(2)}/${num(p.returnRate).toFixed(2)}</option>`).join('');if(window.__parcelBossProvider&&[...providerSelect.options].some(o=>o.value===window.__parcelBossProvider))providerSelect.value=window.__parcelBossProvider;const edit=$('parcelProviderEditSelect');if(edit){const previous=edit.value;edit.innerHTML='<option value="">＋ 新增公司</option>'+window.__bossParcelProviders.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.enabled===false?'（已停用）':''}</option>`).join('');const target=[previous,window.__parcelBossProvider,providerSelect.value,(window.__bossParcelProviders[0]||{}).id].find(v=>v&&[...edit.options].some(o=>o.value===String(v)));if(target)edit.value=String(target);bossParcelProviderEditChanged();}}catch(ignore){}window.__parcelBossProvider=providerSelect.value;}
     const box=$('bossParcelResult');
     if(bossOverviewCache && bossOverviewCache.parcel && box)box.innerHTML=renderBossParcelSummary(bossOverviewCache.parcel);
     else if(box)box.textContent=tr('loading');
@@ -7284,7 +7293,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     // clearCartState(), which removes this snapshot through showCart().
     try{
       const saved=JSON.parse(sessionStorage.getItem('yllSafeReloadCartV1')||'null');
-      if(saved&&Array.isArray(saved.cart)&&saved.cart.length&&Date.now()-Number(saved.at||0)<12*60*60*1000){
+      const clearedAt=Number(sessionStorage.getItem('yllCartClearedAt')||0);
+      if(saved&&Number(saved.at||0)>clearedAt&&Array.isArray(saved.cart)&&saved.cart.length&&Date.now()-Number(saved.at||0)<12*60*60*1000){
         cart=saved.cart.map(x=>({name:String(x.name||''),price:Number(x.price)||0,qty:Math.max(1,Number(x.qty)||1)}));
         discount=Math.max(0,Number(saved.discount)||0);
         setTimeout(()=>{try{showCart();}catch(e){}},0);
@@ -7321,10 +7331,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       try{ window.syncOfflineOrders(); }catch(e){}
       try{ resumePendingOrderChecks(); }catch(e){}
       scheduleTopStatsRefresh(300);
-      // iPad uses the single foreground reload below. Do not run the older
-      // viewport-only repair at the same time: competing recovery paths can
-      // leave a full-width painting with half-width touch coordinates.
-      try{ if(appleTouchDevice&&!iPadDevice)scheduleAppleViewportRecovery();else if(!iPadDevice)recoverViewportAndInteraction(); }catch(e){}
+      try{ if(appleTouchDevice)scheduleAppleViewportRecovery();else recoverViewportAndInteraction(); }catch(e){}
     },delay||120);
   }
   window.addEventListener('online', () => { try{ markNetworkOnline('browser online'); }catch(e){} scheduleForegroundWork(120); });
@@ -7544,6 +7551,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     try{
       const rows=currentCart();
       if(rows.length)sessionStorage.setItem('yllSafeReloadCartV1',JSON.stringify({cart:rows,discount:Number(discount)||0,at:Date.now()}));
+      else sessionStorage.removeItem('yllSafeReloadCartV1');
       sessionStorage.removeItem('yllIpadSafeReloadAt');
       sessionStorage.setItem('yllIpadSafeReloadReason','manual-pos-refresh');
     }catch(e){}
@@ -7582,17 +7590,28 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
           document.body.style.transform='';
           try{void document.body.offsetWidth;}catch(e){}
         }));
-        const screenLong=Math.max(Number(screen.width)||0,Number(screen.height)||0);
-        const reportedWidth=Math.min(
-          Number(window.innerWidth)||screenLong,
-          Number(document.documentElement.clientWidth)||screenLong,
-          Number(window.visualViewport&&window.visualViewport.width)||screenLong
-        );
-        const active=document.activeElement;
-        const typing=!!(active&&/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName));
-        if(!typing&&screenLong>=900&&reportedWidth<screenLong*.86)requestIpadSafeReload('narrow-viewport',260);
       }
     },180);
+  }
+  let ipadForegroundRecoveryTimers=[];
+  function runIpadForegroundRecovery(){
+    ipadForegroundRecoveryTimers.forEach(clearTimeout);
+    ipadForegroundRecoveryTimers=[0,120,420,900,1600].map(delay=>setTimeout(()=>{
+      if(document.hidden)return;
+      try{
+        document.documentElement.style.removeProperty('width');
+        document.documentElement.style.removeProperty('max-width');
+        document.documentElement.style.removeProperty('height');
+        document.body.style.removeProperty('width');
+        document.body.style.removeProperty('max-width');
+        document.body.style.removeProperty('height');
+        document.body.style.transform='';
+        recoverViewportAndInteraction();
+        document.documentElement.classList.add('ipad-hit-reset');
+        void document.documentElement.offsetWidth;
+        requestAnimationFrame(()=>document.documentElement.classList.remove('ipad-hit-reset'));
+      }catch(e){}
+    },delay));
   }
   // iPad briefly reports a false viewport size while taking/sharing a
   // screenshot. Never rebuild products during that transient resize: doing so
@@ -7600,27 +7619,19 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   if(appleTouchDevice){
     const handleAppleResize=()=>{
       scheduleAppleViewportRecovery();
-      if(!iPadDevice||Date.now()-ipadRecoveryBootAt<2200)return;
-      const active=document.activeElement;
-      const typing=!!(active&&/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName));
-      // Screenshot on this iPad does not always report a narrower width, but
-      // it does emit a resize and leaves WebKit's modal/Boss hit-test layer
-      // stale. Reload on every non-keyboard resize instead of guessing width.
-      if(!typing)requestIpadSafeReload('ipad-non-keyboard-resize',520);
+      if(iPadDevice)runIpadForegroundRecovery();
     };
     window.addEventListener('resize',handleAppleResize,{passive:true});
     if(window.visualViewport)window.visualViewport.addEventListener('resize',handleAppleResize,{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
   if(iPadDevice){
-    window.addEventListener('pageshow',event=>{
-      if(event.persisted&&Date.now()-ipadRecoveryBootAt>2200)requestIpadSafeReload('pageshow-return',220,true);
-    },{passive:true});
+    window.addEventListener('pageshow',()=>runIpadForegroundRecovery(),{passive:true});
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden){ipadHiddenAt=Date.now();return;}
-      // Returning from Screenshot/Photos/WhatsApp is where old WebKit keeps a
-      // stale half-screen hit-test layer. A real reload is the only reliable
-      // way to rebuild it; the cart snapshot above makes that safe.
-      if(ipadHiddenAt&&Date.now()-ipadHiddenAt>250)requestIpadSafeReload('foreground-return',220,true);
+      // Pressing Home or returning from Screenshot/WhatsApp must keep the
+      // current POS/Boss view. Rebuild WebKit's viewport and hit-test layer in
+      // several passes while its transient viewport settles; never reload.
+      if(ipadHiddenAt&&Date.now()-ipadHiddenAt>120)runIpadForegroundRecovery();
       ipadHiddenAt=0;
     },{passive:true});
   }
