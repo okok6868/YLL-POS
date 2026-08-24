@@ -3932,7 +3932,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   }
 
   let parcelReminderCheckedAt=0,parcelReminderInFlight=false;
-  function parcelReminderElement(){let el=$('parcelClosingReminder');if(el)return el;const order=$('todayOrders'),host=order&&order.parentElement;if(!host)return null;el=document.createElement('button');el.type='button';el.id='parcelClosingReminder';el.className='parcel-closing-reminder';el.hidden=true;el.addEventListener('click',()=>{try{openParcelBox();}catch(e){}});host.appendChild(el);return el;}
+  function parcelReminderElement(){let el=$('parcelClosingReminder');if(el)return el;const order=$('todayOrders'),host=order&&order.parentElement;if(!host)return null;el=document.createElement('button');el.type='button';el.id='parcelClosingReminder';el.className='parcel-closing-reminder';el.hidden=true;el.addEventListener('click',(event)=>{event.preventDefault();event.stopPropagation();try{openParcelBox();}catch(e){}});host.appendChild(el);return el;}
   async function checkParcelClosingReminder(){
     const el=parcelReminderElement();if(!el)return;
     const now=new Date(),hour=now.getHours();
