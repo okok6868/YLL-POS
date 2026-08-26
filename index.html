@@ -5800,7 +5800,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(typeof loadTodayStats === 'function')loadTodayStats();
       if(typeof showToast === 'function')showToast(`${tr('orderConfirmedNo')}: ${saved.orderId}`);
     }
-    if(wasSlow)showAppAlert(`${tr('orderConfirmedNo')}: ${saved.orderId}\n${tr('lookupNo')}: ${clientId}`, tr('payment'));
+    // Confirmation must never close or cover “今日卖了什么”/Boss screens.
+    // A toast is enough because the same idempotency key already protects the order.
+    if(wasSlow&&typeof showToast==='function')showToast(`✅ ${tr('orderConfirmedNo')}: ${saved.orderId}`);
+    if(saved.inventoryVerified===false)setTimeout(()=>showAppAlert(lang()==='zh'?`订单 ${saved.orderId} 已保存，但库存回读仍不一致。请立即通知老板并检查该商品库存。`:`Order ${saved.orderId} was saved, but inventory verification still differs. Please notify the boss and check this stock immediately.`,lang()==='zh'?'库存核对警告':'Inventory warning'),250);
     return true;
   }
   function finishSlowOrder(clientId, sendDiscount, pendingPayload){
@@ -7255,6 +7258,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
     setTimeout(()=>{ try{ resumePendingOrderChecks(); }catch(e){} }, 1600);
     setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
+    // Keep different counters in sync without making every device constantly
+    // reload the full catalogue. Totals are light; products refresh once/minute.
+    setInterval(()=>{if(!document.hidden){try{scheduleTopStatsRefresh(0);}catch(e){}}},30000);
     // Safari may reload the page after a screenshot or app switch. Restore the
     // parcel workflow instead of silently dropping the user back at POS home.
     /* A deploy/manual refresh always returns to the POS home.  Reopening a
@@ -7262,12 +7268,17 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     try{sessionStorage.removeItem('yllResumeModal');}catch(e){}
   });
   let foregroundWorkTimer=null;
+  let lastForegroundProductRefresh=0;
   function scheduleForegroundWork(delay){
     clearTimeout(foregroundWorkTimer);
     foregroundWorkTimer=setTimeout(()=>{
       try{ window.syncOfflineOrders(); }catch(e){}
       try{ resumePendingOrderChecks(); }catch(e){}
       scheduleTopStatsRefresh(300);
+      if(Date.now()-lastForegroundProductRefresh>45000){
+        lastForegroundProductRefresh=Date.now();
+        try{Promise.resolve(window.load(true)).catch(()=>{});}catch(e){}
+      }
       try{parcelReminderCheckedAt=0;scheduleParcelClosingReminderCheck();}catch(e){}
       try{ recoverViewportAndInteraction(); }catch(e){}
     },delay||120);
