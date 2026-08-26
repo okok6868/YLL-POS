@@ -957,7 +957,6 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 .parcel-provider-settings>summary{cursor:pointer;font-weight:900;color:#facc15;padding:10px 12px;border:1px solid #334155;border-radius:11px;background:#111827}.parcel-provider-settings[open]>summary{margin-bottom:10px}.boss-parcel-loading{position:relative;opacity:.72;pointer-events:none}.boss-parcel-loading::before{content:'正在载入下一页…';position:sticky;display:block;top:8px;z-index:3;width:max-content;max-width:calc(100% - 24px);margin:0 auto 8px;padding:8px 14px;border-radius:999px;background:#0369a1;color:#fff;font-weight:900;box-shadow:0 5px 16px rgba(2,132,199,.3)}
 .modal:not(.active),.checkout-busy:not(.active){pointer-events:none!important;visibility:hidden!important}
 .modal.active,.checkout-busy.active{pointer-events:auto!important;visibility:visible!important}
-html.ipad-hit-reset body,html.ipad-hit-reset body *{pointer-events:none!important}
 @media(max-width:1050px){.boss-parcel-payout-row{grid-template-columns:1fr 1fr!important}.boss-parcel-payout-row button{grid-column:2}.parcel-provider-editor{grid-template-columns:repeat(2,minmax(0,1fr))!important}.parcel-provider-new-name{grid-column:1/-1!important}}
 .parcel-provider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
 .parcel-provider-card{min-width:0;padding:14px;border:1px solid #334155;border-radius:16px;background:linear-gradient(145deg,#101a2e,#0b1222)}
@@ -2406,20 +2405,6 @@ bossOpenCashCollect = async function(){
   }catch(e){document.getElementById('bossCashInfo').textContent='载入失败：'+(e.message||e)}
 };
 
-bossOpenParcelBoss = async function(){
-  if(!bossRequire())return; bossHideBossPanels(); bossSetNav('Shopee');
-  const p=document.getElementById('bossParcelBox'); if(p){p.style.display='block';p.classList.add('active');}
-  const box=document.getElementById('bossParcelResult'); box.textContent='载入中...';
-  try{
-    const r=await apiCall('getParcelSummary',[]);
-    const logs=(r.logs||[]).slice(0,12);
-    const diff=moneyNum((r.pendingEstimated||0)-(r.actualPaid||0));
-    let html=`<div class="boss-overview-grid" style="margin-bottom:12px"><div class="overview-card ${diff>0?'warn':''}"><small>预计未对账</small><b>${fmt(r.pendingEstimated||0)}</b><span>系统按件数估算</span></div><div class="overview-card"><small>实际已记录</small><b>${fmt(r.actualPaid||0)}</b><span>以你填写的 payout 为准</span></div><div class="overview-card ${Math.abs(cents(diff))>0?'warn':''}"><small>差额</small><b>${fmt(diff)}</b><span>可能是包裹还未结算或下期再算</span></div><div class="overview-card"><small>记录数</small><b>${r.count||0} 笔</b><span>每页显示 12 笔</span></div></div>`;
-    if(logs.length){html += `<table><tr><th>日期</th><th>趟</th><th class="right">派件</th><th class="right">退回</th><th class="right">预计</th><th>状态</th></tr>` + logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.returned||0}</td><td class="right">${fmt(x.estimated||0)}</td><td><span class="boss-chip">${x.status||''}</span></td></tr>`).join('') + `</table>`;} else html += '还没有 SPX 包裹记录。';
-    box.innerHTML=html;
-  }catch(e){box.textContent='失败：'+(e.message||e)}
-};
-
 bossConfirmShopeePaid = async function(){
   if(!bossRequire())return;
   const amount=Number((document.getElementById('shopeePaidAmount')||{}).value||0), note=(document.getElementById('shopeePaidNote')||{}).value||'';
@@ -2707,38 +2692,6 @@ bossOpenCredentialBox=function(){
   installSettingLabels();
 };
 
-function installParcelUI(){
-  const box=document.querySelector('#parcelBox .modal-content');
-  if(!box || box.dataset.v462==='1') return;
-  box.innerHTML=`
-    <h3>📦 SPX Parcel</h3>
-    <p style="color:#94a3b8;font-size:13px">Fill today parcel count only. Trip number is auto counted by system.</p>
-    <div class="parcel-auto-note" id="parcelTripNote">Today trip: Auto</div>
-    <input id="parcelDelivered" type="number" inputmode="numeric" placeholder="Arrived parcels">
-    <input id="parcelReturned" type="number" inputmode="numeric" placeholder="Returned parcels">
-    <input id="parcelNote" type="text" placeholder="Note optional">
-    <button class="green" onclick="saveParcelLog()">✅ Save Parcel Record</button>
-    <button onclick="closeModal('parcelBox')">Close</button>`;
-  box.dataset.v462='1';
-}
-openParcelBox=function(){
-  installParcelUI();
-  ['parcelDelivered','parcelReturned','parcelNote'].forEach(id=>{let e=document.getElementById(id); if(e)e.value='';});
-  const note=document.getElementById('parcelTripNote'); if(note)note.textContent='Today trip: Auto';
-  openModal('parcelBox');
-};
-saveParcelLog=async function(){
-  const delivered=Number((document.getElementById('parcelDelivered')||{}).value||0);
-  const returned=Number((document.getElementById('parcelReturned')||{}).value||0);
-  const note=(document.getElementById('parcelNote')||{}).value||'';
-  if(delivered<0||returned<0||(!delivered&&!returned)){showAppAlert('Please fill arrived or returned parcels.','SPX Parcel');return;}
-  try{
-    const r=await apiCall('saveParcelLog',[{delivered,returned,note}]);
-    closeModal('parcelBox');
-    showToast(`✅ Shopee saved. Trip ${r.trip||''}`);
-  }catch(e){showAppAlert('SPX save failed: '+(e.message||e),'SPX Parcel')}
-};
-
 let selectedRefundOrder=null;
 function installRefundUI(){
   const box=document.querySelector('#refundBox .modal-content');
@@ -2855,8 +2808,8 @@ printReceipt=function(auto=false){
 // Obsolete per-dialog Boss Enter logic intentionally removed. Keeping one
 // shared handler prevents Enter from closing or jumping to an older field.
 function installBossEnterHandlersFinal(){}
-document.addEventListener('DOMContentLoaded',()=>{installParcelUI(); installRefundUI(); installSettingLabels();});
-setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},500);
+document.addEventListener('DOMContentLoaded',()=>{installRefundUI(); installSettingLabels();});
+setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
 
 
 ;
@@ -6426,54 +6379,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     if(c)c.textContent=Math.max(0,subtotal-d).toFixed(2);
   }
 
-  window.openParcelBox = async function(){
-    if(parcelSubmitting){
-      if(typeof showToast==='function')showToast(lang()==='zh'?'包裹记录正在后台保存，请勿重复提交。':'Parcel record is saving in the background.');
-      return;
-    }
-    window.__parcelRecoveryDate='';
-    window.__parcelRecoveryOutstanding=0;
-    setSubmitBusy(false);
-    releaseStaleInteractionLock();
-    const box=document.querySelector('#parcelBox .modal-content');
-    const localDate=new Date().toLocaleDateString('en-CA');
-    const initialProvider=String(window.__parcelEntryProvider||'SPX');
-    if(box)box.innerHTML=`<h3>📦 ${lang()==='zh'?'包裹记录':'Parcel Records'}</h3>
-      <p style="color:#94a3b8;font-size:13px">${esc(tr('normalParcel'))}</p>
-      <div class="parcel-head-grid"><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'包裹公司':'Provider'}</span><select id="parcelProvider"><option value="SPX">SPX</option><option value="TIKTOK">TikTok Self Collect</option></select></label><div class="boss-field"><span class="boss-field-label">${lang()==='zh'?'系统记录日期':'System date'}</span><div id="parcelBusinessDateText" class="parcel-readonly-date">${esc(localDate)}</div><input id="parcelBusinessDate" type="hidden" value="${esc(localDate)}"></div></div>
-      <div class="parcel-auto-note" id="parcelTripNote">${esc(tr('todayTrip'))}</div>
-      <div id="parcelTodayStatus" class="discount-preview">${esc(tr('loading'))}</div>
-      <section class="parcel-today-section"><h4 class="parcel-section-title">${esc(lang()==='zh'?'今天的包裹':'Today')}</h4>
-        <label class="parcel-no-pickup-today"><input id="parcelNoPickup" type="checkbox"> ${esc(lang()==='zh'?'今天没有送货':'No pickup today')}</label>
-        <div class="parcel-today-grid"><label class="boss-field"><span class="boss-field-label">${esc(tr('actualReceived'))}</span><input id="parcelDelivered" type="number" inputmode="numeric" min="0" placeholder="${esc(tr('actualReceived'))}"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('shortParcels'))}</span><input id="parcelMissing" type="number" inputmode="numeric" min="0" placeholder="0"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('returnedParcels'))}</span><input id="parcelReturned" type="number" inputmode="numeric" placeholder="${esc(tr('returnedParcels'))}"></label><label class="boss-field"><span class="boss-field-label">${esc(tr('noteOptional'))}</span><input id="parcelNote" type="text" placeholder="${esc(tr('noteOptional'))}"></label></div>
-      </section>
-      <section class="parcel-backfill-section"><h4 class="parcel-section-title">${esc(lang()==='zh'?'漏填日期补录':'Missing daily records')}</h4><p class="parcel-section-help">${esc(lang()==='zh'?'这里只显示系统确认没有记录的营业日；星期四自动排除。':'Only dates without a record appear here; Thursdays are excluded.')}</p><div id="parcelMissingDates">${esc(lang()==='zh'?'正在检查待补日期...':'Checking missing dates...')}</div><div id="parcelBackfillForms"></div></section>
-      <div class="parcel-action-row"><button id="parcelSubmitBtn" class="green" onclick="saveParcelLog()">${esc(tr('saveParcelRecord'))}</button><button onclick="closeModal('parcelBox')">${esc(tr('close'))}</button></div>`;
-    ['parcelMissing','parcelReturned','parcelDelivered','parcelRecovered'].forEach(id=>{ const e=$(id); if(e)e.oninput=updateParcelPreview; });
-    updateParcelPreview();
-    setupEnterNext('#parcelBox');
-    openModal('parcelBox');
-    try{
-      let providers=[];try{providers=await timeout(apiCall('getParcelProviders',[]),10000,'Parcel providers');}catch(ignore){}
-      const providerSelect=$('parcelProvider');if(providerSelect&&providers.length)providerSelect.innerHTML=providers.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
-      if(providerSelect){providerSelect.value=initialProvider;window.__parcelEntryProvider=providerSelect.value||'SPX';providerSelect.onchange=()=>{window.__parcelEntryProvider=providerSelect.value||'SPX';window.openParcelBox();};}
-      let r;
-      try{r=await timeout(apiCall('getParcelSummary',[1,60,(providerSelect||{}).value||'SPX']),25000,'Parcel summary');}
-      catch(firstError){await new Promise(resolve=>setTimeout(resolve,700));r=await timeout(apiCall('getParcelSummary',[1,60,(providerSelect||{}).value||'SPX']),25000,'Parcel summary retry');}
-      renderParcelTodayStatus(r.today || {});
-      window.__parcelTodayRecorded=!!num((r.today||{}).count);
-      window.__parcelTodayTripCount=num((r.today||{}).count);
-      const tripNote=$('parcelTripNote');if(tripNote)tripNote.textContent=lang()==='zh'?`今天下一笔：第 ${window.__parcelTodayTripCount+1} 趟`:`Next today: trip ${window.__parcelTodayTripCount+1}`;
-      const noPickupToday=$('parcelNoPickup');if(noPickupToday)noPickupToday.closest('label').style.display=window.__parcelTodayRecorded?'none':'flex';
-      window.__parcelLatestLogs=r.logs||[];
-      window.__parcelLatestProvider=(providerSelect||{}).value||'SPX';
-      const recordedDates=[...(r.recordedDates||[]),...(r.logs||[]).map(x=>x.businessDate||x.date)];
-      renderParcelMissingDates(recordedDates,window.__parcelLatestProvider);
-    }catch(e){
-      const el=$('parcelTodayStatus');
-      if(el)el.innerHTML=`<b>${esc(tr('todayParcelStatus'))}</b><br>${esc(lang()==='zh'?'资料回应较慢；可以稍后再开，不能代表网络断线。':'Data response is slow. Try again later; this does not necessarily mean the network is offline.')}`;
-    }
-  };
   /* Compact daily entry: every provider is visible at once. */
   window.openParcelBox=async function(){
     if(parcelSubmitting){showToast(lang()==='zh'?'包裹记录正在后台保存，请勿重复提交。':'Parcel record is saving.');return;}
@@ -7364,7 +7269,7 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       try{ resumePendingOrderChecks(); }catch(e){}
       scheduleTopStatsRefresh(300);
       try{parcelReminderCheckedAt=0;scheduleParcelClosingReminderCheck();}catch(e){}
-      try{ if(appleTouchDevice)scheduleAppleViewportRecovery();else recoverViewportAndInteraction(); }catch(e){}
+      try{ recoverViewportAndInteraction(); }catch(e){}
     },delay||120);
   }
   window.addEventListener('online', () => { try{ markNetworkOnline('browser online'); }catch(e){} scheduleForegroundWork(120); });
@@ -7522,29 +7427,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
   const appleTouchDevice=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   const iPadDevice=/iPad/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(appleTouchDevice)document.documentElement.classList.add('apple-pos');
-  if(iPadDevice){
-    document.documentElement.classList.add('ipad-pos');
-    const saveStableIpadCanvas=()=>{
-      const innerW=Math.max(Number(window.innerWidth)||0,Number(document.documentElement.clientWidth)||0);
-      const innerH=Math.max(Number(window.innerHeight)||0,Number(document.documentElement.clientHeight)||0);
-      const screenLong=Math.max(Number(screen.width)||0,Number(screen.height)||0);
-      const screenShort=Math.min(Number(screen.width)||0,Number(screen.height)||0);
-      // Old iPad PWA may initially expose the portrait width (768) while the
-      // device is already landscape (1024). Screen long/short sides are stable
-      // during screenshots, unlike visualViewport and sometimes innerWidth.
-      // This POS is a landscape-only composition. Never save the transient
-      // portrait width reported while Screenshot/Share/App Switch is active.
-      const w=Math.max(screenLong,innerW,innerH);
-      const h=screenShort>0?screenShort:Math.min(innerW,innerH);
-      if(w>0)document.documentElement.style.setProperty('--ipad-stable-width',w+'px');
-      if(h>0)document.documentElement.style.setProperty('--ipad-stable-height',h+'px');
-    };
-    saveStableIpadCanvas();
-    window.__saveStableIpadCanvas=saveStableIpadCanvas;
-  }
-  let appleViewportRecoveryTimer=null;
-  let ipadHiddenAt=0,ipadSafeReloadTimer=null;
+  if(iPadDevice)document.documentElement.classList.add('ipad-pos');
+  let ipadHiddenAt=0,ipadBlurAt=0,ipadSafeReloadTimer=null,ipadResizeReloadTimer=null;
   const ipadRecoveryBootAt=Date.now();
+  const ipadNormalViewport={
+    innerWidth:Number(window.innerWidth)||0,
+    innerHeight:Number(window.innerHeight)||0,
+    visualWidth:Number((window.visualViewport||{}).width)||0,
+    visualHeight:Number((window.visualViewport||{}).height)||0
+  };
   function ipadCriticalWorkActive(){
     let busy=!!parcelSubmitting||!!window.__submitBusy||!!window.__cashCollectSubmitting||!!window.__fundExpenseSubmitting;
     try{busy=busy||!!isCheckingOut||!!window.isCheckingOut||!!offlineSyncing;}catch(e){}
@@ -7615,81 +7506,43 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       }catch(e){window.location.reload();}
     },120);
   };
-  function scheduleAppleViewportRecovery(){
-    clearTimeout(appleViewportRecoveryTimer);
-    appleViewportRecoveryTimer=setTimeout(()=>{
-      const viewport=document.querySelector('meta[name="viewport"]');
-      if(viewport&&!/width=device-width/i.test(viewport.content||''))viewport.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
-      try{void document.documentElement.offsetWidth;void document.body.offsetWidth;}catch(e){}
-      recoverViewportAndInteraction();
-      // Rebuild WebKit's touch hit-test layer as well as the visible canvas.
-      // Old iPad Safari can paint the full page again while retaining the
-      // half-width touch coordinates from the screenshot/share transition.
-      if(iPadDevice){
-        try{window.scrollTo(0,0);}catch(e){}
-        document.documentElement.classList.add('ipad-hit-reset');
-        document.body.style.transform='translateZ(0)';
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-          document.documentElement.classList.remove('ipad-hit-reset');
-          document.body.style.transform='';
-          try{void document.body.offsetWidth;}catch(e){}
-        }));
-      }
-    },180);
+  function editableIpadTargetActive(){
+    const el=document.activeElement,tag=String((el&&el.tagName)||'').toLowerCase();
+    return tag==='input'||tag==='textarea'||tag==='select'||!!(el&&el.isContentEditable);
   }
-  let ipadForegroundRecoveryTimers=[];
-  function runIpadForegroundRecovery(){
-    ipadForegroundRecoveryTimers.forEach(clearTimeout);
-    const passes=[0,120,420,900,1600,2400];
-    ipadForegroundRecoveryTimers=passes.map(delay=>setTimeout(()=>{
-      if(document.hidden)return;
-      try{
-        const viewport=document.querySelector('meta[name="viewport"]');
-        if(viewport)viewport.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
-        if(window.__saveStableIpadCanvas)window.__saveStableIpadCanvas();
-        try{window.scrollTo(0,0);if(document.scrollingElement){document.scrollingElement.scrollLeft=0;document.scrollingElement.scrollTop=0;}}catch(ignore){}
-        document.documentElement.style.removeProperty('width');
-        document.documentElement.style.removeProperty('max-width');
-        document.documentElement.style.removeProperty('height');
-        document.body.style.removeProperty('width');
-        document.body.style.removeProperty('max-width');
-        document.body.style.removeProperty('height');
-        document.body.style.transform='';
-        recoverViewportAndInteraction();
-        document.documentElement.classList.add('ipad-hit-reset');
-        void document.documentElement.offsetWidth;
-        requestAnimationFrame(()=>document.documentElement.classList.remove('ipad-hit-reset'));
-      }catch(e){}
-    },delay));
+  function observeIpadScreenshotResize(){
+    if(!iPadDevice||Date.now()-ipadRecoveryBootAt<4000||ipadCriticalWorkActive()||editableIpadTargetActive())return;
+    const innerW=Number(window.innerWidth)||0,innerH=Number(window.innerHeight)||0;
+    const visualW=Number((window.visualViewport||{}).width)||innerW,visualH=Number((window.visualViewport||{}).height)||innerH;
+    const baseInnerW=Number(ipadNormalViewport.innerWidth)||innerW,baseInnerH=Number(ipadNormalViewport.innerHeight)||innerH;
+    const baseVisualW=Number(ipadNormalViewport.visualWidth)||visualW,baseVisualH=Number(ipadNormalViewport.visualHeight)||visualH;
+    // Screenshot/share on the affected iPad briefly collapses one viewport
+    // dimension. Remember the transient state even if it has returned to the
+    // normal size by the time the debounce fires.
+    const abnormal=(baseInnerW>0&&innerW<baseInnerW*.82)||(baseInnerH>0&&innerH<baseInnerH*.72)||(baseVisualW>0&&visualW<baseVisualW*.82)||(baseVisualH>0&&visualH<baseVisualH*.72)||(innerW>0&&innerH>0&&innerW<innerH&&baseInnerW>baseInnerH);
+    if(!abnormal)return;
+    clearTimeout(ipadResizeReloadTimer);
+    ipadResizeReloadTimer=setTimeout(()=>requestIpadSafeReload('screenshot-viewport-collapse',250,false),650);
   }
-  // iPad briefly reports a false viewport size while taking/sharing a
-  // screenshot. Never rebuild products during that transient resize: doing so
-  // invoked an older renderer and visibly changed the finalized POS layout.
-  if(appleTouchDevice){
-    const handleAppleResize=()=>{
-      scheduleAppleViewportRecovery();
-      if(iPadDevice)runIpadForegroundRecovery();
-    };
-    window.addEventListener('resize',handleAppleResize,{passive:true});
-    if(window.visualViewport)window.visualViewport.addEventListener('resize',handleAppleResize,{passive:true});
+  if(iPadDevice){
+    window.addEventListener('resize',observeIpadScreenshotResize,{passive:true});
+    if(window.visualViewport)window.visualViewport.addEventListener('resize',observeIpadScreenshotResize,{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
   if(iPadDevice){
-    window.addEventListener('pageshow',()=>runIpadForegroundRecovery(),{passive:true});
+    window.addEventListener('blur',()=>{ipadBlurAt=Date.now();},{passive:true});
+    window.addEventListener('focus',()=>{
+      if(ipadBlurAt&&Date.now()-ipadBlurAt>250&&!ipadCriticalWorkActive())requestIpadSafeReload('screenshot-or-app-focus-return',350,false);
+      ipadBlurAt=0;
+    },{passive:true});
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden){ipadHiddenAt=Date.now();return;}
-      // Old iPad WebKit can repaint correctly while most of the hit-test layer
-      // remains frozen.  The old health check tested only the top-right gear,
-      // precisely the one control that still worked, so it produced a false
-      // healthy result.  A fresh document is the reliable recovery; the safe
-      // reload keeps an unfinished cart and avoids duplicating checkout work.
       if(ipadHiddenAt&&Date.now()-ipadHiddenAt>800){
-        runIpadForegroundRecovery();
-        requestIpadSafeReload('app-return-touch-layer',350,true);
+        requestIpadSafeReload('app-return-touch-layer',350,false);
       }
       ipadHiddenAt=0;
     },{passive:true});
   }
-  window.addEventListener('orientationchange',()=>setTimeout(()=>{if(window.__saveStableIpadCanvas)window.__saveStableIpadCanvas();recoverViewportAndInteraction();},900),{passive:true});
+  window.addEventListener('orientationchange',()=>{if(iPadDevice)requestIpadSafeReload('orientation-change',900,false);else setTimeout(recoverViewportAndInteraction,900);},{passive:true});
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
   const finalLang=()=>{try{return localStorage.getItem('yllLang')||'zh';}catch(e){return 'zh';}};
