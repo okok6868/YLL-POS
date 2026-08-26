@@ -1941,27 +1941,7 @@ function updateCashDrawerAlert(data){
   // V4.3.1：员工 POS 不显示建议收现金；只在 Boss → 收现金 里看。
   let box=document.getElementById("cashDrawerAlert"); if(box){box.classList.remove("active"); box.textContent="";}
 }
-function bossHideBossPanels(){["bossOverviewPanel","bossReportsPanel","bossRangeBox","bossExportBox","bossCredentialBox","bossCashBox","bossParcelBox","bossOtherIncomeBox","bossLowStockBox"].forEach(id=>{let e=document.getElementById(id);if(e){e.style.display="none"; e.classList.remove("active");}})}
 function bossShowPanel(id){if(!bossRequire())return; bossHideBossPanels(); let e=document.getElementById(id); if(e){e.style.display="block"; e.classList.add("active");}}
-async function bossOpenOverview(){
-  if(!bossRequire())return;
-  bossHideBossPanels();
-  let p=document.getElementById("bossOverviewPanel"); if(p){p.style.display="block";p.classList.add("active");}
-  let box=document.getElementById("bossOverviewResult"); if(box)box.innerHTML="载入中...";
-  try{
-    const r=await apiCall("getBossOverview",[]);
-    const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[];
-    const can=moneyNum((cash.cashDrawer||0)-(cash.floatCash||0));
-    const limit=moneyNum(cash.cashDrawerLimit||500);
-    const warnCash=can>=limit;
-    box.innerHTML=`
-      <div class="overview-card ${warnCash?'warn':''}"><small>可收现金</small><b>${fmt(can)}</b><span>收银机 ${fmt(cash.cashDrawer||0)} / 找零本金 ${fmt(cash.floatCash||0)} / 提醒 ${fmt(limit)}</span></div>
-      <div class="overview-card ${(parcel.pendingEstimated||0)>0?'warn':''}"><small>Shopee 待对账</small><b>${fmt(parcel.pendingEstimated||0)}</b><span>记录 ${parcel.count||0} 笔，实际已收 ${fmt(parcel.actualPaid||0)}</span></div>
-      <div class="overview-card ${(other.pending||0)>0?'warn':''}"><small>其它收入待确认</small><b>${fmt(other.pending||0)}</b><span>已确认 ${fmt(other.received||0)}</span></div>
-      <div class="overview-card ${low.length?'warn':''}"><small>库存提醒</small><b>${low.length||0} 项</b><span>${low.length?low.slice(0,3).map(x=>x.name).join('、'):'暂时没有低库存'}</span></div>
-    `;
-  }catch(e){ if(box)box.textContent="载入失败："+(e.message||e); }
-}
 async function bossOpenCashCollect(){
   if(!bossRequire())return;
   bossHideBossPanels();
@@ -1982,10 +1962,6 @@ async function bossOpenCashCollect(){
   document.getElementById("bossCashInfo").textContent=`已收走: ${fmt(r.collected||0)}\n退货现金扣回: ${fmt(r.refunds||0)}\n提醒金额可在 Settings 里的 CashDrawerLimit 调整。`;
 }
 async function bossCollectCash(){let amount=Number((document.getElementById("collectCashAmount")||{}).value||0), note=(document.getElementById("collectCashNote")||{}).value||""; if(amount<=0){alert("请输入收走金额");return} try{await apiCall("collectCash",[amount,note]); showToast("✅ 已记录收现金"); bossOpenCashCollect(); loadTodayStats();}catch(e){alert("记录失败："+(e.message||e))}}
-async function bossOpenParcelBoss(){if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossParcelBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; let r=await apiCall("getParcelSummary",[]); document.getElementById("bossParcelResult").textContent=`预计未收 Shopee: ${fmt(r.pendingEstimated||0)}
-实际已收: ${fmt(r.actualPaid||0)}
-记录数: ${r.count||0}`;}
-async function bossConfirmShopeePaid(){let amount=Number((document.getElementById("shopeePaidAmount")||{}).value||0), note=(document.getElementById("shopeePaidNote")||{}).value||""; if(amount<=0){alert("请输入实际金额");return} try{await apiCall("recordShopeePayout",[amount,note]); showToast("✅ Shopee 实收已记录"); bossOpenParcelBoss();}catch(e){alert("记录失败："+(e.message||e))}}
 async function checkSystemStatus(showOk){
   try{
     const r = await apiCall("getSystemStatus",[]);
@@ -2024,34 +2000,6 @@ function openBossLogin(){
     if(pw) pw.value="";
   },60)
 }
-async function bossLogin(){
-  const id=(document.getElementById("bossId")||{}).value||"";
-  const pw=(document.getElementById("bossPassword")||{}).value||"";
-  const msg=document.getElementById("bossLoginMsg");
-  const btn=document.getElementById("bossLoginBtn");
-  if(!id||!pw){ if(msg){msg.style.display="block";msg.textContent="请输入帐号和密码。";} return; }
-  if(btn){btn.disabled=true;btn.classList.add("busy-btn");btn.dataset.oldText=btn.textContent;btn.textContent="登入中...";}
-  if(msg){msg.style.display="block";msg.textContent="登入中...";}
-  try{
-    const r=await apiCall("bossLogin",[id,pw]);
-    if(r && r.locked){ closeAllModal(); await checkSystemStatus(false); return; }
-    if(r && r.ok){
-      BOSS_IDLE_MS = Math.max(1, Number(r.autoLogoutMinutes||10))*60*1000;
-      sessionStorage.setItem("bossSessionUntil", String(Date.now()+BOSS_IDLE_MS));
-      bossStartIdleTimer();
-      if(document.getElementById("bossId"))document.getElementById("bossId").value="";
-      if(document.getElementById("bossPassword"))document.getElementById("bossPassword").value="";
-      closeModal("bossLoginBox");
-      openModal("bossDashboard");
-      const ov=document.getElementById("bossOverviewResult"); if(ov) ov.innerHTML="<div class='overview-card'><small>状态</small><b>载入中...</b><span>正在读取管理资料。</span></div>";
-      const br=document.getElementById("bossResult"); if(br)br.textContent="已进入管理模式。";
-      setTimeout(()=>{ try{ bossOpenOverview(); }catch(e){ console.error(e); } },30);
-      return;
-    }
-    if(msg){msg.style.display="block"; msg.textContent="帐号或密码错误，剩余 "+(r.remaining??0)+" 次。";}
-  }catch(e){ if(msg){msg.style.display="block"; msg.textContent="登入失败："+(e.message||e);} }
-  finally{if(btn){btn.disabled=false;btn.classList.remove("busy-btn");btn.textContent=btn.dataset.oldText||"登入";}}
-}
 let BOSS_IDLE_MS = 10*60*1000;
 let bossIdleTimer=null;
 function bossTouch(){
@@ -2072,10 +2020,8 @@ function bossRequire(){ if(Number(sessionStorage.getItem("bossSessionUntil")||0)
 function bossLogout(auto=false){sessionStorage.removeItem("bossSessionUntil"); closeModal("bossDashboard"); if(auto)showToast("管理模式已自动退出"); else showToast("已退出管理模式")}
 function bossDates(type){let n=new Date(), y=n.getFullYear(), m=n.getMonth(), d=n.getDate(); let s,e; if(type==='today'){s=new Date(y,m,d);e=new Date(y,m,d);} else if(type==='yesterday'){s=new Date(y,m,d-1);e=new Date(y,m,d-1);} else if(type==='week'){let day=(n.getDay()+6)%7; s=new Date(y,m,d-day); e=new Date(y,m,d-day+6);} else if(type==='lastWeek'){let day=(n.getDay()+6)%7; s=new Date(y,m,d-day-7); e=new Date(y,m,d-day-1);} else if(type==='month'){s=new Date(y,m,1);e=new Date(y,m+1,0);} else if(type==='lastMonth'){s=new Date(y,m-1,1);e=new Date(y,m,0);} else {s=new Date(y,0,1);e=new Date(y,11,31);} let f=d=>d.toLocaleDateString('en-CA'); return [f(s),f(e)];}
 async function bossLoadReport(type){ if(!bossRequire())return; let p=document.getElementById('bossReportsPanel'); if(p){p.style.display='block';p.classList.add('active');} let [s,e]=bossDates(type); return bossLoadReportRange(s,e,type);}
-async function bossLoadReportRange(s,e,label){ let box=document.getElementById("bossResult"); box.textContent="载入中..."; try{let r=await apiCall("getFullReport",[s,e]); box.innerHTML=`<b>${label||"报表"}：${s} 至 ${e}</b><br><br>订单：${r.count||0}<br>销售：RM ${moneyNum(r.total).toFixed(2)}<br>折扣：RM ${moneyNum(r.discount||0).toFixed(2)}<br>退货：RM ${moneyNum(r.refund||0).toFixed(2)}<br>净销售：RM ${moneyNum(r.netSales||r.total).toFixed(2)}<br>利润：RM ${moneyNum(r.profit).toFixed(2)}<br><br>Cash：RM ${moneyNum(r.Cash).toFixed(2)}<br>转账：RM ${moneyNum(r.Transfer).toFixed(2)}<br>QR：RM ${moneyNum(r.MBB_QR).toFixed(2)}`;}catch(err){box.textContent="失败："+(err.message||err)}}
 function bossOpenRangeReport(){ if(!bossRequire())return; let row=document.getElementById('bossInlineRange'); if(!row)return; let [s,e]=bossDates('today'); document.getElementById('bossInlineStartDate').value=s; document.getElementById('bossInlineEndDate').value=e; row.style.display=row.style.display==='none'?'flex':'none';}
 function bossLoadCustomReport(){ let s=document.getElementById("bossInlineStartDate").value; let e=document.getElementById("bossInlineEndDate").value; if(!s||!e){alert("请选择日期");return} return bossLoadReportRange(s,e,"自订");}
-function bossHideBossPanels(){["bossOverviewPanel","bossReportsPanel","bossRangeBox","bossExportBox","bossCredentialBox","bossCashBox","bossParcelBox","bossOtherIncomeBox","bossLowStockBox"].forEach(id=>{let e=document.getElementById(id); if(e){e.style.display="none"; e.classList.remove("active");}});}
 function bossOpenExport(){ if(!bossRequire())return; bossHideBossPanels(); let y=new Date().getFullYear(); document.getElementById("exportYear").value=y; document.getElementById("exportMonth").value=""; let __p=document.getElementById("bossExportBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; document.getElementById("bossResult").textContent="选择年份/月，然后生成 Excel。";}
 function bossOpenCredentialBox(){ if(!bossRequire())return; bossHideBossPanels(); let __p=document.getElementById("bossCredentialBox"); if(__p){__p.style.display="block";__p.classList.add("active");}; document.getElementById("bossResult").textContent="只填写要修改的项目。"; ["newBossId","newBossPassword","newRecoveryCode","newCashLimit","newFloatCash","newAutoLogout","newParcelRate","newParcelReturnRate"].forEach(id=>{let e=document.getElementById(id); if(e)e.value="";}); }
 async function bossSaveSettings(){
@@ -2106,7 +2052,6 @@ async function bossSaveSettings(){
   finally{if(window.setSubmitBusy)window.setSubmitBusy(false)}
 }
 async function bossChangeCredentials(){return bossSaveSettings()}
-async function bossExportXlsx(){ if(!bossRequire())return; let y=Number(document.getElementById("exportYear").value); let m=Number(document.getElementById("exportMonth").value||0); if(!y){alert("请输入年份");return} let box=document.getElementById("bossResult"); box.textContent="正在生成 Excel..."; try{let r=await apiCall("exportAccountingXlsx",[y,m]); box.innerHTML=`✅ 已生成：${r.fileName}<br><br><a href="${r.url}" target="_blank" rel="noopener" style="color:#93c5fd">点这里打开 / 下载 XLSX</a><br><small style="color:#94a3b8">旧 iPad 不会自动打开，避免网页崩溃。</small>`;}catch(e){box.textContent="生成失败："+(e.message||e)}}
 async function bossLoadLowStock(){
   if(!bossRequire())return;
   bossHideBossPanels();
@@ -2227,48 +2172,6 @@ async function openTodaySoldItems(){
 function salesReportWithTimeout(promise,ms){return new Promise(function(resolve,reject){const timer=setTimeout(function(){reject(new Error('载入超时'));},ms);Promise.resolve(promise).then(function(value){clearTimeout(timer);resolve(value);},function(err){clearTimeout(timer);reject(err);});});}
 function bossReportTitle(label){return ({today:"今日",yesterday:"昨天",week:"本周",lastWeek:"上周",month:"本月",lastMonth:"上月",year:"今年"})[label]||label||"报表"}
 function bossMiniCard(title,value,sub,warn){return `<div class="overview-card ${warn?'warn':''}"><small>${title}</small><b>${value}</b><span>${sub||''}</span></div>`}
-async function bossOpenOverview(){
-  if(!bossRequire())return;
-  bossHideBossPanels();
-  const p=document.getElementById("bossOverviewPanel"); if(p){p.style.display="block";p.classList.add("active");}
-  const box=document.getElementById("bossOverviewResult"); if(box)box.innerHTML="载入中...";
-  try{
-    const [r,today]=await Promise.all([apiCall("getBossOverview",[]),apiCall("getTodayReport",[])]);
-    const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[];
-    const cashDrawer=moneyNum(cash.cashDrawer||0), flt=moneyNum(cash.floatCash||0), limit=moneyNum(cash.cashDrawerLimit||500);
-    const can=Math.max(0,fromCents(cents(cashDrawer)-cents(flt)));
-    const parcelDiff=moneyNum((parcel.pendingEstimated||0)-(parcel.actualPaid||0));
-    box.innerHTML = [
-      bossMiniCard("可收现金",fmt(can),`收银机 ${fmt(cashDrawer)} / 找零本金 ${fmt(flt)} / 提醒 ${fmt(limit)}`, can>=limit),
-      bossMiniCard("今日销售",fmt(today.total||0),`订单 ${today.orders||today.count||0} 笔 / Cash ${fmt(today.Cash||0)} / QR ${fmt(today.MBB_QR||0)}`, false),
-      bossMiniCard("Shopee 待对账",fmt(parcel.pendingEstimated||0),`实际已记 ${fmt(parcel.actualPaid||0)} / 差额 ${fmt(parcelDiff)}`, Math.abs(cents(parcelDiff))>0),
-      bossMiniCard("其它收入待确认",fmt(other.pending||0),`已确认 ${fmt(other.received||0)} / 记录 ${other.count||0} 笔`, (other.pending||0)>0),
-      bossMiniCard("库存提醒",(low.length||0)+" 项", low.length?low.slice(0,4).map(x=>x.name).join('、'):"暂时没有低库存", low.length>0)
-    ].join('');
-    document.getElementById("bossResult").textContent="今日提醒已更新。";
-  }catch(e){ if(box)box.textContent="载入失败："+(e.message||e); }
-}
-async function bossOpenParcelBoss(){
-  if(!bossRequire())return; bossHideBossPanels();
-  const p=document.getElementById("bossParcelBox"); if(p){p.style.display="block";p.classList.add("active");}
-  const box=document.getElementById("bossParcelResult"); box.textContent="载入中...";
-  try{
-    const r=await apiCall("getParcelSummary",[]);
-    const logs=(r.logs||[]).slice(0,20);
-    const diff=moneyNum((r.pendingEstimated||0)-(r.actualPaid||0));
-    let html=`<div style="margin-bottom:10px">预计未对账：<b>${fmt(r.pendingEstimated||0)}</b><br>实际已记录：<b>${fmt(r.actualPaid||0)}</b><br>差额：<b>${fmt(diff)}</b><br>记录：${r.count||0} 笔</div>`;
-    if(logs.length){html += `<table><tr><th>日期</th><th>趟</th><th class="right">派件</th><th class="right">退回</th><th class="right">预计</th><th>状态</th></tr>` + logs.map(x=>`<tr><td>${x.date||''}</td><td>${x.trip||''}</td><td class="right">${x.delivered||0}</td><td class="right">${x.returned||0}</td><td class="right">${fmt(x.estimated||0)}</td><td><span class="boss-chip">${x.status||''}</span></td></tr>`).join('') + `</table>`;}
-    box.innerHTML=html;
-  }catch(e){box.textContent="失败："+(e.message||e)}
-}
-async function bossConfirmShopeePaid(){
-  if(!bossRequire())return;
-  let amount=Number((document.getElementById("shopeePaidAmount")||{}).value||0), note=(document.getElementById("shopeePaidNote")||{}).value||"";
-  if(amount<=0){alert("请输入实际金额");return}
-  const evidence=await fileToBase64("shopeeEvidence");
-  try{await apiCall("recordShopeePayout",[amount,note,evidence]); showToast("✅ Shopee 实收已记录"); ["shopeePaidAmount","shopeePaidNote"].forEach(id=>{let e=document.getElementById(id);if(e)e.value=""}); let f=document.getElementById("shopeeEvidence"); if(f)f.value=""; bossOpenParcelBoss();}
-  catch(e){alert("记录失败："+(e.message||e))}
-}
 async function bossLoadReportRange(s,e,label){
   const box=document.getElementById("bossReportInlineResult")||document.getElementById("bossResult"); box.textContent="载入中...";
   try{let r=await salesReportWithTimeout(apiCall("getFullReport",[s,e]),25000);const otherRow=(Number(r.otherIncomeCash||0)||Number(r.otherIncomeQR||0))?`<tr><td>其它收入 Cash</td><td class="num">${fmt(r.otherIncomeCash||0)}</td><td>其它收入 QR</td><td class="num">${fmt(r.otherIncomeQR||0)}</td></tr>`:'';box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)}营业报表</h3><span>${s} 至 ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>收款与调整</h4><table class="sales-product-table"><tr><td>现金</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>转账</td><td class="num">${fmt(r.Transfer||0)}</td><td>混合付款（旧记录）</td><td class="num">${fmt(r.Mixed||0)}</td></tr>${otherRow}<tr><td>折扣</td><td class="num">${fmt(r.discount||0)}</td><td>退货</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>净销售</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
@@ -3687,7 +3590,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     }catch(e){
       if(!isTransientApiError(e))throw e;
       await wait(700);
-      return await timeout(apiCall(action,args||[]), Math.max(timeoutMs||16000,18000), label||action);
+      try{return await timeout(apiCall(action,args||[]), Math.max(timeoutMs||16000,18000), label||action);}
+      catch(second){try{recordApiGlitch(`${action}: ${cleanMessage((second&&second.message)||second)}`);}catch(ignore){}throw second;}
     }
   }
   function optimisticTopStatsAfterOrder(savedCart,payment,discountAmount,paidAmount,changeAmount){
@@ -7218,7 +7122,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
         window.__bossUserNavAway=false;
         setStaticText();
         const br=$('bossResult'); if(br)br.textContent=tr('bossReady');
-        setTimeout(()=>{ try{ window.bossOpenOverview(); }catch(e){} }, 50);
+        // Approval data loads only when Approval Center is opened. Starting it
+        // here made login compete with the first page the boss actually chose.
         return;
       }
       if(msg)msg.textContent=tr('wrongLogin')+(r&&r.remaining!=null?r.remaining:0)+'.';
@@ -7259,9 +7164,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
     setTimeout(()=>{ try{ resumePendingOrderChecks(); }catch(e){} }, 1600);
     setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
+    setTimeout(()=>{try{checkPosSyncRevision();}catch(e){}},2200);
+    setInterval(()=>{try{checkPosSyncRevision();}catch(e){}},8000);
     // Keep different counters in sync without making every device constantly
     // reload the full catalogue. Totals are light; products refresh once/minute.
-    setInterval(()=>{if(!document.hidden){try{scheduleTopStatsRefresh(0);}catch(e){}}},30000);
+    // Full sales refresh now runs only when the lightweight last-order check
+    // detects a change on another device.
     // Safari may reload the page after a screenshot or app switch. Restore the
     // parcel workflow instead of silently dropping the user back at POS home.
     /* A deploy/manual refresh always returns to the POS home.  Reopening a
@@ -7270,12 +7178,28 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   });
   let foregroundWorkTimer=null;
   let lastForegroundProductRefresh=0;
+  let lastPosSyncRevision=null,posSyncRevisionBusy=false;
+  async function checkPosSyncRevision(){
+    if(document.hidden||!navigator.onLine||posSyncRevisionBusy)return;
+    posSyncRevisionBusy=true;
+    try{
+      const r=await timeout(apiCall('getPosSyncRevision',[]),6500,'POS sync revision');
+      const revision=String((r&&r.row)||0)+'|'+String((r&&r.orderId)||'');
+      if(lastPosSyncRevision===null){lastPosSyncRevision=revision;return;}
+      if(revision!==lastPosSyncRevision){
+        lastPosSyncRevision=revision;
+        try{localStorage.removeItem('yllTopStatsCacheV1');}catch(e){}
+        try{await window.loadTodayStats();}catch(e){}
+        setTimeout(()=>{try{Promise.resolve(window.load(true)).catch(()=>{});}catch(e){}},700);
+      }
+    }catch(e){}finally{posSyncRevisionBusy=false;}
+  }
   function scheduleForegroundWork(delay){
     clearTimeout(foregroundWorkTimer);
     foregroundWorkTimer=setTimeout(()=>{
       try{ window.syncOfflineOrders(); }catch(e){}
       try{ resumePendingOrderChecks(); }catch(e){}
-      scheduleTopStatsRefresh(300);
+      setTimeout(()=>{try{checkPosSyncRevision();}catch(e){}},300);
       if(Date.now()-lastForegroundProductRefresh>45000){
         lastForegroundProductRefresh=Date.now();
         // Do not launch the heavier catalogue request together with stats,
