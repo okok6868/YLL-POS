@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <!-- YLL POS BUILD: SESSION-092-TODAY-SOLD-IPAD-LAYOUT-20260810 -->
 <html>
 <head>
@@ -6487,8 +6487,12 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
       <details class="parcel-secondary-tools"><summary>🗓️ ${esc(lang()==='zh'?'漏填记录补录':'Missing-day entry')}</summary><div><p class="parcel-section-help">${esc(lang()==='zh'?'系统只列出最近14天完全没有记录的营业日；没有漏填就不会出现输入框。':'Only business days with no record in the last 14 days are listed.')}</p><button type="button" onclick="openParcelBackfill()">${esc(lang()==='zh'?'检查漏填日期':'Check missing dates')}</button></div></details>
       <div class="parcel-action-row" style="grid-template-columns:1fr"><button onclick="closeModal('parcelBox')">${esc(tr('close'))}</button></div>`;
     openModal('parcelBox');
-    let providers=[];
-    try{providers=await getEnabledParcelProvidersCached(false);}catch(ignore){}
+    let providers=[],dashboard=null;
+    try{
+      dashboard=await apiCallTransient('getParcelEntryDashboard',[],18000,'Parcel entry dashboard');
+      providers=(dashboard&&dashboard.providers)||[];
+      window.__parcelReminderProviders=providers;window.__parcelReminderProvidersAt=Date.now();
+    }catch(ignore){try{providers=await getEnabledParcelProvidersCached(false);}catch(ignore2){}}
     if(!providers.length)providers=[{id:'SPX',name:'SPX'}];
     const cards=$('parcelProviderCards');if(!cards)return;
     cards.innerHTML=providers.map(p=>parcelProviderCardHtml(p,localDate)).join('');
@@ -6498,7 +6502,8 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     });
     await Promise.all(providers.map(async p=>{
       try{
-        const r=await getParcelEntrySummaryCached(p.id,false);
+        const r=(dashboard&&dashboard.summaries&&dashboard.summaries[p.id])||await getParcelEntrySummaryCached(p.id,false);
+        parcelEntrySummaryCache[String(p.id)]={at:Date.now(),data:r||{}};
         updateParcelProviderCard(p.id,(r&&r.today)||{},(r&&r.outstandingShortages)||[]);
       }catch(e){updateParcelProviderCard(p.id,null,[]);}
     }));
@@ -7633,22 +7638,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     },180);
   }
   let ipadForegroundRecoveryTimers=[];
-  function ipadTouchLayerHealthy(){
-    if(!iPadDevice||document.hidden||document.querySelector('.modal.active'))return true;
-    const target=document.querySelector('.plain-gear');
-    if(!target)return true;
-    const r=target.getBoundingClientRect();
-    if(r.width<2||r.height<2)return true;
-    const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
-    return !!hit&&(hit===target||target.contains(hit));
-  }
-  function maybeReloadBrokenIpadTouchLayer(){
-    if(!iPadDevice||document.hidden||ipadCriticalWorkActive()||ipadTouchLayerHealthy())return;
-    let last=0;try{last=Number(sessionStorage.getItem('yllIpadHitReloadAt')||0);}catch(e){}
-    if(Date.now()-last<15000)return;
-    try{sessionStorage.setItem('yllIpadHitReloadAt',String(Date.now()));}catch(e){}
-    requestIpadSafeReload('broken-hit-layer',120,true);
-  }
   function runIpadForegroundRecovery(){
     ipadForegroundRecoveryTimers.forEach(clearTimeout);
     const passes=[0,120,420,900,1600,2400];
@@ -7671,7 +7660,6 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
         void document.documentElement.offsetWidth;
         requestAnimationFrame(()=>document.documentElement.classList.remove('ipad-hit-reset'));
       }catch(e){}
-      if(delay===passes[passes.length-1])setTimeout(maybeReloadBrokenIpadTouchLayer,180);
     },delay));
   }
   // iPad briefly reports a false viewport size while taking/sharing a
@@ -7689,10 +7677,15 @@ setTimeout(()=>{installParcelUI(); installRefundUI(); installSettingLabels();},5
     window.addEventListener('pageshow',()=>runIpadForegroundRecovery(),{passive:true});
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden){ipadHiddenAt=Date.now();return;}
-      // Pressing Home or returning from Screenshot/WhatsApp must keep the
-      // current POS/Boss view. Rebuild WebKit's viewport and hit-test layer in
-      // several passes while its transient viewport settles; never reload.
-      if(ipadHiddenAt&&Date.now()-ipadHiddenAt>120)runIpadForegroundRecovery();
+      // Old iPad WebKit can repaint correctly while most of the hit-test layer
+      // remains frozen.  The old health check tested only the top-right gear,
+      // precisely the one control that still worked, so it produced a false
+      // healthy result.  A fresh document is the reliable recovery; the safe
+      // reload keeps an unfinished cart and avoids duplicating checkout work.
+      if(ipadHiddenAt&&Date.now()-ipadHiddenAt>800){
+        runIpadForegroundRecovery();
+        requestIpadSafeReload('app-return-touch-layer',350,true);
+      }
       ipadHiddenAt=0;
     },{passive:true});
   }
