@@ -758,6 +758,7 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
 }
 .boss-panel h4{font-size:19px!important;margin:0 0 14px!important;color:#f8fafc!important;letter-spacing:.2px}
 .boss-result{background:rgba(2,6,23,.46)!important;border:1px solid rgba(148,163,184,.17)!important;border-radius:18px!important;color:#e2e8f0!important}
+#bossNetworkResult{max-height:none!important;overflow:visible!important}
 .boss-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
 .overview-card{
   border-radius:22px!important;padding:16px!important;min-height:112px!important;
@@ -1095,7 +1096,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
       <summary>Boss Authorization / Direct Approve</summary>
       <input id="discountBossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
       <input id="discountBossPassword" type="password" placeholder="密码" autocomplete="new-password">
-      <small style="color:#94a3b8">员工折扣每单最多 RM10；超过 RM10 必须老板批准。</small>
+      <small style="color:#94a3b8">不填老板帐号可直接提交审批；批准前仍按原价。填写完整老板帐号和密码可立即批准。</small>
     </details>
     <div id="discountStatusMsg" class="boss-result" style="display:none"></div>
     <button id="discountApplyBtn" class="green" type="button">✅ 应用折扣</button>
@@ -1273,7 +1274,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <div class="boss-dashboard-shell">
       <div class="boss-hero">
         <div><b>🔒 管理模式</b><br><small>只限授权使用；闲置后自动回到收银画面。</small></div>
-        <div style="display:flex;gap:8px;align-items:center"><button id="bossRefreshBtn" type="button" onclick="bossRefreshCurrentPage()" style="width:auto;margin:0;padding:10px 14px">刷新当前页面</button><button class="danger-outline" onclick="bossLogout()" style="width:auto;margin:0;padding:10px 14px">退出</button></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="bossLangBtn" type="button" onclick="toggleLanguage(event)" style="width:auto;margin:0;padding:10px 14px">中 / EN</button><button id="bossRefreshBtn" type="button" onclick="bossRefreshCurrentPage()" style="width:auto;margin:0;padding:10px 14px">刷新当前页面</button><button class="danger-outline" onclick="bossLogout()" style="width:auto;margin:0;padding:10px 14px">退出</button></div>
       </div>
 
       <div class="boss-layout">
@@ -2825,8 +2826,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const bossBtns = document.querySelectorAll('#bossDashboard .boss-tab-grid button');
     const bossKeys = ['today','finance','reports','shopee','stockOutHistory','otherIncome','lowStock','exportExcel','settings','productManage','lostItem','networkLog'];
     const bossIcons={today:'✅',finance:'💰',reports:'📊',shopee:'📦',stockOutHistory:'🛍️',otherIncome:'🚰',lowStock:'📉',exportExcel:'📤',settings:'⚙️',productManage:'🧾',lostItem:'🧹',networkLog:'🌐'};
-    bossBtns.forEach((b,i)=>{ if(bossKeys[i]){ b.dataset.navKey=bossKeys[i]; b.textContent=(bossIcons[bossKeys[i]]||'')+' '+tr(bossKeys[i]); } if(!b.dataset.navGuardBound){b.dataset.navGuardBound='1';b.addEventListener('click',()=>{window.__bossUserNavAway=b.dataset.navKey!=='today';window.__bossActiveKey=b.dataset.navKey||window.__bossActiveKey;},{capture:true});} });
+    bossBtns.forEach((b,i)=>{ if(bossKeys[i]){ b.dataset.navKey=bossKeys[i]; b.textContent=(bossIcons[bossKeys[i]]||'')+' '+tr(bossKeys[i]); } if(!b.dataset.navGuardBound){b.dataset.navGuardBound='1';b.addEventListener('click',()=>{window.__bossUserNavAway=b.dataset.navKey!=='today';window.__bossActiveKey=b.dataset.navKey||window.__bossActiveKey;setBossNav(window.__bossActiveKey);},{capture:true});} });
     const refreshBtn=$('bossRefreshBtn');if(refreshBtn)refreshBtn.textContent=lang()==='zh'?'刷新当前页面':'Refresh current page';
+    const posRefresh=$('posManualRefresh');if(posRefresh){posRefresh.textContent=lang()==='zh'?'↻ 刷新':'↻ Refresh';posRefresh.title=lang()==='zh'?'画面卡住或按钮点不到时使用；购物车会保留':'Use if the screen is stuck; the cart will be kept';}
     setText('#bossOverviewPanel h4', tr('today'));
     setText('#bossStockOutHistoryPanel h4', '🛍️ '+tr('stockOutHistory'));
     setText('#bossReportsPanel h4', tr('reports'));
@@ -5818,14 +5820,14 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       finally{setSubmitBusy(false);}return;
     }
     try{
-      setSubmitBusy(true,tr('saving'));
+      const applyBtn=$('discountApplyBtn');if(applyBtn){applyBtn.disabled=true;applyBtn.textContent=lang()==='zh'?'提交中...':'Submitting...';}
       const discountClientId='DISC-'+makeClientOrderId();
       const request=await apiCall('requestDiscount',[val,subtotal,{clientId:discountClientId,reference:discountClientId}]);
       if(status){status.style.display='block';status.textContent=lang()==='zh'?`已提交老板审批：RM ${val.toFixed(2)}。批准前购物车仍是原价。`:`Submitted for Boss approval: RM ${val.toFixed(2)}. Original price remains until approved.`;}
       window.__pendingDiscountRequest={auditId:request.auditId,amount:val,subtotal:subtotal};
       pollPendingDiscount(request.auditId,val,subtotal,0);
     }catch(e){showAppAlert((e&&e.message)||e,tr('discount'));}
-    finally{setSubmitBusy(false);}
+    finally{const applyBtn=$('discountApplyBtn');if(applyBtn){applyBtn.disabled=false;applyBtn.textContent=lang()==='zh'?'提交折扣':'Submit Discount';}}
   };
   async function pollPendingDiscount(auditId,amount,requestedSubtotal,attempt){
     if(!auditId||attempt>90)return;
@@ -5871,7 +5873,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     openModal('parcelBox');
     let providers=[],dashboard=null;
     try{
-      dashboard=await apiCallTransient('getParcelEntryDashboard',[],18000,'Parcel entry dashboard');
+      const dashCache=window.__parcelEntryDashboardCache;
+      dashboard=dashCache&&Date.now()-dashCache.at<120000?dashCache.data:await apiCallTransient('getParcelEntryDashboard',[],30000,'Parcel entry dashboard');
+      if(dashboard)window.__parcelEntryDashboardCache={at:Date.now(),data:dashboard};
       providers=(dashboard&&dashboard.providers)||[];
       window.__parcelReminderProviders=providers;window.__parcelReminderProvidersAt=Date.now();
     }catch(ignore){try{providers=await getEnabledParcelProvidersCached(false);}catch(ignore2){}}
@@ -6294,6 +6298,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(typeof bossRequire === 'function' && !bossRequire())return;
     if(window.__bossUserNavAway && force!==true)return;
     if(force===true)window.__bossUserNavAway=false;
+    setBossNav('today');
     try{ if(typeof bossHideBossPanels === 'function')bossHideBossPanels(); }catch(e){}
     const panel=$('bossOverviewPanel');
     if(panel){panel.style.display='block';panel.classList.add('active');}
@@ -6642,6 +6647,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     setStaticText();
     try{ renderCategories(); }catch(e){}
     try{ render(currentList || currentProducts()); }catch(e){}
+    try{parcelReminderCheckedAt=0;checkParcelClosingReminder();setTimeout(()=>{parcelReminderCheckedAt=0;checkParcelClosingReminder();},800);}catch(e){}
     try{
       const dashboard=$('bossDashboard'),productBox=$('bossProductBox');
       const bossVisible=!!(dashboard&&dashboard.classList.contains('active'));
@@ -6877,8 +6883,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   }
   window.bossOpenCashCollect=async function(page){
     if(typeof bossRequire==='function'&&!bossRequire())return;
-    keepBossDashboardOpen('cash');
-    showBossPanel('bossCashBox','cash');
+    keepBossDashboardOpen('finance');
+    showBossPanel('bossCashBox','finance');
     const box=$('bossCashInfo');
     if(box)box.textContent=tr('loading');
     try{
@@ -7154,6 +7160,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     validateSubmit(submit){
       const flow=this.flowBySubmit(submit);if(!flow)return true;
       const id=$(flow.id),password=$(flow.password);
+      if(submit==='discountApplyBtn'&&!(id&&id.value.trim())&&!(password&&password.value)){this.clear(flow);return true;}
       if(!(id&&id.value.trim()))return this.missing(flow,finalLang()==='zh'?'请先输入老板帐号。':'Enter Boss ID first.');
       if(!(password&&password.value))return this.missing(flow,finalLang()==='zh'?'请输入老板密码。':'Enter Boss password.');
       this.clear(flow);return true;
