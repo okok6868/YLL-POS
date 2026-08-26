@@ -656,6 +656,8 @@ body.pos-busy .products, body.pos-busy .cart, body.pos-busy .paybar, body.pos-bu
 
 
 html,body{width:100%;overflow-x:hidden;}
+#bossProductBox,#bossProductBox .boss-product-tools,#bossProductBox .boss-product-grid,#bossProductBox .boss-result,#bossProductBox form{width:100%;max-width:100%;min-width:0;box-sizing:border-box;overflow-x:hidden}
+#bossProductBox input,#bossProductBox select,#bossProductBox textarea,#bossProductBox button{max-width:100%;min-width:0;box-sizing:border-box}
 .plain-gear{width:auto!important;min-width:44px;border-radius:14px!important;background:rgba(15,23,42,.7)!important;border:1px solid rgba(148,163,184,.25)!important;color:#cbd5e1!important;padding:9px 12px!important;font-size:18px!important}.plain-gear:hover{background:rgba(30,41,59,.9)!important}.access-card h3{text-align:center;margin-bottom:14px}.access-card{max-width:380px}
 
 
@@ -7253,8 +7255,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     setTimeout(bindActionButtons, 1200);
     initNetworkMonitor();
     try{ const cached=loadTopStatsCache(); if(cached)applyTopStats(cached); }catch(e){}
-    scheduleTopStatsRefresh(250);
-    setTimeout(()=>scheduleTopStatsRefresh(0), 2500);
+    scheduleTopStatsRefresh(900);
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
     setTimeout(()=>{ try{ resumePendingOrderChecks(); }catch(e){} }, 1600);
     setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
@@ -7277,7 +7278,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       scheduleTopStatsRefresh(300);
       if(Date.now()-lastForegroundProductRefresh>45000){
         lastForegroundProductRefresh=Date.now();
-        try{Promise.resolve(window.load(true)).catch(()=>{});}catch(e){}
+        // Do not launch the heavier catalogue request together with stats,
+        // offline confirmation and parcel reminder on Apps Script cold start.
+        setTimeout(()=>{try{Promise.resolve(window.load(true)).catch(()=>{});}catch(e){}},2500);
       }
       try{parcelReminderCheckedAt=0;scheduleParcelClosingReminderCheck();}catch(e){}
       try{ recoverViewportAndInteraction(); }catch(e){}
