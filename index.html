@@ -332,9 +332,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .parcel-closing-reminder{display:flex;align-items:center;justify-content:center;width:100%;margin-top:5px;padding:6px 10px;border:1px solid rgba(254,215,170,.72);border-radius:9px;background:#b45309;color:#fff7ed;font:inherit;font-size:10px;font-weight:900;cursor:default;animation:parcelPulse 1.6s ease-in-out infinite}.parcel-closing-reminder[hidden]{display:none}@keyframes parcelPulse{50%{background:#dc2626}}
 .parcel-missing-date-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}.parcel-missing-date{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px}.parcel-missing-date button{min-height:36px;padding:7px 9px;border:1px solid #475569;border-radius:9px;background:#17233a;color:#f8fafc;font-weight:800}.parcel-missing-date .parcel-no-pickup-btn{background:#334155;color:#cbd5e1;font-size:11px}@media(max-width:700px){.parcel-missing-date-grid{grid-template-columns:1fr}}
 #todaySoldBox .today-order-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:3px 0;font-size:13px}#todaySoldBox .today-order-total{border-top:1px solid rgba(148,163,184,.18);margin-top:5px;padding-top:5px;text-align:right;font-size:13px}
-#bossOtherIncomeBox .boss-inline{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:end}
+#bossOtherIncomeBox .boss-inline{display:grid;grid-template-columns:minmax(180px,1.15fr) minmax(130px,.7fr) minmax(180px,1fr) minmax(180px,1fr);gap:10px;align-items:end}
 #otherIncomeTypeSettings .boss-inline{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-#bossOtherIncomeBox .boss-income-form label{display:flex;flex-direction:column;gap:6px;min-width:0;color:#94a3b8;font-size:12px;font-weight:700}#bossOtherIncomeBox .boss-income-form label span{padding-left:2px}#bossOtherIncomeBox .boss-income-form>button{align-self:end}
+#bossOtherIncomeBox .boss-income-form label{display:flex;flex-direction:column;gap:6px;min-width:0;color:#94a3b8;font-size:12px;font-weight:700}#bossOtherIncomeBox .boss-income-form label span{padding-left:2px}#bossOtherIncomeBox .boss-income-form>button{align-self:end;grid-column:1/-1;width:100%}
 #bossOtherIncomeBox .boss-inline input,#bossOtherIncomeBox .boss-inline select{width:100%;min-width:0;height:48px;padding:0 13px;border:1px solid rgba(96,165,250,.42);border-radius:11px;background:#17263f!important;color:#e5edf9!important;-webkit-text-fill-color:#e5edf9;box-shadow:inset 0 1px 0 rgba(255,255,255,.035);font-size:14px}
 #bossOtherIncomeBox .boss-inline input:focus,#bossOtherIncomeBox .boss-inline select:focus{outline:none;border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.14)}
 #bossOtherIncomeBox .boss-inline select option{background:#17263f;color:#e5edf9}
@@ -348,6 +348,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #otherIncomeMonths .other-month-chip:hover{border-color:#38bdf8;background:rgba(14,116,144,.22)}#otherIncomeMonths .other-month-chip:has(input:checked){border-color:#22c55e;background:rgba(22,163,74,.2);box-shadow:0 0 0 2px rgba(34,197,94,.12) inset}
 #otherIncomeMonths .other-month-chip.is-old{opacity:.42;background:rgba(51,65,85,.25);cursor:not-allowed}#otherIncomeMonths .other-month-chip.is-done{opacity:.72;border-color:rgba(34,197,94,.45);background:rgba(22,101,52,.2);color:#86efac;cursor:not-allowed}
 #otherIncomeMonths input{width:17px;height:17px;accent-color:#22c55e}
+@media(max-width:1180px){#bossOtherIncomeBox .boss-income-form{grid-template-columns:repeat(2,minmax(0,1fr))!important}#otherIncomeMonths>div:last-child{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:700px){#bossOtherIncomeBox .boss-income-form{grid-template-columns:1fr!important}#otherIncomeMonths>div:last-child{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 body.light #bossOtherIncomeBox .boss-inline input,body.light #bossOtherIncomeBox .boss-inline select{background:#fff!important;color:#172033!important;-webkit-text-fill-color:#172033;border-color:#94a3b8}body.light #otherIncomeMonths{background:#f8fafc;color:#334155}body.light #otherIncomeMonths .other-month-chip{background:#eef6ff;color:#172033}
 @media(max-width:1100px){#bossOtherIncomeBox .boss-inline{grid-template-columns:1fr 1fr}#bossOtherIncomeBox .boss-inline button{grid-column:1/-1}#otherIncomeMonths>div:last-child{grid-template-columns:repeat(4,minmax(100px,1fr))}}
 .income-btn{background:linear-gradient(135deg,#155e75,#0e7490)!important;color:#fff!important}
@@ -594,7 +596,7 @@ body.light .toast{
   background:linear-gradient(135deg,#f97316,#fb923c) !important;
   color:#fff !important;
 }
-.cash-clear-amount-btn{background:#475569!important;border-color:#94a3b8!important;color:#fff!important;}
+.cash-clear-amount-btn{background:linear-gradient(135deg,#b91c1c,#ef4444)!important;border-color:#f87171!important;color:#fff!important;}
 .pay-choice-box button:hover,
 #cashBox .modal-content button:hover{
   transform:translateY(-1px);
@@ -1384,8 +1386,8 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
             <p style="color:#94a3b8;font-size:13px;margin-top:-4px">1–4月是旧资料；5月可补回已删除的记录，6月以后可继续登记。只有已经登记的月份才会锁住。</p>
             <div class="boss-inline boss-income-form"><label><span>收入类型</span><select id="otherIncomeType"><option value="水机">水机</option></select></label><label><span>账单年份</span><input id="otherIncomeYear" type="number" min="2026" value="2026" placeholder="年份"></label><label><span>实收总金额</span><input id="otherIncomeAmount" type="number" step="0.01" placeholder="RM 0.00"></label><label><span>收款方式</span><select id="otherIncomePayment"><option value="Cash">现金 Cash</option><option value="QR">QR／公司银行</option><option value="Transfer">Transfer／公司银行</option></select></label><button class="green" onclick="bossAddOtherIncome()">确认已收到</button></div>
             <details id="otherIncomeTypeSettings" style="margin-top:10px"><summary>⚙️ 收入项目设置（需要修改时才展开）</summary><div class="boss-inline" style="margin-top:10px;grid-template-columns:minmax(180px,1fr) 150px"><input id="newOtherIncomeType" placeholder="例如：饮水机／租金"><button type="button" onclick="bossAddOtherIncomeType()">新增项目</button></div><div id="otherIncomeTypeList" class="boss-result"></div></details>
-            <div id="otherIncomeMonths" class="boss-result" style="margin-top:10px">请选择水机账单月份。</div>
-            <div id="bossOtherIncomeResult" class="boss-result">记录后会立即更新今日销售和收银机现金。</div>
+            <div id="otherIncomeMonths" class="boss-result" style="margin-top:10px"></div>
+            <div id="bossOtherIncomeResult" class="boss-result"></div>
           </div>
 
           <div id="bossLowStockBox" class="boss-panel">
@@ -2072,7 +2074,7 @@ function bossReportTitle(label){const zh=lang()==='zh';return (zh?{today:"今日
 function bossMiniCard(title,value,sub,warn){return `<div class="overview-card ${warn?'warn':''}"><small>${title}</small><b>${value}</b><span>${sub||''}</span></div>`}
 async function bossLoadReportRange(s,e,label){
   const box=document.getElementById("bossReportInlineResult")||document.getElementById("bossResult"),zh=lang()==='zh'; box.textContent=zh?'载入中...':'Loading...';
-  try{let r=await apiCallTransient("getFullReport",[s,e],30000,'Report');const otherRow=(Number(r.otherIncomeCash||0)||Number(r.otherIncomeQR||0))?`<tr><td>${zh?'其它收入 Cash':'Other Income Cash'}</td><td class="num">${fmt(r.otherIncomeCash||0)}</td><td>${zh?'其它收入 QR':'Other Income QR'}</td><td class="num">${fmt(r.otherIncomeQR||0)}</td></tr>`:'';box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)} ${zh?'营业报表':'Sales Report'}</h3><span>${s} ${zh?'至':'to'} ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>${zh?'收款与调整':'Payments & Adjustments'}</h4><table class="sales-product-table"><tr><td>${zh?'现金':'Cash'}</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>${zh?'转账':'Transfer'}</td><td class="num">${fmt(r.Transfer||0)}</td><td>${zh?'混合付款（旧记录）':'Mixed Payment (legacy)'}</td><td class="num">${fmt(r.Mixed||0)}</td></tr>${otherRow}<tr><td>${zh?'折扣':'Discount'}</td><td class="num">${fmt(r.discount||0)}</td><td>${zh?'退货':'Refund'}</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>${zh?'净销售':'Net Sales'}</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
+  try{let r=await salesReportWithTimeout(apiCall("getReportSummary",[s,e]),25000);const otherRow=(Number(r.otherIncomeCash||0)||Number(r.otherIncomeQR||0))?`<tr><td>${zh?'其它收入 Cash':'Other Income Cash'}</td><td class="num">${fmt(r.otherIncomeCash||0)}</td><td>${zh?'其它收入 QR':'Other Income QR'}</td><td class="num">${fmt(r.otherIncomeQR||0)}</td></tr>`:'';box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)} ${zh?'营业报表':'Sales Report'}</h3><span>${s} ${zh?'至':'to'} ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>${zh?'收款与调整':'Payments & Adjustments'}</h4><table class="sales-product-table"><tr><td>${zh?'现金':'Cash'}</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>${zh?'转账':'Transfer'}</td><td class="num">${fmt(r.Transfer||0)}</td><td>${zh?'混合付款（旧记录）':'Mixed Payment (legacy)'}</td><td class="num">${fmt(r.Mixed||0)}</td></tr>${otherRow}<tr><td>${zh?'折扣':'Discount'}</td><td class="num">${fmt(r.discount||0)}</td><td>${zh?'退货':'Refund'}</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>${zh?'净销售':'Net Sales'}</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
   catch(err){const detail=cleanMessage((err&&err.message)||err);box.textContent=(zh?'报表载入失败：':'Report failed: ')+detail;}
 }
 async function bossExportXlsx(){
@@ -2822,6 +2824,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const more = $('moreMenu');
     if(more)more.innerHTML=`<button class="smallbtn print-btn" onclick="smartPrintLast()">🖨️ ${esc(tr('print'))}</button><button class="smallbtn parcel-btn" onclick="openParcelBox()">📦 ${lang()==='zh'?'包裹记录':'Parcel Records'}</button><button class="smallbtn income-btn" onclick="openStaffOtherIncome()">🚰 ${esc(tr('otherIncome'))}</button><button class="smallbtn shopee-stock-btn" onclick="openShopeeStockOut()">🛍️ ${lang()==='zh'?'Shopee卖货出库':'Shopee Stock Out'}</button><button class="smallbtn close-btn" onclick="openRefundBox()">↩️ ${esc(tr('refund'))}</button>`;
     const bossTitle = document.querySelector('#bossLoginBox h3'); if(bossTitle)bossTitle.textContent=tr('bossAuth');
+    setPh('bossId',lang()==='zh'?'帐号':'Account');
+    setPh('bossPassword',lang()==='zh'?'密码':'Password');
     const bossLoginBtn = $('bossLoginBtn'); if(bossLoginBtn && !bossLoginBtn.disabled)bossLoginBtn.textContent=tr('login');
     const bossLoginClose = document.querySelector('#bossLoginBox button[onclick*="closeModal"]'); if(bossLoginClose)bossLoginClose.textContent=tr('close');
     const hero = document.querySelector('.boss-hero div'); if(hero)hero.innerHTML=`<b>${esc(tr('bossMode'))}</b><br><small>${esc(tr('bossHint'))}</small>`;
@@ -2880,6 +2884,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       setPh('otherIncomeAmount', tr('amount'));
       const btn=otherPanel.querySelector('button.green'); if(btn)btn.textContent=tr('addPending');
       const res=$('bossOtherIncomeResult'); if(res && /^Waiting confirmation/.test(res.textContent||''))res.textContent=tr('waitingConfirmation');
+      const months=$('otherIncomeMonths');if(months&&!window.__bossIncomeState)months.textContent=lang()==='zh'?'载入月份...':'Loading months...';
     }
     const productPanel = $('bossProductBox');
     if(productPanel){
