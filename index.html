@@ -1085,9 +1085,10 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <h3>💸 Discount</h3>
     <input id="discountInput" type="number" placeholder="输入折扣">
     <div class="discount-grid">
-      <button onclick="add折扣(0.1)">+0.10</button>
-      <button onclick="add折扣(1)">+1</button>
-      <button onclick="add折扣(5)">+5</button>
+      <button type="button" onclick="add折扣(0.1)">+0.10</button>
+      <button type="button" onclick="add折扣(1)">+1</button>
+      <button type="button" onclick="add折扣(5)">+5</button>
+      <button type="button" onclick="clearDiscountAmount()">清除金额</button>
     </div>
     <div class="discount-preview">
       原价 RM <span id="dSubtotal">0.00</span><br>
@@ -1124,15 +1125,16 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <div id="cashTotal">RM 0.00</div>
     <input id="cashInput" type="number" inputmode="decimal" placeholder="Customer paid amount" oninput="calcChange()">
     <div class="discount-grid">
-  <button class="cash-quick-btn cash-rm1" onclick="quick(1)">RM1</button>
-  <button class="cash-quick-btn cash-rm5" onclick="quick(5)">RM5</button>
-  <button class="cash-quick-btn cash-rm10" onclick="quick(10)">RM10</button>
+  <button type="button" class="cash-quick-btn cash-rm1" onclick="quick(1)">RM1</button>
+  <button type="button" class="cash-quick-btn cash-rm5" onclick="quick(5)">RM5</button>
+  <button type="button" class="cash-quick-btn cash-rm10" onclick="quick(10)">RM10</button>
 
-  <button class="cash-quick-btn cash-rm20" onclick="quick(20)">RM20</button>
-  <button class="cash-quick-btn cash-rm50" onclick="quick(50)">RM50</button>
-  <button class="cash-quick-btn cash-rm100" onclick="quick(100)">RM100</button>
+  <button type="button" class="cash-quick-btn cash-rm20" onclick="quick(20)">RM20</button>
+  <button type="button" class="cash-quick-btn cash-rm50" onclick="quick(50)">RM50</button>
+  <button type="button" class="cash-quick-btn cash-rm100" onclick="quick(100)">RM100</button>
+  <button type="button" class="cash-quick-btn" onclick="clearCashAmount()">清除金额</button>
 
-  <button class="exact-pay-btn" onclick="quickExact()">
+  <button type="button" class="exact-pay-btn" onclick="quickExact()">
     💵 刚好付款
   </button>
 </div>
@@ -1263,7 +1265,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div id="bossLoginBox" class="modal">
   <div class="modal-content access-card">
     <h3>🔐 权限验证</h3>
-    <input id="bossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input id="bossId" type="password" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
     <input id="bossPassword" type="password" placeholder="密码" autocomplete="new-password">
     <button id="bossLoginBtn" class="green" type="button">登入</button>
     <button onclick="closeModal('bossLoginBox')">关闭</button>
@@ -3190,7 +3192,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   }
   function wait(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
   async function apiCallTransient(action,args,timeoutMs,label){
-    if(action==='getFullReport')timeoutMs=Math.max(Number(timeoutMs)||0,65000);
+    if(action==='getFullReport'){action='getReportSummary';timeoutMs=Math.max(Number(timeoutMs)||0,30000);}
     try{
       return await timeout(apiCall(action,args||[]), timeoutMs||16000, label||action);
     }catch(e){
@@ -5073,7 +5075,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const rows=(data.rows||[]).slice(0,12);
     if(rows.length){
       html+=`<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('item'))}</th><th>${esc(tr('lossType'))}</th><th class="right">${esc(tr('qty'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('reason'))}</th></tr>`+
-        rows.map(x=>`<tr><td>${esc(x.date||'')}</td><td>${esc(x.name||'')}</td><td>${esc(x.type||'')}</td><td class="right">${esc(x.qty||0)}</td><td class="right">${money(x.amount||0)}</td><td>${esc(x.reason||x.note||'')}</td></tr>`).join('')+
+        rows.map(x=>{const map=lang()==='zh'?{'Stocktake Difference':'盘点差异','Physical stocktake difference':'实际盘点差异','Damaged':'损坏','Expired':'过期','Missing':'遗失','Other':'其它'}:{};return `<tr><td>${esc(x.date||'')}</td><td>${esc(x.name||'')}</td><td>${esc(map[x.type]||x.type||'')}</td><td class="right">${esc(x.qty||0)}</td><td class="right">${money(x.amount||0)}</td><td>${esc(map[x.reason]||x.reason||x.note||'')}</td></tr>`;}).join('')+
         `</table>`;
     }else{
       html+=`<div class="empty">${esc(tr('noRecords'))}</div>`;
@@ -5663,6 +5665,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     input.value=moneyNum(current + num(v)).toFixed(2);
     if(typeof window.calcChange === 'function')window.calcChange();
   };
+  window.clearCashAmount=function(){const input=$('cashInput');if(input){input.value='';input.focus();}if(typeof window.calcChange==='function')window.calcChange();};
 
   window.calcChange = function(){
     const input=$('cashInput');
@@ -5820,6 +5823,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   };
   window.close折扣 = function(){ closeModal('discountBox'); };
   window.add折扣 = function(v){ const input=$('discountInput'); const val=moneyNum(num(input && input.value) + num(v)); if(input)input.value=val; update折扣Preview(val); };
+  window.clearDiscountAmount=function(){const input=$('discountInput');if(input){input.value='';input.focus();}update折扣Preview(0);};
   window.apply折扣 = async function(){
     const input=$('discountInput');
     let val = moneyNum(input ? input.value : 0);
@@ -5831,7 +5835,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(!id||!pw){const auth=$('discountAuthDetails');if(auth)auth.open=true;if(status){status.style.display='block';status.textContent=lang()==='zh'?'必须填写老板 ID 和密码。':'Boss ID and password are required.';}const target=!id?$('discountBossId'):$('discountBossPassword');if(target)target.focus();return;}
     const cartRef=currentCart(),cartSnapshot=cartRef.map(x=>Object.assign({},x)),previousDiscount=moneyNum(typeof discount!=='undefined'?discount:(window.discount||0));
     try{setSubmitBusy(true,tr('saving'));const approved=await apiCall('approveDiscount',[val,id,pw,subtotal,{clientId:'DISC-'+makeClientOrderId(),reference:'CurrentCart'}]);window.__activeDiscountAudit={auditId:approved.auditId,amount:val,status:'Approved'};try{discount=val;}catch(e){window.discount=val;}closeModal('discountBox');showCart();showToast(lang()==='zh'?'✅ 折扣已通过老板权限':'✅ Discount approved with Boss authorization');}
-    catch(e){cartRef.splice(0,cartRef.length,...cartSnapshot.map(x=>Object.assign({},x)));try{discount=previousDiscount;}catch(ignore){window.discount=previousDiscount;}showCart();const auth=$('discountAuthDetails');if(auth)auth.open=true;showAppAlert(tr('discountRejected')+(e.message||e),tr('discount'));}
+    catch(e){cartRef.splice(0,cartRef.length,...cartSnapshot.map(x=>Object.assign({},x)));try{discount=previousDiscount;}catch(ignore){window.discount=previousDiscount;}showCart();const auth=$('discountAuthDetails');if(auth)auth.open=true;const raw=cleanMessage(e.message||e),remaining=(raw.match(/Remaining\s+(\d+)/i)||[])[1],locked=/System locked/i.test(raw),detail=lang()==='zh'?(locked?'错误次数已达5次，系统已锁定。':remaining!=null?`帐号或密码错误，还可尝试 ${remaining} 次。`:raw):raw;showAppAlert(tr('discountRejected')+detail,tr('discount'));}
     finally{setSubmitBusy(false);}
   };
   window.reset折扣 = function(){ window.__activeDiscountAudit=null;try{ discount = 0; }catch(e){ window.discount = 0; } const input=$('discountInput'); if(input)input.value=''; update折扣Preview(0); showCart(); };
@@ -6654,6 +6658,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     }
     if(key==='exportExcel'){ph('exportYear',zh?'年份':'Year');ph('exportMonth',zh?'月份（可不填）':'Month optional');const b=document.querySelector('#bossExportBox button.green');if(b)b.textContent=zh?'生成 Excel':'Generate Excel';const h=$('exportModeHint');if(h)h.textContent=zh?'会计版默认不包含成本与利润。Shopee／其它收入不会混进 POS 销售；需要时再勾选独立页。':'Accounting excludes cost and profit by default. Shopee and other income remain separate from POS sales.';}
     if(key==='finance'){text('#bossCashBox h4',zh?'财务':'Finance');const w=$('bossCashWarning');if(w&&w.style.display!=='none'){const m=String(w.textContent||'').match(/RM\s*[\d,.]+/);w.textContent=(zh?'可收现金 ':'Collectable cash ')+(m?m[0]:'');}}
+    if(key==='reports'){const q=document.querySelector('#bossReportsPanel button.green');if(q)q.textContent=zh?'查询':'Search';}
+    if(key==='productManage'){const intro=$('bossWorkIntro');if(intro)intro.innerHTML=zh?'<div>请先从左边选择要做的工作<br><small>一次只显示一个表格。一次性旧资料整理已经完成，相关危险按钮已移除。</small></div>':'<div>Choose a task on the left<br><small>Only one form is shown at a time. Legacy cleanup is complete and dangerous one-time actions were removed.</small></div>';}
     if(key==='lostItem'){const intro=document.querySelector('#bossLostBox .receipt-note, #bossLostBox>p');if(intro)intro.textContent=zh?'记录过期、损坏、遗失或盘点差异；散卖商品会同步换算成本。':'Record expiry, damage, missing stock or count differences; loose-sale costs are converted automatically.';}
     if(key==='stockOutHistory'){const intro=document.querySelector('#bossStockOutHistoryPanel .receipt-note, #bossStockOutHistoryPanel>p');if(intro)intro.textContent=zh?'只显示 Shopee 卖货扣库存记录，保留时间、商品、数量和审核人，方便核对 CCTV。':'Shows Shopee stock deductions with time, items, quantities and approver for CCTV checks.';}
   }
@@ -6712,6 +6718,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       return;
     }
     window.__bossLoginInFlight=true;
+    if(idEl)idEl.value='';if(pwEl)pwEl.value='';
     if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
     if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
     try{
@@ -6735,7 +6742,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       }
       if(msg)msg.textContent=tr('wrongLogin')+(r&&r.remaining!=null?r.remaining:0)+'.';
     }catch(e){
-      if(msg)msg.textContent=tr('loginFailed')+(isTimeoutError(e)?tr('bossLoginSlow'):cleanMessage(e.message||e));
+      if(msg){const raw=cleanMessage(e.message||e),remaining=(raw.match(/Remaining\s+(\d+)/i)||[])[1],locked=/System locked/i.test(raw);msg.textContent=isTimeoutError(e)?tr('bossLoginSlow'):(locked?(lang()==='zh'?'错误次数已达5次，系统已锁定。':'Five wrong attempts. System locked.'):(remaining!=null?(lang()==='zh'?`帐号或密码错误，还可尝试 ${remaining} 次。`:`ID or password is wrong. Remaining ${remaining}.`):tr('loginFailed')+raw));}
     }finally{
       window.__bossLoginInFlight=false;if(btn){btn.disabled=false; btn.textContent=tr('login');}
     }
