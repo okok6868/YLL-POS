@@ -3190,6 +3190,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   }
   function wait(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
   async function apiCallTransient(action,args,timeoutMs,label){
+    if(action==='getFullReport')timeoutMs=Math.max(Number(timeoutMs)||0,65000);
     try{
       return await timeout(apiCall(action,args||[]), timeoutMs||16000, label||action);
     }catch(e){
@@ -3898,6 +3899,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const p=$(id);
     if(p){p.style.display='block';p.classList.add('active');}
     setBossNav(activeKey);
+    try{if(activeKey&&typeof localizeBossCurrentPanel==='function')localizeBossCurrentPanel(activeKey);}catch(e){}
     requestAnimationFrame(()=>{const content=document.querySelector('#bossDashboard .boss-content');if(content)content.scrollTop=0;});
   }
 
@@ -4596,7 +4598,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   function isAuthoritativeSharedProduct(p){return !!(normalizeText(p&&p.inventoryGroup)&&p&&p.sharedStock!==null&&p.sharedStock!==''&&Number.isFinite(Number(p.sharedStock))&&Number(p.stockFactor)>0);}
   function isLooseBulkProduct(p){const group=isAuthoritativeSharedProduct(p)?normalizeText(p.inventoryGroup):'';if(!group)return true;const same=(bossProductsCache||[]).filter(x=>isAuthoritativeSharedProduct(x)&&normalizeText(x.inventoryGroup)===group),kg=x=>{const m=String(x.name||'').toUpperCase().match(/(\d+(?:\.\d+)?)\s*KG/);return m?Number(m[1]):0;},max=Math.max(0,...same.map(kg));return kg(p)===max&&max>1;}
   function fillBossStocktakeCategories(){const sel=$('bossStocktakeCategory');if(!sel)return;const old=sel.value;sel.innerHTML=`<option value="">${lang()==='zh'?'请选择入口':'Select entrance'}</option>`+bossEntranceOptions().map(x=>`<option value="${x[0]}">${esc(x[1])}</option>`).join('');if(old)sel.value=old;window.bossRenderStocktakeRows();}
-  window.bossRenderStocktakeRows=function(){const sel=$('bossStocktakeProduct'),key=normalizeText(($('bossStocktakeCategory')||{}).value);if(!sel)return;const rows=(bossProductsCache||[]).filter(p=>p.active!==false&&productInEntrance(p,key)&&isLooseBulkProduct(p)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));sel.innerHTML=`<option value="">${key?(lang()==='zh'?'请选择商品':'Select product'):(lang()==='zh'?'请先选择入口':'Choose entrance first')}</option>`+rows.map(p=>`<option value="${esc(p.code||p.name||'')}">${esc(p.name||'')} · ${lang()==='zh'?'账面':'System'} ${Number(p.stock||0)}</option>`).join('');};
+  window.bossRenderStocktakeRows=function(){const sel=$('bossStocktakeProduct'),key=normalizeText(($('bossStocktakeCategory')||{}).value);if(!sel)return;const rows=(bossProductsCache||[]).filter(p=>p.active!==false&&productInEntrance(p,key)&&isLooseBulkProduct(p)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));sel.innerHTML=`<option value="">${key?(lang()==='zh'?'请选择商品':'Select product'):(lang()==='zh'?'请先选择入口':'Choose entrance first')}</option>`+rows.map(p=>{const book=isAuthoritativeSharedProduct(p)?Number(p.sharedStock||0):Number(p.stock||0),unit=isAuthoritativeSharedProduct(p)?' KG':'';return `<option value="${esc(p.code||p.name||'')}">${esc(p.name||'')} · ${lang()==='zh'?'账面':'System'} ${book}${unit}</option>`;}).join('');};
   window.bossStocktakeSoldOut=function(){if($('bossStocktakeActual'))$('bossStocktakeActual').value='0';window.bossSubmitStocktake();};
   window.bossStocktakeProductChanged=function(){const key=normalizeText(($('bossStocktakeProduct')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),label=$('bossStocktakeActualLabel');if(label)label.textContent=isAuthoritativeSharedProduct(p)?(lang()==='zh'?'实际剩余总 KG':'Actual total KG remaining'):(lang()==='zh'?'实际剩余数量':'Actual quantity remaining');};
   window.bossSubmitStocktake=function(){const key=normalizeText(($('bossStocktakeProduct')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),actual=Number(($('bossStocktakeActual')||{}).value);if(!p||String(($('bossStocktakeActual')||{}).value).trim()===''||!Number.isFinite(actual)||actual<0){showAppAlert(lang()==='zh'?'请选择商品并填写实际剩余数量。':'Select a product and enter actual remaining quantity.',tr('productEditor'));return;}showConfirm(lang()==='zh'?'确认保存盘点？少于账面库存的差额会自动记录为耗损。':'Save this count? Any shortage is recorded as loss.',()=>isAuthoritativeSharedProduct(p)?bossSubmitLooseSimple(p,actual):bossSubmitStocktakeNow([{code:p.code||'',name:p.name||'',actual}]));};
@@ -4773,6 +4775,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     ensureBossProductPanel();
     keepBossDashboardOpen('productManage');
     showBossPanel('bossProductBox','productManage');
+    localizeBossCurrentPanel('productManage');
     const res=$('bossProductResult');
     setSubmitBusy(true, tr('uploadingImage'));
     try{
@@ -4883,6 +4886,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       fillBossReceiveCategories();
       fillBossStocktakeCategories();
       fillBossCategoryList();
+      localizeBossCurrentPanel('productManage');
       fillBossProductFilterCategories();
       renderBossProductList(($('bossProductSearch')||{}).value||'');
       renderBossProductCounts();
@@ -5081,6 +5085,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(typeof bossRequire === 'function' && !bossRequire())return;
     ensureBossLostPanel();
     showBossPanel('bossLostBox','lostItem');
+    localizeBossCurrentPanel('lostItem');
     keepBossDashboardOpen('lostItem');
     bossLostProductsCache=bossLocalProductRows();
     fillBossLostFilterCategories();
@@ -5090,6 +5095,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     try{
       const data=await apiCallTransient('getLostItemSummary',[1,12],30000,'Lost items');window.__bossLostSummaryData=data;
       if(res)res.innerHTML=renderLostSummary(data||{});
+      localizeBossCurrentPanel('lostItem');
     }catch(e){
       if(res)res.textContent=tr('loadFailed')+(e.message||e);
     }
@@ -5823,8 +5829,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(val < 0 || val > subtotal){ showAppAlert(tr('discountTooHigh'),tr('discount')); return; }
     const id=($('discountBossId')||{}).value||'',pw=($('discountBossPassword')||{}).value||'';
     if(!id||!pw){const auth=$('discountAuthDetails');if(auth)auth.open=true;if(status){status.style.display='block';status.textContent=lang()==='zh'?'必须填写老板 ID 和密码。':'Boss ID and password are required.';}const target=!id?$('discountBossId'):$('discountBossPassword');if(target)target.focus();return;}
+    const cartRef=currentCart(),cartSnapshot=cartRef.map(x=>Object.assign({},x)),previousDiscount=moneyNum(typeof discount!=='undefined'?discount:(window.discount||0));
     try{setSubmitBusy(true,tr('saving'));const approved=await apiCall('approveDiscount',[val,id,pw,subtotal,{clientId:'DISC-'+makeClientOrderId(),reference:'CurrentCart'}]);window.__activeDiscountAudit={auditId:approved.auditId,amount:val,status:'Approved'};try{discount=val;}catch(e){window.discount=val;}closeModal('discountBox');showCart();showToast(lang()==='zh'?'✅ 折扣已通过老板权限':'✅ Discount approved with Boss authorization');}
-    catch(e){const auth=$('discountAuthDetails');if(auth)auth.open=true;showAppAlert(tr('discountRejected')+(e.message||e),tr('discount'));}
+    catch(e){cartRef.splice(0,cartRef.length,...cartSnapshot.map(x=>Object.assign({},x)));try{discount=previousDiscount;}catch(ignore){window.discount=previousDiscount;}showCart();const auth=$('discountAuthDetails');if(auth)auth.open=true;showAppAlert(tr('discountRejected')+(e.message||e),tr('discount'));}
     finally{setSubmitBusy(false);}
   };
   window.reset折扣 = function(){ window.__activeDiscountAudit=null;try{ discount = 0; }catch(e){ window.discount = 0; } const input=$('discountInput'); if(input)input.value=''; update折扣Preview(0); showCart(); };
@@ -6477,7 +6484,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     }catch(e){if(box)box.textContent=tr('loadFailed')+cleanMessage(e.message||e);}
   };
 
-  window.renderOtherIncomeRecordPage=function(r){const rows=(r&&r.rows)||[];if(!rows.length)return `<div class="boss-result">${esc(tr('noRecords'))}</div>`;const hasAction=rows.some(x=>String(x.status||'Pending')!=='Received');return `<table class="other-income-record-table" style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('status'))}</th>${hasAction?`<th>${esc(tr('action'))}</th>`:''}</tr>`+rows.map(x=>{const received=String(x.status||'Pending')==='Received',label=[x.type||'',(x.periods||[]).join(', '),x.payment||''].filter(Boolean).join(' · ');return `<tr><td>${esc(x.date||'')}</td><td>${esc(label)}</td><td class="right">${money(x.amount||0)}</td><td>${esc(received?tr('received'):tr('pending'))}</td>${hasAction?`<td>${received?'—':`<button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${esc(x.id||'')}')">${esc(tr('confirmReceived'))}</button>`}</td>`:''}</tr>`;}).join('')+`</table>${bossRecordPagerHtml(r,'bossLoadOtherIncomePage')}`;};
+  function otherIncomeDisplayName(value){value=String(value||'');if(lang()!=='en')return value;if(value==='水机')return 'Water Machine';const m=value.match(/^(\d{1,2})月水机$/);return m?'Water Machine · Month '+m[1]:value;}
+  window.renderOtherIncomeRecordPage=function(r){const rows=(r&&r.rows)||[];if(!rows.length)return `<div class="boss-result">${esc(tr('noRecords'))}</div>`;const hasAction=rows.some(x=>String(x.status||'Pending')!=='Received');return `<table class="other-income-record-table" style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th><th>${esc(tr('status'))}</th>${hasAction?`<th>${esc(tr('action'))}</th>`:''}</tr>`+rows.map(x=>{const received=String(x.status||'Pending')==='Received',label=[otherIncomeDisplayName(x.type),(x.periods||[]).join(', '),x.payment||''].filter(Boolean).join(' · ');return `<tr><td>${esc(x.date||'')}</td><td>${esc(label)}</td><td class="right">${money(x.amount||0)}</td><td>${esc(received?tr('received'):tr('pending'))}</td>${hasAction?`<td>${received?'—':`<button class="green" style="padding:6px 10px" onclick="bossConfirmOtherIncome('${esc(x.id||'')}')">${esc(tr('confirmReceived'))}</button>`}</td>`:''}</tr>`;}).join('')+`</table>${bossRecordPagerHtml(r,'bossLoadOtherIncomePage')}`;};
   window.bossLoadOtherIncomePage=async function(page){const rowsBox=$('bossOtherIncomeRows');if(rowsBox)rowsBox.textContent=tr('loading');try{const r=await apiCallTransient('getOtherIncomeSummaryPage',[Number(page)||1,12],16000,'Other income records');window.__bossOtherIncomePageData=r;if(rowsBox)rowsBox.innerHTML=renderOtherIncomeRecordPage(r);}catch(e){if(rowsBox)rowsBox.textContent=tr('loadFailed')+cleanMessage(e.message||e);}};
   window.__otherIncomeTypes=['水机'];
   function renderOtherIncomeTypeControls(types){types=(types||['水机']).filter(Boolean);window.__otherIncomeTypes=types;const display=x=>lang()==='en'&&x==='水机'?'Water Machine':x;['otherIncomeType','staffIncomeType'].forEach(id=>{const el=$(id),old=el&&el.value;if(!el)return;el.innerHTML=types.map(x=>`<option value="${esc(x)}">${esc(display(x))}</option>`).join('');if(old&&types.includes(old))el.value=old;});const list=$('otherIncomeTypeList');if(list)list.innerHTML=types.map((x,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0"><span>${esc(display(x))}</span><button type="button" ${types.length<=1?'disabled':''} onclick="bossRemoveOtherIncomeType(${i})" style="width:auto;padding:7px 12px">${lang()==='zh'?'移除':'Remove'}</button></div>`).join('');}
@@ -6515,7 +6523,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const box=$('otherIncomeMonths'),year=Math.max(2026,Number(($('otherIncomeYear')||{}).value)||2026),used={};
     (recorded||[]).forEach(function(x){used[String(x)]=1;});
     if(!box)return;
-    const zh=lang()==='zh',type=(($('otherIncomeType')||{}).value)||'';let html=`<div style="margin-bottom:7px">${zh?type+' 账单月份（可多选；已记录月份不能再选）':type+' billing months (multiple allowed; recorded months are locked)'}</div><div style="display:flex;flex-wrap:wrap;gap:7px">`;
+    const zh=lang()==='zh',type=(($('otherIncomeType')||{}).value)||'',displayType=otherIncomeDisplayName(type);let html=`<div style="margin-bottom:7px">${zh?type+' 账单月份（可多选；已记录月份不能再选）':displayType+' billing months (multiple allowed; recorded months are locked)'}</div><div style="display:flex;flex-wrap:wrap;gap:7px">`;
     for(let m=1;m<=12;m++){const key=year+'-'+String(m).padStart(2,'0'),old=key<String(start||'2026-05'),done=!!used[key],disabled=old||done;html+=`<label class="other-month-chip ${done?'is-done':old?'is-old':''}"><input class="other-income-month" type="checkbox" value="${key}" ${disabled?'disabled':''}><span>${zh?m+'月':new Date(2026,m-1,1).toLocaleString('en',{month:'short'})}${done?(zh?' · 已收':' · Received'):old?(zh?' · 旧资料':' · Legacy'):''}</span></label>`;}
     box.innerHTML=html+'</div>';
     const y=$('otherIncomeYear');if(y&&!y.dataset.monthBound){y.dataset.monthBound='1';y.addEventListener('change',function(){renderOtherIncomeMonths(recorded,start);});}
@@ -6638,6 +6646,16 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(key==='productManage'){text('#bossProductBox h4',zh?'商品管理':'Product Editor');const menu=document.querySelectorAll('#bossProductBox .boss-work-menu button'),names=zh?['✏️ 修改现有商品','📥 商品进货','📋 盘点／耗损','＋ 建立新商品']:['✏️ Edit existing product','📥 Receive stock','📋 Stocktake / loss','＋ Create new product'];menu.forEach((b,i)=>b.textContent=names[i]||b.textContent);text('#bossEditPrompt',zh?'请先从左边选择要修改的商品':'Select a product on the left');const b=$('bossQuickKgButton');if(b)b.textContent=zh?'快速校正实际KG':'Quick correct actual KG';renderBossProductCounts();fillBossProductFacets();renderBossProductList(($('bossProductSearch')||{}).value||'');}
     if(key==='lostItem'){text('#bossLostBox h4',zh?'耗损／丢失':'Lost Item');const intro=document.querySelector('#bossLostBox>p');if(intro)intro.textContent=zh?'记录过期、损坏、遗失或盘点差异；散卖商品会同步换算成本。':'Record expiry, damage, missing stock or count differences; loose-sale costs are converted automatically.';const labels=document.querySelectorAll('#bossLostBox .boss-product-filter-row .boss-field-label'),names=zh?['搜索商品（可不填）','主分类','里面分类','商品系列']:['Search product (optional)','Main category','Subcategory','Product series'];labels.forEach((e,i)=>e.textContent=names[i]||e.textContent);ph('bossLostSearch',zh?'输入名字快速寻找':'Type a name to search');const formLabels=document.querySelectorAll('#bossLostBox .boss-product-grid .boss-field-label'),formNames=zh?['耗损类型','数量','原因','备注（可不填）']:['Loss type','Qty','Reason','Note (optional)'];formLabels.forEach((e,i)=>e.textContent=formNames[i]||e.textContent);ph('bossLostQty',zh?'数量':'Qty');ph('bossLostReason',zh?'原因':'Reason');ph('bossLostNote',zh?'备注（可不填）':'Note optional');const selected=$('bossLostSelected');if(selected&&!selected.dataset.selectedCode)selected.textContent=zh?'选择商品':'Select product';fillBossLostFacets();renderBossLostProductList(($('bossLostSearch')||{}).value||'');if(window.__bossLostSummaryData){const r=$('bossLostResult');if(r)r.innerHTML=renderLostSummary(window.__bossLostSummaryData);}}
     if(key==='shopee'){text('#bossParcelBox h4',zh?'📦 包裹记录':'📦 Parcel Records');const p=document.querySelector('#bossParcelBox>p');if(p)p.textContent=zh?'各公司共用账本，但分开计算与显示。':'Providers share one ledger but are calculated and shown separately.';ph('shopeePaidAmount',zh?'实际收到金额':'Actual payout amount');ph('shopeePaidNote',zh?'备注／到账日期':'Note / payout date');const paid=document.querySelector('#bossParcelBox .boss-parcel-payout-row button');if(paid)paid.textContent=zh?'记录实收':'Record Paid';const monthly=$('shopeeMonthBtn');if(monthly)monthly.textContent=zh?'查看月度汇总':'View Monthly Summary';const details=document.querySelector('#bossParcelBox .parcel-provider-settings'),summary=details&&details.querySelector('summary');if(summary)summary.textContent=zh?'⚙️ 公司设置（需要修改时才展开）':'⚙️ Provider settings (open only when needed)';const labels=details?[...details.querySelectorAll('.boss-field-label')]:[],names=zh?['选择要修改的公司／新增公司','公司名称','使用状态','派件单价','退回单价']:['Choose provider / add provider','Provider name','Status','Delivered rate','Return rate'];labels.forEach((e,i)=>e.textContent=names[i]||e.textContent);const enabled=$('parcelProviderEnabled');if(enabled){enabled.options[0].textContent=zh?'启用':'Enabled';enabled.options[1].textContent=zh?'停用':'Disabled';}const save=details&&details.querySelector('button.green');if(save)save.textContent=zh?'保存公司资料':'Save provider';const help=details&&details.querySelector('small');if(help)help.textContent=zh?'可直接修改现有公司名称；新增或停用不会删除旧记录。':'Existing names can be edited; adding or disabling a provider never deletes old records.';bossParcelProviderEditChanged();}
+    if(key==='settings'){
+      const labels=document.querySelectorAll('#bossCredentialBox .setting-field label');
+      const names=zh?['新帐号','新密码','新恢复码','收现金提醒金额','找零本金','自动退出分钟']:['New ID','New password','New recovery code','Cash collection alert','Float cash','Auto logout minutes'];
+      labels.forEach((e,i)=>{if(names[i])e.textContent=names[i];});
+      ph('newCashLimit',zh?'收现金提醒，例如 500':'Cash alert, e.g. 500');ph('newFloatCash',zh?'找零本金，例如 200':'Float cash, e.g. 200');ph('newAutoLogout',zh?'自动退出分钟，例如 10':'Auto logout minutes, e.g. 10');
+    }
+    if(key==='exportExcel'){ph('exportYear',zh?'年份':'Year');ph('exportMonth',zh?'月份（可不填）':'Month optional');const b=document.querySelector('#bossExportBox button.green');if(b)b.textContent=zh?'生成 Excel':'Generate Excel';const h=$('exportModeHint');if(h)h.textContent=zh?'会计版默认不包含成本与利润。Shopee／其它收入不会混进 POS 销售；需要时再勾选独立页。':'Accounting excludes cost and profit by default. Shopee and other income remain separate from POS sales.';}
+    if(key==='finance'){text('#bossCashBox h4',zh?'财务':'Finance');const w=$('bossCashWarning');if(w&&w.style.display!=='none'){const m=String(w.textContent||'').match(/RM\s*[\d,.]+/);w.textContent=(zh?'可收现金 ':'Collectable cash ')+(m?m[0]:'');}}
+    if(key==='lostItem'){const intro=document.querySelector('#bossLostBox .receipt-note, #bossLostBox>p');if(intro)intro.textContent=zh?'记录过期、损坏、遗失或盘点差异；散卖商品会同步换算成本。':'Record expiry, damage, missing stock or count differences; loose-sale costs are converted automatically.';}
+    if(key==='stockOutHistory'){const intro=document.querySelector('#bossStockOutHistoryPanel .receipt-note, #bossStockOutHistoryPanel>p');if(intro)intro.textContent=zh?'只显示 Shopee 卖货扣库存记录，保留时间、商品、数量和审核人，方便核对 CCTV。':'Shows Shopee stock deductions with time, items, quantities and approver for CCTV checks.';}
   }
 
   window.bossShowPanel=function(id){if(typeof bossRequire==='function'&&!bossRequire())return;const key=id==='bossReportsPanel'?'reports':'';showBossPanel(id,key);if(key)localizeBossCurrentPanel(key);};
