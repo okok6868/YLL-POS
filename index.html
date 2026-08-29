@@ -594,6 +594,7 @@ body.light .toast{
   background:linear-gradient(135deg,#f97316,#fb923c) !important;
   color:#fff !important;
 }
+.cash-clear-amount-btn{background:#475569!important;border-color:#94a3b8!important;color:#fff!important;}
 .pay-choice-box button:hover,
 #cashBox .modal-content button:hover{
   transform:translateY(-1px);
@@ -1088,7 +1089,6 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
       <button type="button" onclick="add折扣(0.1)">+0.10</button>
       <button type="button" onclick="add折扣(1)">+1</button>
       <button type="button" onclick="add折扣(5)">+5</button>
-      <button type="button" onclick="clearDiscountAmount()">清除金额</button>
     </div>
     <div class="discount-preview">
       原价 RM <span id="dSubtotal">0.00</span><br>
@@ -1132,7 +1132,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
   <button type="button" class="cash-quick-btn cash-rm20" onclick="quick(20)">RM20</button>
   <button type="button" class="cash-quick-btn cash-rm50" onclick="quick(50)">RM50</button>
   <button type="button" class="cash-quick-btn cash-rm100" onclick="quick(100)">RM100</button>
-  <button type="button" class="cash-quick-btn" onclick="clearCashAmount()">清除金额</button>
+  <button type="button" class="cash-quick-btn cash-clear-amount-btn" onclick="clearCashAmount()">清除金额</button>
 
   <button type="button" class="exact-pay-btn" onclick="quickExact()">
     💵 刚好付款
@@ -2073,7 +2073,7 @@ function bossMiniCard(title,value,sub,warn){return `<div class="overview-card ${
 async function bossLoadReportRange(s,e,label){
   const box=document.getElementById("bossReportInlineResult")||document.getElementById("bossResult"),zh=lang()==='zh'; box.textContent=zh?'载入中...':'Loading...';
   try{let r=await apiCallTransient("getFullReport",[s,e],30000,'Report');const otherRow=(Number(r.otherIncomeCash||0)||Number(r.otherIncomeQR||0))?`<tr><td>${zh?'其它收入 Cash':'Other Income Cash'}</td><td class="num">${fmt(r.otherIncomeCash||0)}</td><td>${zh?'其它收入 QR':'Other Income QR'}</td><td class="num">${fmt(r.otherIncomeQR||0)}</td></tr>`:'';box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)} ${zh?'营业报表':'Sales Report'}</h3><span>${s} ${zh?'至':'to'} ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>${zh?'收款与调整':'Payments & Adjustments'}</h4><table class="sales-product-table"><tr><td>${zh?'现金':'Cash'}</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>${zh?'转账':'Transfer'}</td><td class="num">${fmt(r.Transfer||0)}</td><td>${zh?'混合付款（旧记录）':'Mixed Payment (legacy)'}</td><td class="num">${fmt(r.Mixed||0)}</td></tr>${otherRow}<tr><td>${zh?'折扣':'Discount'}</td><td class="num">${fmt(r.discount||0)}</td><td>${zh?'退货':'Refund'}</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>${zh?'净销售':'Net Sales'}</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
-  catch(err){box.textContent=zh?'报表载入较慢，请再按一次重试。':'Report is loading slowly. Please try once more.'}
+  catch(err){const detail=cleanMessage((err&&err.message)||err);box.textContent=(zh?'报表载入失败：':'Report failed: ')+detail;}
 }
 async function bossExportXlsx(){
   if(!bossRequire())return;
@@ -3192,7 +3192,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   }
   function wait(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
   async function apiCallTransient(action,args,timeoutMs,label){
-    if(action==='getFullReport'){action='getReportSummary';timeoutMs=Math.max(Number(timeoutMs)||0,30000);}
+    if(action==='getFullReport')timeoutMs=Math.max(Number(timeoutMs)||0,30000);
     try{
       return await timeout(apiCall(action,args||[]), timeoutMs||16000, label||action);
     }catch(e){
@@ -5822,7 +5822,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     openModal('discountBox');
   };
   window.close折扣 = function(){ closeModal('discountBox'); };
-  window.add折扣 = function(v){ const input=$('discountInput'); const val=moneyNum(num(input && input.value) + num(v)); if(input)input.value=val; update折扣Preview(val); };
+  window.add折扣 = function(v){ const input=$('discountInput'); const val=moneyNum(num(input && input.value) + num(v)); if(input){input.value=val;input.focus();} update折扣Preview(val); };
   window.clearDiscountAmount=function(){const input=$('discountInput');if(input){input.value='';input.focus();}update折扣Preview(0);};
   window.apply折扣 = async function(){
     const input=$('discountInput');
@@ -6114,7 +6114,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       <label class="boss-field"><span class="boss-field-label">${esc(tr('refundReason'))}</span><input id="refundReason" type="text" enterkeyhint="next" placeholder="${esc(tr('refundReason'))}"></label>
       <details class="refund-auth" id="refundAuthDetails">
         <summary>${esc(tr('bossAuth'))}</summary>
-        <label class="boss-field"><span class="boss-field-label">ID</span><input id="refundBossId" type="text" enterkeyhint="next" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label class="boss-field"><span class="boss-field-label">ID</span><input id="refundBossId" type="password" enterkeyhint="next" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
         <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" enterkeyhint="done" placeholder="Password" autocomplete="new-password"></label>
         <div class="receipt-note">${esc(tr('refundDirectNote'))}</div>
       </details>
@@ -6345,7 +6345,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
         const result=x.status==='Approved'?(lang()==='zh'?'已批准':'Approved'):(x.status==='Recorded'?(lang()==='zh'?'已记录':'Recorded'):(lang()==='zh'?'已拒绝':'Rejected'));
         const time=x.decisionTime||x.requestTime||'-',legacy=x.legacyTime?(lang()==='zh'?' · 旧记录仅有申请时间':' · legacy request time'):'';
         const statusClass=x.status==='Rejected'?'rejected':'approved';
-        return `<div class="shopee-approval-card approval-history-card status-${statusClass}"><div><b>${esc(type)} · ${esc(x.reference||x.id||'-')}</b><small>${esc(time)}${esc(legacy)}</small><div>${esc(x.detail||'').replace(/\n/g,'<br>')}</div></div><div><span class="approval-status ${statusClass}">${esc(result)}</span><small>${lang()==='zh'?'处理人':'Reviewer'}：${esc(x.reviewer||'-')}</small>${num(x.amount)>0?`<b>${money(x.amount)}</b>`:''}</div></div>`;
+        const authOnly=x.type==='Discount'&&String(x.reference||'')==='CurrentCart'?(lang()==='zh'?'仅授权，未买单；未扣现金及库存。':'Authorization only; not checked out. No cash or stock deducted.'):'';
+        return `<div class="shopee-approval-card approval-history-card status-${statusClass}"><div><b>${esc(type)} · ${esc(x.reference||x.id||'-')}</b><small>${esc(time)}${esc(legacy)}</small><div>${esc(x.detail||'').replace(/\n/g,'<br>')}</div>${authOnly?`<small>${esc(authOnly)}</small>`:''}</div><div><span class="approval-status ${statusClass}">${esc(result)}</span><small>${lang()==='zh'?'处理人':'Reviewer'}：${esc(x.reviewer||'-')}</small>${num(x.amount)>0?`<b>${money(x.amount)}</b>`:''}</div></div>`;
       }).join('');
       const history=`<div class="boss-result shopee-stock-approvals approval-history"><h4>🕘 ${lang()==='zh'?'审批记录':'Approval history'}</h4>${historyHtml||`<div class="receipt-note">${lang()==='zh'?'还没有审批记录。':'No approval history yet.'}</div>`}</div>`;
       if(box)box.innerHTML=cards+approvals+history;
@@ -6501,6 +6502,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   window.bossOpenOtherIncome = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
     keepBossDashboardOpen('otherIncome');
+    localizeBossCurrentPanel('otherIncome');
     showBossPanel('bossOtherIncomeBox','otherIncome');
     localizeBossCurrentPanel('otherIncome');
     const box=$('bossOtherIncomeResult');
@@ -6749,6 +6751,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+    ['discountBossId','refundBossId','shopeeStockBossId','bossId'].forEach(id=>{const e=$(id);if(e)e.type='password';});
     appBootDate=todayKey();
     // Restore only a recent unfinished cart. Completed checkouts call
     // clearCartState(), which removes this snapshot through showCart().
@@ -6828,7 +6831,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   window.addEventListener('focus', () => scheduleForegroundWork(160));
   window.addEventListener('pageshow', () => scheduleForegroundWork(100));
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden)scheduleForegroundWork(140);
+    if(document.hidden){const boss=$('bossDashboard');if(boss&&boss.classList.contains('active'))window.bossLogout(true);return;}
+    scheduleForegroundWork(140);
   });
 
   // V5.5 iPad recovery, single-step paging, and Boss cash collection busy state.
