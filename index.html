@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-173-BOSS-DUPLICATE-LAYER-CLEANUP-20260831 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-174-BOSS-FINAL-ENTRY-CLEANUP-20260831 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1867,15 +1867,6 @@ async function recoveryUnlock(){
   }catch(e){alert("解锁失败："+(e.message||e))}
 }
 
-function openBossLogin(){
-  document.getElementById("bossLoginMsg").style.display="none";
-  openModal("bossLoginBox");
-  setTimeout(()=>{
-    let id=document.getElementById("bossId"), pw=document.getElementById("bossPassword");
-    if(id){id.value=""; id.focus();}
-    if(pw) pw.value="";
-  },60)
-}
 let BOSS_IDLE_MS = 10*60*1000;
 let bossIdleTimer=null;
 function bossTouch(){
@@ -1893,13 +1884,11 @@ function bossStartIdleTimer(){
 }
 ["click","keydown","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{ if(document.getElementById("bossDashboard")?.classList.contains("active")) bossTouch(); },{passive:true}));
 function bossRequire(){ if(Number(sessionStorage.getItem("bossSessionUntil")||0)<Date.now()){bossLogout(true);openBossLogin();return false} bossTouch(); return true }
-function bossLogout(auto=false){sessionStorage.removeItem("bossSessionUntil"); closeModal("bossDashboard"); if(auto)showToast("管理模式已自动退出"); else showToast("已退出管理模式")}
 function bossDates(type){let n=new Date(), y=n.getFullYear(), m=n.getMonth(), d=n.getDate(); let s,e; if(type==='today'){s=new Date(y,m,d);e=new Date(y,m,d);} else if(type==='yesterday'){s=new Date(y,m,d-1);e=new Date(y,m,d-1);} else if(type==='week'){let day=(n.getDay()+6)%7; s=new Date(y,m,d-day); e=new Date(y,m,d-day+6);} else if(type==='lastWeek'){let day=(n.getDay()+6)%7; s=new Date(y,m,d-day-7); e=new Date(y,m,d-day-1);} else if(type==='month'){s=new Date(y,m,1);e=new Date(y,m+1,0);} else if(type==='lastMonth'){s=new Date(y,m-1,1);e=new Date(y,m,0);} else {s=new Date(y,0,1);e=new Date(y,11,31);} let f=d=>d.toLocaleDateString('en-CA'); return [f(s),f(e)];}
 function bossMarkReportRange(type,loading){const order=['today','yesterday','week','lastWeek','month','lastMonth','year','custom'],buttons=document.querySelectorAll('#bossReportsPanel .boss-report-grid button'),idx=order.indexOf(type);buttons.forEach((b,i)=>{b.classList.toggle('range-active',i===idx);b.classList.toggle('report-loading',!!loading&&i===idx);});}
 async function bossLoadReport(type){ if(!bossRequire())return;if(window.__bossReportLoading){showToast(lang()==='zh'?'报表正在载入，请稍等。':'Report is loading. Please wait.');return;}let p=document.getElementById('bossReportsPanel'); if(p){p.style.display='block';p.classList.add('active');}bossMarkReportRange(type,true);let [s,e]=bossDates(type); return bossLoadReportRange(s,e,type);}
 function bossOpenRangeReport(){ if(!bossRequire())return; let row=document.getElementById('bossInlineRange'); if(!row)return; let [s,e]=bossDates('today'); document.getElementById('bossInlineStartDate').value=s; document.getElementById('bossInlineEndDate').value=e; row.style.display=row.style.display==='none'?'flex':'none';}
 function bossLoadCustomReport(){if(window.__bossReportLoading){showToast(lang()==='zh'?'报表正在载入，请稍等。':'Report is loading. Please wait.');return;}let s=document.getElementById("bossInlineStartDate").value; let e=document.getElementById("bossInlineEndDate").value; if(!s||!e){alert(lang()==='zh'?"请选择日期":"Choose dates");return}bossMarkReportRange('custom',true);return bossLoadReportRange(s,e,"custom");}
-function bossOpenExport(){ if(!bossRequire())return; showBossPanel('bossExportBox','exportExcel'); let y=new Date().getFullYear(); document.getElementById("exportYear").value=y; document.getElementById("exportMonth").value=""; document.getElementById("bossResult").textContent=lang()==='zh'?"选择年份/月，然后生成 Excel。":"Choose a year/month, then generate Excel.";localizeBossCurrentPanel('exportExcel');}
 async function bossSaveSettings(){
   if(!bossRequire())return;
   const payload={
@@ -1927,7 +1916,6 @@ async function bossSaveSettings(){
   }catch(e){box.textContent="储存失败："+(e.message||e)}
   finally{if(window.setSubmitBusy)window.setSubmitBusy(false)}
 }
-async function bossChangeCredentials(){return bossSaveSettings()}
 function openModal(id){closeAllModal();let m=document.getElementById(id);if(m){m.classList.add("active");m.scrollTop=0}document.body.classList.add("modal-open");if(id==='parcelBox'){try{sessionStorage.removeItem('yllResumeModal')}catch(e){}}}
 function closeModal(id){let m=document.getElementById(id);if(m)m.classList.remove("active");if(id==='parcelBox'){try{sessionStorage.removeItem('yllResumeModal')}catch(e){}} if(!document.querySelector(".modal.active"))document.body.classList.remove("modal-open")}
 function closeAllModal(){document.querySelectorAll(".modal").forEach(m=>m.classList.remove("active"));document.body.classList.remove("modal-open")}
@@ -2039,7 +2027,6 @@ async function openTodaySoldItems(){
 }
 function salesReportWithTimeout(promise,ms){return new Promise(function(resolve,reject){const timer=setTimeout(function(){reject(new Error('载入超时'));},ms);Promise.resolve(promise).then(function(value){clearTimeout(timer);resolve(value);},function(err){clearTimeout(timer);reject(err);});});}
 function bossReportTitle(label){const zh=lang()==='zh';return (zh?{today:"今日",yesterday:"昨天",week:"本周",lastWeek:"上周",month:"本月",lastMonth:"上月",year:"今年"}:{today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",year:"This Year"})[label]||label||(zh?'报表':'Report')}
-function bossMiniCard(title,value,sub,warn){return `<div class="overview-card ${warn?'warn':''}"><small>${title}</small><b>${value}</b><span>${sub||''}</span></div>`}
 async function bossLoadReportRange(s,e,label){
   const box=document.getElementById("bossReportInlineResult")||document.getElementById("bossResult"),zh=lang()==='zh',cacheKey=s+'|'+e;window.__bossReportCache=window.__bossReportCache||{};window.__bossReportLoading=true; box.textContent=zh?'载入中...':'Loading...';
   try{const hit=window.__bossReportCache[cacheKey],r=hit&&Date.now()-hit.time<30000?hit.data:await salesReportWithTimeout(apiCall("getReportSummary",[s,e]),25000);window.__bossReportCache[cacheKey]={time:Date.now(),data:r};const otherRow=(Number(r.otherIncomeCash||0)||Number(r.otherIncomeQR||0))?`<tr><td>${zh?'其它收入 Cash':'Other Income Cash'}</td><td class="num">${fmt(r.otherIncomeCash||0)}</td><td>${zh?'其它收入 QR':'Other Income QR'}</td><td class="num">${fmt(r.otherIncomeQR||0)}</td></tr>`:'';box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)} ${zh?'营业报表':'Sales Report'}</h3><span>${s} ${zh?'至':'to'} ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>${zh?'收款与调整':'Payments & Adjustments'}</h4><table class="sales-product-table"><tr><td>${zh?'现金':'Cash'}</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>${zh?'转账':'Transfer'}</td><td class="num">${fmt(r.Transfer||0)}</td><td>${zh?'混合付款（旧记录）':'Mixed Payment (legacy)'}</td><td class="num">${fmt(r.Mixed||0)}</td></tr>${otherRow}<tr><td>${zh?'折扣':'Discount'}</td><td class="num">${fmt(r.discount||0)}</td><td>${zh?'退货':'Refund'}</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>${zh?'净销售':'Net Sales'}</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
@@ -2178,8 +2165,6 @@ openBossLogin = function(){
   openModal('bossLoginBox');
   setTimeout(()=>{let id=document.getElementById('bossId'), pw=document.getElementById('bossPassword'); if(id){id.value='';id.focus();} if(pw)pw.value='';},60);
 };
-document.addEventListener('DOMContentLoaded',()=>{installRefundUI();});
-
 function installSettingLabels(){
   const grid=document.querySelector('#bossCredentialBox .settings-grid');
   if(!grid || grid.dataset.labeled==='1') return;
