@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS BUILD: SESSION-092-TODAY-SOLD-IPAD-LAYOUT-20260810 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-171-CHECKOUT-MONOTONIC-CLEANUP-20260829 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -3175,6 +3175,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
         productCount:(currentProducts()||[]).length || (window.products||[]).length || fallback.productCount || 0,
         at:Date.now()
       };
+      // Apps Script may briefly return the snapshot from immediately before a
+      // completed checkout.  During that short propagation window the POS must
+      // never jump backwards from order 6 to an older order count/total.
+      const optimisticAt=Number(cached&&cached.optimisticAt||0),optimisticFresh=optimisticAt&&Date.now()-optimisticAt<20000;
+      const cachedOrders=num(cached&&cached.today&&(cached.today.orders||cached.today.count)||0),serverOrders=num(snapshot.today&&(snapshot.today.orders||snapshot.today.count)||0);
+      if(optimisticFresh&&cachedOrders>serverOrders){snapshot.today=cached.today;snapshot.drawer=cached.drawer||snapshot.drawer;snapshot.optimisticAt=optimisticAt;}
       if(requestSequence!==topStatsRequestSequence)return;
       saveTopStatsCache(snapshot);
       applyTopStats(snapshot);
@@ -3240,6 +3246,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       snap.today.totalQty=num(snap.today.totalQty||0)+qty;
       snap.productCount=snap.productCount || (currentProducts()||[]).length || (window.products||[]).length || 0;
       snap.at=Date.now();
+      snap.optimisticAt=Date.now();
       saveTopStatsCache(snap);
       applyTopStats(snap);
     }catch(e){ console.warn('optimistic stats failed', e); }
@@ -5205,17 +5212,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(rec && rec.key===checkoutKey)localStorage.removeItem('activeCheckout');
     }catch(e){}
   }
-  function rememberCompletedCheckout(checkoutKey, orderId){
-    if(!checkoutKey)return;
-    try{ localStorage.setItem('lastCompletedCheckout', JSON.stringify({key:checkoutKey,orderId,at:Date.now()})); }catch(e){}
-  }
-  function recentCompletedCheckout(checkoutKey){
-    try{
-      const rec=JSON.parse(localStorage.getItem('lastCompletedCheckout') || 'null');
-      if(rec && rec.key===checkoutKey && Date.now()-Number(rec.at||0) < 3*60*1000)return rec;
-    }catch(e){}
-    return null;
-  }
+  try{localStorage.removeItem('lastCompletedCheckout');}catch(e){}
   function clearCartState(){
     try{ if(typeof cart !== 'undefined' && Array.isArray(cart))cart.length=0; }catch(e){}
     try{ if(Array.isArray(window.cart))window.cart.length=0; }catch(e){}
@@ -5279,10 +5276,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     pendingPayload=pendingPayload||{};
     const checkoutKey=pendingPayload.key||'';
     removePendingOnlineOrder(clientId);
-    if(checkoutKey){
-      rememberCompletedCheckout(checkoutKey, saved.orderId);
-      clearActiveCheckout(checkoutKey);
-    }
+    if(checkoutKey)clearActiveCheckout(checkoutKey);
     const canFinish=checkoutKey && currentCart().length && cartStillMatchesCheckout(
       checkoutKey,
       pendingPayload.payment,
@@ -5526,7 +5520,6 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     window.lastDiscount = sendDiscount;
     try{ lastDiscount = sendDiscount; }catch(e){}
     window.__activeDiscountAudit=null;
-    if(checkoutKey)rememberCompletedCheckout(checkoutKey, orderId);
     const stockWarnings=checkoutStockStatus().short.map(x=>x.name);
     optimisticTopStatsAfterOrder(window.lastCart, window.lastPayment, sendDiscount, window.lastPaid, window.lastChange);
     reduceLocalStock(window.lastCart);
@@ -5573,15 +5566,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     });
     const sendDiscount = moneyNum(due.discount);
     const checkoutKey = makeCheckoutKey(send, payment, sendDiscount, window.lastPaid, window.lastChange);
-    const completed = recentCompletedCheckout(checkoutKey);
-    if(completed && completed.orderId){
-      clearCartState();
-      clearActiveCheckout(checkoutKey);
-      setCheckoutBusy(false);
-      try{scheduleTopStatsRefresh(200);}catch(e){}
-      if(typeof showToast==='function')showToast(lang()==='zh'?'✅ 订单已经成功保存，正在刷新今日收款。':'✅ Order was saved successfully. Refreshing today totals.');
-      return;
-    }
+    // Do not block a new sale merely because it has the same products and
+    // amount as a recently completed sale. Duplicate protection is tied to the
+    // active clientId/save request below, not to a three-minute cart fingerprint.
     const clientId = getActiveCheckoutClientId(checkoutKey);
     const mixedBreakdown=method==='mixed'?Object.assign({},window.lastMixedBreakdown||lastMixedBreakdown||{}):null;
     const currentOrderCount=Number(String((($('todayOrders')||{}).textContent)||'0').replace(/[^0-9.-]/g,''))||0;
