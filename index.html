@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-174-BOSS-FINAL-ENTRY-CLEANUP-20260831 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-175-FINANCE-HISTORY-LANGUAGE-INCOME-SPEED-20260831 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -4145,7 +4145,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     return html;
   }
 
-  window.bossLoadNetworkPage=async function(page){const box=$('bossNetworkResult');if(box)box.textContent=tr('loading');try{const data=await timeout(apiCall('getNetworkLogSummary',[90,Number(page)||1,12]),12000,'Network log');if(box)box.innerHTML=renderNetworkSummary(data||{});}catch(e){if(box)box.innerHTML=renderNetworkSummary(null);}};
+  window.bossLoadNetworkPage=async function(page){const box=$('bossNetworkResult');if(box)box.textContent=tr('loading');try{const data=await timeout(apiCall('getNetworkLogSummary',[90,Number(page)||1,12]),12000,'Network log');window.__bossNetworkPageData=data||{};if(box)box.innerHTML=renderNetworkSummary(window.__bossNetworkPageData);}catch(e){window.__bossNetworkPageData=null;if(box)box.innerHTML=renderNetworkSummary(null);}};
 
   window.bossOpenNetworkLog = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
@@ -4156,9 +4156,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     try{ await flushNetworkLogs(); }catch(e){}
     try{
       const data=await timeout(apiCall('getNetworkLogSummary',[90,1,12]),12000,'Network log');
-      if(box)box.innerHTML=renderNetworkSummary(data||{});
+      window.__bossNetworkPageData=data||{};
+      if(box)box.innerHTML=renderNetworkSummary(window.__bossNetworkPageData);
       const br=$('bossResult'); if(br)br.textContent='';
     }catch(e){
+      window.__bossNetworkPageData=null;
       if(box)box.innerHTML=renderNetworkSummary(null);
       const br=$('bossResult'); if(br)br.textContent=tr('networkUnstable');
     }
@@ -6326,13 +6328,13 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     localizeBossCurrentPanel('otherIncome');
     const box=$('bossOtherIncomeResult');
     loadOtherIncomeTypes();
-    if(box)box.textContent=tr('loading');
+    if(box)box.innerHTML=`<div class="boss-result">${esc(lang()==='zh'?'正在读取收入月份与最近记录，请稍等…':'Loading billing months and recent records…')}</div>`;
     try{
       const r=await apiCallTransient('getOtherIncomeSummary',[],16000,'Other income');
       window.__bossIncomeState={byType:r.recordedPeriodsByType||{},start:r.trackingStart||'2026-05'};const typeSel=$('otherIncomeType');if(typeSel)typeSel.onchange=function(){const s=window.__bossIncomeState||{};renderOtherIncomeMonths((s.byType||{})[this.value]||[],s.start||'2026-05');};renderOtherIncomeMonths((window.__bossIncomeState.byType||{})[(typeSel&&typeSel.value)||'水机']||[],window.__bossIncomeState.start);
       const zh=lang()==='zh';let html=`<div class="boss-overview-grid income-summary-cards"><div class="overview-card"><small>${zh?'已收到':'Received'}</small><b>${money(r.received||0)}</b><span>${esc(r.count||0)} ${zh?'笔记录':'records'}</span></div>${num(r.pending)>0?`<div class="overview-card warn"><small>${zh?'旧待确认':'Legacy pending'}</small><b>${money(r.pending||0)}</b><span>${zh?'只处理历史记录':'Historical records only'}</span></div>`:''}</div>`;
-      if(box)box.innerHTML=html+'<div id="bossOtherIncomeRows"></div>';
-      await bossLoadOtherIncomePage(1);
+      window.__bossOtherIncomePageData={rows:r.rows||[],page:r.page||1,pageSize:r.pageSize||12,total:r.total!=null?r.total:(r.count||0),totalPages:r.totalPages||1};
+      if(box)box.innerHTML=html+`<div id="bossOtherIncomeRows">${renderOtherIncomeRecordPage(window.__bossOtherIncomePageData)}</div>`;
     }catch(e){
       if(box)box.textContent=tr('loadFailed')+(e.message||e);
     }
@@ -6507,7 +6509,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     try{ renderCategories(); }catch(e){}
     try{ render(currentList || currentProducts()); }catch(e){}
     try{parcelReminderCheckedAt=0;checkParcelClosingReminder();setTimeout(()=>{parcelReminderCheckedAt=0;checkParcelClosingReminder();},800);}catch(e){}
-    try{const dashboard=$('bossDashboard'),bossVisible=!!(dashboard&&dashboard.classList.contains('active'));if(bossVisible){const key=window.__bossActiveKey||'today';setBossNav(key);localizeBossCurrentPanel(key);}}catch(e){}
+    try{const dashboard=$('bossDashboard'),bossVisible=!!(dashboard&&dashboard.classList.contains('active'));if(bossVisible){const key=window.__bossActiveKey||'today';setBossNav(key);localizeBossCurrentPanel(key);if(key==='networkLog'){const box=$('bossNetworkResult');if(box)box.innerHTML=renderNetworkSummary(window.__bossNetworkPageData||null);}if(key==='otherIncome'){if(window.__bossOtherIncomePageData){const rows=$('bossOtherIncomeRows');if(rows)rows.innerHTML=renderOtherIncomeRecordPage(window.__bossOtherIncomePageData);}const state=window.__bossIncomeState||{},type=(($('otherIncomeType')||{}).value)||'水机';renderOtherIncomeTypeControls(window.__otherIncomeTypes||['水机']);if(state.byType)renderOtherIncomeMonths((state.byType||{})[type]||[],state.start||'2026-05');}}}catch(e){}
   };
 
   window.bossLogout = function(auto=false){
@@ -6741,6 +6743,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(!rows||!rows.length)return `<div class="boss-result">${lang()==='zh'?'还没有资金出口记录。':'No fund expense records.'}</div>`;
     return `<div class="boss-result" style="overflow:auto"><table><tr><th>${lang()==='zh'?'日期':'Date'}</th><th>${lang()==='zh'?'来源':'Source'}</th><th>${lang()==='zh'?'用途':'Purpose'}</th><th class="right">${lang()==='zh'?'金额':'Amount'}</th><th>${lang()==='zh'?'备注':'Note'}</th></tr>${rows.map(r=>`<tr><td>${esc(r.date||'')}</td><td>${esc(r.source||'')}</td><td>${esc(r.purpose||'')}</td><td class="right">${money(r.amount||0)}</td><td>${esc(r.note||'')}</td></tr>`).join('')}</table>${bossRecordPagerHtml(data,'bossOpenCashCollect')}</div>`;
   }
+  function cashCollectionRows(data){const rows=(data&&data.collectionRows)||[],zh=lang()==='zh';if(!rows.length)return `<div class="boss-result"><b>${zh?'收现金记录':'Cash collection history'}</b><div class="empty">${zh?'还没有逐笔收现金记录。':'No cash collection records yet.'}</div></div>`;return `<div class="boss-result" style="overflow:auto"><b>${zh?'收现金记录':'Cash collection history'}</b><small style="display:block;margin:4px 0 8px;color:#94a3b8">${zh?'最近记录；总共':'Recent records; total'} ${esc(data.collectionTotal||rows.length)} ${zh?'笔':'records'}</small><table><tr><th>${zh?'日期时间':'Date & time'}</th><th class="right">${zh?'收走金额':'Collected'}</th><th>${zh?'备注':'Note'}</th></tr>${rows.map(r=>`<tr><td>${esc(r.date||'-')}</td><td class="right">${money(r.amount||0)}</td><td>${esc(r.note||'—')}</td></tr>`).join('')}</table></div>`;}
   window.bossOpenCashCollect=async function(page){
     if(typeof bossRequire==='function'&&!bossRequire())return;
     keepBossDashboardOpen('finance');
@@ -6752,7 +6755,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const cash=d.cashDrawer||{}, drawer=num(cash.cashDrawer), floatCash=num(cash.floatCash), collectable=Math.max(0,drawer-floatCash);
       const warning=$('bossCashWarning');
       if(warning){warning.style.display=collectable>=num(cash.cashDrawerLimit||500)?'block':'none';warning.textContent=(lang()==='zh'?'可收现金 ':'Collectable cash ')+money(collectable);}
-      if(box)box.innerHTML=fundCards(d)+`
+      if(box)box.innerHTML=fundCards(d)+cashCollectionRows(d)+`
         <div class="boss-result" style="margin-top:12px"><b>${lang()==='zh'?'资金出口记录':'Record fund expense'}</b>
           <div class="boss-product-grid" style="margin-top:10px">
             <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'从哪里支出':'Source'}</span><select id="fundExpenseSource"><option value="Cash">Cash</option><option value="QR">QR</option><option value="Transfer">Transfer</option></select></label>
