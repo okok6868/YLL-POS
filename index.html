@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-172-ORDER-ID-FINISH-GUARD-20260831 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-173-BOSS-DUPLICATE-LAYER-CLEANUP-20260831 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1838,33 +1838,6 @@ function updateCashDrawerAlert(data){
   // V4.3.1：员工 POS 不显示建议收现金；只在 Boss → 收现金 里看。
   let box=document.getElementById("cashDrawerAlert"); if(box){box.classList.remove("active"); box.textContent="";}
 }
-function bossHideBossPanels(){
-  ["bossOverviewPanel","bossReportsPanel","bossRangeBox","bossExportBox","bossCredentialBox","bossCashBox","bossParcelBox","bossOtherIncomeBox","bossLowStockBox","bossProductBox","bossLostBox","bossShopeeStockOutBox","bossNetworkBox"].forEach(id=>{
-    const panel=document.getElementById(id);
-    if(panel){panel.style.display="none";panel.classList.remove("active");}
-  });
-}
-function bossShowPanel(id){if(!bossRequire())return; bossHideBossPanels(); let e=document.getElementById(id); if(e){e.style.display="block"; e.classList.add("active");}}
-async function bossOpenCashCollect(){
-  if(!bossRequire())return;
-  bossHideBossPanels();
-  let __p=document.getElementById("bossCashBox");
-  if(__p){__p.style.display="block";__p.classList.add("active");}
-  let r=await apiCall("getCashDrawer",[]);
-  const cash=moneyNum(r.cashDrawer||0), flt=moneyNum(r.floatCash||0), limit=moneyNum(r.cashDrawerLimit||0);
-  const can=Math.max(0,cash-flt);
-  const set=(id,val)=>{let e=document.getElementById(id); if(e)e.textContent=fmt(val)};
-  set("cashDrawerAmount", cash);
-  set("floatCashAmount", flt);
-  set("collectableAmount", can);
-  let warn=document.getElementById("bossCashWarning");
-  if(warn){
-    warn.style.display = can>=limit ? "block" : "none";
-    warn.textContent = `🟠 可收现金 ${fmt(can)} 已超过提醒 ${fmt(limit)}，建议收现金。`;
-  }
-  document.getElementById("bossCashInfo").textContent=`已收走: ${fmt(r.collected||0)}\n退货现金扣回: ${fmt(r.refunds||0)}\n提醒金额可在 Settings 里的 CashDrawerLimit 调整。`;
-}
-async function bossCollectCash(){let amount=Number((document.getElementById("collectCashAmount")||{}).value||0), note=(document.getElementById("collectCashNote")||{}).value||""; if(amount<=0){alert("请输入收走金额");return} try{await apiCall("collectCash",[amount,note]); showToast("✅ 已记录收现金"); bossOpenCashCollect(); loadTodayStats();}catch(e){alert("记录失败："+(e.message||e))}}
 async function checkSystemStatus(showOk){
   try{
     const r = await apiCall("getSystemStatus",[]);
@@ -1927,7 +1900,6 @@ async function bossLoadReport(type){ if(!bossRequire())return;if(window.__bossRe
 function bossOpenRangeReport(){ if(!bossRequire())return; let row=document.getElementById('bossInlineRange'); if(!row)return; let [s,e]=bossDates('today'); document.getElementById('bossInlineStartDate').value=s; document.getElementById('bossInlineEndDate').value=e; row.style.display=row.style.display==='none'?'flex':'none';}
 function bossLoadCustomReport(){if(window.__bossReportLoading){showToast(lang()==='zh'?'报表正在载入，请稍等。':'Report is loading. Please wait.');return;}let s=document.getElementById("bossInlineStartDate").value; let e=document.getElementById("bossInlineEndDate").value; if(!s||!e){alert(lang()==='zh'?"请选择日期":"Choose dates");return}bossMarkReportRange('custom',true);return bossLoadReportRange(s,e,"custom");}
 function bossOpenExport(){ if(!bossRequire())return; showBossPanel('bossExportBox','exportExcel'); let y=new Date().getFullYear(); document.getElementById("exportYear").value=y; document.getElementById("exportMonth").value=""; document.getElementById("bossResult").textContent=lang()==='zh'?"选择年份/月，然后生成 Excel。":"Choose a year/month, then generate Excel.";localizeBossCurrentPanel('exportExcel');}
-function bossOpenCredentialBox(){ if(!bossRequire())return; showBossPanel('bossCredentialBox','settings'); document.getElementById("bossResult").textContent=lang()==='zh'?"只填写要修改的项目。":"Only fill in settings you want to change."; ["newBossId","newBossPassword","newRecoveryCode","newCashLimit","newFloatCash","newAutoLogout","newParcelRate","newParcelReturnRate"].forEach(id=>{let e=document.getElementById(id); if(e)e.value="";});localizeBossCurrentPanel('settings'); }
 async function bossSaveSettings(){
   if(!bossRequire())return;
   const payload={
@@ -1956,14 +1928,6 @@ async function bossSaveSettings(){
   finally{if(window.setSubmitBusy)window.setSubmitBusy(false)}
 }
 async function bossChangeCredentials(){return bossSaveSettings()}
-async function bossLoadLowStock(){
-  if(!bossRequire())return;
-  bossHideBossPanels();
-  let p=document.getElementById("bossLowStockBox"); if(p){p.style.display="block";p.classList.add("active");}
-  let box=document.getElementById("bossLowStockResult"); box.textContent="载入中...";
-  try{let rows=await apiCall("getLowStock",[5]); box.textContent=(rows||[]).map(p=>`${p.name} | Stock: ${p.stock}`).join("\n")||"没有低库存";}catch(e){box.textContent="失败："+(e.message||e)}
-}
-
 function openModal(id){closeAllModal();let m=document.getElementById(id);if(m){m.classList.add("active");m.scrollTop=0}document.body.classList.add("modal-open");if(id==='parcelBox'){try{sessionStorage.removeItem('yllResumeModal')}catch(e){}}}
 function closeModal(id){let m=document.getElementById(id);if(m)m.classList.remove("active");if(id==='parcelBox'){try{sessionStorage.removeItem('yllResumeModal')}catch(e){}} if(!document.querySelector(".modal.active"))document.body.classList.remove("modal-open")}
 function closeAllModal(){document.querySelectorAll(".modal").forEach(m=>m.classList.remove("active"));document.body.classList.remove("modal-open")}
@@ -2100,72 +2064,6 @@ function bossSetExportMode(internal){
     ? '内部检查版会包含成本与利润，只供老板核对；交给会计前请改回会计版。'
     : '会计版默认不包含成本与利润。Shopee / 其它收入不会混进 POS 销售；需要时再勾选独立页。';
 }
-function bossSetNav(label){
-  document.querySelectorAll('#bossDashboard .boss-tab-grid button').forEach(b=>{
-    b.classList.toggle('active', (b.textContent||'').includes(label));
-  });
-}
-const __oldBossHide = bossHideBossPanels;
-bossHideBossPanels = function(){
-  __oldBossHide();
-  document.querySelectorAll('#bossDashboard .boss-tab-grid button').forEach(b=>b.classList.remove('active'));
-};
-const __oldBossShowPanel = bossShowPanel;
-bossShowPanel = function(id){
-  if(!bossRequire())return;
-  __oldBossShowPanel(id);
-  const map={bossReportsPanel:'报表',bossRangeBox:'报表',bossExportBox:'汇出',bossCredentialBox:'系统',bossLowStockBox:'库存'};
-  if(map[id]) bossSetNav(map[id]);
-};
-
-bossOpenOverview = async function(){
-  if(!bossRequire())return;
-  bossHideBossPanels(); bossSetNav('今日');
-  const p=document.getElementById('bossOverviewPanel'); if(p){p.style.display='block';p.classList.add('active');}
-  const box=document.getElementById('bossOverviewResult'); if(box)box.innerHTML='载入中...';
-  try{
-    const [r,today]=await Promise.all([apiCall('getBossOverview',[]),apiCall('getTodayReport',[])]);
-    const cash=r.cash||{}, parcel=r.parcel||{}, other=r.other||{}, low=r.lowStock||[];
-    const cashDrawer=moneyNum(cash.cashDrawer||0), flt=moneyNum(cash.floatCash||0), limit=moneyNum(cash.cashDrawerLimit||500);
-    const can=Math.max(0,fromCents(cents(cashDrawer)-cents(flt)));
-    const parcelPending=moneyNum(parcel.pendingEstimated||0);
-    const otherPending=moneyNum(other.pending||0);
-    const cards=[];
-    cards.push(bossMiniCard('收银机可收现金',fmt(can),`收银机 ${fmt(cashDrawer)} / 找零本金 ${fmt(flt)} / 提醒 ${fmt(limit)}`, can>=limit));
-    const otherHint=(Number(today.otherIncomeCash||0)||Number(today.otherIncomeQR||0))?` / 其它收入 Cash ${fmt(today.otherIncomeCash||0)} · QR ${fmt(today.otherIncomeQR||0)}`:'';
-    cards.push(bossMiniCard('今日销售',fmt(today.total||0),`订单 ${today.orders||today.count||0} 笔 / Cash ${fmt(today.Cash||0)} / QR ${fmt(today.MBB_QR||0)}${otherHint}`, false));
-    if(parcelPending>0) cards.push(bossMiniCard('Shopee 待对账',fmt(parcelPending),`已记录实际收到 ${fmt(parcel.actualPaid||0)} / 共 ${parcel.count||0} 笔`, true));
-    if(otherPending>0) cards.push(bossMiniCard('其它收入待确认',fmt(otherPending),`已确认 ${fmt(other.received||0)} / 共 ${other.count||0} 笔`, true));
-    if(low.length) cards.push(bossMiniCard('库存不足',low.length+' 项',low.slice(0,4).map(x=>x.name).join('、'),true));
-    if(!cards.some(x=>x.includes('warn'))) cards.push(`<div class="overview-card good"><small>今日待处理</small><b>没有提醒</b><span>目前没有需要马上处理的收现金、Shopee、水机或库存提醒。</span></div>`);
-    box.innerHTML=cards.join('');
-    document.getElementById('bossResult').textContent='今日提醒已更新。';
-  }catch(e){ if(box)box.textContent='载入失败：'+(e.message||e); }
-};
-
-bossOpenCashCollect = async function(){
-  if(!bossRequire())return; bossHideBossPanels(); bossSetNav('财务');
-  const p=document.getElementById('bossCashBox'); if(p){p.style.display='block';p.classList.add('active');}
-  try{
-    const r=await apiCall('getCashDrawer',[]);
-    const cash=moneyNum(r.cashDrawer||0), flt=moneyNum(r.floatCash||0), limit=moneyNum(r.cashDrawerLimit||0);
-    const can=Math.max(0,fromCents(cents(cash)-cents(flt)));
-    const set=(id,val)=>{let e=document.getElementById(id); if(e)e.textContent=fmt(val)};
-    set('cashDrawerAmount', cash); set('floatCashAmount', flt); set('collectableAmount', can);
-    const warn=document.getElementById('bossCashWarning');
-    if(warn){warn.style.display=can>=limit?'block':'none';warn.textContent=`🟠 可收现金 ${fmt(can)} 已超过提醒 ${fmt(limit)}，建议收现金。`;}
-    document.getElementById('bossCashInfo').innerHTML=`<table><tr><th>项目</th><th class="right">金额</th></tr><tr><td>已收走现金</td><td class="right">${fmt(r.collected||0)}</td></tr><tr><td>退货现金扣回</td><td class="right">${fmt(r.refunds||0)}</td></tr><tr><td>提醒金额</td><td class="right">${fmt(limit)}</td></tr></table>`;
-  }catch(e){document.getElementById('bossCashInfo').textContent='载入失败：'+(e.message||e)}
-};
-
-bossConfirmShopeePaid = async function(){
-  if(!bossRequire())return;
-  const amount=Number((document.getElementById('shopeePaidAmount')||{}).value||0), note=(document.getElementById('shopeePaidNote')||{}).value||'';
-  if(amount<=0){alert('请输入实际金额');return}
-  try{await apiCall('recordShopeePayout',[amount,note,null]); showToast('✅ Shopee 实收已记录'); ['shopeePaidAmount','shopeePaidNote'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''}); bossOpenParcelBoss();}
-  catch(e){alert('记录失败：'+(e.message||e))}
-};
-
 /* ===== V4.6.1 operational hotfix ===== */
 (function(){
   const nativeAlert = window.alert.bind(window);
@@ -2280,27 +2178,6 @@ openBossLogin = function(){
   openModal('bossLoginBox');
   setTimeout(()=>{let id=document.getElementById('bossId'), pw=document.getElementById('bossPassword'); if(id){id.value='';id.focus();} if(pw)pw.value='';},60);
 };
-bossLogin = async function(){
-  const idEl=document.getElementById('bossId'), pwEl=document.getElementById('bossPassword'), msg=document.getElementById('bossLoginMsg');
-  const id=(idEl||{}).value||'', pw=(pwEl||{}).value||'';
-  if(msg){msg.style.display='block';msg.textContent='登入中...';}
-  try{
-    const r=await apiCall('bossLogin',[id,pw]);
-    if(r&&r.locked){ closeAllModal(); await checkSystemStatus(false); return; }
-    if(r&&r.ok){
-      BOSS_IDLE_MS=Math.max(1,Number(r.autoLogoutMinutes||10))*60*1000;
-      sessionStorage.setItem('bossSessionUntil',String(Date.now()+BOSS_IDLE_MS)); bossStartIdleTimer();
-      if(idEl)idEl.value=''; if(pwEl)pwEl.value='';
-      closeModal('bossLoginBox'); openModal('bossDashboard'); await bossOpenOverview();
-      const br=document.getElementById('bossResult'); if(br)br.textContent='已进入管理模式。'; return;
-    }
-    if(msg){msg.textContent='帐号 或密码错误，剩余 '+(r.remaining??0)+' 次。';}
-  }catch(e){ if(msg){msg.textContent='登入失败：'+(e.message||e);} }
-};
-
-// Removed obsolete Boss Enter listeners. All Boss credential dialogs are
-// controlled by the single V2BossAuth handler at the end of this file.
-function installEnterHandlers(){}
 document.addEventListener('DOMContentLoaded',()=>{installRefundUI();});
 
 function installSettingLabels(){
@@ -2318,13 +2195,6 @@ function installSettingLabels(){
   });
   grid.dataset.labeled='1';
 }
-const __oldBossOpenCredentialBox = typeof bossOpenCredentialBox==='function' ? bossOpenCredentialBox : null;
-bossOpenCredentialBox=function(){
-  if(__oldBossOpenCredentialBox) __oldBossOpenCredentialBox();
-  installSettingLabels();
-};
-
-function installBossEnterHandlersFinal(){}
 document.addEventListener('DOMContentLoaded',()=>{installRefundUI(); installSettingLabels();});
 setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
 
@@ -3922,13 +3792,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     requestAnimationFrame(()=>{const content=document.querySelector('#bossDashboard .boss-content');if(content)content.scrollTop=0;});
   }
 
-  const originalBossHidePanelsFn = (typeof bossHideBossPanels === 'function') ? bossHideBossPanels : null;
   window.bossHideBossPanels = function(){
-    try{ if(originalBossHidePanelsFn)originalBossHidePanelsFn(); }catch(e){}
     document.querySelectorAll('#bossDashboard .boss-panel').forEach(el=>{
       el.style.display='none';
       el.classList.remove('active');
     });
+    document.querySelectorAll('#bossDashboard .boss-tab-grid button').forEach(el=>el.classList.remove('active'));
   };
   try{ bossHideBossPanels = window.bossHideBossPanels; }catch(e){}
 
@@ -6260,44 +6129,6 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       setRefundBusy(false);
       setupEnterNext('#refundBox');
       // V2BossAuth owns refund authorization Enter handling.
-    }
-  };
-
-  window.bossOpenCashCollect = async function(){
-    if(typeof bossRequire === 'function' && !bossRequire())return;
-    try{
-      if(typeof bossHideBossPanels === 'function')bossHideBossPanels();
-    }catch(e){}
-    const panel=$('bossCashBox');
-    if(panel){panel.style.display='block';panel.classList.add('active');}
-    const info=$('bossCashInfo');
-    if(info)info.textContent=tr('loading');
-    try{
-      const r=await apiCall('getCashDrawer',[]);
-      const drawer=num(r.cashDrawer||0), collected=num(r.collected||0), refunds=num(r.refunds||0), flt=num(r.floatCash||0), collectable=drawer-flt;
-      const a=$('cashDrawerAmount'), b=$('floatCashAmount'), c=$('collectableAmount');
-      if(a)a.textContent=money(drawer);
-      if(b)b.textContent=money(flt);
-      if(c)c.textContent=money(collectable);
-      const warn=$('bossCashWarning');
-      if(warn){
-        warn.style.display=collectable>=num(r.cashDrawerLimit||500)?'block':'none';
-        warn.textContent=trf('cashReminderReached',{amount:money(collectable),limit:money(r.cashDrawerLimit||500)});
-      }
-      let html=`<table><tr><th>${esc(tr('item'))}</th><th class="right">${esc(tr('amount'))}</th></tr>
-        <tr><td>${esc(tr('cashCurrentlyDrawer'))}</td><td class="right">${money(drawer)}</td></tr>
-        <tr><td>${esc(tr('cashAlreadyCollected'))}</td><td class="right">${money(collected)}</td></tr>
-        <tr><td>${esc(tr('approvedRefundsDeducted'))}</td><td class="right">${money(refunds)}</td></tr>
-        <tr><td>${esc(tr('floatCash'))}</td><td class="right">${money(flt)}</td></tr></table>`;
-      const logs=r.collections||[];
-      if(logs.length){
-        html+=`<table style="margin-top:12px"><tr><th>${esc(tr('date'))}</th><th class="right">${esc(tr('collected'))}</th><th>${esc(tr('note'))}</th></tr>`+
-          logs.map(x=>`<tr><td>${esc(x.date||'')}</td><td class="right">${money(x.amount||0)}</td><td>${esc(x.note||'')}</td></tr>`).join('')+
-          `</table>`;
-      }
-      if(info)info.innerHTML=html;
-    }catch(e){
-      if(info)info.textContent=tr('loadFailed')+(e.message||e);
     }
   };
 
