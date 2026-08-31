@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-175-FINANCE-HISTORY-LANGUAGE-INCOME-SPEED-20260831 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-176-CLIENT-ID-FINISH-QR-FINANCE-LANGUAGE-20260831 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -3573,6 +3573,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
 
   window.add = function(name,price,code=''){
     if(window.isCheckingOut || (typeof isCheckingOut !== 'undefined' && isCheckingOut))return;
+    if(Date.now()<Number(window.__ignoreProductAddsUntil||0))return;
     const c=currentCart();
     const product=(currentProducts()||[]).find(p=>(code && String(p.code)===String(code)) || String(p.name)===String(name));
     if(product){
@@ -5092,11 +5093,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     return /timeout|timed out|network/i.test(String((err && err.message) || err || ''));
   }
   // One backend response can arrive through both the direct await and the
-  // background confirmation callback. Guard that duplicate callback by the
-  // unique saved orderId, never by cart contents: two customers may buy the
-  // exact same items one minute apart and both still need a fresh receipt and
-  // full UI cleanup.
-  const finishedOrderIds = new Set();
+  // background confirmation callback. Guard that duplicate callback by this
+  // checkout's unique clientId. Backend order numbers can be reused if test
+  // rows were manually deleted, so orderId alone is not a safe UI-finish key.
+  const finishedCheckoutClientIds = new Set();
   function rememberPendingOnlineOrder(order){
     try{
       const rows=JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]').filter(x=>x && x.id!==order.id);
@@ -5147,7 +5147,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     );
     const wasSlow=!!pendingPayload.slow;
     if(canFinish){
-      finishSavedOrder(saved.orderId, moneyNum(pendingPayload.discount||0), checkoutKey);
+      finishSavedOrder(saved.orderId, moneyNum(pendingPayload.discount||0), checkoutKey, clientId);
       if(typeof showToast === 'function')showToast(`${tr('orderConfirmedNo')}: ${saved.orderId}`);
     }else{
       try{
@@ -5366,13 +5366,13 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       applyProducts(list,false);
     }catch(e){ console.warn('local stock update failed', e); }
   }
-  function finishSavedOrder(orderId, sendDiscount, checkoutKey){
+  function finishSavedOrder(orderId, sendDiscount, checkoutKey, clientId){
     const savedOrderId=String(orderId||'').trim();
-    if(savedOrderId && finishedOrderIds.has(savedOrderId)){
+    const finishKey=String(clientId||'').trim()||String(checkoutKey||'').trim()||savedOrderId;
+    if(finishKey && finishedCheckoutClientIds.has(finishKey)){
       setCheckoutBusy(false);
       return;
     }
-    if(savedOrderId)finishedOrderIds.add(savedOrderId);
     const c = currentCart();
     c.forEach(i => i.orderId = orderId);
     window.lastCart = JSON.parse(JSON.stringify(c));
@@ -5386,12 +5386,16 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     optimisticTopStatsAfterOrder(window.lastCart, window.lastPayment, sendDiscount, window.lastPaid, window.lastChange);
     reduceLocalStock(window.lastCart);
     clearCartState();
+    // Prevent the touch-up from the completed payment flow falling through
+    // onto a product card when iPad returns to the home catalogue.
+    window.__ignoreProductAddsUntil=Date.now()+1000;
     try{localStorage.removeItem('yllPopularGroupsV1');}catch(e){}
     try{if(typeof window.goHome==='function')window.goHome();else if(typeof goHome==='function')goHome();}catch(e){}
     try{setTimeout(()=>loadPopularHome(),150); }catch(e){}
     if(checkoutKey && !currentCart().length)clearActiveCheckout(checkoutKey);
     setCheckoutBusy(false);
     const receiptReady=prepareSavedReceipt();
+    if(finishKey)finishedCheckoutClientIds.add(finishKey);
     if(typeof showToast === 'function')showToast(receiptReady?(lang()==='zh'?'订单已保存，收据已准备好；需要时按“打印收据”。':'Order saved. Receipt is ready; press Print Receipt when needed.'):tr('receiptFailed'));
     if(stockWarnings.length)setTimeout(()=>showAppAlert((lang()==='zh'?'买单成功。以下商品库存不足，请通知老板补货：\n\n':'Order saved. Please tell the boss to replenish:\n\n')+stockWarnings.join('\n'),lang()==='zh'?'补货提醒':'Replenishment reminder'),180);
     if(typeof loadTodayStats === 'function')setTimeout(()=>loadTodayStats(), 100);
@@ -5440,7 +5444,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const offline = JSON.parse(localStorage.getItem('offlineOrders') || '[]').filter(o=>o && String(o.id)!==String(clientId));
       offline.push({id:clientId, key:checkoutKey, cart:send, payment, discount:sendDiscount, discountAuditId:discountAuditId, paid:window.lastPaid, change:window.lastChange, mixedBreakdown:mixedBreakdown, date:new Date().toISOString()});
       localStorage.setItem('offlineOrders', JSON.stringify(offline));
-      finishSavedOrder('OFFLINE-' + clientId, sendDiscount, checkoutKey);
+      finishSavedOrder('OFFLINE-' + clientId, sendDiscount, checkoutKey, clientId);
       try{ scheduleTopStatsRefresh(800); }catch(e){}
       if(typeof showToast === 'function')showToast(tr('offlineSaved'));
       showAppAlert(`${tr('offlineSaved')}\n\n${tr('networkUnstable')}`,tr('payment'));
@@ -5457,7 +5461,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const res = await timeout(savePromise, checkoutWaitMs, 'Save order');
       if(!res || !res.orderId) throw new Error(tr('noOrderNumber'));
       removePendingOnlineOrder(clientId);
-      finishSavedOrder(res.orderId, sendDiscount, checkoutKey);
+      finishSavedOrder(res.orderId, sendDiscount, checkoutKey, clientId);
     }catch(err){
       {
         // Validation and programming errors will never become successful by
@@ -6509,7 +6513,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     try{ renderCategories(); }catch(e){}
     try{ render(currentList || currentProducts()); }catch(e){}
     try{parcelReminderCheckedAt=0;checkParcelClosingReminder();setTimeout(()=>{parcelReminderCheckedAt=0;checkParcelClosingReminder();},800);}catch(e){}
-    try{const dashboard=$('bossDashboard'),bossVisible=!!(dashboard&&dashboard.classList.contains('active'));if(bossVisible){const key=window.__bossActiveKey||'today';setBossNav(key);localizeBossCurrentPanel(key);if(key==='networkLog'){const box=$('bossNetworkResult');if(box)box.innerHTML=renderNetworkSummary(window.__bossNetworkPageData||null);}if(key==='otherIncome'){if(window.__bossOtherIncomePageData){const rows=$('bossOtherIncomeRows');if(rows)rows.innerHTML=renderOtherIncomeRecordPage(window.__bossOtherIncomePageData);}const state=window.__bossIncomeState||{},type=(($('otherIncomeType')||{}).value)||'水机';renderOtherIncomeTypeControls(window.__otherIncomeTypes||['水机']);if(state.byType)renderOtherIncomeMonths((state.byType||{})[type]||[],state.start||'2026-05');}}}catch(e){}
+    try{const dashboard=$('bossDashboard'),bossVisible=!!(dashboard&&dashboard.classList.contains('active'));if(bossVisible){const key=window.__bossActiveKey||'today';setBossNav(key);localizeBossCurrentPanel(key);if(key==='finance'&&window.__bossFundLedgerData)renderFundLedgerData(window.__bossFundLedgerData);if(key==='networkLog'){const box=$('bossNetworkResult');if(box)box.innerHTML=renderNetworkSummary(window.__bossNetworkPageData||null);}if(key==='otherIncome'){if(window.__bossOtherIncomePageData){const rows=$('bossOtherIncomeRows');if(rows)rows.innerHTML=renderOtherIncomeRecordPage(window.__bossOtherIncomePageData);}const state=window.__bossIncomeState||{},type=(($('otherIncomeType')||{}).value)||'水机';renderOtherIncomeTypeControls(window.__otherIncomeTypes||['水机']);if(state.byType)renderOtherIncomeMonths((state.byType||{})[type]||[],state.start||'2026-05');}}}catch(e){}
   };
 
   window.bossLogout = function(auto=false){
@@ -6744,6 +6748,15 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     return `<div class="boss-result" style="overflow:auto"><table><tr><th>${lang()==='zh'?'日期':'Date'}</th><th>${lang()==='zh'?'来源':'Source'}</th><th>${lang()==='zh'?'用途':'Purpose'}</th><th class="right">${lang()==='zh'?'金额':'Amount'}</th><th>${lang()==='zh'?'备注':'Note'}</th></tr>${rows.map(r=>`<tr><td>${esc(r.date||'')}</td><td>${esc(r.source||'')}</td><td>${esc(r.purpose||'')}</td><td class="right">${money(r.amount||0)}</td><td>${esc(r.note||'')}</td></tr>`).join('')}</table>${bossRecordPagerHtml(data,'bossOpenCashCollect')}</div>`;
   }
   function cashCollectionRows(data){const rows=(data&&data.collectionRows)||[],zh=lang()==='zh';if(!rows.length)return `<div class="boss-result"><b>${zh?'收现金记录':'Cash collection history'}</b><div class="empty">${zh?'还没有逐笔收现金记录。':'No cash collection records yet.'}</div></div>`;return `<div class="boss-result" style="overflow:auto"><b>${zh?'收现金记录':'Cash collection history'}</b><small style="display:block;margin:4px 0 8px;color:#94a3b8">${zh?'最近记录；总共':'Recent records; total'} ${esc(data.collectionTotal||rows.length)} ${zh?'笔':'records'}</small><table><tr><th>${zh?'日期时间':'Date & time'}</th><th class="right">${zh?'收走金额':'Collected'}</th><th>${zh?'备注':'Note'}</th></tr>${rows.map(r=>`<tr><td>${esc(r.date||'-')}</td><td class="right">${money(r.amount||0)}</td><td>${esc(r.note||'—')}</td></tr>`).join('')}</table></div>`;}
+  function renderFundLedgerData(d){d=d||{};window.__bossFundLedgerData=d;const box=$('bossCashInfo'),cash=d.cashDrawer||{},drawer=num(cash.cashDrawer),floatCash=num(cash.floatCash),collectable=Math.max(0,drawer-floatCash),warning=$('bossCashWarning');if(warning){warning.style.display=collectable>=num(cash.cashDrawerLimit||500)?'block':'none';warning.textContent=(lang()==='zh'?'可收现金 ':'Collectable cash ')+money(collectable);}if(box)box.innerHTML=fundCards(d)+cashCollectionRows(d)+`
+      <div class="boss-result" style="margin-top:12px"><b>${lang()==='zh'?'资金出口记录':'Record fund expense'}</b>
+        <div class="boss-product-grid" style="margin-top:10px">
+          <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'从哪里支出':'Source'}</span><select id="fundExpenseSource"><option value="Cash">Cash</option><option value="QR">QR</option><option value="Transfer">Transfer</option></select></label>
+          <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'金额':'Amount'}</span><input id="fundExpenseAmount" type="number" min="0.01" step="0.01" placeholder="RM"></label>
+          <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'用途':'Purpose'}</span><input id="fundExpensePurpose" placeholder="${lang()==='zh'?'例如：买货':'e.g. Stock purchase'}"></label>
+          <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'备注（可空）':'Note (optional)'}</span><input id="fundExpenseNote" placeholder="${lang()==='zh'?'备注':'Note'}"></label>
+        </div><button id="fundExpenseSubmit" class="green" onclick="bossRecordFundExpense()">${lang()==='zh'?'记录资金出口':'Record expense'}</button>
+      </div>${fundExpenseRows(d)}`;setupEnterNext('#bossCashBox');}
   window.bossOpenCashCollect=async function(page){
     if(typeof bossRequire==='function'&&!bossRequire())return;
     keepBossDashboardOpen('finance');
@@ -6752,19 +6765,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(box)box.textContent=tr('loading');
     try{
       const d=await apiCallTransient('getFundLedger',[Number(page)||1,12],20000,'Fund ledger');
-      const cash=d.cashDrawer||{}, drawer=num(cash.cashDrawer), floatCash=num(cash.floatCash), collectable=Math.max(0,drawer-floatCash);
-      const warning=$('bossCashWarning');
-      if(warning){warning.style.display=collectable>=num(cash.cashDrawerLimit||500)?'block':'none';warning.textContent=(lang()==='zh'?'可收现金 ':'Collectable cash ')+money(collectable);}
-      if(box)box.innerHTML=fundCards(d)+cashCollectionRows(d)+`
-        <div class="boss-result" style="margin-top:12px"><b>${lang()==='zh'?'资金出口记录':'Record fund expense'}</b>
-          <div class="boss-product-grid" style="margin-top:10px">
-            <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'从哪里支出':'Source'}</span><select id="fundExpenseSource"><option value="Cash">Cash</option><option value="QR">QR</option><option value="Transfer">Transfer</option></select></label>
-            <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'金额':'Amount'}</span><input id="fundExpenseAmount" type="number" min="0.01" step="0.01" placeholder="RM"></label>
-            <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'用途':'Purpose'}</span><input id="fundExpensePurpose" placeholder="${lang()==='zh'?'例如：买货':'e.g. Stock purchase'}"></label>
-            <label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'备注（可空）':'Note (optional)'}</span><input id="fundExpenseNote" placeholder="${lang()==='zh'?'备注':'Note'}"></label>
-          </div><button id="fundExpenseSubmit" class="green" onclick="bossRecordFundExpense()">${lang()==='zh'?'记录资金出口':'Record expense'}</button>
-        </div>${fundExpenseRows(d)}`;
-      setupEnterNext('#bossCashBox');
+      renderFundLedgerData(d);
     }catch(e){
       const msg=cleanMessage(e.message||e);
       if(/Unknown action:\\s*getFundLedger/i.test(msg)){
