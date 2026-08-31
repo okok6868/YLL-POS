@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-171-CHECKOUT-MONOTONIC-CLEANUP-20260829 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-172-ORDER-ID-FINISH-GUARD-20260831 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -5235,7 +5235,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   function isTimeoutError(err){
     return /timeout|timed out|network/i.test(String((err && err.message) || err || ''));
   }
-  const finishedCheckoutKeys = new Set();
+  // One backend response can arrive through both the direct await and the
+  // background confirmation callback. Guard that duplicate callback by the
+  // unique saved orderId, never by cart contents: two customers may buy the
+  // exact same items one minute apart and both still need a fresh receipt and
+  // full UI cleanup.
+  const finishedOrderIds = new Set();
   function rememberPendingOnlineOrder(order){
     try{
       const rows=JSON.parse(localStorage.getItem('pendingOnlineOrders') || '[]').filter(x=>x && x.id!==order.id);
@@ -5506,11 +5511,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     }catch(e){ console.warn('local stock update failed', e); }
   }
   function finishSavedOrder(orderId, sendDiscount, checkoutKey){
-    if(checkoutKey && finishedCheckoutKeys.has(checkoutKey)){
+    const savedOrderId=String(orderId||'').trim();
+    if(savedOrderId && finishedOrderIds.has(savedOrderId)){
       setCheckoutBusy(false);
       return;
     }
-    if(checkoutKey)finishedCheckoutKeys.add(checkoutKey);
+    if(savedOrderId)finishedOrderIds.add(savedOrderId);
     const c = currentCart();
     c.forEach(i => i.orderId = orderId);
     window.lastCart = JSON.parse(JSON.stringify(c));
