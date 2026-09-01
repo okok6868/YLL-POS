@@ -1,9 +1,19 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-177-RECEIVING-UX-BOSS-MODAL-SMOOTH-STATS-20260901 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-178-REFUND-CASH-NET-BOSS-MASK-20260901 -->
 <html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<style>
+/* Authorization identifiers are secrets too: never render readable characters,
+   including during browser/password-manager autofill before JavaScript starts. */
+#bossId,#bossPassword,#discountBossId,#discountBossPassword,
+#refundBossId,#refundBossPassword,#shopeeStockBossId,#shopeeStockBossPassword{
+  -webkit-text-security:disc!important;
+  text-security:disc!important;
+}
+.receipt-refund{color:#ff6b6b;font-weight:800}
+</style>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#050816">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1210,7 +1220,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <input id="refundReason" type="text" placeholder="原因，例如顾客退货">
     <details class="refund-auth" id="refundAuthDetails">
       <summary>🔐 打开授权验证</summary>
-      <input id="refundBossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="refundBossId" type="password" placeholder="帐号" autocomplete="new-password" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true">
       <input id="refundBossPassword" type="password" placeholder="密码" autocomplete="new-password" enterkeyhint="done">
       <div class="receipt-note">退货一定要授权验证。提交中会锁住，避免重复上传。</div>
     </details>
@@ -1270,8 +1280,8 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
 <div id="bossLoginBox" class="modal">
   <div class="modal-content access-card">
     <h3>🔐 权限验证</h3>
-    <input id="bossId" type="password" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <input id="bossPassword" type="password" placeholder="密码" autocomplete="new-password">
+    <input id="bossId" type="password" placeholder="帐号" autocomplete="new-password" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true">
+    <input id="bossPassword" type="password" placeholder="密码" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true">
     <button id="bossLoginBtn" class="green" type="button">登入</button>
     <button onclick="closeModal('bossLoginBox')">关闭</button>
     <div id="bossLoginMsg" class="boss-result" style="display:none"></div>
@@ -3255,7 +3265,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const today=snapshot.today||{}, drawer=snapshot.drawer||{};
     const off=offlineSummary();
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
-      if(sales)sales.textContent=money(num(today.total||0)+off.total);
+      const refundToday=num(today.refund||0);
+      const netToday=today.netSales!==undefined?num(today.netSales):num(today.total||0)-refundToday;
+      if(sales)sales.textContent=money(netToday+off.total);
       const syncNote=off.count?` | ${tr('offlinePending')}`:'';
       const receiptParts=[];
       const displayCash=stableTodayPayment(num(today.Cash||0)+off.cash,'cash');
@@ -3269,9 +3281,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(num(today.otherIncomeQR||0))otherParts.push(`QR ${money(today.otherIncomeQR)}`);
       if(num(today.otherIncomeTransfer||0))otherParts.push(`${tr('transfer')} ${money(today.otherIncomeTransfer)}`);
       const otherLine=otherTotal>0?`<span class="receipt-other">${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' | ')||money(otherTotal)}</span>`:'';
-      setStatDetail('todaySales', `<span class="receipt-breakdown">${receiptParts.join('')}${syncNote?`<span>${syncNote.replace(/^\s*\|\s*/,'')}</span>`:''}</span>${otherLine}`);
+      const refundLine=refundToday>0?`<span class="receipt-refund">${lang()==='zh'?'今日已批准现金退款':'Approved cash refunds today'} -${money(refundToday)}</span>`:'';
+      setStatDetail('todaySales', `<span class="receipt-breakdown">${receiptParts.join('')}${syncNote?`<span>${syncNote.replace(/^\s*\|\s*/,'')}</span>`:''}</span>${otherLine}${refundLine}`);
       if(cash)cash.textContent=money(num(drawer.cashDrawer||0)+off.cash);
       const cashNotes=[`${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`];
+      if(refundToday>0)cashNotes.push(`${lang()==='zh'?'今日现金退款':'Cash refunds today'} -${money(refundToday)}`);
       setStatDetail('todayCash',cashNotes.join(' | '));
       if(orders)orders.textContent=num(today.orders||today.count||0)+off.count;
     if(items)items.textContent=snapshot.productCount || (currentProducts()||[]).length || (window.products||[]).length || 0;
@@ -4506,9 +4520,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     bossReceiveProductChangedBase();
     const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),mode=$('bossReceiveMode'),loose=isAuthoritativeSharedProduct(p);if(mode){const cartonOption=mode.querySelector('option[value="carton"]');if(cartonOption)cartonOption.disabled=loose;if(loose&&mode.value==='carton')mode.value='unit';const unitOption=mode.querySelector('option[value="unit"]');if(unitOption)unitOption.textContent=loose?(lang()==='zh'?'按包（KG换算）':'Bags (KG conversion)'):(lang()==='zh'?'按件／按包':'Individual units');}const carton=!loose&&normalizeText((mode||{}).value)==='carton',pack=$('bossReceivePackSize'),previous=$('bossReceivePreviousCost'),selling=$('bossReceiveSellingPrice'),margin=$('bossReceiveMarginPreview');
     const kgLabel=$('bossReceiveLooseKgLabel');if(kgLabel)kgLabel.style.display=loose?'flex':'none';const packLabel=$('bossReceivePackSizeLabel');if(packLabel)packLabel.style.display=carton?'flex':'none';
-    const qtyInput=$('bossReceiveQty'),costInput=$('bossReceiveCost');if(qtyInput&&qtyInput.closest('label'))qtyInput.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'收到多少包':'Bags received'):(carton?(lang()==='zh'?'收到多少箱／盒':'Cartons / boxes received'):(lang()==='zh'?'收到多少件':'Units received'));if(costInput&&costInput.closest('label'))costInput.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'每包进货价（可留空）':'Cost per bag (optional)'):(carton?(lang()==='zh'?'每箱／每盒总进货价':'Total cost per carton / box'):(lang()==='zh'?'每件进货价（可留空）':'Cost per unit (optional)'));
+    const qtyInput=$('bossReceiveQty'),costInput=$('bossReceiveCost');if(qtyInput&&qtyInput.closest('label'))qtyInput.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'收到多少包':'Bags received'):(carton?(lang()==='zh'?'收到多少箱／盒':'Cartons / boxes received'):(lang()==='zh'?'收到多少件':'Units received'));if(costInput&&costInput.closest('label'))costInput.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'每包进货价（可留空）':'Cost per bag (optional)'):(carton?(lang()==='zh'?'每箱／每盒总进货价（已带入上次价格）':'Carton / box total (previous price filled)'):(lang()==='zh'?'每件进货价（可留空）':'Cost per unit (optional)'));
+    const methodHint=$('bossReceiveHint');if(methodHint)methodHint.textContent=loose?(lang()==='zh'?'散卖商品：填包数、每包KG和每包进货价；系统换算总KG。':'Loose sale: enter bags, KG per bag and bag cost.'):(carton?(lang()==='zh'?'普通按箱：只填箱数、每箱件数和每箱总价；这里不需要也不会填写KG。':'Ordinary cartons: enter cartons, units per carton and carton total. No KG field.'):(lang()==='zh'?'普通按件：只填收到件数和每件进货价。':'Ordinary units: enter units received and unit cost.'));
     if(selling&&selling.dataset.productKey!==key){selling.dataset.productKey=key;selling.value=p&&Number(p.price||0)>0?Number(p.price):'';}
-    if(carton&&p){if(pack&&!String(pack.value||'').trim()&&Number(p.packSize)>0)pack.value=Number(p.packSize);if(previous)previous.innerHTML=lang()==='zh'?`<b>上次整箱资料</b><br>每箱 ${Number(p.packSize||0)||'未记录'} 件 · 箱价 ${p.lastPackCost==null?'未记录':'RM '+Number(p.lastPackCost).toFixed(2)}<br><small>目前库存平均成本：每件 RM ${Number(p.cost||0).toFixed(4)}</small>`:`<b>Previous carton</b><br>${Number(p.packSize||0)||'not recorded'} units · ${p.lastPackCost==null?'cost not recorded':'RM '+Number(p.lastPackCost).toFixed(2)}<br><small>Current inventory average: RM ${Number(p.cost||0).toFixed(4)} each</small>`;}
+    if(previous)previous.style.display=carton?'none':'block';
+    if(carton&&p){if(pack&&!String(pack.value||'').trim()&&Number(p.packSize)>0)pack.value=Number(p.packSize);const priceKey=key+'|carton';if(costInput&&costInput.dataset.prefillKey!==priceKey){costInput.dataset.prefillKey=priceKey;costInput.value=Number(p.lastPackCost)>0?Number(p.lastPackCost).toFixed(2):'';costInput.placeholder=Number(p.lastPackCost)>0?(lang()==='zh'?`上次每箱 RM ${Number(p.lastPackCost).toFixed(2)}`:`Previous carton RM ${Number(p.lastPackCost).toFixed(2)}`):(lang()==='zh'?'首次按箱进货，请填每箱总价':'First carton receipt: enter carton total');}}
+    else if(costInput&&costInput.dataset.prefillKey&&costInput.dataset.prefillKey.endsWith('|carton')){costInput.dataset.prefillKey='';costInput.value='';}
     if(margin){
       if(!p){margin.textContent=lang()==='zh'?'选择商品后显示预计毛利率。':'Choose a product to preview margin.';return;}
       const raw=String(($('bossReceiveCost')||{}).value||'').trim(),packSize=Math.max(0,Number(($('bossReceivePackSize')||{}).value)||0),purchase=raw===''?(carton?Number(p.lastPackCost||0):Number(p.lastPurchaseCost!=null?p.lastPurchaseCost:p.cost)||0):Number(raw),unitCost=carton&&packSize>0?purchase/packSize:purchase,sale=Number((selling||{}).value)||Number(p.price)||0;
@@ -5990,8 +6007,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       <label class="boss-field"><span class="boss-field-label">${esc(tr('refundReason'))}</span><input id="refundReason" type="text" enterkeyhint="next" placeholder="${esc(tr('refundReason'))}"></label>
       <details class="refund-auth" id="refundAuthDetails">
         <summary>${esc(tr('bossAuth'))}</summary>
-        <label class="boss-field"><span class="boss-field-label">ID</span><input id="refundBossId" type="password" enterkeyhint="next" placeholder="ID" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-        <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" enterkeyhint="done" placeholder="Password" autocomplete="new-password"></label>
+        <label class="boss-field"><span class="boss-field-label">ID</span><input id="refundBossId" type="password" enterkeyhint="next" placeholder="ID" autocomplete="new-password" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true"></label>
+        <label class="boss-field"><span class="boss-field-label">Password</span><input id="refundBossPassword" type="password" enterkeyhint="done" placeholder="Password" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true"></label>
         <div class="receipt-note">${esc(tr('refundDirectNote'))}</div>
       </details>
       <div id="refundStatusMsg" class="refund-status-msg" style="display:none"></div>
@@ -6123,7 +6140,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       updateRefundTotal();
       if(typeof showToast==='function')showToast(direct?tr('refundApproved'):tr('refundSubmitted'));
       try{ invalidateBossCache(); }catch(e){}
-      if(typeof loadTodayStats==='function')loadTodayStats();
+      if(direct){try{localStorage.removeItem('yllTopStatsCacheV1');}catch(e){} if(typeof scheduleTopStatsRefresh==='function')scheduleTopStatsRefresh(100);else if(typeof loadTodayStats==='function')loadTodayStats();}
       setTimeout(()=>{ if(document.querySelector('#refundBox.active'))closeModal('refundBox'); },700);
     }catch(e){
       if(st){st.style.display='block';st.textContent=tr('refundFailed')+(e.message||e);}
@@ -6227,7 +6244,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
 
   window.approveShopeeStockOut = async function(requestId){const ok=await appConfirm('批准后会立即扣库存，确认吗？','Shopee卖货出库');if(!ok)return;try{setSubmitBusy(true,'正在批准并扣库存...');await apiCall('approveShopeeStockOutFromBoss',[requestId]);bossOverviewCache=null;bossOverviewCacheAt=0;showToast('✅ 已批准并扣库存');await bossOpenOverview(true);}catch(e){showAppAlert('批准失败：'+cleanMessage(e.message||e),'Shopee卖货出库');}finally{setSubmitBusy(false);keepBossDashboardOpen('today');}};
   window.rejectShopeeStockOut = async function(requestId){const ok=await appConfirm('拒绝这项出库申请？库存不会改变。','Shopee卖货出库');if(!ok)return;try{setSubmitBusy(true,'正在拒绝...');await apiCall('rejectShopeeStockOutFromBoss',[requestId]);bossOverviewCache=null;bossOverviewCacheAt=0;showToast('已拒绝，库存没有改变');await bossOpenOverview(true);}catch(e){showAppAlert('拒绝失败：'+cleanMessage(e.message||e),'Shopee卖货出库');}finally{setSubmitBusy(false);keepBossDashboardOpen('today');}};
-  window.approveRefundFromBoss = async function(refundId){const ok=await appConfirm('批准退货后会恢复对应库存，确认吗？','退货审核');if(!ok)return;try{setSubmitBusy(true,'正在批准退货...');await apiCall('approvePendingRefundFromBoss',[refundId]);bossOverviewCache=null;bossOverviewCacheAt=0;showToast('✅ 退货已批准并恢复库存');await bossOpenOverview(true);}catch(e){showAppAlert('批准失败：'+cleanMessage(e.message||e),'退货审核');}finally{setSubmitBusy(false);keepBossDashboardOpen('today');}};
+  window.approveRefundFromBoss = async function(refundId){const ok=await appConfirm('批准后会恢复库存，并从现金及今日净收款扣除退款，确认吗？','退货审核');if(!ok)return;try{setSubmitBusy(true,'正在批准退货...');await apiCall('approvePendingRefundFromBoss',[refundId]);bossOverviewCache=null;bossOverviewCacheAt=0;try{localStorage.removeItem('yllTopStatsCacheV1');}catch(e){}showToast('✅ 已批准：库存已恢复，退款从现金扣除');if(typeof scheduleTopStatsRefresh==='function')scheduleTopStatsRefresh(100);await bossOpenOverview(true);}catch(e){showAppAlert('批准失败：'+cleanMessage(e.message||e),'退货审核');}finally{setSubmitBusy(false);keepBossDashboardOpen('today');}};
   window.rejectRefundFromBoss = async function(refundId){const ok=await appConfirm('拒绝这项退货申请？库存不会改变。','退货审核');if(!ok)return;try{setSubmitBusy(true,'正在拒绝退货...');await apiCall('rejectPendingRefund',[refundId,'Boss Mode rejected']);bossOverviewCache=null;bossOverviewCacheAt=0;showToast('退货申请已拒绝');await bossOpenOverview(true);}catch(e){showAppAlert('拒绝失败：'+cleanMessage(e.message||e),'退货审核');}finally{setSubmitBusy(false);keepBossDashboardOpen('today');}};
 
   function renderBossParcelSummary(r,providerId){
@@ -7014,7 +7031,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     flows:[
       {id:'bossId',password:'bossPassword',submit:'bossLoginBtn'},
       {id:'discountBossId',password:'discountBossPassword',submit:'discountApplyBtn',details:'discountAuthDetails'},
-      {id:'refundBossId',password:'refundBossPassword',submit:'refundSubmitBtn',details:'refundAuthDetails'},
+      // Staff may submit a refund without credentials. It remains Pending until
+      // Approval Centre approves it; submitRefund validates both fields only if
+      // the optional direct-Boss section was deliberately filled.
       {id:'shopeeStockBossId',password:'shopeeStockBossPassword',submit:'shopeeStockSubmit',details:'shopeeStockBossAuth'}
     ],
     find(target){return this.flows.find(flow=>target&&[flow.id,flow.password].includes(target.id));},
