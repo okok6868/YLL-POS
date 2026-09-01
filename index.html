@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-176-CLIENT-ID-FINISH-QR-FINANCE-LANGUAGE-20260831 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-177-RECEIVING-UX-BOSS-MODAL-SMOOTH-STATS-20260901 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2162,8 +2162,10 @@ openMixedPayment = function(){
 
 openBossLogin = function(){
   const msg=document.getElementById('bossLoginMsg'); if(msg){msg.style.display='none';msg.textContent='';}
+  const id=document.getElementById('bossId'),pw=document.getElementById('bossPassword');
+  [id,pw].forEach(el=>{if(!el)return;el.type='password';el.value='';el.setAttribute('autocomplete','new-password');el.readOnly=true;});
   openModal('bossLoginBox');
-  setTimeout(()=>{let id=document.getElementById('bossId'), pw=document.getElementById('bossPassword'); if(id){id.value='';id.focus();} if(pw)pw.value='';},60);
+  setTimeout(()=>{if(id){id.value='';id.readOnly=false;id.focus();}if(pw){pw.value='';pw.readOnly=false;}},60);
 };
 function installSettingLabels(){
   const grid=document.querySelector('#bossCredentialBox .settings-grid');
@@ -2397,7 +2399,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       .boss-product-tools{display:grid!important;grid-template-columns:1.1fr .9fr!important;gap:10px!important;margin:10px 0!important;align-items:start!important}
       .boss-product-tools>div{min-width:0!important}
       .boss-product-filter-row{display:grid!important;grid-template-columns:1fr .78fr!important;gap:8px!important;margin-bottom:8px!important;align-items:end!important}
-      .boss-product-list{height:176px!important;max-height:176px!important;overflow:auto!important;border:1px solid rgba(148,163,184,.2)!important;border-radius:14px!important;padding:8px!important;background:rgba(15,23,42,.18)!important}
+      .boss-product-list{height:176px!important;max-height:176px!important;overflow:auto!important;border:1px solid rgba(148,163,184,.2)!important;border-radius:14px!important;padding:8px!important;background:rgba(15,23,42,.18)!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;scrollbar-gutter:stable!important}
+      #paymentConfirmText{white-space:pre-wrap!important;line-height:1.65!important;letter-spacing:.01em!important}
+      #paymentConfirmBox.active{z-index:420!important}
+      .stat.stat-settle{animation:statSettle .7s ease-out}
+      @keyframes statSettle{0%{transform:translateY(0);box-shadow:0 0 0 rgba(34,197,94,0)}35%{transform:translateY(-2px);box-shadow:0 0 0 3px rgba(34,197,94,.2),0 12px 28px rgba(34,197,94,.12)}100%{transform:translateY(0);box-shadow:none}}
       .boss-product-list button{width:100%!important;min-height:64px!important;text-align:left!important;margin:0 0 6px!important;padding:8px 10px!important;border-radius:10px!important;border:1px solid rgba(148,163,184,.22)!important;background:rgba(15,23,42,.45)!important;color:inherit!important;display:grid!important;grid-template-columns:52px 1fr!important;gap:10px!important;align-items:center!important}
       .boss-product-list button b{display:block!important;line-height:1.2!important}
       .boss-product-list button small{display:block!important;color:var(--muted)!important;margin-top:4px!important}
@@ -2646,6 +2652,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
 
   function setStaticText(){
     ensureCleanUiCss();
+    if(!window.__bossProductScrollGuard){window.__bossProductScrollGuard=true;document.addEventListener('touchmove',e=>{if(e.target&&e.target.closest&&e.target.closest('.boss-product-list'))e.stopPropagation();},{passive:true,capture:true});}
     const setText = (sel, text) => { const el=document.querySelector(sel); if(el)el.textContent=text; };
     const setPh = (id, text) => { const el=$(id); if(el)el.placeholder=text; };
     const title = document.querySelector('.title'); if(title)title.textContent='YLL FEEDS ENTERPRISE';
@@ -3711,10 +3718,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(ttl)ttl.textContent=total;
       ok.textContent=lang()==='zh'?'\u786e\u8ba4':'Confirm';
       if(cancel)cancel.textContent=lang()==='zh'?'\u53d6\u6d88':'Cancel';
-      const done = v => { ok.onclick=null; if(cancel)cancel.onclick=null; closeModal('paymentConfirmBox'); resolve(v); };
+      const bossWasOpen=!!($('bossDashboard')&&$('bossDashboard').classList.contains('active'));
+      const done = v => { ok.onclick=null; if(cancel)cancel.onclick=null; closeModal('paymentConfirmBox'); if(bossWasOpen){$('bossDashboard').classList.add('active');document.body.classList.add('modal-open');} resolve(v); };
       ok.onclick=()=>done(true);
       if(cancel)cancel.onclick=()=>done(false);
-      openModal('paymentConfirmBox');
+      if(bossWasOpen){box.classList.add('active');box.scrollTop=0;document.body.classList.add('modal-open');}
+      else openModal('paymentConfirmBox');
     });
   };
   window.showAppAlert = function(msg,title){
@@ -3920,6 +3929,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const packLabel=document.createElement('label');packLabel.id='bossReceivePackSizeLabel';packLabel.className='boss-field wide';packLabel.style.display='none';packLabel.innerHTML=`<span class="boss-field-label">${lang()==='zh'?'每箱／每盒有多少件':'Units in each carton / box'}</span><input id="bossReceivePackSize" type="number" min="1" step="1" oninput="bossReceiveProductChanged()">`;qtyLabel.parentNode.insertBefore(packLabel,qtyLabel.nextSibling);
       const sellingLabel=document.createElement('label');sellingLabel.className='boss-field';sellingLabel.innerHTML=`<span class="boss-field-label">${lang()==='zh'?'售卖价（可同时更改）':'Selling price (optional change)'}</span><input id="bossReceiveSellingPrice" type="number" min="0.01" step="0.01" oninput="bossReceiveProductChanged()">`;costLabel.parentNode.insertBefore(sellingLabel,costLabel.nextSibling);
       const marginBox=document.createElement('div');marginBox.id='bossReceiveMarginPreview';marginBox.className='wide boss-result';marginBox.textContent=lang()==='zh'?'选择商品后显示预计毛利率。':'Choose a product to preview margin.';sellingLabel.parentNode.insertBefore(marginBox,sellingLabel.nextSibling);
+      const previousBox=receive.querySelector('#bossReceivePreviousCost');if(previousBox)receiveGrid.insertBefore(previousBox,qtyLabel);
       const saveReceiveBtn=receiveGrid.querySelector('button.green');
       const rehearsalBtn=document.createElement('button');rehearsalBtn.type='button';rehearsalBtn.className='wide';rehearsalBtn.style.cssText='background:#334155;color:#fff';rehearsalBtn.textContent=lang()==='zh'?'🧪 进货演练（不写入）':'🧪 Receiving rehearsal (no write)';rehearsalBtn.onclick=()=>window.bossReceiveDryRun();receiveGrid.insertBefore(rehearsalBtn,saveReceiveBtn);
       if(saveReceiveBtn)saveReceiveBtn.textContent=lang()==='zh'?'确认进货（会修改库存）':'Confirm receiving (changes stock)';
@@ -4471,7 +4481,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   window.bossFilterProducts = function(){ bossSetProductEditorVisible(false);renderBossProductList(($('bossProductSearch')||{}).value||''); };
   const bossEntranceOptions=()=>[['PROMOTION',lang()==='zh'?'促销':'Promotion'],['CHICKEN',lang()==='zh'?'鸡':'Chicken'],['DOG',lang()==='zh'?'狗':'Dog'],['CAT',lang()==='zh'?'猫':'Cat'],['BIRD',lang()==='zh'?'鸟':'Bird'],['FISH',lang()==='zh'?'鱼':'Fish'],['HAMSTER',lang()==='zh'?'仓鼠':'Hamster'],['BEVERAGE',lang()==='zh'?'饮料':'Beverage'],['GENERAL',lang()==='zh'?'未分类':'Unclassified']];
   function productInEntrance(p,key){return bossFacetMains(p).includes(key);}
-  function isAuthoritativeSharedProduct(p){return !!(normalizeText(p&&p.inventoryGroup)&&p&&p.sharedStock!==null&&p.sharedStock!==''&&Number.isFinite(Number(p.sharedStock))&&Number(p.stockFactor)>0);}
+  function isAuthoritativeSharedProduct(p){const group=normalizeText(p&&p.inventoryGroup);if(!(group&&p&&p.sharedStock!==null&&p.sharedStock!==''&&Number.isFinite(Number(p.sharedStock))&&Number(p.stockFactor)>0))return false;const peers=(bossProductsCache||[]).filter(x=>normalizeText(x&&x.inventoryGroup)===group),hasKg=peers.some(x=>/(\d+(?:\.\d+)?)\s*KG/i.test(String(x.name||''))),hasMoneyWeight=peers.some(x=>/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test(String(x.name||'')));return hasKg&&hasMoneyWeight;}
   function isLooseBulkProduct(p){const group=isAuthoritativeSharedProduct(p)?normalizeText(p.inventoryGroup):'';if(!group)return true;const same=(bossProductsCache||[]).filter(x=>isAuthoritativeSharedProduct(x)&&normalizeText(x.inventoryGroup)===group),kg=x=>{const m=String(x.name||'').toUpperCase().match(/(\d+(?:\.\d+)?)\s*KG/);return m?Number(m[1]):0;},max=Math.max(0,...same.map(kg));return kg(p)===max&&max>1;}
   function fillBossStocktakeCategories(){const sel=$('bossStocktakeCategory');if(!sel)return;const old=sel.value;sel.innerHTML=`<option value="">${lang()==='zh'?'请选择入口':'Select entrance'}</option>`+bossEntranceOptions().map(x=>`<option value="${x[0]}">${esc(x[1])}</option>`).join('');if(old)sel.value=old;window.bossRenderStocktakeRows();}
   window.bossRenderStocktakeRows=function(){const sel=$('bossStocktakeProduct'),key=normalizeText(($('bossStocktakeCategory')||{}).value);if(!sel)return;const rows=(bossProductsCache||[]).filter(p=>p.active!==false&&productInEntrance(p,key)&&isLooseBulkProduct(p)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));sel.innerHTML=`<option value="">${key?(lang()==='zh'?'请选择商品':'Select product'):(lang()==='zh'?'请先选择入口':'Choose entrance first')}</option>`+rows.map(p=>{const book=isAuthoritativeSharedProduct(p)?Number(p.sharedStock||0):Number(p.stock||0),unit=isAuthoritativeSharedProduct(p)?' KG':'';return `<option value="${esc(p.code||p.name||'')}">${esc(p.name||'')} · ${lang()==='zh'?'账面':'System'} ${book}${unit}</option>`;}).join('');};
@@ -4494,9 +4504,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   const bossReceiveProductChangedBase=window.bossReceiveProductChanged;
   window.bossReceiveProductChanged=function(){
     bossReceiveProductChangedBase();
-    const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),carton=normalizeText(($('bossReceiveMode')||{}).value)==='carton',pack=$('bossReceivePackSize'),previous=$('bossReceivePreviousCost'),selling=$('bossReceiveSellingPrice'),margin=$('bossReceiveMarginPreview');
+    const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),mode=$('bossReceiveMode'),loose=isAuthoritativeSharedProduct(p);if(mode){const cartonOption=mode.querySelector('option[value="carton"]');if(cartonOption)cartonOption.disabled=loose;if(loose&&mode.value==='carton')mode.value='unit';const unitOption=mode.querySelector('option[value="unit"]');if(unitOption)unitOption.textContent=loose?(lang()==='zh'?'按包（KG换算）':'Bags (KG conversion)'):(lang()==='zh'?'按件／按包':'Individual units');}const carton=!loose&&normalizeText((mode||{}).value)==='carton',pack=$('bossReceivePackSize'),previous=$('bossReceivePreviousCost'),selling=$('bossReceiveSellingPrice'),margin=$('bossReceiveMarginPreview');
+    const kgLabel=$('bossReceiveLooseKgLabel');if(kgLabel)kgLabel.style.display=loose?'flex':'none';const packLabel=$('bossReceivePackSizeLabel');if(packLabel)packLabel.style.display=carton?'flex':'none';
+    const qtyInput=$('bossReceiveQty'),costInput=$('bossReceiveCost');if(qtyInput&&qtyInput.closest('label'))qtyInput.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'收到多少包':'Bags received'):(carton?(lang()==='zh'?'收到多少箱／盒':'Cartons / boxes received'):(lang()==='zh'?'收到多少件':'Units received'));if(costInput&&costInput.closest('label'))costInput.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'每包进货价（可留空）':'Cost per bag (optional)'):(carton?(lang()==='zh'?'每箱／每盒总进货价':'Total cost per carton / box'):(lang()==='zh'?'每件进货价（可留空）':'Cost per unit (optional)'));
     if(selling&&selling.dataset.productKey!==key){selling.dataset.productKey=key;selling.value=p&&Number(p.price||0)>0?Number(p.price):'';}
-    if(carton&&p){if(pack&&!String(pack.value||'').trim()&&Number(p.packSize)>0)pack.value=Number(p.packSize);if(previous)previous.textContent=lang()==='zh'?`上次整箱：${Number(p.packSize||0)||'未记录'} 件／箱，箱价 ${p.lastPackCost==null?'未记录':'RM '+Number(p.lastPackCost).toFixed(2)}。系统内部保留真实单位成本。`:`Previous carton: ${Number(p.packSize||0)||'not recorded'} units, ${p.lastPackCost==null?'cost not recorded':'RM '+Number(p.lastPackCost).toFixed(2)}. Exact unit cost is retained internally.`;}
+    if(carton&&p){if(pack&&!String(pack.value||'').trim()&&Number(p.packSize)>0)pack.value=Number(p.packSize);if(previous)previous.innerHTML=lang()==='zh'?`<b>上次整箱资料</b><br>每箱 ${Number(p.packSize||0)||'未记录'} 件 · 箱价 ${p.lastPackCost==null?'未记录':'RM '+Number(p.lastPackCost).toFixed(2)}<br><small>目前库存平均成本：每件 RM ${Number(p.cost||0).toFixed(4)}</small>`:`<b>Previous carton</b><br>${Number(p.packSize||0)||'not recorded'} units · ${p.lastPackCost==null?'cost not recorded':'RM '+Number(p.lastPackCost).toFixed(2)}<br><small>Current inventory average: RM ${Number(p.cost||0).toFixed(4)} each</small>`;}
     if(margin){
       if(!p){margin.textContent=lang()==='zh'?'选择商品后显示预计毛利率。':'Choose a product to preview margin.';return;}
       const raw=String(($('bossReceiveCost')||{}).value||'').trim(),packSize=Math.max(0,Number(($('bossReceivePackSize')||{}).value)||0),purchase=raw===''?(carton?Number(p.lastPackCost||0):Number(p.lastPurchaseCost!=null?p.lastPurchaseCost:p.cost)||0):Number(raw),unitCost=carton&&packSize>0?purchase/packSize:purchase,sale=Number((selling||{}).value)||Number(p.price)||0;
@@ -4504,7 +4516,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       margin.innerHTML=bossMarginSummary(sale,unitCost);
     }
   };
-  window.bossReceiveModeChanged=function(){const carton=normalizeText(($('bossReceiveMode')||{}).value)==='carton',label=$('bossReceivePackSizeLabel'),qty=$('bossReceiveQty'),cost=$('bossReceiveCost');if(label)label.style.display=carton?'flex':'none';if(qty&&qty.closest('label'))qty.closest('label').querySelector('.boss-field-label').textContent=carton?(lang()==='zh'?'收到多少箱／盒':'Cartons / boxes received'):(lang()==='zh'?'收到数量／包数':'Quantity / bags received');if(cost&&cost.closest('label'))cost.closest('label').querySelector('.boss-field-label').textContent=carton?(lang()==='zh'?'每箱／每盒进货价':'Cost per carton / box'):(lang()==='zh'?'每包／每件进货价（可留空）':'Purchase price per bag / item (optional)');window.bossReceiveProductChanged();};
+  window.bossReceiveModeChanged=function(){const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),loose=isAuthoritativeSharedProduct(p),mode=$('bossReceiveMode');if(loose&&mode)mode.value='unit';const carton=!loose&&normalizeText((mode||{}).value)==='carton',label=$('bossReceivePackSizeLabel'),qty=$('bossReceiveQty'),cost=$('bossReceiveCost');if(label)label.style.display=carton?'flex':'none';if(qty&&qty.closest('label'))qty.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'收到多少包':'Bags received'):(carton?(lang()==='zh'?'收到多少箱／盒':'Cartons / boxes received'):(lang()==='zh'?'收到多少件':'Units received'));if(cost&&cost.closest('label'))cost.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'每包进货价（可留空）':'Cost per bag (optional)'):(carton?(lang()==='zh'?'每箱／每盒总进货价':'Total cost per carton / box'):(lang()==='zh'?'每件进货价（可留空）':'Cost per unit (optional)'));window.bossReceiveProductChanged();};
   const bossReceiveProductStockBase=window.bossReceiveProductStock;
   window.bossReceiveProductStock=async function(){
     const mode=normalizeText(($('bossReceiveMode')||{}).value)||'unit';
@@ -4537,7 +4549,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const units=cartons*packSize,unitCost=packCost/packSize;
     const beforeStock=Math.max(0,Number(p.stock)||0),beforeAverage=Math.max(0,Number(p.cost)||0),afterStock=beforeStock+units,projectedAverage=afterStock>0?((beforeStock*beforeAverage)+(units*unitCost))/afterStock:unitCost;
     const chosenSalePrice=Number(($('bossReceiveSellingPrice')||{}).value)||Number(p.price)||0;
-    const preview=(lang()==='zh'?`请核对后才进货：\n\n${p.name}\n${cartons} 箱 × ${packSize} 件 = 增加 ${units} 件\n你填写的每箱总价：RM ${packCost.toFixed(2)}\n系统换算每件成本：RM ${unitCost.toFixed(4)}\n售卖价：RM ${chosenSalePrice.toFixed(2)}\n库存：${beforeStock} → ${afterStock}\n预计平均成本：RM ${projectedAverage.toFixed(4)}\n\n如果你想填的是“每件 RM ${packCost.toFixed(2)}”，请取消，并把每箱总价填成 RM ${(packCost*packSize).toFixed(2)}。`:`Check before receiving:\n\n${p.name}\n${cartons} cartons × ${packSize} = ${units} units\nCarton total: RM ${packCost.toFixed(2)}\nUnit cost: RM ${unitCost.toFixed(4)}\nSelling price: RM ${chosenSalePrice.toFixed(2)}\nStock: ${beforeStock} → ${afterStock}\nProjected average cost: RM ${projectedAverage.toFixed(4)}`)+bossMarginAdvice(chosenSalePrice,projectedAverage);
+    const preview=(lang()==='zh'?`商品：${p.name}\n\n【本次进货】\n${cartons} 箱 × 每箱 ${packSize} 件 = 增加 ${units} 件\n每箱总价：RM ${packCost.toFixed(2)}\n换算每件成本：RM ${unitCost.toFixed(4)}\n\n【库存与成本】\n库存：${beforeStock} → ${afterStock}\n进货前平均成本：RM ${beforeAverage.toFixed(4)}\n进货后预计平均成本：RM ${projectedAverage.toFixed(4)}\n售卖价：RM ${chosenSalePrice.toFixed(2)}\n\n注意：这里填的是每箱总价。若 RM ${packCost.toFixed(2)} 是每件价格，请取消。`:`Product: ${p.name}\n\nTHIS RECEIPT\n${cartons} cartons × ${packSize} units = ${units} units\nCarton total: RM ${packCost.toFixed(2)}\nUnit cost: RM ${unitCost.toFixed(4)}\n\nINVENTORY & COST\nStock: ${beforeStock} → ${afterStock}\nAverage before: RM ${beforeAverage.toFixed(4)}\nProjected average: RM ${projectedAverage.toFixed(4)}\nSelling price: RM ${chosenSalePrice.toFixed(2)}`)+bossMarginAdvice(chosenSalePrice,projectedAverage);
     if(!(await appConfirm(preview,lang()==='zh'?'确认进货换算':'Confirm conversion')))return;
     const salePrice=chosenSalePrice;
     const receivePayload={code:p.code,name:p.name,qty:units,cost:unitCost,price:salePrice,packSize,packCost,receiveId:'RCV-'+makeClientOrderId()};
@@ -5384,6 +5396,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     window.__activeDiscountAudit=null;
     const stockWarnings=checkoutStockStatus().short.map(x=>x.name);
     optimisticTopStatsAfterOrder(window.lastCart, window.lastPayment, sendDiscount, window.lastPaid, window.lastChange);
+    window.__localCheckoutSettledUntil=Date.now()+12000;
+    ['todaySales','todayCash','todayOrders'].forEach(id=>{const el=$(id),card=el&&el.closest('.stat');if(card){card.classList.remove('stat-settle');void card.offsetWidth;card.classList.add('stat-settle');}});
     reduceLocalStock(window.lastCart);
     clearCartState();
     // Prevent the touch-up from the completed payment flow falling through
@@ -5391,7 +5405,6 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     window.__ignoreProductAddsUntil=Date.now()+1000;
     try{localStorage.removeItem('yllPopularGroupsV1');}catch(e){}
     try{if(typeof window.goHome==='function')window.goHome();else if(typeof goHome==='function')goHome();}catch(e){}
-    try{setTimeout(()=>loadPopularHome(),150); }catch(e){}
     if(checkoutKey && !currentCart().length)clearActiveCheckout(checkoutKey);
     setCheckoutBusy(false);
     const receiptReady=prepareSavedReceipt();
@@ -6622,7 +6635,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   let lastForegroundProductRefresh=0;
   let lastPosSyncRevision=null,posSyncRevisionBusy=false;
   async function checkPosSyncRevision(){
-    if(document.hidden||!navigator.onLine||posSyncRevisionBusy)return;
+    if(document.hidden||!navigator.onLine||posSyncRevisionBusy||Date.now()<Number(window.__localCheckoutSettledUntil||0))return;
     posSyncRevisionBusy=true;
     try{
       const r=await timeout(apiCall('getPosSyncRevision',[]),6500,'POS sync revision');
