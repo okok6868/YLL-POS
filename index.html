@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-178-REFUND-CASH-NET-BOSS-MASK-20260901 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-179-REFUND-UX-RED-CARDS-RECEIVING-FIELDS-20260901 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -13,6 +13,14 @@
   text-security:disc!important;
 }
 .receipt-refund{color:#ff6b6b;font-weight:800}
+.stat.blue.has-refund{border-color:#ef4444!important;box-shadow:inset 4px 0 0 #ef4444,0 0 0 1px rgba(239,68,68,.22)!important}
+#todaySoldBox .today-order-card.is-refund{border:2px solid #ef4444!important;border-left:6px solid #ef4444!important;background:linear-gradient(135deg,rgba(127,29,29,.42),rgba(45,10,18,.72))!important}
+#todaySoldBox .today-order-card.is-refund .today-pay-badge{color:#fee2e2!important;background:#b91c1c!important}
+.refund-item-row{display:grid;grid-template-columns:42px minmax(0,1fr) 92px minmax(96px,auto);gap:10px;align-items:center;padding:12px 8px;border-bottom:1px solid rgba(148,163,184,.18)}
+.refund-item-row input[type="checkbox"]{width:34px!important;height:34px!important;min-width:34px!important;margin:0!important;accent-color:#ef4444;cursor:pointer}
+.refund-qty-select{width:92px!important;min-width:92px!important;height:54px!important;min-height:54px!important;margin:0!important;padding:0 12px!important;font-size:20px!important;font-weight:900!important;border:2px solid #60a5fa!important;border-radius:12px!important}
+.refund-amount-chip{font-weight:900;text-align:right;white-space:nowrap}
+@media(max-width:700px){.refund-item-row{grid-template-columns:44px minmax(0,1fr) 96px}.refund-amount-chip{grid-column:2/4;text-align:right}.refund-qty-select{width:96px!important;min-width:96px!important;height:58px!important}}
 </style>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#050816">
@@ -2021,14 +2029,14 @@ function renderTodayOrderPage(page){
   const total=todayOrderTimelineRows.length,totalPages=Math.max(1,Math.ceil(total/5)),current=Math.min(Math.max(1,Number(page)||1),totalPages),rows=todayOrderTimelineRows.slice((current-1)*5,current*5);
   if(!total){box.innerHTML='<div class="sales-empty">今天还没有买单记录。</div>';return;}
   box.innerHTML=`<div class="today-order-list">${rows.map(o=>{
-    const pay=String(o.payment||'Cash'),cash=moneyNum(o.cashAmount||0),qr=moneyNum(o.qrAmount||0),transfer=moneyNum(o.transferAmount||0),isMixed=/mixed/i.test(pay)||(cash>0&&qr+transfer>0);
+    const isRefund=o.type==='refund',pay=String(o.payment||(isRefund?'现金退款':'Cash')),cash=moneyNum(o.cashAmount||0),qr=moneyNum(o.qrAmount||0),transfer=moneyNum(o.transferAmount||0),isMixed=!isRefund&&(/mixed/i.test(pay)||(cash>0&&qr+transfer>0));
     const pc=isMixed?'mixed':/qr/i.test(pay)?'qr':/transfer/i.test(pay)?'transfer':'cash';
     const split=[];
     if(cash>0)split.push(`<span class="receipt-pill cash">现金 ${fmt(cash)}</span>`);
     if(qr>0)split.push(`<span class="receipt-pill qr">QR ${fmt(qr)}</span>`);
     if(transfer>0)split.push(`<span class="receipt-pill transfer">转账 ${fmt(transfer)}</span>`);
     const paymentDetail=split.length?`<div class="receipt-breakdown today-order-split">${split.join('')}</div>`:(pc==='cash'?`<small>收到 ${fmt(o.paid||0)}／找钱 ${fmt(o.change||0)}</small>`:'');
-    return `<section class="today-order-card pay-${pc}"><div class="today-order-head"><b>${salesReportEscapeHtml(o.orderId||'旧单')}</b><span>${salesReportEscapeHtml(o.date||'')} ${salesReportEscapeHtml(o.time||'')}</span><span class="today-pay-badge">${salesReportEscapeHtml(isMixed?'Mixed':pay)}</span></div>${(o.items||[]).map(i=>`<div class="today-order-item"><span>${salesReportEscapeHtml(i.name||'-')}</span><span>× ${moneyNum(i.qty||0)}</span><b>${fmt(i.subtotal||0)}</b></div>`).join('')||'<div class="sales-empty">旧资料没有商品明细</div>'}<div class="today-order-total">${Number(o.discount||0)>0?`折扣 ${fmt(o.discount)}　`:''}<b>总额 ${fmt(o.total||0)}</b>${paymentDetail}</div></section>`;
+    return `<section class="today-order-card pay-${pc}${isRefund?' is-refund':''}"><div class="today-order-head"><b>${salesReportEscapeHtml(isRefund?`退货 · ${o.originalOrderId||o.orderId||''}`:(o.orderId||'旧单'))}</b><span>${salesReportEscapeHtml(o.date||'')} ${salesReportEscapeHtml(o.time||'')}</span><span class="today-pay-badge">${salesReportEscapeHtml(isRefund?'现金退回':(isMixed?'Mixed':pay))}</span></div>${(o.items||[]).map(i=>`<div class="today-order-item"><span>${salesReportEscapeHtml(i.name||'-')}</span><span>× ${moneyNum(i.qty||0)}</span><b>${isRefund?'-':''}${fmt(i.subtotal||0)}</b></div>`).join('')||'<div class="sales-empty">旧资料没有商品明细</div>'}<div class="today-order-total">${Number(o.discount||0)>0?`折扣 ${fmt(o.discount)}　`:''}<b>${isRefund?'退款':'总额'} ${isRefund?'-':''}${fmt(o.total||0)}</b>${isRefund?`<small style="display:block;color:#fecaca;margin-top:4px">${salesReportEscapeHtml(o.reason||'')}</small>`:paymentDetail}</div></section>`;
   }).join('')}</div><div class="stockout-history-pager"><button ${current<=1?'disabled':''} onclick="renderTodayOrderPage(${current-1})">‹ 上一页</button><span><b>第 ${current} / ${totalPages} 页</b><small>共 ${total} 张订单</small></span><button ${current>=totalPages?'disabled':''} onclick="renderTodayOrderPage(${current+1})">下一页 ›</button></div>`;
 }
 async function openTodaySoldItems(){
@@ -3265,9 +3273,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const today=snapshot.today||{}, drawer=snapshot.drawer||{};
     const off=offlineSummary();
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
-      const refundToday=num(today.refund||0);
+      const refundToday=num(today.refund||0),cashRefundToday=num(today.cashRefund!==undefined?today.cashRefund:today.refund||0);
       const netToday=today.netSales!==undefined?num(today.netSales):num(today.total||0)-refundToday;
       if(sales)sales.textContent=money(netToday+off.total);
+      const salesCard=sales&&sales.closest('.stat');if(salesCard)salesCard.classList.toggle('has-refund',cashRefundToday>0);
       const syncNote=off.count?` | ${tr('offlinePending')}`:'';
       const receiptParts=[];
       const displayCash=stableTodayPayment(num(today.Cash||0)+off.cash,'cash');
@@ -3281,11 +3290,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(num(today.otherIncomeQR||0))otherParts.push(`QR ${money(today.otherIncomeQR)}`);
       if(num(today.otherIncomeTransfer||0))otherParts.push(`${tr('transfer')} ${money(today.otherIncomeTransfer)}`);
       const otherLine=otherTotal>0?`<span class="receipt-other">${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' | ')||money(otherTotal)}</span>`:'';
-      const refundLine=refundToday>0?`<span class="receipt-refund">${lang()==='zh'?'今日已批准现金退款':'Approved cash refunds today'} -${money(refundToday)}</span>`:'';
+      const refundLine=cashRefundToday>0?`<span class="receipt-refund">${lang()==='zh'?'今日实际现金退款':'Cash refunded today'} -${money(cashRefundToday)}${refundToday!==cashRefundToday?(lang()==='zh'?'（销售归回原订单日期）':' (sales assigned to original order date)'):''}</span>`:'';
       setStatDetail('todaySales', `<span class="receipt-breakdown">${receiptParts.join('')}${syncNote?`<span>${syncNote.replace(/^\s*\|\s*/,'')}</span>`:''}</span>${otherLine}${refundLine}`);
       if(cash)cash.textContent=money(num(drawer.cashDrawer||0)+off.cash);
       const cashNotes=[`${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`];
-      if(refundToday>0)cashNotes.push(`${lang()==='zh'?'今日现金退款':'Cash refunds today'} -${money(refundToday)}`);
+      if(cashRefundToday>0)cashNotes.push(`${lang()==='zh'?'今日现金退款':'Cash refunds today'} -${money(cashRefundToday)}`);
       setStatDetail('todayCash',cashNotes.join(' | '));
       if(orders)orders.textContent=num(today.orders||today.count||0)+off.count;
     if(items)items.textContent=snapshot.productCount || (currentProducts()||[]).length || (window.products||[]).length || 0;
@@ -3745,10 +3754,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(h)h.textContent=cleanTitle(title);
     if(t){ t.style.whiteSpace='pre-wrap'; t.textContent=cleanMessage(msg); }
     const btn=document.querySelector('#appAlertBox button'); if(btn)btn.textContent=tr('close');
-    const boss=$('bossDashboard'),alertBox=$('appAlertBox');
-    if(boss&&boss.classList.contains('active')&&alertBox){
-      // Boss alerts belong above Boss Mode.  Do not call openModal(), because
-      // its legacy closeAllModal() would close Boss Mode and expose the POS.
+    const boss=$('bossDashboard'),refund=$('refundBox'),alertBox=$('appAlertBox');
+    if(alertBox&&((boss&&boss.classList.contains('active'))||(refund&&refund.classList.contains('active')))){
+      // Alerts belong above the active workflow. Do not call openModal(),
+      // because its legacy closeAllModal() would discard the selected refund.
       alertBox.classList.add('active');
       alertBox.scrollTop=0;
       document.body.classList.add('modal-open');
@@ -4519,7 +4528,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   window.bossReceiveProductChanged=function(){
     bossReceiveProductChangedBase();
     const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),mode=$('bossReceiveMode'),loose=isAuthoritativeSharedProduct(p);if(mode){const cartonOption=mode.querySelector('option[value="carton"]');if(cartonOption)cartonOption.disabled=loose;if(loose&&mode.value==='carton')mode.value='unit';const unitOption=mode.querySelector('option[value="unit"]');if(unitOption)unitOption.textContent=loose?(lang()==='zh'?'按包（KG换算）':'Bags (KG conversion)'):(lang()==='zh'?'按件／按包':'Individual units');}const carton=!loose&&normalizeText((mode||{}).value)==='carton',pack=$('bossReceivePackSize'),previous=$('bossReceivePreviousCost'),selling=$('bossReceiveSellingPrice'),margin=$('bossReceiveMarginPreview');
-    const kgLabel=$('bossReceiveLooseKgLabel');if(kgLabel)kgLabel.style.display=loose?'flex':'none';const packLabel=$('bossReceivePackSizeLabel');if(packLabel)packLabel.style.display=carton?'flex':'none';
+    const kgLabel=$('bossReceiveLooseKgLabel'),kgInput=$('bossReceiveLooseKg');if(kgLabel){kgLabel.style.display=loose?'flex':'none';kgLabel.hidden=!loose;}if(kgInput){kgInput.disabled=!loose;if(!loose)kgInput.value='';}const packLabel=$('bossReceivePackSizeLabel');if(packLabel)packLabel.style.display=carton?'flex':'none';
     const qtyInput=$('bossReceiveQty'),costInput=$('bossReceiveCost');if(qtyInput&&qtyInput.closest('label'))qtyInput.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'收到多少包':'Bags received'):(carton?(lang()==='zh'?'收到多少箱／盒':'Cartons / boxes received'):(lang()==='zh'?'收到多少件':'Units received'));if(costInput&&costInput.closest('label'))costInput.closest('label').querySelector('.boss-field-label').textContent=loose?(lang()==='zh'?'每包进货价（可留空）':'Cost per bag (optional)'):(carton?(lang()==='zh'?'每箱／每盒总进货价（已带入上次价格）':'Carton / box total (previous price filled)'):(lang()==='zh'?'每件进货价（可留空）':'Cost per unit (optional)'));
     const methodHint=$('bossReceiveHint');if(methodHint)methodHint.textContent=loose?(lang()==='zh'?'散卖商品：填包数、每包KG和每包进货价；系统换算总KG。':'Loose sale: enter bags, KG per bag and bag cost.'):(carton?(lang()==='zh'?'普通按箱：只填箱数、每箱件数和每箱总价；这里不需要也不会填写KG。':'Ordinary cartons: enter cartons, units per carton and carton total. No KG field.'):(lang()==='zh'?'普通按件：只填收到件数和每件进货价。':'Ordinary units: enter units received and unit cost.'));
     if(selling&&selling.dataset.productKey!==key){selling.dataset.productKey=key;selling.value=p&&Number(p.price||0)>0?Number(p.price):'';}
