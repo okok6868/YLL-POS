@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-179-REFUND-UX-RED-CARDS-RECEIVING-FIELDS-20260901 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-180-REFUND-RED-LABEL-NOT-SALES-CARD-20260901 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -12,8 +12,7 @@
   -webkit-text-security:disc!important;
   text-security:disc!important;
 }
-.receipt-refund{color:#ff6b6b;font-weight:800}
-.stat.blue.has-refund{border-color:#ef4444!important;box-shadow:inset 4px 0 0 #ef4444,0 0 0 1px rgba(239,68,68,.22)!important}
+.receipt-refund{display:inline-flex;align-items:center;width:max-content;max-width:100%;margin-top:5px;padding:3px 8px;border:1px solid #ef4444;border-radius:999px;background:rgba(127,29,29,.22);color:#fecaca;font-weight:900;line-height:1.25}
 #todaySoldBox .today-order-card.is-refund{border:2px solid #ef4444!important;border-left:6px solid #ef4444!important;background:linear-gradient(135deg,rgba(127,29,29,.42),rgba(45,10,18,.72))!important}
 #todaySoldBox .today-order-card.is-refund .today-pay-badge{color:#fee2e2!important;background:#b91c1c!important}
 .refund-item-row{display:grid;grid-template-columns:42px minmax(0,1fr) 92px minmax(96px,auto);gap:10px;align-items:center;padding:12px 8px;border-bottom:1px solid rgba(148,163,184,.18)}
@@ -3276,7 +3275,6 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const refundToday=num(today.refund||0),cashRefundToday=num(today.cashRefund!==undefined?today.cashRefund:today.refund||0);
       const netToday=today.netSales!==undefined?num(today.netSales):num(today.total||0)-refundToday;
       if(sales)sales.textContent=money(netToday+off.total);
-      const salesCard=sales&&sales.closest('.stat');if(salesCard)salesCard.classList.toggle('has-refund',cashRefundToday>0);
       const syncNote=off.count?` | ${tr('offlinePending')}`:'';
       const receiptParts=[];
       const displayCash=stableTodayPayment(num(today.Cash||0)+off.cash,'cash');
