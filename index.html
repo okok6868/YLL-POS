@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-183-QUIET-SYNC-CLEANUP-20260904 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-185-PARCEL-SELECT-SIZE-ONLY-20260904 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -11,15 +11,16 @@
 #refundBossId,#refundBossPassword,#shopeeStockBossId,#shopeeStockBossPassword{
   -webkit-text-security:disc!important;
   text-security:disc!important;
-  color:transparent!important;
-  -webkit-text-fill-color:transparent!important;
+  color:#e2e8f0!important;
+  -webkit-text-fill-color:#e2e8f0!important;
   caret-color:#e2e8f0!important;
   text-shadow:none!important;
 }
 .secret-entry{position:relative;display:block;width:100%}
-.secret-entry>span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#e2e8f0;pointer-events:none;font:18px monospace;letter-spacing:2px;max-width:85%;overflow:hidden;white-space:nowrap}
 .secret-entry input::placeholder{color:#94a3b8!important;-webkit-text-fill-color:#94a3b8!important}
 input::-ms-reveal,input::-ms-clear{display:none!important}
+/* Backfill provider picker: desktop and iPad touch target; no logic changes. */
+#parcelBox #parcelBackfillProvider{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;height:52px!important;min-height:52px!important;padding:0 14px!important;margin:6px 0 0!important;border-radius:10px!important;font-size:18px!important;line-height:normal!important}
 .receipt-refund{display:inline-flex;align-items:center;width:max-content;max-width:100%;margin-top:5px;padding:3px 8px;border:1px solid #ef4444;border-radius:999px;background:rgba(127,29,29,.22);color:#fecaca;font-weight:900;line-height:1.25}
 #todaySoldBox .today-order-card.is-refund{border:2px solid #ef4444!important;border-left:6px solid #ef4444!important;background:linear-gradient(135deg,rgba(127,29,29,.42),rgba(45,10,18,.72))!important}
 #todaySoldBox .today-order-card.is-refund .today-pay-badge{color:#fee2e2!important;background:#b91c1c!important}
@@ -1127,7 +1128,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     </div>
     <details class="refund-auth" id="discountAuthDetails">
       <summary>Boss Authorization / Direct Approve</summary>
-      <input id="discountBossId" type="text" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="discountBossId" type="password" placeholder="帐号" autocomplete="off" autocapitalize="off" spellcheck="false">
       <input id="discountBossPassword" type="password" placeholder="密码" autocomplete="new-password">
       <small style="color:#94a3b8">不填老板帐号可直接提交审批；批准前仍按原价。填写完整老板帐号和密码可立即批准。</small>
     </details>
@@ -1220,7 +1221,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
     <section class="packing-frequent"><div class="packing-section-title"><b>📌 常打包商品</b><small>根据出库记录自动更新</small></div><div id="shopeeFrequentProducts" class="packing-photo-grid">载入中...</div></section>
     <details id="shopeeAllProducts" class="packing-other"><summary>🔎 选择其他商品</summary><input id="shopeeStockSearch" type="text" placeholder="搜索商品名称／编号" oninput="renderShopeeStockProducts(this.value)"><div id="shopeeStockProducts" class="shopee-stock-products"></div></details>
     <div id="shopeeStockSelected" class="shopee-stock-selected">还没选择商品。</div>
-    <details class="refund-auth" id="shopeeStockBossAuth"><summary>🔐 老板直接批准（工人留空）</summary><input id="shopeeStockBossId" type="text" placeholder="Boss ID" autocomplete="off"><input id="shopeeStockBossPassword" type="password" enterkeyhint="done" placeholder="Boss Password" autocomplete="new-password"><div class="receipt-note">老板填帐号密码＝立即扣库存；工人留空＝提交给Boss Mode审核，审核前不会扣库存。</div></details>
+    <details class="refund-auth" id="shopeeStockBossAuth"><summary>🔐 老板直接批准（工人留空）</summary><input id="shopeeStockBossId" type="password" placeholder="Boss ID" autocomplete="off"><input id="shopeeStockBossPassword" type="password" enterkeyhint="done" placeholder="Boss Password" autocomplete="new-password"><div class="receipt-note">老板填帐号密码＝立即扣库存；工人留空＝提交给Boss Mode审核，审核前不会扣库存。</div></details>
     <button id="shopeeStockSubmit" class="green" type="button">提交Shopee出库</button>
   </div>
 </div>
@@ -7131,11 +7132,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   function protectSecretEntries(){
     document.querySelectorAll('#bossId,#bossPassword,#discountBossId,#discountBossPassword,#refundBossId,#refundBossPassword,#shopeeStockBossId,#shopeeStockBossPassword').forEach(input=>{
       input.type='password';
-      if(input.parentElement.classList.contains('secret-entry')){const dots=input.parentElement.querySelector('span'),text='●'.repeat(Math.min(32,input.value.length));if(dots&&dots.textContent!==text)dots.textContent=text;return;}
-      const wrap=document.createElement('div'),dots=document.createElement('span');wrap.className='secret-entry';dots.setAttribute('aria-hidden','true');
-      input.before(wrap);wrap.append(input,dots);
-      const update=()=>{dots.textContent='●'.repeat(Math.min(32,input.value.length));};
-      input.addEventListener('input',update);input.addEventListener('change',update);input.addEventListener('focus',update);input.addEventListener('blur',update);update();
+      // Native password rendering follows typing, autofill and .value resets
+      // synchronously. A separate dot overlay can become stale after resets.
+      if(input.parentElement.classList.contains('secret-entry'))return;
+      const wrap=document.createElement('div');wrap.className='secret-entry';
+      input.before(wrap);wrap.append(input);
     });
   }
   protectSecretEntries();
