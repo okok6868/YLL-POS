@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-181-MULTI-ENTRANCE-CUMULATIVE-CHECKOUT-20260904 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-182-PRIVATE-LOGIN-VERIFIED-PRODUCT-SYNC-20260904 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -11,7 +11,15 @@
 #refundBossId,#refundBossPassword,#shopeeStockBossId,#shopeeStockBossPassword{
   -webkit-text-security:disc!important;
   text-security:disc!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  caret-color:#e2e8f0!important;
+  text-shadow:none!important;
 }
+.secret-entry{position:relative;display:block;width:100%}
+.secret-entry>span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#e2e8f0;pointer-events:none;font:18px monospace;letter-spacing:2px;max-width:85%;overflow:hidden;white-space:nowrap}
+.secret-entry input::placeholder{color:#94a3b8!important;-webkit-text-fill-color:#94a3b8!important}
+input::-ms-reveal,input::-ms-clear{display:none!important}
 .receipt-refund{display:inline-flex;align-items:center;width:max-content;max-width:100%;margin-top:5px;padding:3px 8px;border:1px solid #ef4444;border-radius:999px;background:rgba(127,29,29,.22);color:#fecaca;font-weight:900;line-height:1.25}
 #todaySoldBox .today-order-card.is-refund{border:2px solid #ef4444!important;border-left:6px solid #ef4444!important;background:linear-gradient(135deg,rgba(127,29,29,.42),rgba(45,10,18,.72))!important}
 #todaySoldBox .today-order-card.is-refund .today-pay-badge{color:#fee2e2!important;background:#b91c1c!important}
@@ -2957,7 +2965,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const productCategoryPriority=p=>/CHIKEN|CHICKEN|鸡/.test(String(p.category).toUpperCase())?0:/DOG|狗/.test(String(p.category).toUpperCase())?1:/CAT|猫/.test(String(p.category).toUpperCase())?2:/FISH|鱼/.test(String(p.category).toUpperCase())?3:/BIRD|鸟/.test(String(p.category).toUpperCase())?4:20;
     list.sort((a,b)=>productCategoryPriority(a)-productCategoryPriority(b) || normalizeCategoryName(a.category).localeCompare(normalizeCategoryName(b.category)) || brandKey(a).localeCompare(brandKey(b)) || String(a.name).localeCompare(String(b.name)));
     const visibleSignature=rows=>JSON.stringify((rows||[]).map(p=>[p.code,p.name,p.price,p.stock,p.sharedStock,p.category,p.type,p.appliesTo,p.image,p.productGroup,p.variant]));
-    if(Date.now()<Number(window.__localCheckoutSettledUntil||0)&&visibleSignature(list)===visibleSignature(currentProducts()))deferRender=true;
+    if(visibleSignature(list)===visibleSignature(currentProducts()))deferRender=true;
     try{ products=list; window.products=list; }catch(e){
       window.products=list;
     }
@@ -3012,7 +3020,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const box=$('list');
       if(box)box.innerHTML='<div class="empty">'+(lang()==='zh'?'\u6b63\u5728\u8f7d\u5165\u5546\u54c1...':'Loading products...')+'</div>';
     }
-    const request=timeout(apiCall('getProducts',[]), hadCache?9000:14000, 'Product load')
+    const request=timeout(apiCall('getProducts',[!!force]), 35000, 'Product load')
       .then(data=>{
         if(requestSequence===productLoadSequence)applyProducts(data||[],false);
         return data;
@@ -4028,12 +4036,28 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(work==='create'){const box=$('bossWorkCreate');if(box)box.classList.add('active');}
   };
 
+  async function createOrdinaryVerified(payload){
+    const fingerprint=JSON.stringify(payload);let pending=null;
+    try{pending=JSON.parse(localStorage.getItem('yllPendingNewProduct')||'null');}catch(e){}
+    if(!pending||pending.fingerprint!==fingerprint){pending={fingerprint,code:'P-'+makeClientOrderId()};try{localStorage.setItem('yllPendingNewProduct',JSON.stringify(pending));}catch(e){}}
+    payload.code=pending.code;
+    try{const result=await timeout(apiCall('receiveProductStock',[payload]),55000,'Create product');if(!result||!result.ok)throw new Error('API returned non-JSON or missing creation confirmation');return result;}
+    catch(error){
+      if(!/timeout|non-JSON|Failed to fetch|network|没有回传/i.test(String(error.message||error)))throw error;
+      try{
+        const rows=await timeout(apiCall('getProductsForBoss',[]),35000,'Verify new product');
+        const found=(rows||[]).find(p=>p.code===payload.code);
+        if(found){applyProducts(rows,false);return {ok:true,verified:true,averageCost:found.cost};}
+      }catch(e){}
+      throw new Error(lang()==='zh'?'暂时无法确认新增结果，请勿重复建立。请刷新商品或检查 Sheet；这不代表写入失败。':'Unable to confirm creation. Do not create again; refresh products or check the Sheet. The write may have succeeded.');
+    }
+  }
   window.bossChooseProductSubWork=function(kind){
     if(kind==='normalStock'||kind==='looseStock')bossChooseProductWork('stocktake',true);else bossChooseProductWork('create',true);
     const id={normalStock:'bossWorkNormalStock',looseStock:'bossWorkNormalStock',ordinaryNew:'bossWorkOrdinaryNew',looseNew:'bossWorkLooseNew'}[kind],box=$(id);if(box)box.classList.add('active');
   };
 
-  window.bossCreateOrdinaryProduct=async function(){const name=normalizeText(($('bossNewName')||{}).value),qty=Number(($('bossNewQty')||{}).value)||0,total=Number(($('bossNewTotalCost')||{}).value)||0,price=Number(($('bossNewPrice')||{}).value),entrance=Array.from(document.querySelectorAll('#bossNewEntrance input:checked')).map(x=>x.value).join(','),type=normalizeText(($('bossNewType')||{}).value);if(!entrance||!type){showAppAlert(lang()==='zh'?'请选择至少一个入口和入口内分类。':'Select at least one entrance and a category.',tr('productEditor'));return;}if(!name||!(price>0)){showAppAlert(lang()==='zh'?'请填写商品名称和售卖价。':'Enter product name and selling price.',tr('productEditor'));return;}if(/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test(name)){showAppAlert(lang()==='zh'?'这属于散卖规格，请使用“建立整套散卖商品”，不能单独建立。':'This is a loose-sale variant. Create the complete loose-sale series instead.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在建立商品...':'Creating product...');try{const out=await timeout(apiCall('receiveProductStock',[{name,qty,cost:qty>0?total/qty:0,price,category:receiveMainCategory(entrance.split(',')[0]),type,appliesTo:entrance,createOnly:true}]),45000,'Create product');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert((lang()==='zh'?'普通商品已建立，库存按件计算。':'Ordinary product created with unit stock.')+bossMarginAdvice(price,Number(out&&out.averageCost)||0),tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}};
+  window.bossCreateOrdinaryProduct=async function(){const name=normalizeText(($('bossNewName')||{}).value),qty=Number(($('bossNewQty')||{}).value)||0,total=Number(($('bossNewTotalCost')||{}).value)||0,price=Number(($('bossNewPrice')||{}).value),entrance=Array.from(document.querySelectorAll('#bossNewEntrance input:checked')).map(x=>x.value).join(','),type=normalizeText(($('bossNewType')||{}).value);if(!entrance||!type){showAppAlert(lang()==='zh'?'请选择至少一个入口和入口内分类。':'Select at least one entrance and a category.',tr('productEditor'));return;}if(!name||!(price>0)){showAppAlert(lang()==='zh'?'请填写商品名称和售卖价。':'Enter product name and selling price.',tr('productEditor'));return;}if(/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test(name)){showAppAlert(lang()==='zh'?'这属于散卖规格，请使用“建立整套散卖商品”，不能单独建立。':'This is a loose-sale variant. Create the complete loose-sale series instead.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在建立商品...':'Creating product...');try{const out=await createOrdinaryVerified({name,qty,cost:qty>0?total/qty:0,price,category:receiveMainCategory(entrance.split(',')[0]),type,appliesTo:entrance,createOnly:true});try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);try{await window.bossOpenProducts();}catch(refreshError){console.warn('Product saved; editor refresh deferred');}showAppAlert((lang()==='zh'?'普通商品已建立，库存按件计算。':'Ordinary product created with unit stock.')+bossMarginAdvice(price,Number(out&&out.averageCost)||0),tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}};
 
   function resetBossProductWorkflow(){
     document.querySelectorAll('#bossProductBox .boss-work-menu button').forEach(x=>x.classList.remove('active'));
@@ -6629,7 +6653,14 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
     if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
     try{
-      const r=await timeout(apiCall('bossLogin',[id,pw]),45000,'Boss login');
+      const attempt=makeClientOrderId();
+      let r;
+      try{r=await timeout(apiCall('bossLogin',[id,pw,attempt]),55000,'Boss login');}
+      catch(e){
+        if(!/timeout|non-JSON|Failed to fetch|network|没有回传/i.test(String(e.message||e)))throw e;
+        if(msg)msg.textContent=lang()==='zh'?'正在重新确认登录结果，请勿重复点击。':'Checking login result again; please do not resubmit.';
+        r=await timeout(apiCall('bossLogin',[id,pw,attempt]),55000,'Boss login verification');
+      }
       if(r&&r.locked){ try{ closeAllModal(); await checkSystemStatus(false); }catch(e){} return; }
       if(r&&r.ok){
         try{
@@ -6688,6 +6719,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
     setTimeout(()=>{try{checkPosSyncRevision();}catch(e){}},2200);
     setInterval(()=>{try{checkPosSyncRevision();}catch(e){}},8000);
+    setInterval(()=>{
+      if(document.hidden||!navigator.onLine||window.isCheckingOut||Date.now()<Number(window.__localCheckoutSettledUntil||0))return;
+      Promise.resolve(window.load(true)).catch(()=>{});
+    },60000);
     // Keep different counters in sync without making every device constantly
     // reload the full catalogue. Totals are light; products refresh once/minute.
     // Full sales refresh now runs only when the lightweight last-order check
@@ -7077,6 +7112,18 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   });
 
   // The only Boss authorization keyboard controller in V2.
+  function protectSecretEntries(){
+    document.querySelectorAll('#bossId,#bossPassword,#discountBossId,#discountBossPassword,#refundBossId,#refundBossPassword,#shopeeStockBossId,#shopeeStockBossPassword').forEach(input=>{
+      input.type='password';
+      if(input.parentElement.classList.contains('secret-entry')){const dots=input.parentElement.querySelector('span'),text='●'.repeat(Math.min(32,input.value.length));if(dots&&dots.textContent!==text)dots.textContent=text;return;}
+      const wrap=document.createElement('div'),dots=document.createElement('span');wrap.className='secret-entry';dots.setAttribute('aria-hidden','true');
+      input.before(wrap);wrap.append(input,dots);
+      const update=()=>{dots.textContent='●'.repeat(Math.min(32,input.value.length));};
+      input.addEventListener('input',update);input.addEventListener('change',update);input.addEventListener('focus',update);input.addEventListener('blur',update);update();
+    });
+  }
+  protectSecretEntries();
+  new MutationObserver(protectSecretEntries).observe(document.body,{childList:true,subtree:true});
   const V2BossAuth={
     flows:[
       {id:'bossId',password:'bossPassword',submit:'bossLoginBtn'},
