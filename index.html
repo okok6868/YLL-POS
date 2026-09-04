@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-182-PRIVATE-LOGIN-VERIFIED-PRODUCT-SYNC-20260904 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-183-QUIET-SYNC-CLEANUP-20260904 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -3004,18 +3004,28 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
 
   window.__popularRankByGroup=window.__popularRankByGroup||{};
   let popularLoadInFlight=null;
-  function applyPopularGroups(rows){const map={};(rows||[]).forEach((r,i)=>{const key=normalizeText(r.group).toUpperCase();if(key)map[key]={rank:i+1,orders:Number(r.orderCount)||0};});window.__popularRankByGroup=map;if(Date.now()>=Number(window.__localCheckoutSettledUntil||0)&&!window.__posMainCategory&&!String(typeof searchText==='undefined'?'':searchText||'').trim()){currentPage=1;currentList=currentProducts();render(currentList);}}
-  function loadPopularHome(){if(popularLoadInFlight)return popularLoadInFlight;try{const cached=JSON.parse(localStorage.getItem('yllPopularGroupsV1')||'null');if(cached&&Array.isArray(cached.items)&&Date.now()-Number(cached.ts||0)<30*60*1000)applyPopularGroups(cached.items);}catch(e){}popularLoadInFlight=timeout(apiCall('getPopularProductGroups',[30,100]),15000,'Popular products').then(rows=>{rows=Array.isArray(rows)?rows:[];applyPopularGroups(rows);try{localStorage.setItem('yllPopularGroupsV1',JSON.stringify({ts:Date.now(),items:rows}));}catch(e){}return rows;}).catch(()=>[]).finally(()=>{popularLoadInFlight=null;});return popularLoadInFlight;}
+  function applyPopularGroups(rows){const map={};(rows||[]).forEach((r,i)=>{const key=normalizeText(r.group).toUpperCase();if(key)map[key]={rank:i+1,orders:Number(r.orderCount)||0};});window.__popularRankByGroup=map;}
+  let popularLoadedAt=0;
+  function loadPopularHome(){
+    if(popularLoadInFlight)return popularLoadInFlight;
+    if(Date.now()-popularLoadedAt<30*60*1000)return Promise.resolve();
+    try{const cached=JSON.parse(localStorage.getItem('yllPopularGroupsV1')||'null');if(cached&&Array.isArray(cached.items)&&Date.now()-Number(cached.ts||0)<30*60*1000){applyPopularGroups(cached.items);popularLoadedAt=Number(cached.ts);return Promise.resolve();}}catch(e){}
+    popularLoadInFlight=timeout(apiCall('getPopularProductGroups',[30,100]),15000,'Popular products').then(rows=>{rows=Array.isArray(rows)?rows:[];applyPopularGroups(rows);popularLoadedAt=Date.now();try{localStorage.setItem('yllPopularGroupsV1',JSON.stringify({ts:popularLoadedAt,items:rows}));}catch(e){}return rows;}).catch(()=>[]).finally(()=>{popularLoadInFlight=null;});return popularLoadInFlight;
+  }
 
   let productLoadInFlight=null;
   let productLoadSequence=0;
   window.load = function(force=false){
-    if(productLoadInFlight && !force)return productLoadInFlight;
+    if(productLoadInFlight){
+      if(!force)return productLoadInFlight;
+      if(!window.__queuedProductRefresh)window.__queuedProductRefresh=productLoadInFlight.then(()=>{window.__queuedProductRefresh=null;return window.load(true);});
+      return window.__queuedProductRefresh;
+    }
     // A forced refresh must not put the pre-sale cache back on screen while
     // the authoritative Products request is still running.
     const hadCache=force ? currentProducts().length>0 : loadProductsCache();
     const requestSequence=++productLoadSequence;
-    loadPopularHome();
+    if(!force)loadPopularHome();
     if(!hadCache){
       const box=$('list');
       if(box)box.innerHTML='<div class="empty">'+(lang()==='zh'?'\u6b63\u5728\u8f7d\u5165\u5546\u54c1...':'Loading products...')+'</div>';
@@ -6716,12 +6726,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     scheduleTopStatsRefresh(900);
     setTimeout(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 1200);
     setTimeout(()=>{ try{ resumePendingOrderChecks(); }catch(e){} }, 1600);
-    setInterval(()=>{ try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
+    setInterval(()=>{if(backgroundSyncPaused())return;try{ window.syncOfflineOrders(); }catch(e){} }, 60000);
     setTimeout(()=>{try{checkPosSyncRevision();}catch(e){}},2200);
     setInterval(()=>{try{checkPosSyncRevision();}catch(e){}},8000);
     setInterval(()=>{
-      if(document.hidden||!navigator.onLine||window.isCheckingOut||Date.now()<Number(window.__localCheckoutSettledUntil||0))return;
-      Promise.resolve(window.load(true)).catch(()=>{});
+      refreshCatalogueInBackground();
     },60000);
     // Keep different counters in sync without making every device constantly
     // reload the full catalogue. Totals are light; products refresh once/minute.
@@ -6736,8 +6745,14 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   let foregroundWorkTimer=null;
   let lastForegroundProductRefresh=0;
   let lastPosSyncRevision=null,posSyncRevisionBusy=false;
+  let backgroundCatalogueAt=0;
+  function backgroundSyncPaused(){return document.hidden||!navigator.onLine||window.__bossLoginInFlight||window.isCheckingOut||!!document.querySelector('#bossLoginBox.active')||Date.now()<Number(window.__localCheckoutSettledUntil||0);}
+  function refreshCatalogueInBackground(){
+    if(backgroundSyncPaused()||productLoadInFlight||Date.now()-backgroundCatalogueAt<45000)return;
+    backgroundCatalogueAt=Date.now();Promise.resolve(window.load(true)).catch(()=>{});
+  }
   async function checkPosSyncRevision(){
-    if(document.hidden||!navigator.onLine||posSyncRevisionBusy||Date.now()<Number(window.__localCheckoutSettledUntil||0))return;
+    if(backgroundSyncPaused()||posSyncRevisionBusy)return;
     posSyncRevisionBusy=true;
     try{
       const r=await timeout(apiCall('getPosSyncRevision',[]),6500,'POS sync revision');
@@ -6747,13 +6762,14 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
         lastPosSyncRevision=revision;
         try{localStorage.removeItem('yllTopStatsCacheV1');}catch(e){}
         try{await window.loadTodayStats();}catch(e){}
-        setTimeout(()=>{try{Promise.resolve(window.load(true)).catch(()=>{});}catch(e){}},700);
+        setTimeout(refreshCatalogueInBackground,700);
       }
     }catch(e){}finally{posSyncRevisionBusy=false;}
   }
   function scheduleForegroundWork(delay){
     clearTimeout(foregroundWorkTimer);
     foregroundWorkTimer=setTimeout(()=>{
+      if(backgroundSyncPaused())return;
       try{ window.syncOfflineOrders(); }catch(e){}
       try{ resumePendingOrderChecks(); }catch(e){}
       setTimeout(()=>{try{checkPosSyncRevision();}catch(e){}},300);
@@ -6761,7 +6777,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
         lastForegroundProductRefresh=Date.now();
         // Do not launch the heavier catalogue request together with stats,
         // offline confirmation and parcel reminder on Apps Script cold start.
-        setTimeout(()=>{try{Promise.resolve(window.load(true)).catch(()=>{});}catch(e){}},2500);
+        setTimeout(refreshCatalogueInBackground,2500);
       }
       try{parcelReminderCheckedAt=0;scheduleParcelClosingReminderCheck();}catch(e){}
       try{ recoverViewportAndInteraction(); }catch(e){}
@@ -7123,7 +7139,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     });
   }
   protectSecretEntries();
-  new MutationObserver(protectSecretEntries).observe(document.body,{childList:true,subtree:true});
+  const secretSelector='#bossId,#bossPassword,#discountBossId,#discountBossPassword,#refundBossId,#refundBossPassword,#shopeeStockBossId,#shopeeStockBossPassword';
+  new MutationObserver(records=>{
+    // Catalogue/stat text changes must not rescan every authorization field.
+    if(records.some(record=>Array.from(record.addedNodes).some(node=>node.nodeType===1&&(node.matches(secretSelector)||node.querySelector(secretSelector)))))protectSecretEntries();
+  }).observe(document.body,{childList:true,subtree:true});
   const V2BossAuth={
     flows:[
       {id:'bossId',password:'bossPassword',submit:'bossLoginBtn'},
