@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-180-REFUND-RED-LABEL-NOT-SALES-CARD-20260901 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-181-MULTI-ENTRANCE-CUMULATIVE-CHECKOUT-20260904 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2440,6 +2440,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       .boss-product-grid input,.boss-product-grid select{min-width:0!important;height:48px!important;min-height:48px!important;box-sizing:border-box!important}
       .boss-product-grid input[type=file]{height:auto!important;min-height:48px!important;padding:8px 10px!important;line-height:1.25!important}
       .boss-product-grid .wide{grid-column:1/-1!important}
+      #bossProductBox #bossReceiveLooseKgLabel[hidden],#bossProductBox #bossReceivePackSizeLabel[style*="display: none"],#bossProductBox #bossReceiveLooseKgLabel[style*="display:none"]{display:none!important}
+      #bossQuickKgButton{display:none!important}
+      .new-entrances{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .new-entrances label{display:flex;align-items:center;gap:8px;min-height:48px;border:1px solid #475569;border-radius:10px;padding:8px}
+      #bossProductBox .new-entrances input{width:24px!important;height:24px!important;min-height:24px!important;margin:0!important}
       .boss-field{display:flex!important;flex-direction:column!important;gap:5px!important;min-width:0!important}
       .boss-field-label{font-size:12px!important;font-weight:800!important;line-height:1.15!important;color:#e5e7eb!important;opacity:.95!important}
       .boss-field.wide{grid-column:1/-1!important}
@@ -2879,7 +2884,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       detail.style.cssText='font-size:11px;color:#9ca3af;line-height:1.25;margin-top:2px;font-weight:700';
       b.parentElement.appendChild(detail);
     }
-    if(detail)detail.innerHTML=html;
+    if(detail&&detail.innerHTML!==html)detail.innerHTML=html;
   }
 
   function cleanMessage(msg){
@@ -2929,7 +2934,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     return map[s] || s || tr('notice');
   }
 
-  function applyProducts(list, fromCache=false){
+  function applyProducts(list, fromCache=false, deferRender=false){
     const savedMain=window.__posMainCategory||'',savedSub=window.__posSubCategory||'ALL',savedPage=Math.max(1,Number(currentPage)||1),savedSearch=String(typeof searchText==='undefined'?'':searchText||'').trim();
     list=(list||[]).filter(p=>p && p.name && Number(p.price)>0 && p.active!==false).map(p=>Object.assign({}, p, {
       code: normalizeText(p.code),
@@ -2951,6 +2956,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     };
     const productCategoryPriority=p=>/CHIKEN|CHICKEN|鸡/.test(String(p.category).toUpperCase())?0:/DOG|狗/.test(String(p.category).toUpperCase())?1:/CAT|猫/.test(String(p.category).toUpperCase())?2:/FISH|鱼/.test(String(p.category).toUpperCase())?3:/BIRD|鸟/.test(String(p.category).toUpperCase())?4:20;
     list.sort((a,b)=>productCategoryPriority(a)-productCategoryPriority(b) || normalizeCategoryName(a.category).localeCompare(normalizeCategoryName(b.category)) || brandKey(a).localeCompare(brandKey(b)) || String(a.name).localeCompare(String(b.name)));
+    const visibleSignature=rows=>JSON.stringify((rows||[]).map(p=>[p.code,p.name,p.price,p.stock,p.sharedStock,p.category,p.type,p.appliesTo,p.image,p.productGroup,p.variant]));
+    if(Date.now()<Number(window.__localCheckoutSettledUntil||0)&&visibleSignature(list)===visibleSignature(currentProducts()))deferRender=true;
     try{ products=list; window.products=list; }catch(e){
       window.products=list;
     }
@@ -2966,10 +2973,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       currentPage=1;
     }
     window.currentList=currentList;window.currentPage=currentPage;
-    renderCategories();
+    if(!deferRender)renderCategories();
     if(savedMain){const selected=document.querySelector(`.maincat-btn[data-main-key="${savedMain}"]`);if(selected)setActiveCategory(selected);renderSubCategories(savedMain);if(savedSub&&savedSub!=='ALL'){const sub=[...document.querySelectorAll('#subMenuList .cat-btn')].find(x=>String(x.getAttribute('onclick')||'').includes(JSON.stringify(savedSub)));if(sub){document.querySelectorAll('#subMenuList .cat-btn').forEach(x=>x.classList.remove('active'));sub.classList.add('active');}}}
-    render(currentList);
-    setStaticText();
+    if(!deferRender)render(currentList);
+    if(!deferRender)setStaticText();
     const items=$('todayItems'); if(items)items.textContent=list.length||0;
     if(!fromCache){
       try{ localStorage.setItem('yllProductsCacheV1', JSON.stringify({ts:Date.now(), items:list})); }catch(e){}
@@ -2989,7 +2996,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
 
   window.__popularRankByGroup=window.__popularRankByGroup||{};
   let popularLoadInFlight=null;
-  function applyPopularGroups(rows){const map={};(rows||[]).forEach((r,i)=>{const key=normalizeText(r.group).toUpperCase();if(key)map[key]={rank:i+1,orders:Number(r.orderCount)||0};});window.__popularRankByGroup=map;if(!window.__posMainCategory&&!String(typeof searchText==='undefined'?'':searchText||'').trim()){currentPage=1;currentList=currentProducts();render(currentList);}}
+  function applyPopularGroups(rows){const map={};(rows||[]).forEach((r,i)=>{const key=normalizeText(r.group).toUpperCase();if(key)map[key]={rank:i+1,orders:Number(r.orderCount)||0};});window.__popularRankByGroup=map;if(Date.now()>=Number(window.__localCheckoutSettledUntil||0)&&!window.__posMainCategory&&!String(typeof searchText==='undefined'?'':searchText||'').trim()){currentPage=1;currentList=currentProducts();render(currentList);}}
   function loadPopularHome(){if(popularLoadInFlight)return popularLoadInFlight;try{const cached=JSON.parse(localStorage.getItem('yllPopularGroupsV1')||'null');if(cached&&Array.isArray(cached.items)&&Date.now()-Number(cached.ts||0)<30*60*1000)applyPopularGroups(cached.items);}catch(e){}popularLoadInFlight=timeout(apiCall('getPopularProductGroups',[30,100]),15000,'Popular products').then(rows=>{rows=Array.isArray(rows)?rows:[];applyPopularGroups(rows);try{localStorage.setItem('yllPopularGroupsV1',JSON.stringify({ts:Date.now(),items:rows}));}catch(e){}return rows;}).catch(()=>[]).finally(()=>{popularLoadInFlight=null;});return popularLoadInFlight;}
 
   let productLoadInFlight=null;
@@ -3057,9 +3064,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       // Apps Script may briefly return the snapshot from immediately before a
       // completed checkout.  During that short propagation window the POS must
       // never jump backwards from order 6 to an older order count/total.
-      const optimisticAt=Number(cached&&cached.optimisticAt||0),optimisticFresh=optimisticAt&&Date.now()-optimisticAt<20000;
-      const cachedOrders=num(cached&&cached.today&&(cached.today.orders||cached.today.count)||0),serverOrders=num(snapshot.today&&(snapshot.today.orders||snapshot.today.count)||0);
-      if(optimisticFresh&&cachedOrders>serverOrders){snapshot.today=cached.today;snapshot.drawer=cached.drawer||snapshot.drawer;snapshot.optimisticAt=optimisticAt;}
+      const latest=loadTopStatsCache()||window.__lastTopStatsSnapshot||cached;
+      const optimisticAt=Number(latest&&latest.optimisticAt||0),optimisticFresh=optimisticAt&&Date.now()-optimisticAt<20000;
+      const cachedOrders=num(latest&&latest.today&&(latest.today.orders||latest.today.count)||0),serverOrders=num(snapshot.today&&(snapshot.today.orders||snapshot.today.count)||0);
+      if(optimisticFresh&&cachedOrders>serverOrders){snapshot.today=latest.today;snapshot.drawer=latest.drawer||snapshot.drawer;snapshot.optimisticAt=optimisticAt;}
       if(requestSequence!==topStatsRequestSequence)return;
       saveTopStatsCache(snapshot);
       applyTopStats(snapshot);
@@ -3104,18 +3112,26 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const total=moneyNum(Math.max(0,subtotal-num(discountAmount||0)));
       const qty=cartRows.reduce((sum,i)=>sum+num(i.qty),0);
       const method=String(payment||'').toLowerCase();
-      const snap=loadTopStatsCache() || {today:{},drawer:{},productCount:(currentProducts()||[]).length || (window.products||[]).length || 0};
+      const baseline=loadTopStatsCache() || (window.__lastTopStatsSnapshot&&window.__lastTopStatsSnapshot.day===todayKey()?window.__lastTopStatsSnapshot:null);
+      // Without a daily baseline, wait for the server, never show only this order.
+      if(!baseline)return;
+      const snap=JSON.parse(JSON.stringify(baseline));
+      ++topStatsRequestSequence;
       snap.today=snap.today||{};
       snap.drawer=snap.drawer||{};
       snap.today.total=moneyNum(num(snap.today.total||0)+total);
+      snap.today.netSales=moneyNum(snap.today.total-num(snap.today.refund||0));
       snap.today.orders=num(snap.today.orders||snap.today.count||0)+1;
       snap.today.count=snap.today.orders;
       if(method==='cash'){
         snap.today.Cash=moneyNum(num(snap.today.Cash||0)+total);
         snap.drawer.cashDrawer=moneyNum(num(snap.drawer.cashDrawer||0)+total);
       }else if(method==='mixed'){
-        const cashPart=moneyNum(Math.max(0,num(paidAmount||0)-num(changeAmount||0)));
+        const cashPart=moneyNum(Math.max(0,num((window.lastMixedBreakdown||{}).cash||0)));
         snap.today.Cash=moneyNum(num(snap.today.Cash||0)+cashPart);
+        const split=window.lastMixedBreakdown||{};
+        snap.today.MBB_QR=moneyNum(num(snap.today.MBB_QR||0)+num(split.qr||0));
+        snap.today.Transfer=moneyNum(num(snap.today.Transfer||0)+num(split.transfer||0));
         snap.drawer.cashDrawer=moneyNum(num(snap.drawer.cashDrawer||0)+cashPart);
       }else if(method==='mbb_qr' || method==='qr'){
         snap.today.MBB_QR=moneyNum(num(snap.today.MBB_QR||0)+total);
@@ -3127,7 +3143,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       snap.at=Date.now();
       snap.optimisticAt=Date.now();
       saveTopStatsCache(snap);
-      applyTopStats(snap);
+      applyTopStats(snap,true);
     }catch(e){ console.warn('optimistic stats failed', e); }
   }
   function readQueue(name){
@@ -3267,14 +3283,31 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     state.methods[key]={value:0,positiveAt:old.positiveAt||0};
     return 0;
   }
-  function applyTopStats(snapshot){
+  function paintStatMoney(el,value,animate){
+    if(!el)return;
+    const target=moneyNum(value);
+    if(el.__moneyTarget===target)return;
+    const from=Number(String(el.textContent||'').replace(/[^0-9.-]/g,''))||0;
+    if(el.__moneyFrame)cancelAnimationFrame(el.__moneyFrame);
+    el.__moneyTarget=target;
+    if(!animate||window.matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=money(target);return;}
+    const start=performance.now();
+    const step=now=>{
+      const t=Math.min(1,(now-start)/850),eased=1-Math.pow(1-t,3);
+      el.textContent=money(from+(target-from)*eased);
+      if(t<1)el.__moneyFrame=requestAnimationFrame(step);else el.__moneyFrame=0;
+    };
+    el.__moneyFrame=requestAnimationFrame(step);
+  }
+  function applyTopStats(snapshot,animate=false){
     snapshot=snapshot||{};
+    window.__lastTopStatsSnapshot=JSON.parse(JSON.stringify({...snapshot,day:todayKey()}));
     const today=snapshot.today||{}, drawer=snapshot.drawer||{};
     const off=offlineSummary();
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
       const refundToday=num(today.refund||0),cashRefundToday=num(today.cashRefund!==undefined?today.cashRefund:today.refund||0);
       const netToday=today.netSales!==undefined?num(today.netSales):num(today.total||0)-refundToday;
-      if(sales)sales.textContent=money(netToday+off.total);
+      paintStatMoney(sales,netToday+off.total,animate);
       const syncNote=off.count?` | ${tr('offlinePending')}`:'';
       const receiptParts=[];
       const displayCash=stableTodayPayment(num(today.Cash||0)+off.cash,'cash');
@@ -3290,7 +3323,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const otherLine=otherTotal>0?`<span class="receipt-other">${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' | ')||money(otherTotal)}</span>`:'';
       const refundLine=cashRefundToday>0?`<span class="receipt-refund">${lang()==='zh'?'今日实际现金退款':'Cash refunded today'} -${money(cashRefundToday)}${refundToday!==cashRefundToday?(lang()==='zh'?'（销售归回原订单日期）':' (sales assigned to original order date)'):''}</span>`:'';
       setStatDetail('todaySales', `<span class="receipt-breakdown">${receiptParts.join('')}${syncNote?`<span>${syncNote.replace(/^\s*\|\s*/,'')}</span>`:''}</span>${otherLine}${refundLine}`);
-      if(cash)cash.textContent=money(num(drawer.cashDrawer||0)+off.cash);
+      paintStatMoney(cash,num(drawer.cashDrawer||0)+off.cash,animate);
       const cashNotes=[`${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`];
       if(cashRefundToday>0)cashNotes.push(`${lang()==='zh'?'今日现金退款':'Cash refunds today'} -${money(cashRefundToday)}`);
       setStatDetail('todayCash',cashNotes.join(' | '));
@@ -3977,8 +4010,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const intro=document.createElement('div');intro.id='bossWorkIntro';intro.className='boss-work-intro';intro.innerHTML=lang()==='zh'?'<div>请先从左边选择要做的工作<br><small>一次只显示一个表格。一次性旧资料整理已经完成，相关危险按钮已移除。</small></div>':'<div>Choose a task on the left<br><small>Only one form is shown at a time. One-time legacy cleanup is complete and its buttons were removed.</small></div>';
     const stockHub=document.createElement('div');stockHub.id='bossWorkStocktake';stockHub.className='boss-work-panel';
     const createHub=document.createElement('div');createHub.id='bossWorkCreate';createHub.className='boss-work-panel';createHub.innerHTML=`<div class="boss-subchoice"><button type="button" onclick="bossChooseProductSubWork('ordinaryNew')">${lang()==='zh'?'建立普通商品':'Create ordinary product'}</button><button type="button" onclick="bossChooseProductSubWork('looseNew')">${lang()==='zh'?'建立整套散卖商品':'Create loose-sale series'}</button></div><div id="bossCreateChoiceHint" class="boss-edit-prompt">${lang()==='zh'?'请选择要建立哪一种新商品':'Choose the kind of product to create'}</div>`;
-    const ordinaryNew=document.createElement('div');ordinaryNew.id='bossWorkOrdinaryNew';ordinaryNew.className='boss-work-panel';ordinaryNew.innerHTML=`<div class="boss-product-grid"><div class="wide boss-notice">${lang()==='zh'?'普通商品只按“件”管理库存。需要 40KG／1KG／RM1／RM0.10 的商品，请返回选择“建立整套散卖商品”。':'Ordinary products use unit stock only. For 40KG / 1KG / RM1 / RM0.10, use Create loose-sale series.'}</div><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'入口':'Entrance'}</span><select id="bossNewEntrance">${bossEntranceOptions().map(x=>`<option value="${x[0]}">${esc(x[1])}</option>`).join('')}</select></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'入口内分类':'Category'}</span><select id="bossNewType">${bossProductTypeOptionsHtml()}</select></label><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'商品名称':'Product name'}</span><input id="bossNewName"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'售卖价':'Selling price'}</span><input id="bossNewPrice" type="number" min="0" step="0.01"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'开始库存（件）':'Opening stock (units)'}</span><input id="bossNewQty" type="number" min="0" step="1" value="0"></label><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'总进货成本（可不填）':'Total purchase cost (optional)'}</span><input id="bossNewTotalCost" type="number" min="0" step="0.01"></label><button type="button" class="green wide" onclick="bossCreateOrdinaryProduct()">${lang()==='zh'?'建立普通商品':'Create ordinary product'}</button></div>`;
+    const ordinaryNew=document.createElement('div');ordinaryNew.id='bossWorkOrdinaryNew';ordinaryNew.className='boss-work-panel';ordinaryNew.innerHTML=`<div class="boss-product-grid"><div class="wide boss-notice">${lang()==='zh'?'普通商品只按“件”管理库存。需要 40KG／1KG／RM1／RM0.10 的商品，请返回选择“建立整套散卖商品”。':'Ordinary products use unit stock only. For 40KG / 1KG / RM1 / RM0.10, use Create loose-sale series.'}</div><div class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'入口（可以多选）':'Entrances (select multiple)'}</span><div id="bossNewEntrance" class="new-entrances">${bossEntranceOptions().map(x=>`<label><input type="checkbox" value="${x[0]}" onchange="bossFillNewTypes()">${esc(x[1])}</label>`).join('')}</div></div><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'入口内分类':'Category'}</span><select id="bossNewType">${bossProductTypeOptionsHtml()}</select></label><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'商品名称':'Product name'}</span><input id="bossNewName"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'售卖价':'Selling price'}</span><input id="bossNewPrice" type="number" min="0" step="0.01"></label><label class="boss-field"><span class="boss-field-label">${lang()==='zh'?'开始库存（件）':'Opening stock (units)'}</span><input id="bossNewQty" type="number" min="0" step="1" value="0"></label><label class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'总进货成本（可不填）':'Total purchase cost (optional)'}</span><input id="bossNewTotalCost" type="number" min="0" step="0.01"></label><button type="button" class="green wide" onclick="bossCreateOrdinaryProduct()">${lang()==='zh'?'建立普通商品':'Create ordinary product'}</button></div>`;
     right.append(intro,editor,stockHub,createHub,ordinaryNew);
+    window.bossFillNewTypes();
     [receive,series,loose,stocktake].forEach(x=>{if(!x)return;x.open=true;x.classList.add('boss-work-panel');right.appendChild(x);});
     if(receive)receive.id='bossWorkReceive';if(series)series.id='bossWorkLooseNew';if(loose)loose.id='bossWorkLooseStock';if(stocktake)stocktake.id='bossWorkNormalStock';
     bossSetProductEditorVisible(false);
@@ -3999,7 +4033,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const id={normalStock:'bossWorkNormalStock',looseStock:'bossWorkNormalStock',ordinaryNew:'bossWorkOrdinaryNew',looseNew:'bossWorkLooseNew'}[kind],box=$(id);if(box)box.classList.add('active');
   };
 
-  window.bossCreateOrdinaryProduct=async function(){const name=normalizeText(($('bossNewName')||{}).value),qty=Number(($('bossNewQty')||{}).value)||0,total=Number(($('bossNewTotalCost')||{}).value)||0,price=Number(($('bossNewPrice')||{}).value),entrance=normalizeText(($('bossNewEntrance')||{}).value)||'GENERAL',type=normalizeText(($('bossNewType')||{}).value)||'OTHER';if(!name||!(price>0)){showAppAlert(lang()==='zh'?'请填写商品名称和售卖价。':'Enter product name and selling price.',tr('productEditor'));return;}if(/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test(name)){showAppAlert(lang()==='zh'?'这属于散卖规格，请使用“建立整套散卖商品”，不能单独建立。':'This is a loose-sale variant. Create the complete loose-sale series instead.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在建立商品...':'Creating product...');try{const out=await timeout(apiCall('receiveProductStock',[{name,qty,cost:qty>0?total/qty:0,price,category:receiveMainCategory(entrance),type,appliesTo:entrance,createOnly:true}]),45000,'Create product');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert((lang()==='zh'?'普通商品已建立，库存按件计算。':'Ordinary product created with unit stock.')+bossMarginAdvice(price,Number(out&&out.averageCost)||0),tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}};
+  window.bossCreateOrdinaryProduct=async function(){const name=normalizeText(($('bossNewName')||{}).value),qty=Number(($('bossNewQty')||{}).value)||0,total=Number(($('bossNewTotalCost')||{}).value)||0,price=Number(($('bossNewPrice')||{}).value),entrance=Array.from(document.querySelectorAll('#bossNewEntrance input:checked')).map(x=>x.value).join(','),type=normalizeText(($('bossNewType')||{}).value);if(!entrance||!type){showAppAlert(lang()==='zh'?'请选择至少一个入口和入口内分类。':'Select at least one entrance and a category.',tr('productEditor'));return;}if(!name||!(price>0)){showAppAlert(lang()==='zh'?'请填写商品名称和售卖价。':'Enter product name and selling price.',tr('productEditor'));return;}if(/\(\s*RM\s*(?:1|0\.10)\s*\)/i.test(name)){showAppAlert(lang()==='zh'?'这属于散卖规格，请使用“建立整套散卖商品”，不能单独建立。':'This is a loose-sale variant. Create the complete loose-sale series instead.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在建立商品...':'Creating product...');try{const out=await timeout(apiCall('receiveProductStock',[{name,qty,cost:qty>0?total/qty:0,price,category:receiveMainCategory(entrance.split(',')[0]),type,appliesTo:entrance,createOnly:true}]),45000,'Create product');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert((lang()==='zh'?'普通商品已建立，库存按件计算。':'Ordinary product created with unit stock.')+bossMarginAdvice(price,Number(out&&out.averageCost)||0),tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}};
 
   function resetBossProductWorkflow(){
     document.querySelectorAll('#bossProductBox .boss-work-menu button').forEach(x=>x.classList.remove('active'));
@@ -4232,6 +4266,15 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const pair=labels[value]||[value,value]; return lang()==='zh'?pair[0]:pair[1];
   }
   function bossFixedProductTypes(){return ['PROMOTION','FOOD','DRY FOOD','WET FOOD','CANNED FOOD','TREAT','MILK','MEDICINE','DEWORMING','SUPPLEMENT','HYGIENE','SHAMPOO','FLEA & TICK','GROOMING','LITTER','LITTER BOX','TOY','ACCESSORY','FEEDER / DRINKER','CAGE / BEDDING','AQUARIUM','MINERAL WATER','PACKAGED WATER','LARGE BOTTLE','SMALL BOTTLE','SOFT DRINK','OTHER'];}
+  window.bossFillNewTypes=function(){
+    const el=$('bossNewType');if(!el)return;
+    const old=el.value,selected=Array.from(document.querySelectorAll('#bossNewEntrance input:checked')).map(x=>x.value);
+    const rows=bossProductsCache&&bossProductsCache.length?bossProductsCache:currentProducts(),counts={};
+    (rows||[]).filter(p=>p.active!==false&&selected.some(key=>bossFacetMains(p).includes(key))).forEach(p=>{const key=bossFacetType(p);counts[key]=(counts[key]||0)+1;});
+    const types=[...new Set(bossFixedProductTypes().concat(Object.keys(counts)))].sort((a,b)=>(counts[b]||0)-(counts[a]||0));
+    el.innerHTML='<option value="">'+(lang()==='zh'?'请选择入口内分类':'Select category')+'</option>'+types.map(v=>`<option value="${esc(v)}">${esc(bossTypeLabel(v))} (${counts[v]||0})</option>`).join('');
+    if(types.includes(old))el.value=old;
+  };
   function bossProductTypeOptionsHtml(){return bossFixedProductTypes().map(v=>`<option value="${esc(v)}">${esc(bossTypeLabel(v))}</option>`).join('');}
 
   function fillBossProductTypes(){
@@ -5399,7 +5442,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
           });
         }else p.stock=Math.max(0,Number(p.stock||0)-Number(it.qty||0));
       });
-      applyProducts(list,false);
+      applyProducts(list,false,true);
     }catch(e){ console.warn('local stock update failed', e); }
   }
   function finishSavedOrder(orderId, sendDiscount, checkoutKey, clientId){
@@ -5421,7 +5464,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const stockWarnings=checkoutStockStatus().short.map(x=>x.name);
     optimisticTopStatsAfterOrder(window.lastCart, window.lastPayment, sendDiscount, window.lastPaid, window.lastChange);
     window.__localCheckoutSettledUntil=Date.now()+12000;
-    ['todaySales','todayCash','todayOrders'].forEach(id=>{const el=$(id),card=el&&el.closest('.stat');if(card){card.classList.remove('stat-settle');void card.offsetWidth;card.classList.add('stat-settle');}});
+
     reduceLocalStock(window.lastCart);
     clearCartState();
     // Prevent the touch-up from the completed payment flow falling through
