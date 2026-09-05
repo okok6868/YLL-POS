@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: IPAD-ONE-TAP-RETURN-20260905 -->
+<!-- YLL POS UNIQUE LATEST: IPAD-STAGED-RETURN-20260905 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -6983,7 +6983,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const el=document.activeElement,tag=String((el&&el.tagName)||'').toLowerCase();
     return tag==='input'||tag==='textarea'||tag==='select'||!!(el&&el.isContentEditable);
   }
-  let ipadCompositorTimer=null,lastIpadCompositorAt=0;
+  let ipadCompositorTimer=null,ipadReturnTimer=null,lastIpadCompositorAt=0,ipadWasHidden=false;
   function applyIpadScreenAxis(){
     const sw=Number((window.screen||{}).width)||0,sh=Number((window.screen||{}).height)||0;
     const angle=Math.abs(Number(window.orientation!=null?window.orientation:((screen.orientation||{}).angle||0)))%180;
@@ -7015,14 +7015,38 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(immediate===true){performIpadCompositorRebuild();return;}
     ipadCompositorTimer=setTimeout(performIpadCompositorRebuild,350);
   }
+  function ipadRecoveryNotice(show){
+    let notice=document.getElementById('ipadRecoveryNotice');
+    if(!show){if(notice)notice.remove();return;}
+    if(notice)return;
+    notice=document.createElement('div');notice.id='ipadRecoveryNotice';
+    notice.textContent=finalLang()==='zh'?'正在恢复 iPad 画面与触控…':'Restoring iPad screen and touch…';
+    notice.style.cssText='position:fixed;inset:0;z-index:30000;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,.82);color:#fff;font-size:20px;font-weight:900;pointer-events:auto';
+    document.body.appendChild(notice);
+  }
+  function recoverIpadAfterAppReturn(){
+    if(!iPadDevice||ipadCriticalWorkActive())return;
+    ipadWasHidden=false;
+    if(ipadReturnTimer)return;
+    clearTimeout(ipadCompositorTimer);ipadRecoveryNotice(true);
+    // This iPad restores the foreground viewport in stages: the user's real
+    // screenshots show width first, then height/touch roughly three seconds
+    // later. Rebuilding during the intermediate state preserves bad geometry.
+    ipadReturnTimer=setTimeout(()=>{
+      ipadReturnTimer=null;performIpadCompositorRebuild();
+      requestAnimationFrame(()=>requestAnimationFrame(()=>ipadRecoveryNotice(false)));
+    },2600);
+  }
   if(iPadDevice){
     applyIpadScreenAxis();
-    rebuildIpadCompositor(true);
+    // A manual refresh can boot while WebKit still exposes the intermediate
+    // screenshot viewport. Recheck once after initial layout has settled.
+    rebuildIpadCompositor(false);
     window.addEventListener('resize',()=>rebuildIpadCompositor(false),{passive:true});
     if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>rebuildIpadCompositor(false),{passive:true});
-    window.addEventListener('focus',()=>rebuildIpadCompositor(true),{passive:true});
-    window.addEventListener('pageshow',()=>rebuildIpadCompositor(true),{passive:true});
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)rebuildIpadCompositor(true);},{passive:true});
+    window.addEventListener('focus',()=>{if(ipadWasHidden)recoverIpadAfterAppReturn();},{passive:true});
+    window.addEventListener('pageshow',e=>{if(e.persisted)recoverIpadAfterAppReturn();},{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){ipadWasHidden=true;clearTimeout(ipadCompositorTimer);}else if(ipadWasHidden)recoverIpadAfterAppReturn();},{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
   window.addEventListener('orientationchange',()=>setTimeout(()=>{if(iPadDevice)rebuildIpadCompositor(true);else recoverViewportAndInteraction();},700),{passive:true});
 
