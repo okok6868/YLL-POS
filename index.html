@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-187-PARCEL-IPAD-STABILITY-20260905 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-188-IPAD-VIEWPORT-WIDTH-20260905 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -24,7 +24,7 @@ input::-ms-reveal,input::-ms-clear{display:none!important}
 /* One final iPad viewport owner. Earlier compatibility rules remain for other
    devices, while iPad uses a stable pixel height refreshed after rotation or
    app return instead of stacking reloads and transient 100dvh values. */
-html.ipad-pos,html.ipad-pos body{height:var(--yll-ipad-height,100%)!important;min-height:var(--yll-ipad-height,100%)!important;max-height:var(--yll-ipad-height,100%)!important}
+html.ipad-pos,html.ipad-pos body{width:var(--yll-ipad-width,100%)!important;min-width:var(--yll-ipad-width,100%)!important;max-width:var(--yll-ipad-width,100%)!important;height:var(--yll-ipad-height,100%)!important;min-height:var(--yll-ipad-height,100%)!important;max-height:var(--yll-ipad-height,100%)!important}
 html.ipad-pos body{position:relative!important;inset:auto!important}
 html.ipad-pos .layout{height:calc(var(--yll-ipad-height,100vh) - 112px)!important;max-height:calc(var(--yll-ipad-height,100vh) - 112px)!important}
 html.ipad-pos .modal{height:var(--yll-ipad-height,100vh)!important;max-height:var(--yll-ipad-height,100vh)!important}
@@ -6983,30 +6983,41 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const el=document.activeElement,tag=String((el&&el.tagName)||'').toLowerCase();
     return tag==='input'||tag==='textarea'||tag==='select'||!!(el&&el.isContentEditable);
   }
-  let ipadViewportTimer=null,ipadStableHeight=Math.max(Number(window.innerHeight)||0,Number((window.visualViewport||{}).height)||0);
-  function settleIpadViewport(){
+  let ipadViewportTimer=null,ipadStableWidth=Math.max(Number(window.innerWidth)||0,Number((window.visualViewport||{}).width)||0),ipadStableHeight=Math.max(Number(window.innerHeight)||0,Number((window.visualViewport||{}).height)||0);
+  function reapplyIpadViewportMeta(){
+    const meta=document.querySelector('meta[name="viewport"]');if(!meta)return;
+    const wanted='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+    // Setting the same value does not always invalidate WebKit's stale layout
+    // viewport, so briefly use the minimal form before restoring our policy.
+    if(meta.content!==wanted)meta.content=wanted;
+    else{meta.content='width=device-width, viewport-fit=cover';void document.documentElement.offsetWidth;meta.content=wanted;}
+  }
+  function settleIpadViewport(resetMeta){
     if(!iPadDevice||ipadCriticalWorkActive()||editableIpadTargetActive())return;
     clearTimeout(ipadViewportTimer);
     ipadViewportTimer=setTimeout(()=>{
-      const innerH=Number(window.innerHeight)||0,visualH=Number((window.visualViewport||{}).height)||0;
-      const candidate=Math.max(innerH,visualH);
-      // Ignore the short collapsed viewport emitted by screenshot/share. Use
-      // the new height only when it is plausible (including real rotation).
-      if(candidate>0&&(ipadStableHeight<=0||candidate>=ipadStableHeight*.72))ipadStableHeight=candidate;
+      if(resetMeta===true)reapplyIpadViewportMeta();
+      const innerW=Number(window.innerWidth)||0,innerH=Number(window.innerHeight)||0,visualW=Number((window.visualViewport||{}).width)||0,visualH=Number((window.visualViewport||{}).height)||0;
+      const candidateW=Math.max(innerW,visualW),candidateH=Math.max(innerH,visualH);
+      // Ignore the temporary half-width/short viewport emitted by screenshot.
+      if(candidateW>0&&(ipadStableWidth<=0||candidateW>=ipadStableWidth*.72))ipadStableWidth=candidateW;
+      if(candidateH>0&&(ipadStableHeight<=0||candidateH>=ipadStableHeight*.72))ipadStableHeight=candidateH;
+      if(ipadStableWidth>0)document.documentElement.style.setProperty('--yll-ipad-width',Math.round(ipadStableWidth)+'px');
       if(ipadStableHeight>0)document.documentElement.style.setProperty('--yll-ipad-height',Math.round(ipadStableHeight)+'px');
+      void document.documentElement.offsetWidth;
       try{window.scrollTo(0,0);}catch(e){}
       recoverViewportAndInteraction();
     },320);
   }
   if(iPadDevice){
-    settleIpadViewport();
-    window.addEventListener('resize',settleIpadViewport,{passive:true});
-    if(window.visualViewport)window.visualViewport.addEventListener('resize',settleIpadViewport,{passive:true});
-    window.addEventListener('focus',settleIpadViewport,{passive:true});
-    window.addEventListener('pageshow',settleIpadViewport,{passive:true});
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)settleIpadViewport();},{passive:true});
+    settleIpadViewport(true);
+    window.addEventListener('resize',()=>settleIpadViewport(false),{passive:true});
+    if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>settleIpadViewport(false),{passive:true});
+    window.addEventListener('focus',()=>settleIpadViewport(true),{passive:true});
+    window.addEventListener('pageshow',()=>{settleIpadViewport(true);setTimeout(()=>settleIpadViewport(false),900);},{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden){settleIpadViewport(true);setTimeout(()=>settleIpadViewport(false),900);}},{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
-  window.addEventListener('orientationchange',()=>setTimeout(()=>{if(iPadDevice){ipadStableHeight=0;settleIpadViewport();}else recoverViewportAndInteraction();},700),{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(()=>{if(iPadDevice){ipadStableWidth=0;ipadStableHeight=0;settleIpadViewport(true);}else recoverViewportAndInteraction();},700),{passive:true});
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
   const finalLang=()=>{try{return localStorage.getItem('yllLang')||'zh';}catch(e){return 'zh';}};
