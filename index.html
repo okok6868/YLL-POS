@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-188-IPAD-VIEWPORT-WIDTH-20260905 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-189-IPAD-FINAL-CSS-OWNER-20260905 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -2643,10 +2643,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       /* Do not fix the whole body to Safari's transient visual viewport. During
          a screenshot old iPad Safari can temporarily shrink that fixed layer,
          leaving a black, non-touchable strip until the app is foregrounded. */
-      html.ipad-pos,html.ipad-pos body{width:100%!important;max-width:none!important;min-width:0!important;height:100%!important;min-height:100%!important;max-height:none!important}
+      html.ipad-pos,html.ipad-pos body{width:var(--yll-ipad-width,100%)!important;max-width:var(--yll-ipad-width,100%)!important;min-width:var(--yll-ipad-width,100%)!important;height:var(--yll-ipad-height,100%)!important;min-height:var(--yll-ipad-height,100%)!important;max-height:var(--yll-ipad-height,100%)!important}
       html.ipad-pos body{position:relative!important;inset:auto!important;overflow:hidden!important}
       html.ipad-pos body>.header{display:block!important;width:100%!important;min-width:0!important;box-sizing:border-box!important}
-      html.ipad-pos body>.layout{display:grid!important;grid-template-columns:150px minmax(0,1fr) 310px!important;width:100%!important;min-width:0!important;height:calc(100dvh - 112px)!important;max-height:calc(100dvh - 112px)!important;overflow:hidden!important}
+      html.ipad-pos body>.layout{display:grid!important;grid-template-columns:150px minmax(0,1fr) 310px!important;width:var(--yll-ipad-width,100%)!important;min-width:0!important;height:calc(var(--yll-ipad-height,100vh) - 112px)!important;max-height:calc(var(--yll-ipad-height,100vh) - 112px)!important;overflow:hidden!important}
       html.ipad-pos body>.layout>.sidebar{display:block!important;width:auto!important;min-width:0!important;overflow-y:auto!important;border-right:1px solid var(--line)!important;border-bottom:0!important;padding:14px 10px 10px!important}
       html.ipad-pos body>.layout>.sidebar .cat-btn{width:100%!important;min-width:0!important;margin:0 0 8px!important}
       html.ipad-pos body>.layout>.main{min-height:0!important;height:auto!important;overflow:hidden!important}
@@ -2655,7 +2655,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       html.ipad-pos body>.layout>.main .products{max-height:none!important;grid-template-columns:repeat(auto-fill,minmax(122px,1fr))!important}
       html.ipad-pos body>.layout>.right{height:auto!important;min-width:0!important;border-left:1px solid var(--line)!important;border-top:0!important}
       html.ipad-pos .stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-      html.ipad-pos .modal{width:100%!important;max-width:100%!important;height:100%!important;max-height:100%!important}
+      html.ipad-pos .modal{width:var(--yll-ipad-width,100%)!important;max-width:var(--yll-ipad-width,100%)!important;height:var(--yll-ipad-height,100vh)!important;max-height:var(--yll-ipad-height,100vh)!important}
       html.ipad-pos #bossDashboard .boss-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;gap:16px!important;align-items:start!important}
       html.ipad-pos #bossDashboard .boss-tab-grid{position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;grid-template-columns:none!important}
       html.ipad-pos #bossDashboard .boss-tab-grid button{text-align:left!important;justify-content:flex-start!important}
