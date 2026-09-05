@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: SESSION-186-PARCEL-CONTROL-SIZES-20260904 -->
+<!-- YLL POS UNIQUE LATEST: SESSION-187-PARCEL-IPAD-STABILITY-20260905 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -21,6 +21,13 @@
 input::-ms-reveal,input::-ms-clear{display:none!important}
 #parcelBox .parcel-backfill-actions{grid-template-columns:minmax(0,1fr)!important}
 #parcelBox .parcel-backfill-actions>button{width:100%!important;height:52px!important;min-height:52px!important;padding:10px 16px!important;box-sizing:border-box!important;font-size:18px!important;line-height:1.3!important}
+/* One final iPad viewport owner. Earlier compatibility rules remain for other
+   devices, while iPad uses a stable pixel height refreshed after rotation or
+   app return instead of stacking reloads and transient 100dvh values. */
+html.ipad-pos,html.ipad-pos body{height:var(--yll-ipad-height,100%)!important;min-height:var(--yll-ipad-height,100%)!important;max-height:var(--yll-ipad-height,100%)!important}
+html.ipad-pos body{position:relative!important;inset:auto!important}
+html.ipad-pos .layout{height:calc(var(--yll-ipad-height,100vh) - 112px)!important;max-height:calc(var(--yll-ipad-height,100vh) - 112px)!important}
+html.ipad-pos .modal{height:var(--yll-ipad-height,100vh)!important;max-height:var(--yll-ipad-height,100vh)!important}
 /* Backfill provider picker: desktop and iPad touch target; no logic changes. */
 #parcelBox #parcelBackfillProvider{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;height:52px!important;min-height:52px!important;padding:0 14px!important;margin:6px 0 0!important;border-radius:10px!important;font-size:18px!important;line-height:normal!important}
 .receipt-refund{display:inline-flex;align-items:center;width:max-content;max-width:100%;margin-top:5px;padding:3px 8px;border:1px solid #ef4444;border-radius:999px;background:rgba(127,29,29,.22);color:#fecaca;font-weight:900;line-height:1.25}
@@ -5858,7 +5865,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     let providers=[],dashboard=null;
     try{
       const dashCache=window.__parcelEntryDashboardCache;
-      dashboard=dashCache&&Date.now()-dashCache.at<120000?dashCache.data:await apiCallTransient('getParcelEntryDashboard',[],30000,'Parcel entry dashboard');
+      dashboard=dashCache&&Date.now()-dashCache.at<15000?dashCache.data:await apiCallTransient('getParcelEntryDashboard',[],18000,'Parcel entry dashboard');
       if(dashboard)window.__parcelEntryDashboardCache={at:Date.now(),data:dashboard};
       providers=(dashboard&&dashboard.providers)||[];
       window.__parcelReminderProviders=providers;window.__parcelReminderProvidersAt=Date.now();
@@ -5944,7 +5951,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     try{await apiCallTransient('saveParcelEntries',[[entry]],55000,'Parcel save');saved=true;}
     catch(e){try{const check=await timeout(apiCall('getParcelSaveStatus',[clientId]),10000,'Check parcel save');saved=!!(check&&check.found);}catch(ignore){}}
     finally{parcelSubmitting=false;releaseStaleInteractionLock();}
-    if(saved){clearParcelEntrySummaryCache(provider);parcelReminderCheckedAt=0;scheduleTopStatsRefresh(250);scheduleParcelClosingReminderCheck();showToast(lang()==='zh'?'✅ 包裹记录已保存':'✅ Parcel record saved');}
+    if(saved){clearParcelEntrySummaryCache(provider);window.__parcelEntryDashboardCache=null;window.__parcelReminderProvidersAt=0;parcelReminderCheckedAt=0;scheduleTopStatsRefresh(250);scheduleParcelClosingReminderCheck();showToast(lang()==='zh'?'✅ 包裹记录已保存':'✅ Parcel record saved');}
     else showToast((lang()==='zh'?'包裹记录回传较慢，请勿重复提交。编号：':'Response is slow; do not resubmit. ID: ')+clientId);
   };
   function renderParcelTodayStatus(today){
@@ -6941,58 +6948,11 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   const iPadDevice=/iPad/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(appleTouchDevice)document.documentElement.classList.add('apple-pos');
   if(iPadDevice)document.documentElement.classList.add('ipad-pos');
-  let ipadHiddenAt=0,ipadBlurAt=0,ipadSafeReloadTimer=null,ipadResizeReloadTimer=null;
-  const ipadRecoveryBootAt=Date.now();
-  const ipadNormalViewport={
-    innerWidth:Number(window.innerWidth)||0,
-    innerHeight:Number(window.innerHeight)||0,
-    visualWidth:Number((window.visualViewport||{}).width)||0,
-    visualHeight:Number((window.visualViewport||{}).height)||0
-  };
   function ipadCriticalWorkActive(){
     let busy=!!parcelSubmitting||!!window.__submitBusy||!!window.__cashCollectSubmitting||!!window.__fundExpenseSubmitting;
     try{busy=busy||!!isCheckingOut||!!window.isCheckingOut||!!offlineSyncing;}catch(e){}
     return busy;
   }
-  function requestIpadSafeReload(reason,delay,force){
-    if(!iPadDevice)return;
-    clearTimeout(ipadSafeReloadTimer);
-    ipadSafeReloadTimer=setTimeout(()=>{
-      if(iPadCriticalWorkActive()){
-        requestIpadSafeReload(reason,900,force);
-        return;
-      }
-      let last=0;
-      try{last=Number(sessionStorage.getItem('yllIpadSafeReloadAt')||0);}catch(e){}
-      if(!force&&Date.now()-last<7000)return;
-      try{
-        const rows=currentCart();
-        if(rows.length)sessionStorage.setItem('yllSafeReloadCartV1',JSON.stringify({cart:rows,discount:Number(discount)||0,at:Date.now()}));
-        else{sessionStorage.removeItem('yllSafeReloadCartV1');sessionStorage.setItem('yllCartClearedAt',String(Date.now()));}
-        sessionStorage.setItem('yllIpadSafeReloadAt',String(Date.now()));
-        sessionStorage.setItem('yllIpadSafeReloadReason',String(reason||'viewport'));
-      }catch(e){}
-      // A plain reload may be satisfied by the installed PWA/Service Worker
-      // with the same damaged document. Navigate to a one-time URL so WebKit
-      // must construct a new page and touch layer.
-      try{
-        const busy=$('checkoutBusy');
-        if(busy){
-          busy.textContent=finalLang()==='zh'?'正在恢复 iPad 画面，购物车会保留...':'Restoring iPad screen; cart will be kept...';
-          busy.classList.add('active');
-          busy.style.zIndex='9999';
-        }
-      }catch(e){}
-      setTimeout(()=>{
-        try{
-          const url=new URL(window.location.href);
-          url.searchParams.set('ipadRecover',String(Date.now()));
-          window.location.replace(url.toString());
-        }catch(e){window.location.reload();}
-      },180);
-    },Math.max(120,Number(delay)||350));
-  }
-  window.__requestIpadSafeReload=requestIpadSafeReload;
   window.manualPosRefresh=function(){
     // Always available: old iPad screenshot/share sometimes emits no reliable
     // browser event, so device detection cannot be required for manual recovery.
@@ -7023,39 +6983,30 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const el=document.activeElement,tag=String((el&&el.tagName)||'').toLowerCase();
     return tag==='input'||tag==='textarea'||tag==='select'||!!(el&&el.isContentEditable);
   }
-  function observeIpadScreenshotResize(){
-    if(!iPadDevice||Date.now()-ipadRecoveryBootAt<4000||ipadCriticalWorkActive()||editableIpadTargetActive())return;
-    const innerW=Number(window.innerWidth)||0,innerH=Number(window.innerHeight)||0;
-    const visualW=Number((window.visualViewport||{}).width)||innerW,visualH=Number((window.visualViewport||{}).height)||innerH;
-    const baseInnerW=Number(ipadNormalViewport.innerWidth)||innerW,baseInnerH=Number(ipadNormalViewport.innerHeight)||innerH;
-    const baseVisualW=Number(ipadNormalViewport.visualWidth)||visualW,baseVisualH=Number(ipadNormalViewport.visualHeight)||visualH;
-    // Screenshot/share on the affected iPad briefly collapses one viewport
-    // dimension. Remember the transient state even if it has returned to the
-    // normal size by the time the debounce fires.
-    const abnormal=(baseInnerW>0&&innerW<baseInnerW*.82)||(baseInnerH>0&&innerH<baseInnerH*.72)||(baseVisualW>0&&visualW<baseVisualW*.82)||(baseVisualH>0&&visualH<baseVisualH*.72)||(innerW>0&&innerH>0&&innerW<innerH&&baseInnerW>baseInnerH);
-    if(!abnormal)return;
-    clearTimeout(ipadResizeReloadTimer);
-    ipadResizeReloadTimer=setTimeout(()=>requestIpadSafeReload('screenshot-viewport-collapse',250,false),650);
+  let ipadViewportTimer=null,ipadStableHeight=Math.max(Number(window.innerHeight)||0,Number((window.visualViewport||{}).height)||0);
+  function settleIpadViewport(){
+    if(!iPadDevice||ipadCriticalWorkActive()||editableIpadTargetActive())return;
+    clearTimeout(ipadViewportTimer);
+    ipadViewportTimer=setTimeout(()=>{
+      const innerH=Number(window.innerHeight)||0,visualH=Number((window.visualViewport||{}).height)||0;
+      const candidate=Math.max(innerH,visualH);
+      // Ignore the short collapsed viewport emitted by screenshot/share. Use
+      // the new height only when it is plausible (including real rotation).
+      if(candidate>0&&(ipadStableHeight<=0||candidate>=ipadStableHeight*.72))ipadStableHeight=candidate;
+      if(ipadStableHeight>0)document.documentElement.style.setProperty('--yll-ipad-height',Math.round(ipadStableHeight)+'px');
+      try{window.scrollTo(0,0);}catch(e){}
+      recoverViewportAndInteraction();
+    },320);
   }
   if(iPadDevice){
-    window.addEventListener('resize',observeIpadScreenshotResize,{passive:true});
-    if(window.visualViewport)window.visualViewport.addEventListener('resize',observeIpadScreenshotResize,{passive:true});
+    settleIpadViewport();
+    window.addEventListener('resize',settleIpadViewport,{passive:true});
+    if(window.visualViewport)window.visualViewport.addEventListener('resize',settleIpadViewport,{passive:true});
+    window.addEventListener('focus',settleIpadViewport,{passive:true});
+    window.addEventListener('pageshow',settleIpadViewport,{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)settleIpadViewport();},{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
-  if(iPadDevice){
-    window.addEventListener('blur',()=>{ipadBlurAt=Date.now();},{passive:true});
-    window.addEventListener('focus',()=>{
-      if(ipadBlurAt&&Date.now()-ipadBlurAt>250&&!ipadCriticalWorkActive())requestIpadSafeReload('screenshot-or-app-focus-return',350,false);
-      ipadBlurAt=0;
-    },{passive:true});
-    document.addEventListener('visibilitychange',()=>{
-      if(document.hidden){ipadHiddenAt=Date.now();return;}
-      if(ipadHiddenAt&&Date.now()-ipadHiddenAt>800){
-        requestIpadSafeReload('app-return-touch-layer',350,false);
-      }
-      ipadHiddenAt=0;
-    },{passive:true});
-  }
-  window.addEventListener('orientationchange',()=>{if(iPadDevice)requestIpadSafeReload('orientation-change',900,false);else setTimeout(recoverViewportAndInteraction,900);},{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(()=>{if(iPadDevice){ipadStableHeight=0;settleIpadViewport();}else recoverViewportAndInteraction();},700),{passive:true});
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
   const finalLang=()=>{try{return localStorage.getItem('yllLang')||'zh';}catch(e){return 'zh';}};
