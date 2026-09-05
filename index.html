@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- YLL POS UNIQUE LATEST: IPAD-SCREEN-AXIS-FIX-20260905 -->
+<!-- YLL POS UNIQUE LATEST: IPAD-ONE-TAP-RETURN-20260905 -->
 <html>
 <head>
 <meta charset="UTF-8">
@@ -6983,7 +6983,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const el=document.activeElement,tag=String((el&&el.tagName)||'').toLowerCase();
     return tag==='input'||tag==='textarea'||tag==='select'||!!(el&&el.isContentEditable);
   }
-  let ipadCompositorTimer=null;
+  let ipadCompositorTimer=null,lastIpadCompositorAt=0;
   function applyIpadScreenAxis(){
     const sw=Number((window.screen||{}).width)||0,sh=Number((window.screen||{}).height)||0;
     const angle=Math.abs(Number(window.orientation!=null?window.orientation:((screen.orientation||{}).angle||0)))%180;
@@ -6994,34 +6994,37 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const width=landscape?Math.max(sw,sh):Math.min(sw,sh);
     if(width>0)document.documentElement.style.setProperty('--yll-ipad-screen-width',Math.round(width)+'px');
   }
-  function rebuildIpadCompositor(){
+  function performIpadCompositorRebuild(){
+    if(!iPadDevice||ipadCriticalWorkActive()||editableIpadTargetActive())return;
+    // focus, pageshow and visibilitychange normally arrive together. Rebuild
+    // once only, otherwise a later duplicate can swallow the user's first tap.
+    if(Date.now()-lastIpadCompositorAt<600){recoverViewportAndInteraction();return;}
+    lastIpadCompositorAt=Date.now();applyIpadScreenAxis();
+    document.documentElement.classList.remove('ipad-pos');
+    void document.documentElement.offsetWidth;
+    document.documentElement.classList.add('ipad-pos');
+    document.body.style.display='none';
+    void document.body.offsetHeight;
+    document.body.style.removeProperty('display');
+    try{window.scrollTo(0,0);}catch(e){}
+    recoverViewportAndInteraction();
+  }
+  function rebuildIpadCompositor(immediate){
     if(!iPadDevice||ipadCriticalWorkActive()||editableIpadTargetActive())return;
     clearTimeout(ipadCompositorTimer);
-    ipadCompositorTimer=setTimeout(()=>{
-      applyIpadScreenAxis();
-      // Recreate the root layout and hit-test layer without navigating or
-      // replacing application state. This mirrors the useful part of fully
-      // closing/reopening the PWA, which the user's device confirms works.
-      document.documentElement.classList.remove('ipad-pos');
-      void document.documentElement.offsetWidth;
-      document.documentElement.classList.add('ipad-pos');
-      document.body.style.display='none';
-      void document.body.offsetHeight;
-      document.body.style.removeProperty('display');
-      try{window.scrollTo(0,0);}catch(e){}
-      recoverViewportAndInteraction();
-    },350);
+    if(immediate===true){performIpadCompositorRebuild();return;}
+    ipadCompositorTimer=setTimeout(performIpadCompositorRebuild,350);
   }
   if(iPadDevice){
     applyIpadScreenAxis();
-    rebuildIpadCompositor();
-    window.addEventListener('resize',rebuildIpadCompositor,{passive:true});
-    if(window.visualViewport)window.visualViewport.addEventListener('resize',rebuildIpadCompositor,{passive:true});
-    window.addEventListener('focus',rebuildIpadCompositor,{passive:true});
-    window.addEventListener('pageshow',rebuildIpadCompositor,{passive:true});
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)rebuildIpadCompositor();},{passive:true});
+    rebuildIpadCompositor(true);
+    window.addEventListener('resize',()=>rebuildIpadCompositor(false),{passive:true});
+    if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>rebuildIpadCompositor(false),{passive:true});
+    window.addEventListener('focus',()=>rebuildIpadCompositor(true),{passive:true});
+    window.addEventListener('pageshow',()=>rebuildIpadCompositor(true),{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)rebuildIpadCompositor(true);},{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
-  window.addEventListener('orientationchange',()=>setTimeout(()=>{if(iPadDevice)rebuildIpadCompositor();else recoverViewportAndInteraction();},700),{passive:true});
+  window.addEventListener('orientationchange',()=>setTimeout(()=>{if(iPadDevice)rebuildIpadCompositor(true);else recoverViewportAndInteraction();},700),{passive:true});
 
   // Inline HTML handlers must resolve through window on iPad/PWA as well.
   const finalLang=()=>{try{return localStorage.getItem('yllLang')||'zh';}catch(e){return 'zh';}};
