@@ -5624,7 +5624,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
           applyConfirmedPendingOrder(clientId,r,pendingPayload);
         }
       }).catch(()=>{});
-      const checkoutWaitMs=18000+Math.min(7000,send.length*350);
+      const checkoutWaitMs=30000+Math.min(5000,send.length*250);
       const res = await timeout(savePromise, checkoutWaitMs, 'Save order');
       if(!res || !res.orderId) throw new Error(tr('noOrderNumber'));
       removePendingOnlineOrder(clientId);
