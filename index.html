@@ -1528,6 +1528,12 @@ function apiCall(action,args=[]){
   const controller=typeof AbortController!=='undefined'?new AbortController():null;
   const active=window.__activeApiRequests||(window.__activeApiRequests=new Set());
   let requestBossToken='';try{requestBossToken=sessionStorage.getItem('yllBossToken')||'';}catch(e){}
+  // All read-only calls with identical input share one in-flight request. This
+  // prevents startup, foreground recovery and a button tap from asking Apps
+  // Script to perform the same Sheet scan at the same time.
+  const readMap=window.__inflightReadApi||(window.__inflightReadApi=new Map());
+  const readKey=/^get[A-Z]/.test(String(action||''))?JSON.stringify([action,args,requestBossToken]):'';
+  if(readKey&&readMap.has(readKey))return readMap.get(readKey);
   const request={action:String(action||''),controller:controller};active.add(request);
   const promise=fetch("/api/pos",{
     method:"POST",
@@ -1544,8 +1550,9 @@ function apiCall(action,args=[]){
       throw new Error(errorText+(json.raw?"\n\nRAW:\n"+json.raw:""));
     }
     return json.data;
-  }).finally(()=>active.delete(request));
+  }).finally(()=>{active.delete(request);if(readKey&&readMap.get(readKey)===promise)readMap.delete(readKey);});
   promise.abort=()=>{try{if(controller)controller.abort();}catch(e){}};
+  if(readKey)readMap.set(readKey,promise);
   return promise;
 }
 
@@ -2048,6 +2055,8 @@ function salesReportEscapeHtml(value){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
   });
 }
+function beginForegroundRead(){window.__foregroundReadCount=Number(window.__foregroundReadCount||0)+1;}
+function endForegroundRead(){window.__foregroundReadCount=Math.max(0,Number(window.__foregroundReadCount||0)-1);}
 function reportProductRows(r,showProfit){
   const rows=(r&&r.topProducts)||[];
   if(!rows.length)return `<div class="sales-empty">${salesReportLang()==='zh'?'这段时间还没有销售记录。':'No sales in this period.'}</div>`;
@@ -2059,6 +2068,12 @@ function reportKpis(r,showProfit){
   return `<div class="sales-kpis">${cards.map((x,i)=>`<div class="sales-kpi ${showProfit&&i===cards.length-1?'profit':''}"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>`;
 }
 let todayOrderTimelineRows=[];
+function loadTodayOrderTimelineCache(){
+  try{const hit=JSON.parse(localStorage.getItem('yllTodayOrderTimelineV1')||'null');return hit&&hit.day===todayKey()&&Array.isArray(hit.rows)?hit.rows:null;}catch(e){return null;}
+}
+function saveTodayOrderTimelineCache(rows){
+  try{localStorage.setItem('yllTodayOrderTimelineV1',JSON.stringify({day:todayKey(),at:Date.now(),rows:Array.isArray(rows)?rows:[]}));}catch(e){}
+}
 function renderTodayOrderPage(page){
   const box=document.getElementById('todaySoldResult');if(!box)return;
   const total=todayOrderTimelineRows.length,totalPages=Math.max(1,Math.ceil(total/5)),current=Math.min(Math.max(1,Number(page)||1),totalPages),rows=todayOrderTimelineRows.slice((current-1)*5,current*5);
@@ -2075,16 +2090,22 @@ function renderTodayOrderPage(page){
   }).join('')}</div><div class="stockout-history-pager"><button ${current<=1?'disabled':''} onclick="renderTodayOrderPage(${current-1})">‹ 上一页</button><span><b>第 ${current} / ${totalPages} 页</b><small>共 ${total} 张订单</small></span><button ${current>=totalPages?'disabled':''} onclick="renderTodayOrderPage(${current+1})">下一页 ›</button></div>`;
 }
 async function openTodaySoldItems(){
-  openModal('todaySoldBox');const box=document.getElementById('todaySoldResult');box.innerHTML='<div class="sales-empty">载入中...</div>';
-  try{todayOrderTimelineRows=await salesReportWithTimeout(apiCall('getTodayOrderTimeline',[]),25000)||[];renderTodayOrderPage(1);}catch(err){box.innerHTML='<div class="sales-empty">载入超过 25 秒，请关闭后重试。<br>'+salesReportEscapeHtml(err.message||err)+'</div>';}
+  openModal('todaySoldBox');const box=document.getElementById('todaySoldResult'),cached=loadTodayOrderTimelineCache();
+  if(cached){todayOrderTimelineRows=cached;renderTodayOrderPage(1);}else box.innerHTML='<div class="sales-empty">载入中...</div>';
+  beginForegroundRead();
+  try{todayOrderTimelineRows=await salesReportWithTimeout(apiCall('getTodayOrderTimeline',[]),25000)||[];saveTodayOrderTimelineCache(todayOrderTimelineRows);renderTodayOrderPage(1);}catch(err){
+    if(cached){todayOrderTimelineRows=cached;renderTodayOrderPage(1);if(typeof showToast==='function')showToast(lang()==='zh'?'最新订单同步较慢，先显示上次成功资料':'Latest orders are slow; showing last confirmed data');}
+    else box.innerHTML='<div class="sales-empty">载入超过 25 秒，请关闭后重试。<br>'+salesReportEscapeHtml(err.message||err)+'</div>';
+  }finally{endForegroundRead();}
 }
 function salesReportWithTimeout(promise,ms){return new Promise(function(resolve,reject){const timer=setTimeout(function(){reject(new Error('载入超时'));},ms);Promise.resolve(promise).then(function(value){clearTimeout(timer);resolve(value);},function(err){clearTimeout(timer);reject(err);});});}
 function bossReportTitle(label){const zh=lang()==='zh';return (zh?{today:"今日",yesterday:"昨天",week:"本周",lastWeek:"上周",month:"本月",lastMonth:"上月",year:"今年"}:{today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",year:"This Year"})[label]||label||(zh?'报表':'Report')}
 async function bossLoadReportRange(s,e,label){
   const box=document.getElementById("bossReportInlineResult")||document.getElementById("bossResult"),zh=lang()==='zh',cacheKey=s+'|'+e;window.__bossReportCache=window.__bossReportCache||{};window.__bossReportLoading=true; box.textContent=zh?'载入中...':'Loading...';
+  beginForegroundRead();
   try{const hit=window.__bossReportCache[cacheKey],r=hit&&Date.now()-hit.time<30000?hit.data:await salesReportWithTimeout(apiCall("getReportSummary",[s,e]),25000);window.__bossReportCache[cacheKey]={time:Date.now(),data:r};const otherRow=(Number(r.otherIncomeCash||0)||Number(r.otherIncomeQR||0))?`<tr><td>${zh?'其它收入 Cash':'Other Income Cash'}</td><td class="num">${fmt(r.otherIncomeCash||0)}</td><td>${zh?'其它收入 QR':'Other Income QR'}</td><td class="num">${fmt(r.otherIncomeQR||0)}</td></tr>`:'';box.innerHTML=`<div class="sales-report-head"><h3>${bossReportTitle(label)} ${zh?'营业报表':'Sales Report'}</h3><span>${s} ${zh?'至':'to'} ${e}</span></div>${reportKpis(r,true)}<div class="sales-report-section"><h4>${zh?'收款与调整':'Payments & Adjustments'}</h4><table class="sales-product-table"><tr><td>${zh?'现金':'Cash'}</td><td class="num">${fmt(r.Cash||0)}</td><td>QR</td><td class="num">${fmt(r.MBB_QR||0)}</td></tr><tr><td>${zh?'转账':'Transfer'}</td><td class="num">${fmt(r.Transfer||0)}</td><td>${zh?'混合付款（旧记录）':'Mixed Payment (legacy)'}</td><td class="num">${fmt(r.Mixed||0)}</td></tr>${otherRow}<tr><td>${zh?'折扣':'Discount'}</td><td class="num">${fmt(r.discount||0)}</td><td>${zh?'退货':'Refund'}</td><td class="num">${fmt(r.refund||0)}</td></tr><tr><td>${zh?'净销售':'Net Sales'}</td><td class="num">${fmt(r.netSales||r.total||0)}</td><td></td><td></td></tr></table></div>${reportProductRows(r,true)}`;}
   catch(err){const detail=cleanMessage((err&&err.message)||err);box.textContent=(zh?'报表载入失败：':'Report failed: ')+detail;}
-  finally{window.__bossReportLoading=false;bossMarkReportRange(label,false);}
+  finally{window.__bossReportLoading=false;bossMarkReportRange(label,false);endForegroundRead();}
 }
 async function bossExportXlsx(){
   if(!bossRequire())return;
@@ -3102,10 +3123,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const top = await timeout(apiCall('getPosTopStats',[]), 12000, 'Top stats').catch(()=>null);
       if(requestSequence!==topStatsRequestSequence)return;
       let usableToday = top && top.today ? top.today : null;
-      let drawer = top && top.cashDrawer ? top.cashDrawer : null;
-      // Sequential compatibility fallback for an older API deployment.
-      if(!usableToday)usableToday=await timeout(apiCall('getTodayReport',[]),9000,'Today stats').catch(()=>null);
-      if(!drawer)drawer=await timeout(apiCall('getCashDrawer',[]),9000,'Cash drawer').catch(()=>null);
+      let drawer = top && hasConfirmedCashDrawer(top.cashDrawer) ? top.cashDrawer : null;
+      // getPosTopStats is the single authoritative homepage read. Do not turn
+      // one slow request into two more competing Sheet scans. Keep confirmed
+      // local data and let the scheduled retry update it later.
       if(requestSequence!==topStatsRequestSequence)return;
       if(!usableToday && top)usableToday={total:top.todaySales,orders:top.orders,count:top.orders};
       if(!usableToday && !drawer){
@@ -3118,9 +3139,13 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       topStatsFailureStreak=0;
       const fallback = cached || {};
       if(!usableToday && !fallback.today)return;
+      const previousSnapshot=window.__lastTopStatsSnapshot||{};
+      const confirmedDrawer=hasConfirmedCashDrawer(drawer)?drawer:(hasConfirmedCashDrawer(fallback.drawer)?fallback.drawer:(hasConfirmedCashDrawer(previousSnapshot.drawer)?previousSnapshot.drawer:null));
       const snapshot = {
         today:usableToday || fallback.today || {},
-        drawer:drawer || fallback.drawer || {},
+        // A slow/failed drawer request is not RM0. Keep the last confirmed
+        // amount and never overwrite it with an incomplete response.
+        drawer:confirmedDrawer,
         productCount:(currentProducts()||[]).length || (window.products||[]).length || fallback.productCount || 0,
         at:Date.now()
       };
@@ -3164,6 +3189,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   }
   function saveTopStatsCache(snapshot){
     try{ snapshot.day=todayKey(); localStorage.setItem('yllTopStatsCacheV1', JSON.stringify(snapshot)); }catch(e){}
+  }
+  function hasConfirmedCashDrawer(value){
+    return !!(value&&Object.prototype.hasOwnProperty.call(value,'cashDrawer')&&Number.isFinite(Number(value.cashDrawer)));
   }
   function isTransientApiError(e){
     const s=String((e&&e.message)||e||'');
@@ -3379,7 +3407,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     snapshot=snapshot||{};
     window.__lastTopStatsSnapshot=JSON.parse(JSON.stringify({...snapshot,day:todayKey()}));
     topStatsLastSuccessAt=Date.now();
-    const today=snapshot.today||{}, drawer=snapshot.drawer||{};
+    const today=snapshot.today||{}, drawerConfirmed=hasConfirmedCashDrawer(snapshot.drawer), drawer=drawerConfirmed?snapshot.drawer:{};
     const off=offlineSummary();
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
       const refundToday=num(today.refund||0),cashRefundToday=num(today.cashRefund!==undefined?today.cashRefund:today.refund||0);
@@ -3400,13 +3428,19 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const otherLine=otherTotal>0?`<span class="receipt-other">${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' | ')||money(otherTotal)}</span>`:'';
       const refundLine=cashRefundToday>0?`<span class="receipt-refund">${lang()==='zh'?'今日现金退款（已从今日销售扣除）':'Cash refunded today (deducted from today sales)'} -${money(cashRefundToday)}</span>`:'';
       setStatDetail('todaySales', `<span class="receipt-breakdown">${receiptParts.join('')}${syncNote?`<span>${syncNote.replace(/^\s*\|\s*/,'')}</span>`:''}</span>${otherLine}${refundLine}`);
-      paintStatMoney(cash,num(drawer.cashDrawer||0)+off.cash,animate);
-      const cashNotes=[`${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`];
-      if(cashRefundToday>0)cashNotes.push(`${lang()==='zh'?'今日现金退款':'Cash refunds today'} -${money(cashRefundToday)}`);
-      setStatDetail('todayCash',cashNotes.join(' | '));
+      if(drawerConfirmed){
+        paintStatMoney(cash,num(drawer.cashDrawer)+off.cash,animate);
+        const cashNotes=[`${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`];
+        if(cashRefundToday>0)cashNotes.push(`${lang()==='zh'?'今日现金退款':'Cash refunds today'} -${money(cashRefundToday)}`);
+        setStatDetail('todayCash',cashNotes.join(' | '));
+      }else{
+        // Keep the last confirmed amount already painted on screen. Missing
+        // data means syncing, not a real zero balance.
+        setStatDetail('todayCash',lang()==='zh'?'钱箱资料同步中…':'Cash drawer syncing…');
+      }
       if(orders)orders.textContent=num(today.orders||today.count||0)+off.count;
     if(items)items.textContent=snapshot.productCount || (currentProducts()||[]).length || (window.products||[]).length || 0;
-      if(typeof updateCashDrawerAlert === 'function')updateCashDrawerAlert(drawer);
+      if(drawerConfirmed&&typeof updateCashDrawerAlert === 'function')updateCashDrawerAlert(drawer);
       const approvedBox=$('approvedDiscountNotice'),approvedRows=drawer.recentApprovedDiscounts||[];
       if(approvedBox){approvedBox.style.display=approvedRows.length?'block':'none';approvedBox.innerHTML=approvedRows.length?`<b>${lang()==='zh'?'✅ 最近两天已批准折扣':'✅ Discounts approved in the last 2 days'}</b><div style="margin-top:5px">${approvedRows.map(x=>`${esc(x.orderId)} · ${lang()==='zh'?'折扣':'Discount'} ${money(x.amount)} · ${lang()==='zh'?'已通过':'Approved'}`).join('<br>')}</div>`:'';}
       scheduleParcelClosingReminderCheck();
@@ -6408,6 +6442,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     }
     if(bossOverviewCache)renderOverview(bossOverviewCache);
     else renderFallback(tr('loading'));
+    beginForegroundRead();
     try{
       if(!bossOverviewPromise){
         bossOverviewPromise=timeout(apiCall('getBossDashboardFast',[]), 24000, 'Boss dashboard')
@@ -6421,7 +6456,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     }catch(e){
       renderFallback(tr('dashboardSlow'));
       const br=$('bossResult'); if(br)br.textContent=tr('dashboardSlow');
-    }
+    }finally{endForegroundRead();}
   };
 
   window.renderShopeeStockOutHistoryRows=function(rows){const zh=lang()==='zh';if(!(rows||[]).length)return `<div class="boss-notice">${zh?'暂无出库记录':'No stock-out records'}</div>`;return `<div class="stockout-history-grid">${rows.map(function(x){const items=(x.items||[]).map(function(i){return `<div class="stockout-item"><span>${esc(i.name||i.code||'-')}</span><b>× ${esc(i.qty||0)}</b></div>`;}).join('')||`<div class="stockout-item"><span>${zh?'没有商品明细':'No item details'}</span></div>`;const status=String(x.status||'Approved'),statusClass=status==='Pending'?'pending':status==='Rejected'?'rejected':'approved',statusText=status==='Approved'?(zh?'已批准／已扣库存':'Approved / stock deducted'):status==='Pending'?(zh?'等待审批':'Pending approval'):status==='Rejected'?(zh?'已拒绝':'Rejected'):status;return `<article class="stockout-history-card status-${statusClass}"><div class="stockout-history-head"><b>${esc(x.requestId||(zh?'系统记录':'System record'))}</b><span class="stockout-status ${statusClass}">${esc(statusText)}</span></div>${x.shopeeOrderId?`<div style="margin-top:8px;color:#cbd5e1;font-size:12px">${zh?'Shopee参考':'Shopee reference'}：${esc(x.shopeeOrderId)}</div>`:''}<div class="stockout-items">${items}</div><div class="stockout-meta"><span>${zh?'提交':'Submitted'}：${esc(x.requestTime||'-')}</span><span>${zh?'记录人':'Recorded by'}：${esc(x.requestedBy||'-')}</span><span>${zh?'处理':'Processed'}：${esc(x.approvedAt||'-')}</span><span>${zh?'审核人':'Approved by'}：${esc(x.approvedBy||'-')}</span></div></article>`;}).join('')}</div>`;};
@@ -6853,7 +6888,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   let lastForegroundProductRefresh=0;
   let lastPosSyncRevision=null,posSyncRevisionBusy=false;
   let backgroundCatalogueAt=0;
-  function backgroundSyncPaused(){return document.hidden||!navigator.onLine||Date.now()<Number(window.__ipadRecoveringUntil||0)||window.__bossLoginInFlight||window.isCheckingOut||!!document.querySelector('#bossLoginBox.active')||Date.now()<Number(window.__localCheckoutSettledUntil||0);}
+  function backgroundSyncPaused(){return document.hidden||!navigator.onLine||Number(window.__foregroundReadCount||0)>0||Date.now()<Number(window.__ipadRecoveringUntil||0)||window.__bossLoginInFlight||window.isCheckingOut||!!document.querySelector('#bossLoginBox.active')||Date.now()<Number(window.__localCheckoutSettledUntil||0);}
   function startPosBackgroundTimers(){
     clearInterval(window.__posSyncTimer);
     clearInterval(window.__catalogueTimer);
