@@ -3063,6 +3063,14 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   let popularLoadInFlight=null;
   function applyPopularGroups(rows){const map={};(rows||[]).forEach((r,i)=>{const key=normalizeText(r.group).toUpperCase();if(key)map[key]={rank:i+1,orders:Number(r.orderCount)||0};});window.__popularRankByGroup=map;}
   let popularLoadedAt=0;
+  function schedulePopularHomeLoad(delay){
+    clearTimeout(window.__popularHomeTimer);
+    window.__popularHomeTimer=setTimeout(()=>{
+      const active=window.__activeApiRequests;
+      if(backgroundSyncPaused()||(active&&active.size)){schedulePopularHomeLoad(30000);return;}
+      loadPopularHome();
+    },Math.max(15000,Number(delay)||60000));
+  }
   function loadPopularHome(){
     if(popularLoadInFlight)return popularLoadInFlight;
     if(Date.now()-popularLoadedAt<30*60*1000)return Promise.resolve();
@@ -3082,7 +3090,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     // the authoritative Products request is still running.
     const hadCache=force ? currentProducts().length>0 : loadProductsCache();
     const requestSequence=++productLoadSequence;
-    if(!force)loadPopularHome();
+    // Popular ranking scans historical order items. It is cosmetic and must
+    // never compete with startup totals, checkout confirmation or a page the
+    // user deliberately opened.
+    if(!force)schedulePopularHomeLoad(60000);
     if(!hadCache){
       const box=$('list');
       if(box)box.innerHTML='<div class="empty">'+(lang()==='zh'?'\u6b63\u5728\u8f7d\u5165\u5546\u54c1...':'Loading products...')+'</div>';
