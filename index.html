@@ -1527,18 +1527,20 @@ function handleBossSessionExpired(message){
 function apiCall(action,args=[]){
   const controller=typeof AbortController!=='undefined'?new AbortController():null;
   const active=window.__activeApiRequests||(window.__activeApiRequests=new Set());
+  let requestBossToken='';try{requestBossToken=sessionStorage.getItem('yllBossToken')||'';}catch(e){}
   const request={action:String(action||''),controller:controller};active.add(request);
   const promise=fetch("/api/pos",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action, args,bossToken:(()=>{try{return sessionStorage.getItem('yllBossToken')||'';}catch(e){return '';}})()}),
+    body:JSON.stringify({action, args,bossToken:requestBossToken}),
     signal:controller?controller.signal:undefined
   }).then(async res=>{
     let json;
     try{json=await res.json();}catch(e){throw new Error("API returned non-JSON");}
     if(!json.success){
       const errorText=String(json.error||"API error");
-      if(/Boss session expired/i.test(errorText))handleBossSessionExpired(errorText);
+      const bossWasActive=!!document.querySelector('#bossDashboard.active');
+      if(/Boss session expired/i.test(errorText)&&(requestBossToken||bossWasActive))handleBossSessionExpired(errorText);
       throw new Error(errorText+(json.raw?"\n\nRAW:\n"+json.raw:""));
     }
     return json.data;
