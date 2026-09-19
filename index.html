@@ -1409,7 +1409,7 @@ input[type=number]{-moz-appearance:textfield!important;appearance:textfield!impo
             </div>
             <div id="bossCashWarning" class="boss-warning">🟠 已超过设定提醒，请考虑收现金。</div>
             <div id="bossCashInfo" class="boss-result">载入中...</div>
-            <div class="boss-inline" style="margin-top:10px"><input id="collectCashAmount" type="number" placeholder="收走金额，例如 300"><input id="collectCashNote" type="text" placeholder="备注，可空"><button class="green" onclick="bossCollectCash()">确认收走</button></div>
+            <div class="boss-inline" style="margin-top:10px"><input id="collectCashAmount" type="number" step="0.01" placeholder="正数收走；负数补回，例如 -100"><input id="collectCashNote" type="text" placeholder="备注，可空"><button class="green" onclick="bossCollectCash()">确认现金调整</button></div>
           </div>
 
           <div id="bossParcelBox" class="boss-panel">
@@ -1510,6 +1510,20 @@ function checkDayRollover(){
 function setCheckoutBusy(on){isCheckingOut=!!on; document.body.classList.toggle("pos-busy",!!on); let b=document.getElementById("checkoutBusy"); if(b)b.classList.toggle("active",!!on)}
 function updateClock(){let e=document.getElementById("clock");if(e)e.textContent=new Date().toLocaleTimeString()}
 
+function handleBossSessionExpired(message){
+  if(window.__bossSessionExpiredHandling)return;
+  window.__bossSessionExpiredHandling=true;
+  try{sessionStorage.removeItem('yllBossToken');sessionStorage.removeItem('bossSessionUntil');}catch(e){}
+  try{if(typeof setSubmitBusy==='function')setSubmitBusy(false);}catch(e){}
+  try{setCheckoutBusy(false);}catch(e){}
+  try{if(typeof window.bossLogout==='function')window.bossLogout(true);else closeModal('bossDashboard');}catch(e){}
+  try{openBossLogin();}catch(e){}
+  setTimeout(()=>{
+    const msg=document.getElementById('bossLoginMsg');
+    if(msg){msg.style.display='block';msg.textContent=lang()==='zh'?'管理登录已过期，请重新登录。':'Boss session expired. Please log in again.';}
+  },80);
+  setTimeout(()=>{window.__bossSessionExpiredHandling=false;},1800);
+}
 function apiCall(action,args=[]){
   const controller=typeof AbortController!=='undefined'?new AbortController():null;
   const active=window.__activeApiRequests||(window.__activeApiRequests=new Set());
@@ -1522,7 +1536,11 @@ function apiCall(action,args=[]){
   }).then(async res=>{
     let json;
     try{json=await res.json();}catch(e){throw new Error("API returned non-JSON");}
-    if(!json.success)throw new Error((json.error||"API error")+(json.raw?"\n\nRAW:\n"+json.raw:""));
+    if(!json.success){
+      const errorText=String(json.error||"API error");
+      if(/Boss session expired/i.test(errorText))handleBossSessionExpired(errorText);
+      throw new Error(errorText+(json.raw?"\n\nRAW:\n"+json.raw:""));
+    }
     return json.data;
   }).finally(()=>active.delete(request));
   promise.abort=()=>{try{if(controller)controller.abort();}catch(e){}};
@@ -3066,9 +3084,16 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
 
   let topStatsFailureStreak=0;
   let topStatsRequestSequence=0;
+  let topStatsRequestInFlight=null;
+  let topStatsLastSuccessAt=0;
+  let topStatsRetryTimer=null;
   window.loadTodayStats = async function(){
+    // Startup, foreground recovery and the revision watcher can all ask for
+    // the same figures at once. Share that request instead of letting a later
+    // call invalidate a perfectly good response from an earlier one.
+    if(topStatsRequestInFlight)return topStatsRequestInFlight;
     const requestSequence=++topStatsRequestSequence;
-    try{
+    const request=(async function(){try{
       const cached = loadTopStatsCache();
       if(cached)applyTopStats(cached);
       // Read one coherent snapshot instead of racing two report calls.
@@ -3085,6 +3110,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
         topStatsFailureStreak++;
         if(topStatsFailureStreak>=2)recordApiGlitch('Top stats refresh failed twice');
         if(cached)applyTopStats(cached);
+        scheduleTopStatsRetry();
         return;
       }
       topStatsFailureStreak=0;
@@ -3106,12 +3132,25 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(requestSequence!==topStatsRequestSequence)return;
       saveTopStatsCache(snapshot);
       applyTopStats(snapshot);
+      topStatsLastSuccessAt=Date.now();
+      clearTimeout(topStatsRetryTimer);
     }catch(e){
       console.error('loadTodayStats failed', e);
       topStatsFailureStreak++;
       if(topStatsFailureStreak>=2)recordApiGlitch('Top stats refresh error twice: '+(e && e.message ? e.message : e));
-    }
+      scheduleTopStatsRetry();
+    }finally{
+      if(topStatsRequestInFlight===request)topStatsRequestInFlight=null;
+    }})();
+    topStatsRequestInFlight=request;
+    return request;
   };
+
+  function scheduleTopStatsRetry(){
+    clearTimeout(topStatsRetryTimer);
+    const delay=Math.min(60000,5000*Math.max(1,topStatsFailureStreak));
+    topStatsRetryTimer=setTimeout(()=>{if(!backgroundSyncPaused())window.loadTodayStats();else scheduleTopStatsRetry();},delay);
+  }
 
   function loadTopStatsCache(){
     try{
@@ -3337,6 +3376,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   function applyTopStats(snapshot,animate=false){
     snapshot=snapshot||{};
     window.__lastTopStatsSnapshot=JSON.parse(JSON.stringify({...snapshot,day:todayKey()}));
+    topStatsLastSuccessAt=Date.now();
     const today=snapshot.today||{}, drawer=snapshot.drawer||{};
     const off=offlineSummary();
       const sales=$('todaySales'), cash=$('todayCash'), orders=$('todayOrders'), items=$('todayItems');
@@ -3356,7 +3396,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(num(today.otherIncomeQR||0))otherParts.push(`QR ${money(today.otherIncomeQR)}`);
       if(num(today.otherIncomeTransfer||0))otherParts.push(`${tr('transfer')} ${money(today.otherIncomeTransfer)}`);
       const otherLine=otherTotal>0?`<span class="receipt-other">${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' | ')||money(otherTotal)}</span>`:'';
-      const refundLine=cashRefundToday>0?`<span class="receipt-refund">${lang()==='zh'?'今日实际现金退款':'Cash refunded today'} -${money(cashRefundToday)}${refundToday!==cashRefundToday?(lang()==='zh'?'（销售归回原订单日期）':' (sales assigned to original order date)'):''}</span>`:'';
+      const refundLine=cashRefundToday>0?`<span class="receipt-refund">${lang()==='zh'?'今日现金退款（已从今日销售扣除）':'Cash refunded today (deducted from today sales)'} -${money(cashRefundToday)}</span>`:'';
       setStatDetail('todaySales', `<span class="receipt-breakdown">${receiptParts.join('')}${syncNote?`<span>${syncNote.replace(/^\s*\|\s*/,'')}</span>`:''}</span>${otherLine}${refundLine}`);
       paintStatMoney(cash,num(drawer.cashDrawer||0)+off.cash,animate);
       const cashNotes=[`${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`];
@@ -4603,8 +4643,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   window.bossRenderStocktakeRows=function(){const sel=$('bossStocktakeProduct'),key=normalizeText(($('bossStocktakeCategory')||{}).value);if(!sel)return;const rows=(bossProductsCache||[]).filter(p=>p.active!==false&&productInEntrance(p,key)&&isLooseBulkProduct(p)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));sel.innerHTML=`<option value="">${key?(lang()==='zh'?'请选择商品':'Select product'):(lang()==='zh'?'请先选择入口':'Choose entrance first')}</option>`+rows.map(p=>{const book=isAuthoritativeSharedProduct(p)?Number(p.sharedStock||0):Number(p.stock||0),unit=isAuthoritativeSharedProduct(p)?' KG':'';return `<option value="${esc(p.code||p.name||'')}">${esc(p.name||'')} · ${lang()==='zh'?'账面':'System'} ${book}${unit}</option>`;}).join('');};
   window.bossStocktakeSoldOut=function(){if($('bossStocktakeActual'))$('bossStocktakeActual').value='0';window.bossSubmitStocktake();};
   window.bossStocktakeProductChanged=function(){const key=normalizeText(($('bossStocktakeProduct')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),label=$('bossStocktakeActualLabel');if(label)label.textContent=isAuthoritativeSharedProduct(p)?(lang()==='zh'?'实际剩余总 KG':'Actual total KG remaining'):(lang()==='zh'?'实际剩余数量':'Actual quantity remaining');};
-  window.bossSubmitStocktake=function(){const key=normalizeText(($('bossStocktakeProduct')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),actual=Number(($('bossStocktakeActual')||{}).value);if(!p||String(($('bossStocktakeActual')||{}).value).trim()===''||!Number.isFinite(actual)||actual<0){showAppAlert(lang()==='zh'?'请选择商品并填写实际剩余数量。':'Select a product and enter actual remaining quantity.',tr('productEditor'));return;}showConfirm(lang()==='zh'?'确认保存盘点？少于账面库存的差额会自动记录为耗损。':'Save this count? Any shortage is recorded as loss.',()=>isAuthoritativeSharedProduct(p)?bossSubmitLooseSimple(p,actual):bossSubmitStocktakeNow([{code:p.code||'',name:p.name||'',actual}]));};
-  async function bossSubmitLooseSimple(p,actual){setSubmitBusy(true,lang()==='zh'?'正在保存盘点...':'Saving stocktake...');try{const out=await timeout(apiCall('reconcileLooseStock',[{group:p.inventoryGroup,actualKg:actual,type:normalizeText(($('bossStocktakeType')||{}).value),note:normalizeText(($('bossStocktakeNote')||{}).value)}]),60000,'Loose stocktake');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?`盘点完成；耗损 ${Number(out.lossKg||0)} KG，金额 ${money(out.lossAmount||0)}。`:`Stocktake complete; loss ${Number(out.lossKg||0)} KG, ${money(out.lossAmount||0)}.`,tr('lostItem'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
+  window.bossSubmitStocktake=function(){const key=normalizeText(($('bossStocktakeProduct')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),actual=Number(($('bossStocktakeActual')||{}).value);if(!p||String(($('bossStocktakeActual')||{}).value).trim()===''||!Number.isFinite(actual)||actual<0){showAppAlert(lang()==='zh'?'请选择商品并填写实际剩余数量。':'Select a product and enter actual remaining quantity.',tr('productEditor'));return;}const isLoose=isAuthoritativeSharedProduct(p),confirmMsg=lang()==='zh'?(isLoose?'确认保存盘点？库存差额只写入 StockAudit，不计入盈亏。':'确认保存盘点？少于账面库存的差额会自动记录为耗损。'):(isLoose?'Save this count? Difference only goes to StockAudit, not profit/loss.':'Save this count? Any shortage is recorded as loss.');showConfirm(confirmMsg,()=>isLoose?bossSubmitLooseSimple(p,actual):bossSubmitStocktakeNow([{code:p.code||'',name:p.name||'',actual}]));};
+  async function bossSubmitLooseSimple(p,actual){setSubmitBusy(true,lang()==='zh'?'正在保存盘点...':'Saving stocktake...');try{const out=await timeout(apiCall('reconcileLooseStock',[{group:p.inventoryGroup,actualKg:actual,type:normalizeText(($('bossStocktakeType')||{}).value),note:normalizeText(($('bossStocktakeNote')||{}).value)}]),60000,'Loose stocktake');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?`库存已校正：${out.group} 现在是 ${out.actualKg}KG。库存差额会保留在 StockAudit，不计入盈亏。`:`Stock corrected: ${out.group} is now ${out.actualKg}KG. The difference is kept in StockAudit and not recorded as profit/loss.`,tr('productEditor'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
   async function bossSubmitStocktakeNow(items){const payload={items:items,type:normalizeText(($('bossStocktakeType')||{}).value)||'Stocktake Difference',reason:'Physical stocktake',note:normalizeText(($('bossStocktakeNote')||{}).value)};setSubmitBusy(true,lang()==='zh'?'正在提交盘点并计算耗损...':'Submitting stocktake and calculating loss...');try{const out=await timeout(apiCall('reconcileProductStocktake',[payload]),60000,'Inventory stocktake');try{localStorage.removeItem('yllProductsCacheV1');}catch(e){}await load(true);await window.bossOpenProducts();showAppAlert(lang()==='zh'?`盘点完成：已检查 ${out.checked} 个商品，${out.lossRows} 个有差异；耗损数量 ${out.lossQty}，金额 ${money(out.lossAmount||0)}。`:`Stocktake complete: ${out.checked} checked, ${out.lossRows} shortages; loss ${out.lossQty}, ${money(out.lossAmount||0)}.`,tr('lostItem'));}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
   function fillBossReceiveProductList(){const sel=$('bossReceiveName'),key=normalizeText(($('bossReceiveFilterCategory')||{}).value),type=normalizeText(($('bossReceiveFilterType')||{}).value);if(!sel)return;const rows=(bossProductsCache||[]).filter(p=>p.active!==false&&key&&productInEntrance(p,key)&&(!type||productPurpose(p)===type)&&isLooseBulkProduct(p)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));sel.innerHTML=`<option value="">${key?(lang()==='zh'?'请选择商品':'Select product'):(lang()==='zh'?'请先选择入口':'Choose entrance first')}</option>`+rows.map(p=>{const price=Number(p.price)||0,cost=Number(p.cost)||0,margin=price>0&&cost>0?` · ${lang()==='zh'?'毛利':'Margin'} ${(((price-cost)/price)*100).toFixed(1)}%`:` · ${lang()==='zh'?'未有成本':'No cost'}`;return `<option value="${esc(p.code||p.name||'')}">${esc(p.name||'')} · ${money(price)}${margin}</option>`;}).join('');window.bossReceiveProductChanged();}
   function fillBossReceiveTypes(){const sel=$('bossReceiveFilterType'),key=normalizeText(($('bossReceiveFilterCategory')||{}).value);if(!sel)return;const old=sel.value,creating=key==='__NEW_ORDINARY__'||key==='__NEW_LOOSE__',types=creating?[]:[...new Set((bossProductsCache||[]).filter(p=>p.active!==false&&key&&productInEntrance(p,key)).map(p=>productPurpose(p)).filter(Boolean))].sort();sel.innerHTML=`<option value="">${lang()==='zh'?'全部入口内分类':'All subcategories'}</option>`+types.map(t=>`<option value="${esc(t)}">${esc(bossTypeText(t))}</option>`).join('');if(types.includes(old))sel.value=old;sel.disabled=creating;window.bossReceiveTypeChanged();}
@@ -4736,9 +4776,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   window.bossLooseGroupChanged=function(){const group=normalizeText(($('bossLooseGroup')||{}).value),g=bossLooseGroupsCache.find(x=>x.group===group),status=$('bossLooseStatus');if(!status)return;status.textContent=!g?(lang()==='zh'?'请先选择商品系列':'Choose a product series'):(lang()==='zh'?`系统账面：${g.theoreticalKg===null?'尚未开始':g.theoreticalKg+' KG'}　｜　每完整包：${g.bulkKg||'?'} KG`:`System stock: ${g.theoreticalKg===null?'not started':g.theoreticalKg+' KG'} | Full bag: ${g.bulkKg||'?'} KG`);window.bossLooseCorrectionChanged();};
   window.bossLooseCorrectionChanged=function(){const group=normalizeText(($('bossLooseGroup')||{}).value),g=bossLooseGroupsCache.find(x=>x.group===group),preview=$('bossLooseCorrectionPreview'),bagsRaw=String(($('bossLooseActualBags')||{}).value||''),looseRaw=String(($('bossLooseActualKg')||{}).value||'');if(!preview)return;if(!g||!(Number(g.bulkKg)>1)){preview.textContent=lang()==='zh'?'请先选择商品系列。':'Choose a product series.';return;}if(bagsRaw===''||looseRaw===''){preview.textContent=lang()==='zh'?`填写完整包数及已拆包剩余 KG；每包按 ${g.bulkKg}KG。`:`Enter full bags and loose KG; each bag is ${g.bulkKg}KG.`;return;}const bags=Math.max(0,Number(bagsRaw)||0),loose=Math.max(0,Number(looseRaw)||0),total=bags*Number(g.bulkKg)+loose;preview.textContent=lang()==='zh'?`实际总重量：${bags}包 × ${g.bulkKg}KG + ${loose}KG = ${total}KG`:`Actual total: ${bags} × ${g.bulkKg}KG + ${loose}KG = ${total}KG`;};
   window.bossReceiveLooseStock=async function(){const payload={group:normalizeText(($('bossLooseGroup')||{}).value),bags:($('bossLooseBags')||{}).value,kgPerBag:($('bossLooseKgPerBag')||{}).value,bagCost:($('bossLooseBagCost')||{}).value,receiveId:'RCV-'+makeClientOrderId()};if(!payload.group||!(Number(payload.bags)>0)||!(Number(payload.kgPerBag)>0)){showAppAlert(lang()==='zh'?'请选择系列并填写包数和每包 KG。':'Select group, bags and KG.',tr('productEditor'));return;}setSubmitBusy(true,lang()==='zh'?'正在记录进货...':'Recording stock...');try{const out=await apiCallTransient('receiveLooseStock',[payload],45000,'Receive loose stock');if($('bossLooseBags'))$('bossLooseBags').value='';if($('bossLooseBagCost'))$('bossLooseBagCost').value='';await loadBossLooseGroups();showAppAlert(lang()==='zh'?`已增加 ${out.addedKg}KG，理论库存 ${out.theoreticalKg}KG，每KG平均成本 ${money(out.perKgCost||0)}。`:`Added ${out.addedKg}KG; theoretical ${out.theoreticalKg}KG; average cost/KG ${money(out.perKgCost||0)}.`,tr('productEditor'));await load(true);}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}};
-  window.bossReconcileLooseStock=function(){const group=normalizeText(($('bossLooseGroup')||{}).value),g=bossLooseGroupsCache.find(x=>x.group===group),bagsRaw=($('bossLooseActualBags')||{}).value,looseRaw=($('bossLooseActualKg')||{}).value,bags=Number(bagsRaw||0),looseKg=Number(looseRaw||0),bulkKg=Number(g&&g.bulkKg)||0,payload={group:group,actualKg:bulkKg*bags+looseKg,actualBags:bags,looseKg:looseKg,bulkKg:bulkKg,note:normalizeText(($('bossLooseNote')||{}).value)};if(!group||!g||!(bulkKg>1)||bagsRaw===''||looseRaw===''||bags<0||looseKg<0){showAppAlert(lang()==='zh'?'请选择系列，并填写剩余完整包数及散装 KG；卖完两项都填 0。':'Select a group and enter full bags plus loose KG; use 0 and 0 if sold out.',tr('productEditor'));return;}const before=Number(g.theoreticalKg)||0,diff=payload.actualKg-before,soldOut=payload.actualKg===0,msg=lang()==='zh'?(soldOut?`确认 ${payload.group} 已经卖完并校正为 0KG？`:`确认把 ${payload.group} 从账面 ${before}KG 校正为 ${bags}包 × ${bulkKg}KG + ${looseKg}KG = ${payload.actualKg}KG？${diff>0?'会补回 '+diff.toFixed(2)+'KG；不会当成进货，也不会改变成本。':diff<0?'会记录减少 '+Math.abs(diff).toFixed(2)+'KG。':'重量没有变化。'}`):(soldOut?`Confirm ${payload.group} as 0KG?`:`Correct ${payload.group} from ${before}KG to ${payload.actualKg}KG?`);showConfirm(msg,()=>bossReconcileLooseStockNow(payload));};
-  window.bossQuickCorrectSelectedKg=async function(){const btn=$('bossQuickKgButton'),group=normalizeText((btn&&btn.dataset.group)||''),before=Number((btn&&btn.dataset.before)||0);if(!group)return;const raw=window.prompt(lang()==='zh'?`请输入 ${group} 实际剩余总重量（KG）\n目前账面：${before}KG\n例如实物21.4KG就填21.4，不要加上旧库存。`:`Enter actual total KG for ${group}.\nSystem stock: ${before}KG.\nIf physical stock is 21.4KG, enter 21.4.`,String(before));if(raw===null)return;const actualKg=Number(String(raw).trim());if(!Number.isFinite(actualKg)||actualKg<0){showAppAlert(lang()==='zh'?'请输入正确的实际总KG。':'Enter a valid actual total KG.',tr('productEditor'));return;}const diff=Math.round((actualKg-before)*100)/100,ok=await appConfirm(lang()==='zh'?`确认把 ${group} 从 ${before}KG 校正为 ${actualKg}KG？\n${diff>0?'补回 '+diff+'KG，不改变成本。':diff<0?'减少 '+Math.abs(diff)+'KG并记录差异。':'重量没有变化。'}`:`Correct ${group} from ${before}KG to ${actualKg}KG?`,lang()==='zh'?'确认共享KG校正':'Confirm shared-KG correction');if(!ok)return;await bossReconcileLooseStockNow({group:group,actualKg:actualKg,note:'Quick physical KG correction from Product Manage'});};
-  async function bossReconcileLooseStockNow(payload){setSubmitBusy(true,lang()==='zh'?'正在校正重量库存...':'Correcting weight stock...');try{const out=await timeout(apiCall('reconcileLooseStock',[payload]),45000,'Loose stock correction');if($('bossLooseActualBags'))$('bossLooseActualBags').value='0';if($('bossLooseActualKg'))$('bossLooseActualKg').value='';if($('bossLooseNote'))$('bossLooseNote').value='';await loadBossLooseGroups();showAppAlert(lang()==='zh'?`校正完成：${out.group} 现在是 ${out.actualKg}KG。${Number(out.gainKg)>0?'已补回 '+out.gainKg+'KG；这不是进货，成本没有改变。':Number(out.lossKg)>0?'已减少 '+out.lossKg+'KG。':'重量没有变化。'}`:`Corrected: ${out.group} is now ${out.actualKg}KG.`,tr('productEditor'));await load(true);}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
+  window.bossReconcileLooseStock=function(){const group=normalizeText(($('bossLooseGroup')||{}).value),g=bossLooseGroupsCache.find(x=>x.group===group),bagsRaw=($('bossLooseActualBags')||{}).value,looseRaw=($('bossLooseActualKg')||{}).value,bags=Number(bagsRaw||0),looseKg=Number(looseRaw||0),bulkKg=Number(g&&g.bulkKg)||0,payload={group:group,actualKg:bulkKg*bags+looseKg,actualBags:bags,looseKg:looseKg,bulkKg:bulkKg,note:normalizeText(($('bossLooseNote')||{}).value)};if(!group||!g||!(bulkKg>1)||bagsRaw===''||looseRaw===''||bags<0||looseKg<0){showAppAlert(lang()==='zh'?'请选择系列，并填写剩余完整包数及散装 KG；卖完两项都填 0。':'Select a group and enter full bags plus loose KG; use 0 and 0 if sold out.',tr('productEditor'));return;}const before=Number(g.theoreticalKg)||0,soldOut=payload.actualKg===0,msg=lang()==='zh'?(soldOut?`确认 ${payload.group} 已经卖完并校正为 0KG？库存差额会保留在 StockAudit，不计入盈亏。`:`确认把 ${payload.group} 从账面 ${before}KG 校正为 ${bags}包 × ${bulkKg}KG + ${looseKg}KG = ${payload.actualKg}KG？库存差额会保留在 StockAudit，不计入盈亏。`):(soldOut?`Confirm ${payload.group} as 0KG? The difference is kept in StockAudit and not recorded as profit/loss.`:`Correct ${payload.group} from ${before}KG to ${payload.actualKg}KG? The difference is kept in StockAudit and not recorded as profit/loss.`);showConfirm(msg,()=>bossReconcileLooseStockNow(payload));};
+  window.bossQuickCorrectSelectedKg=async function(){const btn=$('bossQuickKgButton'),group=normalizeText((btn&&btn.dataset.group)||''),before=Number((btn&&btn.dataset.before)||0);if(!group)return;const raw=window.prompt(lang()==='zh'?`请输入 ${group} 实际剩余总重量（KG）\n目前账面：${before}KG\n例如实物21.4KG就填21.4，不要加上旧库存。`:`Enter actual total KG for ${group}.\nSystem stock: ${before}KG.\nIf physical stock is 21.4KG, enter 21.4.`,String(before));if(raw===null)return;const actualKg=Number(String(raw).trim());if(!Number.isFinite(actualKg)||actualKg<0){showAppAlert(lang()==='zh'?'请输入正确的实际总KG。':'Enter a valid actual total KG.',tr('productEditor'));return;}const ok=await appConfirm(lang()==='zh'?`确认把 ${group} 从 ${before}KG 校正为 ${actualKg}KG？\n库存差额会保留在 StockAudit，不计入盈亏。`:`Correct ${group} from ${before}KG to ${actualKg}KG?\nThe difference is kept in StockAudit and not recorded as profit/loss.`,lang()==='zh'?'确认共享KG校正':'Confirm shared-KG correction');if(!ok)return;await bossReconcileLooseStockNow({group:group,actualKg:actualKg,note:'Quick physical KG correction from Product Manage'});};
+  async function bossReconcileLooseStockNow(payload){setSubmitBusy(true,lang()==='zh'?'正在校正重量库存...':'Correcting weight stock...');try{const out=await timeout(apiCall('reconcileLooseStock',[payload]),45000,'Loose stock correction');if($('bossLooseActualBags'))$('bossLooseActualBags').value='0';if($('bossLooseActualKg'))$('bossLooseActualKg').value='';if($('bossLooseNote'))$('bossLooseNote').value='';await loadBossLooseGroups();showAppAlert(lang()==='zh'?`库存已校正：${out.group} 现在是 ${out.actualKg}KG。库存差额会保留在 StockAudit，不计入盈亏。`:`Stock corrected: ${out.group} is now ${out.actualKg}KG. The difference is kept in StockAudit and not recorded as profit/loss.`,tr('productEditor'));await load(true);}catch(e){showAppAlert((e&&e.message)||e,tr('productEditor'));}finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');}}
 
   function inferBossProductMeta(name,category){
     const raw=normalizeText(name).toUpperCase().replace(/PROBLANCE|PRO BALANCE/g,'PROBALANCE');
@@ -6799,7 +6839,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   function startPosBackgroundTimers(){
     clearInterval(window.__posSyncTimer);
     clearInterval(window.__catalogueTimer);
-    window.__posSyncTimer=setInterval(()=>{try{checkPosSyncRevision();}catch(e){}},20000);
+    window.__posSyncTimer=setInterval(()=>{try{checkPosSyncRevision();}catch(e){}},60000);
     window.__catalogueTimer=setInterval(()=>{
       if(document.hidden)return;
       refreshCatalogueInBackground();
@@ -6815,12 +6855,23 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     try{
       const r=await timeout(apiCall('getPosSyncRevision',[]),6500,'POS sync revision');
       const revision=String((r&&r.row)||0)+'|'+String((r&&r.orderId)||'');
-      if(lastPosSyncRevision===null){lastPosSyncRevision=revision;return;}
+      if(lastPosSyncRevision===null){
+        lastPosSyncRevision=revision;
+        // A device opened after today's sales already has the current revision
+        // as its baseline. It still needs the totals even if no later sale is
+        // made on another device.
+        if(!loadTopStatsCache()||!topStatsLastSuccessAt)await window.loadTodayStats();
+        return;
+      }
       if(revision!==lastPosSyncRevision){
         lastPosSyncRevision=revision;
         try{localStorage.removeItem('yllTopStatsCacheV1');}catch(e){}
         try{await window.loadTodayStats();}catch(e){}
         setTimeout(refreshCatalogueInBackground,700);
+      }else if(!topStatsLastSuccessAt||Date.now()-topStatsLastSuccessAt>60000){
+        // Low-frequency safety net: a transient startup/API failure must not
+        // leave the counter at RM0.00 indefinitely while the revision is idle.
+        await window.loadTodayStats();
       }
     }catch(e){}finally{posSyncRevisionBusy=false;}
   }
@@ -6907,10 +6958,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(window.__cashCollectSubmitting)return;
     const amount=num(($('collectCashAmount')||{}).value);
     const note=(($('collectCashNote')||{}).value||'').trim();
-    if(amount<=0){showAppAlert(tr('amountRequired'),tr('cash'));return;}
+    if(!Number.isFinite(amount)||Math.abs(amount)<0.005){showAppAlert(lang()==='zh'?'请输入非零金额。正数代表收走，负数代表补回。':'Enter a non-zero amount. Positive collects cash; negative replenishes it.',tr('cash'));return;}
+    const replenish=amount<0,confirmed=await appConfirm(lang()==='zh'?(replenish?`确认向钱箱补回 ${money(Math.abs(amount))}？钱箱余额会增加。`:`确认从钱箱收走 ${money(amount)}？钱箱余额会减少。`):(replenish?`Replenish ${money(Math.abs(amount))} to the drawer? The drawer balance will increase.`:`Collect ${money(amount)} from the drawer? The drawer balance will decrease.`),lang()==='zh'?'确认现金调整':'Confirm cash adjustment');
+    if(!confirmed)return;
     window.__cashCollectSubmitting=true;
     keepBossDashboardOpen('cash');
-    setSubmitBusy(true,lang()==='zh'?'正在提交收现金，请稍等...':'Submitting cash collection, please wait...');
+    setSubmitBusy(true,lang()==='zh'?(replenish?'正在记录补回现金...':'正在记录收走现金...'):(replenish?'Recording cash replenishment...':'Recording cash collection...'));
     const btn=document.querySelector('#bossCashBox button.green');
     if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent=lang()==='zh'?'处理中...':'Processing...';}
     try{
@@ -6918,7 +6971,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const amountEl=$('collectCashAmount'),noteEl=$('collectCashNote');
       if(amountEl)amountEl.value=''; if(noteEl)noteEl.value='';
       if(typeof invalidateBossCache==='function')invalidateBossCache();
-      if(typeof showToast==='function')showToast(lang()==='zh'?'已记录收现金':'Cash collection recorded');
+      if(typeof showToast==='function')showToast(lang()==='zh'?(replenish?'已记录补回现金':'已记录收走现金'):(replenish?'Cash replenishment recorded':'Cash collection recorded'));
       await bossOpenCashCollect(true);
       scheduleTopStatsRefresh(300);
     }catch(e){
@@ -6945,7 +6998,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(!rows||!rows.length)return `<div class="boss-result">${lang()==='zh'?'还没有资金出口记录。':'No fund expense records.'}</div>`;
     return `<div class="boss-result" style="overflow:auto"><table><tr><th>${lang()==='zh'?'日期':'Date'}</th><th>${lang()==='zh'?'来源':'Source'}</th><th>${lang()==='zh'?'用途':'Purpose'}</th><th class="right">${lang()==='zh'?'金额':'Amount'}</th><th>${lang()==='zh'?'备注':'Note'}</th></tr>${rows.map(r=>`<tr><td>${esc(r.date||'')}</td><td>${esc(r.source||'')}</td><td>${esc(r.purpose||'')}</td><td class="right">${money(r.amount||0)}</td><td>${esc(r.note||'')}</td></tr>`).join('')}</table>${bossRecordPagerHtml(data,'bossOpenCashCollect')}</div>`;
   }
-  function cashCollectionRows(data){const rows=(data&&data.collectionRows)||[],zh=lang()==='zh';if(!rows.length)return `<div class="boss-result"><b>${zh?'收现金记录':'Cash collection history'}</b><div class="empty">${zh?'还没有逐笔收现金记录。':'No cash collection records yet.'}</div></div>`;return `<div class="boss-result" style="overflow:auto"><b>${zh?'收现金记录':'Cash collection history'}</b><small style="display:block;margin:4px 0 8px;color:#94a3b8">${zh?'最近记录；总共':'Recent records; total'} ${esc(data.collectionTotal||rows.length)} ${zh?'笔':'records'}</small><table><tr><th>${zh?'日期时间':'Date & time'}</th><th class="right">${zh?'收走金额':'Collected'}</th><th>${zh?'备注':'Note'}</th></tr>${rows.map(r=>`<tr><td>${esc(r.date||'-')}</td><td class="right">${money(r.amount||0)}</td><td>${esc(r.note||'—')}</td></tr>`).join('')}</table></div>`;}
+  function cashCollectionRows(data){const rows=(data&&data.collectionRows)||[],zh=lang()==='zh';if(!rows.length)return `<div class="boss-result"><b>${zh?'现金调整记录':'Cash adjustment history'}</b><div class="empty">${zh?'还没有现金调整记录。':'No cash adjustment records yet.'}</div></div>`;return `<div class="boss-result" style="overflow:auto"><b>${zh?'现金调整记录':'Cash adjustment history'}</b><small style="display:block;margin:4px 0 8px;color:#94a3b8">${zh?'正数＝收走，负数＝补回；总共':'Positive = collected, negative = replenished; total'} ${esc(data.collectionTotal||rows.length)} ${zh?'笔':'records'}</small><table><tr><th>${zh?'日期时间':'Date & time'}</th><th class="right">${zh?'调整金额':'Adjustment'}</th><th>${zh?'备注':'Note'}</th></tr>${rows.map(r=>`<tr><td>${esc(r.date||'-')}</td><td class="right">${money(r.amount||0)}</td><td>${esc(r.note||'—')}</td></tr>`).join('')}</table></div>`;}
   function renderFundLedgerData(d){d=d||{};window.__bossFundLedgerData=d;const box=$('bossCashInfo'),cash=d.cashDrawer||{},drawer=num(cash.cashDrawer),floatCash=num(cash.floatCash),collectable=Math.max(0,drawer-floatCash),warning=$('bossCashWarning');if(warning){warning.style.display=collectable>=num(cash.cashDrawerLimit||500)?'block':'none';warning.textContent=(lang()==='zh'?'可收现金 ':'Collectable cash ')+money(collectable);}if(box)box.innerHTML=fundCards(d)+cashCollectionRows(d)+`
       <div class="boss-result" style="margin-top:12px"><b>${lang()==='zh'?'资金出口记录':'Record fund expense'}</b>
         <div class="boss-product-grid" style="margin-top:10px">
@@ -7040,7 +7093,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     const el=document.activeElement,tag=String((el&&el.tagName)||'').toLowerCase();
     return tag==='input'||tag==='textarea'||tag==='select'||!!(el&&el.isContentEditable);
   }
-  let ipadCompositorTimer=null,ipadReturnTimer=null,lastIpadCompositorAt=0,ipadWasHidden=false;
+  let ipadCompositorTimer=null,ipadReturnTimer=null,ipadViewportVerifyTimer=null,lastIpadCompositorAt=0,ipadWasHidden=false,ipadViewportBadCount=0,ipadViewportBadSince=0;
   function abortStalePosReads(){
     try{(window.__activeApiRequests||[]).forEach(request=>{if(request&&/^get/i.test(request.action||'')&&request.controller)request.controller.abort();});}catch(e){}
   }
@@ -7097,18 +7150,48 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       requestAnimationFrame(()=>requestAnimationFrame(()=>{window.__ipadRecoveringUntil=0;ipadRecoveryNotice(false);scheduleForegroundWork(180);}));
     },4000);
   }
-  function handleIpadViewportResize(){
-    if(!iPadDevice||document.hidden||editableIpadTargetActive()||window.__bossLoginInFlight)return;
-    const stable=Number(localStorage.getItem('yllIpadStableLandscapeWidth')||0),visible=Number((window.visualViewport||{}).width)||Number(window.innerWidth)||0;
+  function ipadHardReloadBlocked(){
+    return ipadCriticalWorkActive()||editableIpadTargetActive()||!!window.__bossLoginInFlight||!!document.querySelector('#bossLoginBox.active');
+  }
+  function resetIpadViewportVerification(){
+    clearTimeout(ipadViewportVerifyTimer);ipadViewportVerifyTimer=null;ipadViewportBadCount=0;ipadViewportBadSince=0;
+  }
+  function ipadViewportStillBroken(){
+    let stable=0;try{stable=Number(localStorage.getItem('yllIpadStableLandscapeWidth')||0);}catch(e){}
+    const visible=Number((window.visualViewport||{}).width)||Number(window.innerWidth)||0;
     const header=document.querySelector('.header'),layoutWidth=header?Number(header.getBoundingClientRect().width)||0:0;
-    if(stable>=900&&((visible>0&&visible<stable-120)||(layoutWidth>0&&layoutWidth<stable-120)))scheduleIpadHardReload('viewport-width');
+    const widthBroken=stable>=900&&((visible>0&&visible<stable-120)||(layoutWidth>0&&layoutWidth<stable-120));
+    let hitBroken=false;
+    try{
+      const refresh=$('posManualRefresh'),rect=refresh&&refresh.getBoundingClientRect();
+      if(rect&&rect.width>20&&rect.height>20){const hit=document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2);hitBroken=!!hit&&hit!==refresh&&!refresh.contains(hit);}
+    }catch(e){}
+    return widthBroken||hitBroken;
+  }
+  function verifyIpadViewportAfterRecovery(reason){
+    if(!iPadDevice||document.hidden||ipadHardReloadBlocked()){resetIpadViewportVerification();return;}
+    if(!ipadViewportStillBroken()){resetIpadViewportVerification();return;}
+    if(!ipadViewportBadSince)ipadViewportBadSince=Date.now();
+    ipadViewportBadCount++;
+    if(ipadViewportBadCount>=3&&Date.now()-ipadViewportBadSince>=1000){resetIpadViewportVerification();scheduleIpadHardReload(reason||'persistent-viewport');return;}
+    clearTimeout(ipadViewportVerifyTimer);ipadViewportVerifyTimer=setTimeout(()=>verifyIpadViewportAfterRecovery(reason),550);
+  }
+  function beginIpadReturnRecovery(reason){
+    if(!iPadDevice||document.hidden||ipadHardReloadBlocked())return;
+    resetIpadViewportVerification();recoverIpadAfterAppReturn();
+    ipadViewportVerifyTimer=setTimeout(()=>verifyIpadViewportAfterRecovery(reason),4600);
+  }
+  function handleIpadViewportResize(){
+    if(!iPadDevice||document.hidden||ipadHardReloadBlocked())return;
+    if(!ipadViewportStillBroken()){resetIpadViewportVerification();return;}
+    if(!ipadViewportVerifyTimer)ipadViewportVerifyTimer=setTimeout(()=>verifyIpadViewportAfterRecovery('persistent-viewport-width'),300);
   }
   function scheduleIpadHardReload(reason){
-    if(!iPadDevice||window.__ipadHardReloadScheduled||editableIpadTargetActive()||window.__bossLoginInFlight)return;
+    if(!iPadDevice||window.__ipadHardReloadScheduled||ipadHardReloadBlocked())return;
     let last=0;try{last=Number(sessionStorage.getItem('yllIpadHardReloadAt')||0);}catch(e){}
     if(Date.now()-last<8000)return;
     window.__ipadHardReloadScheduled=true;
-    clearTimeout(ipadReturnTimer);clearTimeout(ipadCompositorTimer);abortStalePosReads();
+    clearTimeout(ipadReturnTimer);clearTimeout(ipadCompositorTimer);resetIpadViewportVerification();abortStalePosReads();
     try{sessionStorage.setItem('yllIpadHardReloadAt',String(Date.now()));sessionStorage.setItem('yllIpadHardReloadReason',String(reason||'return'));}catch(e){}
     setTimeout(()=>{try{const url=new URL(location.href);url.searchParams.set('ipadReload',String(Date.now()));location.replace(url.toString());}catch(e){location.reload();}},500);
   }
@@ -7119,9 +7202,9 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     rebuildIpadCompositor(false);
     window.addEventListener('resize',handleIpadViewportResize,{passive:true});
     if(window.visualViewport)window.visualViewport.addEventListener('resize',handleIpadViewportResize,{passive:true});
-    window.addEventListener('focus',()=>{if(ipadWasHidden)scheduleIpadHardReload('focus-return');},{passive:true});
-    window.addEventListener('pageshow',e=>{if(e.persisted)scheduleIpadHardReload('page-cache-return');},{passive:true});
-    document.addEventListener('visibilitychange',()=>{if(document.hidden){ipadWasHidden=true;clearTimeout(ipadCompositorTimer);}else if(ipadWasHidden){ipadWasHidden=false;scheduleIpadHardReload('app-return');}},{passive:true});
+    window.addEventListener('focus',()=>{if(ipadWasHidden)beginIpadReturnRecovery('focus-return-persistent');},{passive:true});
+    window.addEventListener('pageshow',e=>{if(e.persisted)beginIpadReturnRecovery('page-cache-return-persistent');},{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){ipadWasHidden=true;clearTimeout(ipadCompositorTimer);resetIpadViewportVerification();}else if(ipadWasHidden)beginIpadReturnRecovery('app-return-persistent');},{passive:true});
   }else window.addEventListener('resize',()=>setTimeout(recoverViewportAndInteraction,160),{passive:true});
   window.addEventListener('orientationchange',()=>setTimeout(()=>{if(iPadDevice)rebuildIpadCompositor(true);else recoverViewportAndInteraction();},700),{passive:true});
 
