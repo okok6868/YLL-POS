@@ -6602,10 +6602,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     showBossPanel('bossOtherIncomeBox','otherIncome');
     localizeBossCurrentPanel('otherIncome');
     const box=$('bossOtherIncomeResult');
-    loadOtherIncomeTypes();
     if(box)box.innerHTML=`<div class="boss-result">${esc(lang()==='zh'?'正在读取收入月份与最近记录，请稍等…':'Loading billing months and recent records…')}</div>`;
     try{
       const r=await apiCallTransient('getOtherIncomeSummary',[],16000,'Other income');
+      renderOtherIncomeTypeControls(r.types||window.__otherIncomeTypes||['水机']);
       window.__bossIncomeState={byType:r.recordedPeriodsByType||{},start:r.trackingStart||'2026-05'};const typeSel=$('otherIncomeType');if(typeSel)typeSel.onchange=function(){const s=window.__bossIncomeState||{};renderOtherIncomeMonths((s.byType||{})[this.value]||[],s.start||'2026-05');};renderOtherIncomeMonths((window.__bossIncomeState.byType||{})[(typeSel&&typeSel.value)||'水机']||[],window.__bossIncomeState.start);
       const zh=lang()==='zh';let html=`<div class="boss-overview-grid income-summary-cards"><div class="overview-card"><small>${zh?'已收到':'Received'}</small><b>${money(r.received||0)}</b><span>${esc(r.count||0)} ${zh?'笔记录':'records'}</span></div>${num(r.pending)>0?`<div class="overview-card warn"><small>${zh?'旧待确认':'Legacy pending'}</small><b>${money(r.pending||0)}</b><span>${zh?'只处理历史记录':'Historical records only'}</span></div>`:''}</div>`;
       window.__bossOtherIncomePageData={rows:r.rows||[],page:r.page||1,pageSize:r.pageSize||12,total:r.total!=null?r.total:(r.count||0),totalPages:r.totalPages||1};
@@ -6645,8 +6645,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     openModal('staffOtherIncomeBox');
     const months=$('staffIncomeMonths'),recent=$('staffIncomeRecent');if(months)months.textContent='载入月份...';if(recent)recent.textContent='';
     try{
-      const r=await apiCallTransient('getOtherIncomeSummary',[],16000,'Other income');
-      await loadOtherIncomeTypes();const typeSel=$('staffIncomeType'),type=(typeSel&&typeSel.value)||'水机',byType=r.recordedPeriodsByType||{},recorded=[...new Set((byType[type]||[]).concat(extraRecorded||[]))];
+      const r=await apiCallTransient('getOtherIncomeEntrySetup',[],16000,'Other income');
+      renderOtherIncomeTypeControls(r.types||window.__otherIncomeTypes||['水机']);const typeSel=$('staffIncomeType'),type=(typeSel&&typeSel.value)||'水机',byType=r.recordedPeriodsByType||{},recorded=[...new Set((byType[type]||[]).concat(extraRecorded||[]))];
       window.__staffIncomeState={recorded:recorded,byType:byType,start:r.trackingStart||'2026-05'};
       renderStaffIncomeMonths(recorded,window.__staffIncomeState.start);if(typeSel)typeSel.onchange=function(){const s=window.__staffIncomeState||{},rows=(s.byType||{})[this.value]||[];s.recorded=rows;renderStaffIncomeMonths(rows,s.start||'2026-05');};
       const rows=(r.rows||[]).filter(function(x){return (x.periods||[]).length;}).slice(0,4);
