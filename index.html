@@ -3433,10 +3433,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(displayQR>0)receiptParts.push(`<span class="receipt-pill qr">QR ${money(displayQR)}</span>`);
       if(displayTransfer>0)receiptParts.push(`<span class="receipt-pill transfer">${tr('transfer')} ${money(displayTransfer)}</span>`);
       const otherTotal=num(today.otherIncome||0),otherParts=[];
-      if(num(today.otherIncomeCash||0))otherParts.push(`${tr('cash')} ${money(today.otherIncomeCash)}`);
-      if(num(today.otherIncomeQR||0))otherParts.push(`QR ${money(today.otherIncomeQR)}`);
-      if(num(today.otherIncomeTransfer||0))otherParts.push(`${tr('transfer')} ${money(today.otherIncomeTransfer)}`);
-      const otherLine=otherTotal>0?`<span class="receipt-other">${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' | ')||money(otherTotal)}</span>`:'';
+      if(num(today.otherIncomeCash||0))otherParts.push(`<span class="receipt-pill cash">${tr('cash')} ${money(today.otherIncomeCash)}</span>`);
+      if(num(today.otherIncomeQR||0))otherParts.push(`<span class="receipt-pill qr">QR ${money(today.otherIncomeQR)}</span>`);
+      if(num(today.otherIncomeTransfer||0))otherParts.push(`<span class="receipt-pill transfer">${tr('transfer')} ${money(today.otherIncomeTransfer)}</span>`);
+      const otherLine=otherTotal>0?`<span class="receipt-breakdown receipt-other"><span>${lang()==='zh'?'其中其他收入':'Other income included'}</span>${otherParts.join('')||`<span class="receipt-pill">${money(otherTotal)}</span>`}</span>`:'';
       const refundLine=cashRefundToday>0?`<span class="receipt-refund">${lang()==='zh'?'今日现金退款（已从今日销售扣除）':'Cash refunded today (deducted from today sales)'} -${money(cashRefundToday)}</span>`:'';
       setStatDetail('todaySales', `<span class="receipt-breakdown">${receiptParts.join('')}${syncNote?`<span>${syncNote.replace(/^\s*\|\s*/,'')}</span>`:''}</span>${otherLine}${refundLine}`);
       if(drawerConfirmed){
