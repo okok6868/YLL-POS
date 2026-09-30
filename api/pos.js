@@ -29,11 +29,12 @@ export default async function handler(req, res) {
 
   const body = req.body || {};
   const action = String(body.action || "");
-  // Only reads and the idempotent login request may retry automatically.
-  // Writes such as saveOrder, refunds and stock changes are never repeated here.
-  const safeToRetry = /^get[A-Z]/.test(action) || action === "bossLogin";
-  const attempts = safeToRetry ? 2 : 1;
-  const timeoutMs = safeToRetry ? 26000 : 55000;
+  // Never retry a GAS request inside the proxy. The browser already owns the
+  // visible retry/confirmation flow; proxy retries continued running after a
+  // Safari timeout and caused a growing queue of duplicate reads.
+  const safeToRetry = false;
+  const attempts = 1;
+  const timeoutMs = /^get[A-Z]/.test(action) || action === "bossLogin" ? 30000 : 55000;
   let lastText = "";
 
   for (let attempt = 0; attempt < attempts; attempt++) {
