@@ -2076,11 +2076,26 @@ function reportKpis(r,showProfit){
   return `<div class="sales-kpis">${cards.map((x,i)=>`<div class="sales-kpi ${showProfit&&i===cards.length-1?'profit':''}"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>`;
 }
 let todayOrderTimelineRows=[];
+let todayOrderTimelineInFlight=null;
 function loadTodayOrderTimelineCache(){
   try{const hit=JSON.parse(localStorage.getItem('yllTodayOrderTimelineV1')||'null');return hit&&hit.day===todayKey()&&Array.isArray(hit.rows)?hit.rows:null;}catch(e){return null;}
 }
 function saveTodayOrderTimelineCache(rows){
   try{localStorage.setItem('yllTodayOrderTimelineV1',JSON.stringify({day:todayKey(),at:Date.now(),rows:Array.isArray(rows)?rows:[]}));}catch(e){}
+}
+function rememberTodayOrderLocally(orderId,items,payment,discountValue,paid,change,mixed){
+  try{
+    const now=new Date(),subtotal=moneyNum((items||[]).reduce((sum,i)=>sum+num(i.price)*num(i.qty),0)),total=moneyNum(Math.max(0,subtotal-num(discountValue)));
+    const split=mixed||{},method=String(payment||''),row={
+      orderId:String(orderId||''),date:todayKey(),time:now.toLocaleTimeString('en-GB',{hour12:false,timeZone:'Asia/Kuala_Lumpur'}),payment:method,
+      subtotal:subtotal,discount:moneyNum(discountValue||0),total:total,paid:moneyNum(paid||total),change:moneyNum(change||0),
+      cashAmount:method.toLowerCase()==='cash'?total:moneyNum(split.cash||0),qrAmount:moneyNum(split.qr||0),transferAmount:moneyNum(split.transfer||0),status:'PAID',
+      items:(items||[]).map(i=>({name:i.name,qty:num(i.qty),price:moneyNum(i.price),subtotal:moneyNum(num(i.qty)*num(i.price))}))
+    };
+    const cached=loadTodayOrderTimelineCache()||[];
+    const rows=[row].concat(cached.filter(x=>String(x&&x.orderId||'')!==row.orderId)).slice(0,80);
+    todayOrderTimelineRows=rows;saveTodayOrderTimelineCache(rows);
+  }catch(e){}
 }
 function renderTodayOrderPage(page){
   const box=document.getElementById('todaySoldResult');if(!box)return;
@@ -2101,7 +2116,10 @@ async function openTodaySoldItems(){
   openModal('todaySoldBox');const box=document.getElementById('todaySoldResult'),cached=loadTodayOrderTimelineCache();
   if(cached){todayOrderTimelineRows=cached;renderTodayOrderPage(1);}else box.innerHTML='<div class="sales-empty">载入中...</div>';
   beginForegroundRead();
-  try{todayOrderTimelineRows=await salesReportWithTimeout(apiCall('getTodayOrderTimeline',[]),25000)||[];saveTodayOrderTimelineCache(todayOrderTimelineRows);renderTodayOrderPage(1);}catch(err){
+  try{
+    if(!todayOrderTimelineInFlight)todayOrderTimelineInFlight=timeout(apiCall('getTodayOrderTimeline',[]),28000,'Today orders').finally(()=>{todayOrderTimelineInFlight=null;});
+    todayOrderTimelineRows=await todayOrderTimelineInFlight||[];saveTodayOrderTimelineCache(todayOrderTimelineRows);renderTodayOrderPage(1);
+  }catch(err){
     if(cached){todayOrderTimelineRows=cached;renderTodayOrderPage(1);if(typeof showToast==='function')showToast(lang()==='zh'?'最新订单同步较慢，先显示上次成功资料':'Latest orders are slow; showing last confirmed data');}
     else box.innerHTML='<div class="sales-empty">载入超过 25 秒，请关闭后重试。<br>'+salesReportEscapeHtml(err.message||err)+'</div>';
   }finally{endForegroundRead();}
@@ -5431,6 +5449,13 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   }
   function applyConfirmedPendingOrder(clientId,saved,pendingPayload){
     if(!(saved && saved.orderId))return false;
+    try{
+      const alertBox=$('appAlertBox');
+      if(alertBox&&alertBox.dataset.pendingOrderClientId===String(clientId||'')){
+        delete alertBox.dataset.pendingOrderClientId;
+        closeModal('appAlertBox');
+      }
+    }catch(e){}
     pendingPayload=pendingPayload||{};
     const checkoutKey=pendingPayload.key||'';
     removePendingOnlineOrder(clientId);
@@ -5470,6 +5495,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     showAppAlert(lang()==='zh'
       ?`第 ${number} 张买单正在后台确认。这不代表买单失败；购物车会保留到确认成功，请不要重复按买单。`
       :`Order ${number} is still being confirmed in the background. This is not a failed checkout; the cart stays until confirmation. Do not press checkout again.`,tr('payment'));
+    try{const alertBox=$('appAlertBox');if(alertBox)alertBox.dataset.pendingOrderClientId=String(clientId||'');}catch(e){}
   }
   function confirmPendingInBackground(clientId,pendingPayload){
     if(!clientId || !navigator.onLine)return;
@@ -5679,6 +5705,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     window.lastDiscount = sendDiscount;
     try{ lastDiscount = sendDiscount; }catch(e){}
     window.__activeDiscountAudit=null;
+    rememberTodayOrderLocally(savedOrderId,window.lastCart,window.lastPayment,sendDiscount,window.lastPaid,window.lastChange,window.lastMixedBreakdown||lastMixedBreakdown||null);
     const stockWarnings=checkoutStockStatus().short.map(x=>x.name);
     optimisticTopStatsAfterOrder(window.lastCart, window.lastPayment, sendDiscount, window.lastPaid, window.lastChange);
     window.__localCheckoutSettledUntil=Date.now()+12000;
@@ -5696,18 +5723,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(finishKey)finishedCheckoutClientIds.add(finishKey);
     if(typeof showToast === 'function')showToast(receiptReady?(lang()==='zh'?'订单已保存，收据已准备好；需要时按“打印收据”。':'Order saved. Receipt is ready; press Print Receipt when needed.'):tr('receiptFailed'));
     if(stockWarnings.length)setTimeout(()=>showAppAlert((lang()==='zh'?'买单成功。以下商品库存不足，请通知老板补货：\n\n':'Order saved. Please tell the boss to replenish:\n\n')+stockWarnings.join('\n'),lang()==='zh'?'补货提醒':'Replenishment reminder'),180);
-    // Do not make the heavier product reconciliation compete with the header
-    // refresh after every sale. Local stock is already updated above, so the
-    // authoritative Products read can safely wait until the totals finish.
-    if(typeof loadTodayStats === 'function'){
-      setTimeout(()=>{
-        Promise.resolve(loadTodayStats()).finally(()=>setTimeout(()=>{
-          Promise.resolve(window.load(true)).catch(e=>console.warn('post-order product refresh failed',e));
-        },500));
-      },100);
-    }else{
-      setTimeout(()=>{Promise.resolve(window.load(true)).catch(e=>console.warn('post-order product refresh failed',e));},700);
-    }
+    // The optimistic totals and local stock above are already correct. Let the
+    // checkout request finish and the GAS queue settle before reconciling.
+    // Immediate stats + catalogue reads after every sale were the reason the
+    // third/fourth sale became progressively slower.
+    try{scheduleTopStatsRefresh(10000);}catch(e){}
+    setTimeout(()=>{Promise.resolve(window.load(true)).catch(e=>console.warn('post-order product refresh failed',e));},30000);
   }
 
   window.checkout = async function(payment, paid=0, change=0){
