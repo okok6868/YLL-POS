@@ -1504,6 +1504,7 @@ function checkDayRollover(){
   if(isCheckingOut || window.__submitBusy){setTimeout(checkDayRollover,30000);return;}
   appBootDate=t;
   try{localStorage.removeItem('yllTopStatsCacheV1');}catch(e){}
+  try{if(typeof window.__resetPosReadPipelineForNewDay==='function')window.__resetPosReadPipelineForNewDay();}catch(e){}
   try{['todaySales','todayCash','todayOrders'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='--';});}catch(e){}
   try{loadTodayStats();}catch(e){}
 }
@@ -3128,6 +3129,21 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   let topStatsRequestInFlight=null;
   let topStatsLastSuccessAt=0;
   let topStatsRetryTimer=null;
+  window.__resetPosReadPipelineForNewDay=function(){
+    try{
+      const reads=window.__inflightReadApi;
+      if(reads&&reads.forEach)reads.forEach(function(p){try{if(p&&p.abort)p.abort();}catch(e){}});
+      if(reads&&reads.clear)reads.clear();
+    }catch(e){}
+    topStatsRequestSequence++;
+    topStatsRequestInFlight=null;
+    topStatsLastSuccessAt=0;
+    topStatsFailureStreak=0;
+    window.__foregroundReadCount=0;
+    window.__foregroundReadStartedAt=0;
+    try{lastPosSyncRevision=null;posSyncRevisionBusy=false;}catch(e){}
+    clearTimeout(topStatsRetryTimer);
+  };
   window.loadTodayStats = async function(){
     // Startup, foreground recovery and the revision watcher can all ask for
     // the same figures at once. Share that request instead of letting a later
@@ -5680,13 +5696,18 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     if(finishKey)finishedCheckoutClientIds.add(finishKey);
     if(typeof showToast === 'function')showToast(receiptReady?(lang()==='zh'?'订单已保存，收据已准备好；需要时按“打印收据”。':'Order saved. Receipt is ready; press Print Receipt when needed.'):tr('receiptFailed'));
     if(stockWarnings.length)setTimeout(()=>showAppAlert((lang()==='zh'?'买单成功。以下商品库存不足，请通知老板补货：\n\n':'Order saved. Please tell the boss to replenish:\n\n')+stockWarnings.join('\n'),lang()==='zh'?'补货提醒':'Replenishment reminder'),180);
-    if(typeof loadTodayStats === 'function')setTimeout(()=>loadTodayStats(), 100);
-    // Reconcile the optimistic display with the authoritative Products rows.
-    // This updates name/category/price/cost as well as Stock/SharedStock for
-    // every member of a loose-KG family without requiring an app restart.
-    setTimeout(()=>{
-      Promise.resolve(window.load(true)).catch(e=>console.warn('post-order product refresh failed',e));
-    },700);
+    // Do not make the heavier product reconciliation compete with the header
+    // refresh after every sale. Local stock is already updated above, so the
+    // authoritative Products read can safely wait until the totals finish.
+    if(typeof loadTodayStats === 'function'){
+      setTimeout(()=>{
+        Promise.resolve(loadTodayStats()).finally(()=>setTimeout(()=>{
+          Promise.resolve(window.load(true)).catch(e=>console.warn('post-order product refresh failed',e));
+        },500));
+      },100);
+    }else{
+      setTimeout(()=>{Promise.resolve(window.load(true)).catch(e=>console.warn('post-order product refresh failed',e));},700);
+    }
   }
 
   window.checkout = async function(payment, paid=0, change=0){
