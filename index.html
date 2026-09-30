@@ -1533,7 +1533,13 @@ function apiCall(action,args=[]){
   // Script to perform the same Sheet scan at the same time.
   const readMap=window.__inflightReadApi||(window.__inflightReadApi=new Map());
   const readKey=/^get[A-Z]/.test(String(action||''))?JSON.stringify([action,args,requestBossToken]):'';
-  if(readKey&&readMap.has(readKey))return readMap.get(readKey);
+  if(readKey&&readMap.has(readKey)){
+    const existing=readMap.get(readKey),age=Date.now()-Number(existing&&existing.__startedAt||0);
+    if(age>0&&age<30000)return existing;
+    // Never let an abandoned Safari/Vercel read poison this action forever.
+    try{if(existing&&existing.abort)existing.abort();}catch(e){}
+    readMap.delete(readKey);
+  }
   const request={action:String(action||''),controller:controller};active.add(request);
   const promise=fetch("/api/pos",{
     method:"POST",
@@ -1552,6 +1558,7 @@ function apiCall(action,args=[]){
     return json.data;
   }).finally(()=>{active.delete(request);if(readKey&&readMap.get(readKey)===promise)readMap.delete(readKey);});
   promise.abort=()=>{try{if(controller)controller.abort();}catch(e){}};
+  promise.__startedAt=Date.now();
   if(readKey)readMap.set(readKey,promise);
   return promise;
 }
@@ -2055,8 +2062,8 @@ function salesReportEscapeHtml(value){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
   });
 }
-function beginForegroundRead(){window.__foregroundReadCount=Number(window.__foregroundReadCount||0)+1;}
-function endForegroundRead(){window.__foregroundReadCount=Math.max(0,Number(window.__foregroundReadCount||0)-1);}
+function beginForegroundRead(){window.__foregroundReadCount=Number(window.__foregroundReadCount||0)+1;window.__foregroundReadStartedAt=Date.now();}
+function endForegroundRead(){window.__foregroundReadCount=Math.max(0,Number(window.__foregroundReadCount||0)-1);if(!window.__foregroundReadCount)window.__foregroundReadStartedAt=0;}
 function reportProductRows(r,showProfit){
   const rows=(r&&r.topProducts)||[];
   if(!rows.length)return `<div class="sales-empty">${salesReportLang()==='zh'?'这段时间还没有销售记录。':'No sales in this period.'}</div>`;
@@ -3131,7 +3138,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       const cached = loadTopStatsCache();
       if(cached)applyTopStats(cached);
       // Read one coherent snapshot instead of racing two report calls.
-      const top = await timeout(apiCall('getPosTopStats',[]), 12000, 'Top stats').catch(()=>null);
+      const top = await timeout(apiCall('getPosTopStats',[]), 25000, 'Top stats').catch(()=>null);
       if(requestSequence!==topStatsRequestSequence)return;
       let usableToday = top && top.today ? top.today : null;
       let drawer = top && hasConfirmedCashDrawer(top.cashDrawer) ? top.cashDrawer : null;
@@ -3187,7 +3194,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   function scheduleTopStatsRetry(){
     clearTimeout(topStatsRetryTimer);
     const delay=Math.min(60000,5000*Math.max(1,topStatsFailureStreak));
-    topStatsRetryTimer=setTimeout(()=>{if(!backgroundSyncPaused())window.loadTodayStats();else scheduleTopStatsRetry();},delay);
+    topStatsRetryTimer=setTimeout(()=>{
+      // Reports/Boss panels may postpone background work, but they must never
+      // leave the cashier header blank for the rest of the day.
+      if(!document.hidden&&navigator.onLine&&!window.isCheckingOut)window.loadTodayStats();
+      else scheduleTopStatsRetry();
+    },delay);
   }
 
   function loadTopStatsCache(){
@@ -5743,13 +5755,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
           showAppAlert((lang()==='zh'?'买单没有写入：':'Order was not saved: ')+cleanMessage((err&&err.message)||err),tr('payment'));
           return;
         }
-        for(const waitMs of [500,1200,2400]){
-          try{
-            await sleep(waitMs);
-            const saved = await timeout(apiCall('getOrderByClientId',[clientId]), 4500, 'Check saved order');
-            if(applyConfirmedPendingOrder(clientId,saved,pendingPayload))return;
-          }catch(e){}
-        }
+        // Do not launch several short confirmation reads while the original
+        // Apps Script write may still be finishing.  That old pattern created
+        // a queue of abandoned requests and made the whole POS progressively
+        // slower.  One background confirmer owns the retry sequence.
         rememberPendingOnlineOrder(pendingPayload);
         finishSlowOrder(clientId, sendDiscount, pendingPayload);
         confirmPendingInBackground(clientId,pendingPayload);
@@ -6899,7 +6908,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   let lastForegroundProductRefresh=0;
   let lastPosSyncRevision=null,posSyncRevisionBusy=false;
   let backgroundCatalogueAt=0;
-  function backgroundSyncPaused(){return document.hidden||!navigator.onLine||Number(window.__foregroundReadCount||0)>0||Date.now()<Number(window.__ipadRecoveringUntil||0)||window.__bossLoginInFlight||window.isCheckingOut||!!document.querySelector('#bossLoginBox.active')||Date.now()<Number(window.__localCheckoutSettledUntil||0);}
+  function backgroundSyncPaused(){
+    if(Number(window.__foregroundReadCount||0)>0&&Date.now()-Number(window.__foregroundReadStartedAt||0)>45000){window.__foregroundReadCount=0;window.__foregroundReadStartedAt=0;}
+    return document.hidden||!navigator.onLine||Number(window.__foregroundReadCount||0)>0||Date.now()<Number(window.__ipadRecoveringUntil||0)||window.__bossLoginInFlight||window.isCheckingOut||!!document.querySelector('#bossLoginBox.active')||Date.now()<Number(window.__localCheckoutSettledUntil||0);
+  }
   function startPosBackgroundTimers(){
     clearInterval(window.__posSyncTimer);
     clearInterval(window.__catalogueTimer);
@@ -6943,6 +6955,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     clearTimeout(foregroundWorkTimer);
     foregroundWorkTimer=setTimeout(()=>{
       if(backgroundSyncPaused())return;
+      scheduleTopStatsRefresh(250);
       try{ window.syncOfflineOrders(); }catch(e){}
       try{ resumePendingOrderChecks(); }catch(e){}
       setTimeout(()=>{try{checkPosSyncRevision();}catch(e){}},300);
