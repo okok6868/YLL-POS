@@ -1501,14 +1501,24 @@ function checkDayRollover(){
   const t=todayKey();
   if(!appBootDate){appBootDate=t;return;}
   if(t===appBootDate)return;
-  if(isCheckingOut || window.__submitBusy){setTimeout(checkDayRollover,30000);return;}
+  const checkoutAge=Date.now()-Number(window.__checkoutBusyStartedAt||0),submitAge=Date.now()-Number(window.__submitBusyStartedAt||0);
+  const recentCheckout=(isCheckingOut||window.isCheckingOut)&&checkoutAge>=0&&checkoutAge<120000;
+  const recentSubmit=window.__submitBusy&&submitAge>=0&&submitAge<120000;
+  if(recentCheckout||recentSubmit){setTimeout(checkDayRollover,30000);return;}
+  // An iPad can suspend JavaScript while a request is pending and wake the
+  // next day with yesterday's busy flags still true. Those flags are no
+  // longer evidence of a live write after two minutes; keep the cart/pending
+  // ClientId but release the screen so confirmation can resume.
+  try{if(typeof window.setCheckoutBusy==='function')window.setCheckoutBusy(false);else setCheckoutBusy(false);}catch(e){}
+  try{if(typeof window.setSubmitBusy==='function')window.setSubmitBusy(false);else window.__submitBusy=false;}catch(e){window.__submitBusy=false;}
+  try{const alertBox=document.getElementById('appAlertBox');if(alertBox&&alertBox.dataset.pendingOrderClientId){delete alertBox.dataset.pendingOrderClientId;closeModal('appAlertBox');}}catch(e){}
   appBootDate=t;
   try{localStorage.removeItem('yllTopStatsCacheV1');}catch(e){}
   try{if(typeof window.__resetPosReadPipelineForNewDay==='function')window.__resetPosReadPipelineForNewDay();}catch(e){}
   try{['todaySales','todayCash','todayOrders'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='--';});}catch(e){}
   try{loadTodayStats();}catch(e){}
 }
-function setCheckoutBusy(on){isCheckingOut=!!on; document.body.classList.toggle("pos-busy",!!on); let b=document.getElementById("checkoutBusy"); if(b)b.classList.toggle("active",!!on)}
+function setCheckoutBusy(on){isCheckingOut=!!on;window.isCheckingOut=!!on;window.__checkoutBusyStartedAt=on?Date.now():0;document.body.classList.toggle("pos-busy",!!on);let b=document.getElementById("checkoutBusy");if(b)b.classList.toggle("active",!!on)}
 function updateClock(){let e=document.getElementById("clock");if(e)e.textContent=new Date().toLocaleTimeString()}
 
 function handleBossSessionExpired(message){
@@ -3964,6 +3974,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   };
   window.setCheckoutBusy = function(on){
     window.isCheckingOut=!!on;
+    window.__checkoutBusyStartedAt=on?Date.now():0;
     try{ isCheckingOut=!!on; }catch(e){}
     const busy=$('checkoutBusy');
     if(busy){
@@ -3975,6 +3986,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   };
   function setSubmitBusy(on, message){
     window.__submitBusy=!!on;
+    window.__submitBusyStartedAt=on?Date.now():0;
     const busy=$('checkoutBusy');
     if(busy){
       busy.textContent=message || tr('saving');
@@ -7011,9 +7023,21 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       try{ recoverViewportAndInteraction(); }catch(e){}
     },delay||120);
   }
-  window.addEventListener('online', () => { try{ markNetworkOnline('browser online'); }catch(e){} scheduleForegroundWork(120); });
-  window.addEventListener('focus', () => scheduleForegroundWork(160));
-  window.addEventListener('pageshow', () => scheduleForegroundWork(100));
+  let foregroundStatsRecoveryTimer=null;
+  function ensureStatsAfterForeground(delay){
+    clearTimeout(foregroundStatsRecoveryTimer);
+    foregroundStatsRecoveryTimer=setTimeout(()=>{
+      try{checkDayRollover();}catch(e){}
+      if(document.hidden||!navigator.onLine){ensureStatsAfterForeground(1500);return;}
+      // This intentionally bypasses backgroundSyncPaused(): a stale busy or
+      // viewport-recovery flag must never prevent the cash drawer from loading.
+      try{window.loadTodayStats();}catch(e){}
+      try{resumePendingOrderChecks();}catch(e){}
+    },Math.max(50,Number(delay)||50));
+  }
+  window.addEventListener('online', () => { try{ markNetworkOnline('browser online'); }catch(e){} ensureStatsAfterForeground(300);scheduleForegroundWork(120); });
+  window.addEventListener('focus', () => {ensureStatsAfterForeground(4600);scheduleForegroundWork(160);});
+  window.addEventListener('pageshow', () => {ensureStatsAfterForeground(4600);scheduleForegroundWork(100);});
   document.addEventListener('visibilitychange', () => {
     if(document.hidden){
       const boss=$('bossDashboard');
@@ -7025,6 +7049,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       return;
     }
     startPosBackgroundTimers();
+    ensureStatsAfterForeground(4600);
     scheduleForegroundWork(140);
   });
 
@@ -7266,7 +7291,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     // this timer for each wave and release touch only after four quiet seconds.
     ipadReturnTimer=setTimeout(()=>{
       ipadReturnTimer=null;performIpadCompositorRebuild();
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{window.__ipadRecoveringUntil=0;ipadRecoveryNotice(false);scheduleForegroundWork(180);}));
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{window.__ipadRecoveringUntil=0;ipadRecoveryNotice(false);try{checkDayRollover();}catch(e){}try{window.loadTodayStats();}catch(e){}try{resumePendingOrderChecks();}catch(e){}scheduleForegroundWork(180);}));
     },4000);
   }
   function ipadHardReloadBlocked(){
