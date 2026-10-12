@@ -3117,6 +3117,14 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   let productLoadInFlight=null;
   let productLoadSequence=0;
   window.load = function(force=false){
+    const bossDashboard=$('bossDashboard');
+    if(force&&bossDashboard&&bossDashboard.classList.contains('active')&&window.__bossActiveKey==='productManage'){
+      // Product receiving/editing already refreshes its own management data.
+      // Rebuilding the full POS catalogue underneath the modal after every
+      // operation overloads iPad WebKit and can shift the touch hit areas.
+      window.__catalogueNeedsRefreshAfterBoss=true;
+      return Promise.resolve(currentProducts());
+    }
     if(productLoadInFlight){
       if(!force)return productLoadInFlight;
       if(!window.__queuedProductRefresh)window.__queuedProductRefresh=productLoadInFlight.then(()=>{window.__queuedProductRefresh=null;return window.load(true);});
@@ -5135,10 +5143,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
         fillBossCategoryList();
         fillBossProductFilterCategories();
       }
-      // The saved response updates the selected row immediately, then a forced
-      // read synchronizes every affected variant, POS card, price and stock.
-      // The boss must not need to exit and reopen the app to see the result.
-      try{ await window.load(true); }catch(refreshErr){ console.warn('Post-save product refresh failed',refreshErr); }
+      // Keep the editor responsive on iPad. The response already contains the
+      // saved row, so defer the expensive full POS catalogue rebuild until the
+      // boss dashboard closes instead of rebuilding it after every edit.
+      window.__catalogueNeedsRefreshAfterBoss=true;
       const savedName=(out&&out.product&&out.product.name) || payload.name || '';
       const changedText=(out&&out.isNew ? tr('productAdded') : tr('productChanged')) + (savedName ? `: ${savedName}` : '');
       const variantText=(out && out.variantUpdated) ? `<small>${esc(tr('variantsUpdated'))}: ${esc(out.variantUpdated)}</small>` : '';
@@ -5175,7 +5183,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
           const rowNo=Number(confirmed.row),idx=(bossProductsCache||[]).findIndex(p=>Number(p.row)===rowNo);
           if(idx>=0)bossProductsCache[idx]=confirmed;
           renderBossProductCounts();fillBossProductFilterCategories();renderBossProductList(listQuery);
-          try{ await window.load(true); }catch(refreshErr){ console.warn('Confirmed product refresh failed',refreshErr); }
+          window.__catalogueNeedsRefreshAfterBoss=true;
           if(res)res.innerHTML=`<div class="boss-notice">${lang()==='zh'?'已检查Sheet：商品确定保存成功。':'Sheet checked: product was saved successfully.'}<small>${esc(confirmed.name||payload.name)}</small></div>`;
         }else if(res)res.innerHTML=`<div class="boss-notice">${esc(tr('productSaveSlow'))}<small>${lang()==='zh'?'画面会停留在这里，不会自动跳页。请稍后再按保存或刷新商品资料。':'This page will stay open. Wait, then save again or refresh products.'}</small></div>`;
       }else{
@@ -6870,6 +6878,10 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     });
     document.querySelectorAll('#bossDashboard img').forEach(img=>{try{img.loading='lazy';}catch(e){}});
     bossOverviewPromise=null;
+    if(window.__catalogueNeedsRefreshAfterBoss){
+      window.__catalogueNeedsRefreshAfterBoss=false;
+      setTimeout(()=>{try{window.load(true);}catch(e){}},180);
+    }
     if(typeof showToast === 'function')showToast(auto ? tr('autoExited') : tr('exitedBoss'));
   };
 
