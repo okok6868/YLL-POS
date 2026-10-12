@@ -2127,14 +2127,14 @@ async function openTodaySoldItems(){
   if(cached){todayOrderTimelineRows=cached;renderTodayOrderPage(1);}else box.innerHTML='<div class="sales-empty">载入中...</div>';
   beginForegroundRead();
   try{
-    if(!todayOrderTimelineInFlight)todayOrderTimelineInFlight=timeout(apiCall('getTodayOrderTimeline',[]),28000,'Today orders').finally(()=>{todayOrderTimelineInFlight=null;});
+    if(!todayOrderTimelineInFlight)todayOrderTimelineInFlight=salesReportWithTimeout(apiCall('getTodayOrderTimeline',[]),28000).finally(()=>{todayOrderTimelineInFlight=null;});
     todayOrderTimelineRows=await todayOrderTimelineInFlight||[];saveTodayOrderTimelineCache(todayOrderTimelineRows);renderTodayOrderPage(1);
   }catch(err){
     if(cached){todayOrderTimelineRows=cached;renderTodayOrderPage(1);if(typeof showToast==='function')showToast(lang()==='zh'?'最新订单同步较慢，先显示上次成功资料':'Latest orders are slow; showing last confirmed data');}
     else box.innerHTML='<div class="sales-empty">载入超过 25 秒，请关闭后重试。<br>'+salesReportEscapeHtml(err.message||err)+'</div>';
   }finally{endForegroundRead();}
 }
-function salesReportWithTimeout(promise,ms){return new Promise(function(resolve,reject){const timer=setTimeout(function(){reject(new Error('载入超时'));},ms);Promise.resolve(promise).then(function(value){clearTimeout(timer);resolve(value);},function(err){clearTimeout(timer);reject(err);});});}
+function salesReportWithTimeout(promise,ms){return new Promise(function(resolve,reject){let settled=false;const timer=setTimeout(function(){if(settled)return;settled=true;try{if(promise&&typeof promise.abort==='function')promise.abort();}catch(e){}reject(new Error('载入超时'));},ms);Promise.resolve(promise).then(function(value){if(settled)return;settled=true;clearTimeout(timer);resolve(value);},function(err){if(settled)return;settled=true;clearTimeout(timer);reject(err);});});}
 function bossReportTitle(label){const zh=lang()==='zh';return (zh?{today:"今日",yesterday:"昨天",week:"本周",lastWeek:"上周",month:"本月",lastMonth:"上月",year:"今年"}:{today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",year:"This Year"})[label]||label||(zh?'报表':'Report')}
 async function bossLoadReportRange(s,e,label){
   const box=document.getElementById("bossReportInlineResult")||document.getElementById("bossResult"),zh=lang()==='zh',cacheKey=s+'|'+e;window.__bossReportCache=window.__bossReportCache||{};window.__bossReportLoading=true; box.textContent=zh?'载入中...':'Loading...';
@@ -3493,12 +3493,12 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(num(today.otherIncomeQR||0))otherParts.push(`QR ${money(today.otherIncomeQR)}`);
       if(num(today.otherIncomeTransfer||0))otherParts.push(`${tr('transfer')} ${money(today.otherIncomeTransfer)}`);
       const otherLine=otherTotal>0?`<span class="receipt-other">${lang()==='zh'?'其中其他收入':'Other income included'}：${otherParts.join(' · ')||money(otherTotal)}</span>`:'';
-      const refundLine=cashRefundToday>0?`<span class="receipt-refund">${lang()==='zh'?'今日现金退款（已从今日销售扣除）':'Cash refunded today (deducted from today sales)'} -${money(cashRefundToday)}</span>`:'';
+      const refundLine=cashRefundToday>0?`<span class="receipt-refund">${lang()==='zh'?'退款':'Refund'} -${money(cashRefundToday)}</span>`:'';
       setStatDetail('todaySales', `<span class="receipt-breakdown">${receiptParts.join('')}${syncNote?`<span>${syncNote.replace(/^\s*\|\s*/,'')}</span>`:''}</span>${otherLine}${refundLine}`);
       if(drawerConfirmed){
         paintStatMoney(cash,num(drawer.cashDrawer)+off.cash,animate);
         const cashNotes=[`${tr('collected')} ${money(drawer.collectedToday||0)}${off.count?` | ${tr('offlineCash')}`:''}`];
-        if(cashRefundToday>0)cashNotes.push(`${lang()==='zh'?'今日现金退款':'Cash refunds today'} -${money(cashRefundToday)}`);
+        if(cashRefundToday>0)cashNotes.push(`${lang()==='zh'?'退款':'Refund'} -${money(cashRefundToday)}`);
         setStatDetail('todayCash',cashNotes.join(' | '));
       }else{
         // Keep the last confirmed amount already painted on screen. Missing
@@ -4108,7 +4108,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
               <div class="boss-field wide"><span class="boss-field-label">${lang()==='zh'?'适用入口（同一商品、同一库存）':'Show under (shared stock)'}</span><div style="display:flex;gap:18px;align-items:center;padding:10px 0"><label><input id="bossProductForCat" type="checkbox"> ${lang()==='zh'?'猫':'Cat'}</label><label><input id="bossProductForDog" type="checkbox"> ${lang()==='zh'?'狗':'Dog'}</label><label><input id="bossProductForGeneral" type="checkbox"> ${lang()==='zh'?'通用':'General'}</label></div></div>
               <button id="bossSuggestProductMetaBtn" type="button" onclick="bossSuggestProductMeta()">${lang()==='zh'?'自动建议分类':'Suggest Grouping'}</button>
               <label class="boss-field wide"><span class="boss-field-label" data-product-label="imageLink">${esc(tr('imageLink'))}</span><input id="bossProductImage" placeholder="${esc(tr('imageLink'))}"></label>
-              <label class="boss-field wide"><span class="boss-field-label" data-product-label="uploadImage">${esc(tr('uploadImage'))}</span><input id="bossProductImageFile" type="file" accept="image/*" onchange="bossUploadProductImage(this.files&&this.files[0])"></label>
+              <label class="boss-field wide"><span class="boss-field-label" data-product-label="uploadImage">${esc(tr('uploadImage'))}</span><input id="bossProductImageFile" type="file" accept="image/*" onclick="bossBeginProductImagePick()" onchange="bossUploadProductImage(this.files&&this.files[0])"></label>
               <label id="bossProductStockField" class="boss-field"><span class="boss-field-label" data-product-label="stock">${esc(tr('stock'))}</span><input id="bossProductStock" type="number" step="1" placeholder="${esc(tr('stock'))}"></label>
               <label class="boss-field"><span class="boss-field-label" data-product-label="cost">${esc(tr('cost'))}</span><input id="bossProductCost" type="number" step="0.0001" placeholder="${esc(tr('cost'))}"></label>
               <button id="bossQuickKgButton" class="wide" type="button" onclick="bossQuickCorrectSelectedKg()" style="display:none;background:#b45309;color:#fff">${lang()==='zh'?'快速校正实际KG':'Quick correct actual KG'}</button>
@@ -4857,8 +4857,8 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       finally{setSubmitBusy(false);keepBossDashboardOpen('productManage');showBossPanel('bossProductBox','productManage');bossChooseProductWork('receive',true);}
       return;
     }
-    const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),cartons=Number(($('bossReceiveQty')||{}).value),packSize=Number(($('bossReceivePackSize')||{}).value),raw=String(($('bossReceiveCost')||{}).value||'').trim(),packCost=raw===''?Number((p||{}).lastPackCost||0):Number(raw);
-    if(!p||isAuthoritativeSharedProduct(p)||!(cartons>0)||!(packSize>0)||!(packCost>=0)||(raw===''&&!(Number((p||{}).lastPackCost)>0))){showAppAlert(lang()==='zh'?'请选择普通商品，并填写箱数和每箱数量；没有旧箱价的商品必须填写本次每箱进货价。':'Select a product, cartons and units per carton; products without a previous carton cost require this carton price.',tr('productEditor'));return;}
+    const key=normalizeText(($('bossReceiveName')||{}).value),p=(bossProductsCache||[]).find(x=>(x.code||x.name)===key),cartons=Number(($('bossReceiveQty')||{}).value),packSize=Number(($('bossReceivePackSize')||{}).value),raw=String(($('bossReceiveCost')||{}).value||'').trim(),knownUnitCost=Math.max(0,Number((p||{}).lastPurchaseCost!=null?(p||{}).lastPurchaseCost:(p||{}).cost)||0),knownPackCost=Number((p||{}).lastPackCost||0)>0?Number(p.lastPackCost):knownUnitCost*packSize,packCost=raw===''?knownPackCost:Number(raw);
+    if(!p||isAuthoritativeSharedProduct(p)||!(cartons>0)||!(packSize>0)||!(packCost>0)){showAppAlert(lang()==='zh'?'请选择普通商品，并填写箱数和每箱数量；若商品没有任何旧成本，才需要填写本次每箱进货价。':'Select a product, cartons and units per carton; enter this carton price only when no previous cost exists.',tr('productEditor'));return;}
     const units=cartons*packSize,unitCost=packCost/packSize;
     const beforeStock=Math.max(0,Number(p.stock)||0),beforeAverage=Math.max(0,Number(p.cost)||0),afterStock=beforeStock+units,projectedAverage=afterStock>0?((beforeStock*beforeAverage)+(units*unitCost))/afterStock:unitCost;
     const chosenSalePrice=Number(($('bossReceiveSellingPrice')||{}).value)||Number(p.price)||0;
@@ -4970,6 +4970,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     renderBossProductList(($('bossProductSearch')||{}).value||'');
   };
 
+  window.bossBeginProductImagePick=function(){window.__bossImagePickerUntil=Date.now()+30*60*1000;bossTouch();};
   window.bossUploadProductImage = async function(file){
     if(!file)return;
     if(typeof bossRequire === 'function' && !bossRequire())return;
@@ -4997,6 +4998,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       if(res)res.textContent=msg;
       showAppAlert(msg, tr('productEditor'));
     }finally{
+      window.__bossImagePickerUntil=0;
       const picker=$('bossProductImageFile'); if(picker)picker.value='';
       setSubmitBusy(false);
       keepBossDashboardOpen('productManage');
@@ -5063,6 +5065,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
 
   window.bossOpenProducts = async function(){
     if(typeof bossRequire === 'function' && !bossRequire())return;
+    try{abortStalePosReads();}catch(e){}
     ensureBossProductPanel();
     fillBossCategoryList();
     showBossPanel('bossProductBox','productManage');
@@ -6879,6 +6882,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
       return;
     }
     window.__bossLoginInFlight=true;
+    try{abortStalePosReads();}catch(e){}
     if(idEl)idEl.value='';if(pwEl)pwEl.value='';if(window.syncSecretMasks)window.syncSecretMasks();
     if(btn){btn.disabled=true; btn.textContent=tr('loggingIn');}
     if(msg){msg.style.display='block'; msg.textContent=tr('loggingIn');}
@@ -7041,13 +7045,15 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
   document.addEventListener('visibilitychange', () => {
     if(document.hidden){
       const boss=$('bossDashboard');
-      if(boss&&boss.classList.contains('active'))window.bossLogout(true);
+      const choosingProductImage=Number(window.__bossImagePickerUntil||0)>Date.now();
+      if(boss&&boss.classList.contains('active')&&!choosingProductImage)window.bossLogout(true);
       clearInterval(window.__posSyncTimer);
       clearInterval(window.__catalogueTimer);
       window.__posSyncTimer=null;
       window.__catalogueTimer=null;
       return;
     }
+    if(Number(window.__bossImagePickerUntil||0)>Date.now())setTimeout(()=>{if(!document.hidden)window.__bossImagePickerUntil=0;},3000);
     startPosBackgroundTimers();
     ensureStatsAfterForeground(4600);
     scheduleForegroundWork(140);
