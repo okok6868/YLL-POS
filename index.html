@@ -7301,7 +7301,7 @@ setTimeout(()=>{installRefundUI(); installSettingLabels();},500);
     },4000);
   }
   function ipadHardReloadBlocked(){
-    return ipadCriticalWorkActive()||editableIpadTargetActive()||!!window.__bossLoginInFlight||!!document.querySelector('#bossLoginBox.active');
+    return ipadCriticalWorkActive()||editableIpadTargetActive()||!!window.__bossLoginInFlight||!!document.querySelector('.modal.active');
   }
   function resetIpadViewportVerification(){
     clearTimeout(ipadViewportVerifyTimer);ipadViewportVerifyTimer=null;ipadViewportBadCount=0;ipadViewportBadSince=0;
